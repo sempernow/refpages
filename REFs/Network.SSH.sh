@@ -11,22 +11,23 @@ exit
 #   CLIENT: local machine; ssh user's machine
 #   SERVER: remote machine; host; but has per-client config too. 
 
-# SSH @ CONTAINERs 
-    # SSH @ docker-machine 
-        # @ VM (Private IPv4 Addr: 172.31.4.5) 
-            [ec2-user@ip-172-31-4-5 ~] 
-            $ ssh-keygen -lf .ssh/authorized_keys
-            2048 SHA256:XwZbFaWZeXwwbP7lDxvuQ9IsU6jqYNsj81R8Uha4/pM a1 (RSA) 
-        # @ Host
-            ssh-keygen -lf ~/.docker/machine/machines/a1/id_rsa.pub  
-            2048 SHA256:XwZbFaWZeXwwbP7lDxvuQ9IsU6jqYNsj81R8Uha4/pM no comment (RSA)
-
-            # NOTE: home, "~", is (equiv) "/c/Users/$USER" @ MINGW64; "/c/HOME" @ WSL
-
 # CLIENT services :   (client;you)    <==>    sshd (server)
 
     # SSH : TL;DR
-        ssh -i ${_PRIVATE_KEY} ${user}@${host_name_OR_public_ip}
+        ssh -i $_PRIVATE_KEY ${user}@${host_name_OR_public_ip}
+        # !!!  @ GitHub/GitLab : $user is "git", NOT account's username  !!!
+        ssh -i ~/.ssh/gitlab_key git@gitlab.com
+
+        # Generate key pair
+        ssh-keygen -t ed25519 -C "you@emailer.com" -f ~/.ssh/keyname
+        # Show fingerprint of any key (public/private have common fingerprint)
+        ssh-keygen -E md5 -lvf ~/.ssh/keyname[.pub] # -v show visual in addition to the hash.
+        # Show fingerprint of (remote) host(s) : VALIDATE against remote's claim ON FIRST CONNECT
+        ssh-keygen -E md5 -lvf ~/.ssh/known_hosts   # -v show visual in addition to the hash.
+
+        # Push user's PUBLIC key to remote by referencing PRIVATE key "identity file" (-i)
+        ssh-copy-id -i $_PRIVATE_KEY -p $_PORT_NUMBER ${user}@${host_name_OR_public_ip}
+        #... requires the remote already has an existing key or allows password auth.
 
         # Remotely run LOCAL script and args (environment) through a secure shell
         ssh ... "/bin/bash -s" < /a/local/path/script.sh $arg1 $arg2
@@ -92,24 +93,25 @@ exit
     # queries/adds-to on 1st connect 
     ~/.ssh/known_hosts
 
-    # AUTHORIZED KEYS (@ remote/host) file; contains public keys of clients;    
+    # AUTHORIZED KEYS (@ remote/host) file; contains PUBLIC keys of clients;    
         ~/.ssh/authorized_keys 
         # OR
         ~/etc/.ssh/authorized_keys 
          # @ router; AC66U [Merlin]
         /tmp/home/root/.ssh/authorized_keys 
 
-            # may be SENT by CLIENT per ...
+            # Push PUBLIC key to remote by referencing PRIVATE key "identity file" (-i)
             ssh-copy-id -i PRIVATE_KEY_ID_FILE -p PORT_NUMBER USER@HOST.DOMAIN 
-            # if another key or password login available here, 
-            # else by an out-of-band process
+            #... only if remote already has client's key, or password login is available, 
+            # else must use some out-of-band process to insert key into remote's authorized_keys file.
 
     # FINGERPRINT (fpr)
         # E.g., Validate ALL Host fingerprints; list/verify fpr per 'known_hosts';
         # Use on FIRST CONNECT, comparing it to that shown from host @ first connect 
-            ssh-keygen -lvf ~/.ssh/known_hosts    # shows ALL and a visual; -lf sans visual
+            ssh-keygen [-E md5] -lvf ~/.ssh/known_hosts    # shows ALL and a visual; -lf sans visual
+            # Default hash AKA "Encryption" (-E) shown is SHA256 (Website GUI often show MD5 instead)
         # E.g., Show fingerprint of a key, in the old MD5 format (GitHub uses that)
-            ssh-keygen -E md5 -lf ~/.ssh/github_rsa.pub    
+            ssh-keygen [-E md5] -lf ~/.ssh/github_rsa.pub    
         # NOTE: public and private keys (of a pair) have the SAME fpr.
 
         # @ Host : SSHFP Record (Secure Shell fingerprint record )

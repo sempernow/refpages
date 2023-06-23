@@ -1064,27 +1064,6 @@ exit
         
         # \( expr1 ! expr2 \)
             find \( -name 'REF.*' ! -iname '*.lnk' \) -type f -exec cp '{}' "$@" \;
-            
-        # STREAM PROCESSor [generalized]
-            foo(){ echo "[$1] [$2] [$3]"; }
-            streamArgs() { 
-                # set args per window [process] and window shift 
-                foo_MINARGS=3; _N=3 #... simplest case; sequential with no overlap
-                #... Overlap processing if _N < foo_MINARGS
-                (( $# < $foo_MINARGS )) && return
-                # spawn bkgnd `foo` process; lop N args; recurse
-                ( foo "$@" & ); shift $_N; $FUNCNAME "$@" 
-            }
-            export -f streamArgs # must export so subshell @ `find` can access
-            export -f foo        # must export so subshell @ `find` can access
-
-            # Stream process and control max concurrent processes 
-            seq 8 |xargs -P 20 /bin/bash -c 'streamArgs "$@" &' _ 
-            # [1] [2] [3]
-            # [4] [5] [6]
-
-            # Stream process files
-            find . -execdir /bin/bash -c 'streamArgs "$@"' _ {} \+
 
         # TIMESTAMPS : find/reset source/target, newer/newest, ...
         # https://www.gnu.org/software/findutils/manual/html_mono/find.html#Updating-A-Timestamp-File
@@ -1187,32 +1166,24 @@ exit
             } || { 
                 xargs -I {} command {}  # args per pipeline
             }
-        
-        # handle function(s)
-        foo(){
-            #... any ...
-        }
-        export -f foo
-        seq 3 |xargs -I{} /bin/bash -c 'foo {}'
-        # OR, if access to positionals or multiple invocations, ...
-        seq 3 |xargs -I{} /bin/bash -c 'foo "$3" "$2"' _ {}
 
-        # CONCURRENTly, @ max 10, process \n-delimited paths [list]
-        cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}"'
-        # concurrently/background fooProcess ...
-        cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}" &'
-        
         # SUBSHELL; some circumstances require it, e.g,
-        # to access brace-expansion, access a script-defined function, ...
+        # to access brace-expansion, positional params, multiple references to an arg, etc.
             ... |xargs /bin/bash -c 'command1;command2;...' _  
-            # The dummy `_` absorbs the subshell script-name param, $0, which is null here
+            # The dummy `_` absorbs the subshell script-name param, "$0", which is null here.
+            # Also, may replace that with whatever, making it accessible by the subshell.
 
-            # STREAMING N args per process, sans MINARGS control
-            foo(){ echo $1 $2; }
-            export -f foo
-            seq 3 |xargs -n 2 /bin/bash -c 'foo "$@"' _
-            # 1 2
-            # 3
+            # @ User-defined function(s)
+                foo(){ echo [$1] [$2]; }
+                export -f foo
+                seq 3 |xargs -n 2 /bin/bash -c 'foo "$@"' _
+                # [1] [2]
+                # [3]
+
+            # @ SINGLE ARG per execution
+                seq 3 |xargs -I {} foo "{}"
+                # OR, if access to positionals or multiple invocations, ...
+                seq 3 |xargs -I {} /bin/bash -c 'foo "$3" "$2"' _ {}
 
             # NULL-DELIMITed/WHITESPACE args; process @ SUBSHELL; `-0 -I {} ...`; 
                 ... |xargs -0 -I {} /bin/bash -c 'command "$@"' _ {}
@@ -1221,6 +1192,30 @@ exit
                 # STREAMING `$_N` args per subshell ...
                 ... |xargs -0 -n $_N /bin/bash -c 'command "$@"' _
 
+            # CONCURRENTly, @ max 10, process \n-delimited paths [list]
+                cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}"'
+                # concurrently/background fooProcess ...
+                cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}" &'
+
+            # STREAM PROCESSor [generalized]
+                foo(){ echo "[$1] [$2] [$3]"; }
+                streamArgs() { 
+                    # set args per window [process] and window shift 
+                    foo_MINARGS=3; _N=3 #... simplest case; sequential with no overlap
+                    #... Overlap processing if _N < foo_MINARGS
+                    (( $# < $foo_MINARGS )) && return
+                    # spawn bkgnd `foo` process; lop N args; recurse
+                    ( foo "$@" & ); shift $_N; $FUNCNAME "$@" 
+                }
+                export -f streamArgs # must export so subshell @ `find` can access
+                export -f foo        # must export so subshell @ `find` can access
+                # Stream process and control max concurrent processes 
+                seq 8 |xargs -P 20 /bin/bash -c 'streamArgs "$@" &' _ 
+                # [1] [2] [3]
+                # [4] [5] [6]
+
+                # Stream process files
+                find . -execdir /bin/bash -c 'streamArgs "$@"' _ {} \+
 
 # TEXTUTILS [package]; Process text streams using filters ...
 
