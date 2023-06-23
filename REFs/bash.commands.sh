@@ -1066,25 +1066,25 @@ exit
             find \( -name 'REF.*' ! -iname '*.lnk' \) -type f -exec cp '{}' "$@" \;
             
         # STREAM PROCESSor [generalized]
-            # `foo()` controls number of args per process; 
-            # `shift N` controls stream-window shift.
+            foo(){ echo "[$1] [$2] [$3]"; }
             streamArgs() { 
                 # set args per window [process] and window shift 
-                _foo_MINARGS=2; _N=1 
-                (( $# < $_foo_MINARGS )) && return
+                foo_MINARGS=3; _N=3 #... simplest case; sequential with no overlap
+                #... Overlap processing if _N < foo_MINARGS
+                (( $# < $foo_MINARGS )) && return
                 # spawn bkgnd `foo` process; lop N args; recurse
                 ( foo "$@" & ); shift $_N; $FUNCNAME "$@" 
-                # if $@ = 1 2 3 ... n, and `foo()` takes 2 args, 
-                #  then, if _N=1, stream is processed per 
-                #  `foo 1 2`, `foo 2 3`, ..., `foo (n-1) (n)`.
             }
             export -f streamArgs # must export so subshell @ `find` can access
             export -f foo        # must export so subshell @ `find` can access
-            find ... -execdir bash -c 'streamArgs "$@"' _ {} \+ # note bizarre syntax; `_` is `$0`
 
-            # Alternatively, controlling max concurrent processes, `$_M`, ...
-            ... |xargs -n $_N -P $_M /bin/bash -c 'foo "$@" &' _  # sans MINARGS control
+            # Stream process and control max concurrent processes 
+            seq 8 |xargs -P 20 /bin/bash -c 'streamArgs "$@" &' _ 
+            # [1] [2] [3]
+            # [4] [5] [6]
 
+            # Stream process files
+            find . -execdir /bin/bash -c 'streamArgs "$@"' _ {} \+
 
         # TIMESTAMPS : find/reset source/target, newer/newest, ...
         # https://www.gnu.org/software/findutils/manual/html_mono/find.html#Updating-A-Timestamp-File
