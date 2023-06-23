@@ -1,0 +1,57 @@
+# Ignore everything
+*
+# Allow 1st level subdirs
+!*/
+
+# Ignore specified first-level subdir content
+secrets/
+keys/
+archives/
+backup/
+.idea/
+.store/
+.pgpass/
+.vscode/
+
+# Allow all subdirs under specified 1st-level
+!/foo/**
+
+# Irgnore binaries (@Golang pattern)
+app/api/svc_1
+app/api/svc_2
+app/api/svc_3
+app/api/cli_1
+app/sidecar/sc1/sc1
+
+# Whitelist per file name
+!.gitignore
+!.dockerignore
+!Makefile
+!Makefile.settings
+
+# Whitelist per file type
+!*.conf
+!*.sh
+!*.yml
+!*.yaml
+!*.json
+!*.tf
+!*.Dockerfile
+!*.dockerfile
+!*.sh
+!*.go 
+!*.js
+!*.css
+!*.md
+!*.log
+
+# Ignore specified file of otherwise-whitelisted file type
+**/LOG.md
+make.md2html.sh
+make.perms.sh
+make.tarball.sh
+
+# Ignore symlinks
+symlinked/folder
+
+

@@ -1,0 +1,11 @@
+
+choco install rsync 
+
+rsync v5.5.0.20190204
+
+... FAILs @ SSH.
+
+choco uninstall rsync 
+
+USE Cygwin version @ Cygwin terminal,
+or Linux version @ WSL terminal.

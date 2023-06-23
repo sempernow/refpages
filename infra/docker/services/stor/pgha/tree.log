@@ -1,0 +1,36 @@
+.
+├── LOG.html
+├── LOG.md
+├── Makefile
+├── Makefile.settings
+├── README.html
+├── README.md
+├── TLDR.html
+├── TLDR.md
+├── config
+│   ├── pg_hba.conf.sh
+│   └── postgresql.src.conf
+├── docker.postgres.sh
+├── make.exec.sh
+├── make.init.host.sh
+└── stacks
+    ├── bind-mounts
+    │   ├── healthcheck-pgha.sh
+    │   ├── stack-pgha.admin.bak.yml
+    │   ├── stack-pgha.admin.yml
+    │   ├── stack-pgha.boot1.yml
+    │   ├── stack-pgha.boot2.yml
+    │   ├── stack-pgha.off.root.yml
+    │   ├── stack-pgha.off.yml
+    │   └── stack-pgha.yml
+    └── docker-volumes
+        ├── healthcheck-pgha.sh
+        ├── stack-pgha.admin.yml
+        ├── stack-pgha.boot1.yml
+        ├── stack-pgha.boot2.yml
+        ├── stack-pgha.off.root.yml
+        ├── stack-pgha.off.yml
+        ├── stack-pgha.pg1.yml
+        └── stack-pgha.yml
+
+9 directories, 48 files

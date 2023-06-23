@@ -1,0 +1,107 @@
+# go run . [2021-03-05]
+    Prevent popup of "Windows Defender Firewall" at each invocation
+    
+        Firewall > Inbound Rules > New Rule > Port > TCP > 3000-6000 (or All or whatever)
+
+# IPv6  2020-06-12
+
+    Fixed VScode failure to download extensions ...
+
+    FIX: ENABLE IPv6 @ Gateway Router (ASUS RT-AC66U)
+         IPv6 > Enable > Native
+         
+    NOT FIX: (@ PowerShell)
+        Set interface metric of TAP to higher number than desired interface.
+        Get Interface INDEX per: Get-NetIPInterface
+        Then, e.g., ...
+        Set-NetIPInterface -InterfaceIndex 19 -InterfaceMetric 100 
+
+    NOT FIX: Reset IPv6 
+        ipconfig /flushdns
+        nbtstat –r
+        netsh int ip reset
+        netsh winsock reset
+        netsh winsock reset catalog
+        netsh int ipv6 reset reset.log
+        
+        REF: https://www.meltcomics.com/ipv6-no-network-access/
+        
+# Hyper-V 
+
+    The VIRTUAL Adapter DYNAMICALLY alters Properties (check-boxes) 
+    of  PHYSICAL Adapter, as needed by the VM's Virtual Switch(es).
+    
+    See "REF.Hyper-V..."
+
+
+# Set/Get Network Interface (Adapter) Metric (Priority/Order) @ PowerShell
+    REF: https://www.windowscentral.com/how-change-priority-order-network-adapters-windows-10
+
+    ## Get
+    
+        PS> Get-NetIPInterface
+
+        ifIndex InterfaceAlias                  AddressFamily NlMtu(Bytes) InterfaceMetric Dhcp     ConnectionState PolicyStore
+        ------- --------------                  ------------- ------------ --------------- ----     --------------- -----------
+        4       vEthernet (External Switch)     IPv6                  1500              25 Enabled  Connected       ActiveStore
+        26      vEthernet (Default Switch)      IPv6                  1500            5000 Enabled  Connected       ActiveStore
+        1       Loopback Pseudo-Interface 1     IPv6            4294967295              75 Disabled Connected       ActiveStore
+        4       vEthernet (External Switch)     IPv4                  1500              25 Enabled  Connected       ActiveStore
+        26      vEthernet (Default Switch)      IPv4                  1500            5000 Disabled Connected       ActiveStore
+        1       Loopback Pseudo-Interface 1     IPv4            4294967295              75 Disabled Connected       ActiveStore
+
+
+    ## Set (lower Metric-number is higher priority)
+    
+        PS> Set-NetIPInterface -InterfaceIndex 7 -InterfaceMetric 100
+
+        ## Reset to Automatic 
+        PS> Set-NetIPInterface -InterfaceIndex 7 -AutomaticMetric enabled
+
+
+# Two-Factor Authentication
+
+    ## Command
+
+        NET USER "user name" /WORKSTATIONS: TrustedSystem1, TrustedSystem2
+
+        @ XPC :: Restrict RDC/RDP access ...
+
+            NET USER "XPC Remote" /WORKSTATIONS:HTPC
+            NET USER "%USERNAME%" /WORKSTATIONS:XPC
+
+        @ HTPC :: Restrict RDC/RDP access ...
+
+            NET USER "Remote" /WORKSTATIONS:XPC
+            NET USER "%USERNAME%" /WORKSTATIONS:HTPC
+
+
+
+        @ XPC :: drive/folder Shares ... 
+
+            Properties > Security > "Group or user names"
+            
+                > Add: SYSTEM, Administrators, and LAN  (Remove all others)
+                
+            Properties > Sharing > "Advanced Sharing" > Permissions 
+            
+                > Add: LAN  (Remove all others)
+            
+
+    ## Background
+    
+        NET USER - use it to limit login location to specific machines [Trusted System X]
+
+        /WORKSTATIONS:{computername[,...] | *}
+        Lists as many as eight computers from which a user can log on to the network. If the /WORKSTATIONS option has no list or if the list is *, the user can log on from any computer.
+
+        Use to prevent a weak-password admin account, "Local", from remotely accessing its own [admin]shares; restrict its workstations to the local machine only.
+
+        LAN [Admin]Shares/RDC/RDP Scenarios: 
+        ------------------------------------
+        1. Strong security for LAN [admin]shares & RDC/RDP access: Create Username "Remote" w/ strong passsord @ remote machine serving LAN [admin]shares. Restrict net-user-workstations of Remote to that local machine and machines on LAN from which Remote user is trusted to access those [admin]shares. Create group "LAN", making Remote a  member, and set access to shares, to LAN group ONLY, using Security & Sharing [tabs] using folder Properties applet. Restrict workstations for weak-password account [e.g., Username "Local"] to local-machine ONLY, and exclude Local from LAN group membership. Thus, Local admin account, w/ weak-password, is prohibited from remotely accessing even its own admin-shares.
+
+        2. Strong security for RDC/RDP access by weak-password account: Say Username "Local" has weak password, and Username "Remote" has strong password. Set "/Workstations:" for Local to local-machine ONLY, and for Remote to remote-machine[s] ONLY. This will allow Remote to RDC/RDP into local-machine logon-screen, but disallow logon, causing logon-screen query for another user to logon, whereof Local can logon; SESSIONNAME=Console, not @ "RDP-Tcp#0". Yet Local is unable to remotely access local-machine via RDC/RDP, without Remote. Thus, Remote can be a shell admin [admin-shares] account; needn't install programs, adjust setup Desktop settings, curate Start Menu, etc.
+
+
+    ## REF: http://support.microsoft.com/kb/251394

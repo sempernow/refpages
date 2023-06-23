@@ -1,0 +1,67 @@
+@ Win10 Pro x64 [1709.16299.251] RS3 [Gen2] (Original-install version)
+
+# 2019-11-15
+    Windows File Manager - SLOW to show FOLDER CONTENT; "Working on it"
+
+    FIX:
+        - DISABLE Windows Search (service) 
+        - DELETE all (or at least all old) files 
+            - @ "%AppData%\Microsoft\Windows\Recent\AutomaticDestinations"
+                - This resets Quick access.
+            - @ "%AppData%\Microsoft\Windows\Recent\CustomDestinations"
+      
+# 2018-06-20 
+    COM Server - Critical Error logged @ Windows Event Viewer:
+        "
+        The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID 
+        {...}
+         and APPID 
+        {...}
+         to the user NT AUTHORITY\LOCAL SERVICE SID (S-1-5-19) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.
+         "
+
+    FIX:
+        1. RegEdit.exe; navigate to and change owner/ACLs of the two problem keys reported by Event Viewer (as above); Properties > Security > Advanced ... change OWNER for problem object AND ALL THEREUNDER.
+
+            HKCR\CLSID\{...}
+            HKCR\APPID\{...}
+
+        2. DCOMCNFG.exe (Component Services) app per @ cmd.exe as Admin. Navigate to: Component Services > Computer > My Computer > DCOM Config. Click on that object launched a query window informing that "... not registered ..." and asking to register it; clicked "yes". This process repeated several times, after which the right-hand panel of populated with all the apps handled thereunder.
+        
+        REF: https://shauncassells.wordpress.com/2015/09/28/windows-10-event-10016-fix-the-application-specific-permission-settings-do-not-grant-local-activation-permission-for-the-com-server-application-with-clsid-d63b10c5-bb46-4990-a94f-e40b9d520160-and-a/
+        
+            Note @ ref. article author's experience, there was no popup-query-answer window @ DCOMCNFG.exe. Rather, changed owner/ACLs of the two registry keys of the logged error message to "Administrators" group. and @ DCOMCNFG.exe, changed "RunTimeBroker" ACLs per: Properties > Security > "Launch and Activation Permissions" > Edit ACLs to grant Full access to SYSTEM. 
+            
+            RunTimeBroker changes will NOT BE ALLOWED unless Administrators group has owner/access per their CLSID keys; use RegEdit process detailed above to take Owner/ACLs. 
+            
+            RunTimeBrokers (2) are apps that handles permissions for Universal Apps; its service is called Time Broker; cannot be disabled.
+
+# 2018-05-31 (post Windows Update)
+    cmdadmin.exe scheme per Directory @ File Explorer, "CMD (Admin) Here", is ruined; cmdadmin.exe was a clone of cmd.exe set to always run as Admin, and called from a relevant registry key; now treated as an unknown program; "Not enough storage is available to process this command." ... and such msgs.
+    
+    FIX: 
+        - Create binary wrapper using golang, which calls batch script, and reference that binary in the apropos registry key. Set binary to always run as administrator: Properties > Compatibility > "Change settings for all users" > "Run this program as an administrator".
+    
+    Corrupted Windows Defender file @ "C:\Program Files\Windows Defender\MpClient.dll" Error Message on boot: "Bad image ..." regarding MpClient.dll @ MSASCuil.exe
+    
+    FIX:
+        - Extracted last-good version @ system WIM (captured per DISM @ WinPE)
+        - Take Ownership and change ACLs
+        - Overwrite corrupted with last-good version.
+
+# Wakes every hour on the hour 
+    svchost; EseDiskFlushConsistency; in beta; can't stop it.  
+        Event Viewer -> Windows Logs -> Application -> ESENT 916 General  
+        "svchost (3612,G,0) The beta feature EseDiskFlushConsistency is enabled in ESENT due to the beta site mode settings 0x800000."  
+        https://social.technet.microsoft.com/Forums/en-US/9054b832-d001-4543-b3b0-bcbb729d5f24/esediskflushconsistency-win10-1709?forum=win10itprogeneral
+
+    Wake log showed it was NIC
+    
+    FIX: @ Device Manager 
+      > Network adapters > "Intel ... Ethernet ..." 
+      > Power Management >  check: "Only allow a Magic Packet..."
+
+# Windows Search (Indexing Options)
+    Repeatedly adds bogus/unavailable location, csc:\{...}, upon start. Google search suggested it as cause for hourly wake issue on svchost EseDiskFlushConsistency  
+        
+    FIX: Disabled; also unchecked/disabled all 'Recovery' actions  

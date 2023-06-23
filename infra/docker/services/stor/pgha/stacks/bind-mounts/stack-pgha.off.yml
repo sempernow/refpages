@@ -1,0 +1,62 @@
+# https://docs.docker.com/compose/compose-file
+version: '3.8'
+
+x-logopts:  # https://docs.docker.com/compose/compose-file/compose-file-v3/#extension-fields 
+    &default-logopts  # https://docs.docker.com/compose/compose-file/compose-file-v3/#logging 
+    options:
+        max-size: "12m"
+        max-file: "5"
+    driver: json-file
+
+networks:
+    pvt1:
+        driver: overlay
+        external: true
+
+x-svc: &default-svc
+        image: ${PGHA_IMAGE}
+        user: "70:70"
+        networks:
+            pvt1:
+        ports:
+            - 5432
+        env_file:
+            - ${PATH_ABS_HOST_ASSETS}/.env/pgha.env
+        # Starting the server : https://www.postgresql.org/docs/current/server-start.html 
+        # command: ["postgres", "-c", "config_file=${PATH_ABS_CTNR_PGHOME}/pgha/config/${PG_CONFIG}"]
+        ################################################
+        ### Start the service sans PostgreSQL server
+        ################################################
+        command: ["sleep", "1d"]
+        logging: *default-logopts
+
+services:
+
+    pg1: 
+        <<: *default-svc
+        hostname: "${PGHA_HOST1}"
+        volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volumes
+            - ${PATH_ABS_VM_STORE}/pgha/pgdata:${PATH_ABS_CTNR_PGDATA}
+            - ${PATH_ABS_VM_STORE}/pgha/archive:${PATH_ABS_CTNR_PGARCHIVE}
+            - ${PATH_ABS_VM_STORE}/pgha/etc:${PATH_ABS_CTNR_PG_ETC}
+            - ${PATH_ABS_VM_STORE}/pgha/sql:${PATH_ABS_CTNR_PG_SQL}
+            #- ${PATH_ABS_VM_ASSETS}/sql:${PATH_ABS_CTNR_PGHOME}/sql
+        deploy: # https://docs.docker.com/compose/compose-file/compose-file-v3/#deploy 
+            replicas: 1
+            placement:
+                constraints: 
+                    - node.labels.pg1 == true
+    pg2: 
+        <<: *default-svc
+        hostname: "${PGHA_HOST2}"
+        volumes:
+            - ${PATH_ABS_VM_STORE}/pgha/pgdata:${PATH_ABS_CTNR_PGDATA}
+            - ${PATH_ABS_VM_STORE}/pgha/archive:${PATH_ABS_CTNR_PGARCHIVE}
+            - ${PATH_ABS_VM_STORE}/pgha/etc:${PATH_ABS_CTNR_PG_ETC}
+            - ${PATH_ABS_VM_STORE}/pgha/sql:${PATH_ABS_CTNR_PG_SQL}
+            #- ${PATH_ABS_VM_ASSETS}/sql:${PATH_ABS_CTNR_PGHOME}/sql
+        deploy: # https://docs.docker.com/compose/compose-file/compose-file-v3/#deploy 
+            replicas: 1
+            placement:
+                constraints: 
+                    - node.labels.pg2 == true
