@@ -11,8 +11,14 @@
 !.dockerignore
 !Makefile
 !Makefile.settings
+!favicon.png
 
 # Whitelist per file type
+!*.sql
+!*.cmd
+!*.ps
+!*.bat
+!*.reg
 !*.sh
 !*.yml
 !*.yaml

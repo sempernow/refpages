@@ -5,11 +5,64 @@
 ```powershell
 PS> wsl --install
 ```
+- This BREAKS Docker Desktop
 
 ## Configuration | [Advanced Settings](https://learn.microsoft.com/en-us/windows/wsl/wsl-config) 
 
 - `/etc/wsl.conf` (per distro)
 - `~/.wslconfig` (global; WSL 2 only)
+
+## WSL 2
+
+### Distros
+
+Installed 
+
+```powershell
+wsl -l -v
+```
+
+Available online
+
+```powershell
+wsl --list --online
+```
+
+[Import ANY (custom) Linux Distro per Tarball](https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro)
+
+### WSL2 Host IP is NOT `localhost`
+
+See:
+
+```bash
+$ cat /etc/resolv.conf
+```
+- `nameserver 172.29.144.1`
+
+LAN IP v. WSL2 Host IP
+
+```bash
+$ ip -4 addr show dev eth0
+5: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    inet 172.29.148.53/20 brd 172.29.159.255 scope global eth0
+       valid_lft forever preferred_lft forever
+
+$ ip route
+default via 172.29.144.1 dev eth0
+172.29.144.0/20 dev eth0 proto kernel scope link src 172.29.148.53
+```
+
+### [Fix GUI programs @ WSL 2](https://stackoverflow.com/questions/61860208/running-graphical-linux-desktop-applications-from-wsl-2-error-e233-cannot-op "StackOverflow.com 2021")
+
+On errors of display or clipboard/copy, 
+e.g., `... couldn't connect to display:0`, 
+set the `DISPLAY` environment variable to :
+`WSL_HOST_IP:0.0`
+
+```bash 
+export DISPLAY=$(grep nameserver /etc/resolv.conf |awk '{print $2}'):0.0
+```
+- `DISPLAY=172.29.144.1:0.0`
 
 ## [Commands](https://learn.microsoft.com/en-us/windows/wsl/basic-commands?source=recommendations)
 
@@ -235,8 +288,9 @@ $ screenfetch
     - Mount (`SMB`) network share (sans `smbfs`)
         ```bash
         # Mount network share 
-        sudo mount -t drvfs '\\server\share' /mnt/share
+        sudo mount -t drvfs //RT-AC66U/etc /media/share
         ```
+        - Mount point (`/media/share`) must exist. 
         - WSL uses [DriveFs](https://blogs.msdn.microsoft.com/wsl/2016/06/15/wsl-file-system-support/ "microsoft.com 2016") for such interoperability.
 - Admin   
 
@@ -297,23 +351,31 @@ sudo vim /etc/fstab
 ```text
 ...
 
-'\\SMB\etc' /smb smbfs binary,noacl 0 0
+//RT-AC66U/etc /media/share drvfs binary,noacl 0 0
 ```
+- Mount point ___must exist___ already.
+    - `mkdir -p /media/share`
+- WSL 1 used Type `smbfs` here, yet type `drvfs` at `mount ...`.
 
 #### Per [`mount(8)`](https://linux.die.net/man/8/mount) 
 
-Mount a drive manually, sans any such declaration at either `wsl.conf` or `fstab`:
+Mount a drive manually, sans any such declaration at either `/tec/wsl.conf` or `/etc/fstab`:
 
 ```bash
 # Unmount/Mount
 sudo umount /mnt/c
 sudo mount -t drvfs C: /mnt/c -o 'metadata'
+```
 
-# Mount Windows SMB drive (Router's USB drive)
-sudo mkdir /smb
-sudo mount -t drvfs '\\SMB\etc\' /smb
+Mount (router's) thumb drive.
+
+```bash
+# Mount Windows SMB drive. 
+sudo mkdir /media/share
+sudo mount -t drvfs //RT-AC66U/etc /media/share
+
 # Verify
-ls /smb
+ls /media/share
 ```
 - [Chmod/Chown WSL Improvements](https://blogs.msdn.microsoft.com/commandline/2018/01/12/chmod-chown-wsl-improvements/) 
 

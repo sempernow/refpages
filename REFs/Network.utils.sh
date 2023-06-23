@@ -126,6 +126,7 @@ exit
             -I, --head             # Show headers ONLY
             -D, --dump-header FILE # Show (Dump) response headers; write to FILE; `-` for STDOUT  
             -s, --silent           # Silent mode; sans progress
+            -S, --show-error       # Show error even with -s
             -d, --data DATA        # HTTP POST data; string(s); multiple `-d key#=val#` okay 
             --data-ascii DATA      # HTTP POST ASCII data
             --data-binary DATA     # HTTP POST binary data 
@@ -154,6 +155,9 @@ exit
                          time_total:  %{time_total}s\n
                 # To STDOUT: 
                 curl -s -w "@curl-format.txt" -o /dev/null ...
+
+        # Pull a script to ./a.sh; quitely, follow redirects, rpt only on err
+            curl -fsSL -o a.sh https://foo.com/path/to/a.sh
 
         # Online Golang tool: cURL-to-Golang: https://mholt.github.io/curl-to-go  
 

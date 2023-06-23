@@ -10,7 +10,7 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     # Reference: a string that points to a commit.
     # 4 main types: HEAD, Tag, Branch, Remote Reference
 
-# Git was designed as a filesystem, but was adopted for use as a (very complicated) source version control.
+# Git was designed as a filesystem; adopted for use as SVC/SCM.
 # Git manages and manipulates THREE TREES (repo versions) in its normal operation
 # All LOCAL and per branch https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
     Tree                Role  
@@ -20,16 +20,44 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     Working Directory   Sandbox  
 
     # ORIGIN : origin is the alias referencing the REMOTE (upstream) repo. 
-    # It must have been added earlier per `git remote add origin ...`. (See below.)
-        origin 
+        origin  # Declared, usually during project setup: `git remote add origin URL.git`
 
     # Plumbing (lower-level) commands
         git cat-file -p HEAD
         git ls-tree -r HEAD
         git ls-files -s
 
-# SSH LOGIN [see details @ REF.GitHub.sh] 
-    ssh -T git@github.com
+    # Git Internal Environment Variables
+    ## https://git-scm.com/book/en/v2/Git-Internals-Environment-Variables
+
+# HELP 
+    git help VERB    # big help; html if so @ git config
+    git VERB --help  # big help
+    git VERB -h      # small help; options for VERB
+    man git VERB     # man page for verb AKA porcelain (high-level) command.
+
+# SSH PKI SETUP : https://docs.gitlab.com/ee/user/ssh.html 
+    # Generate key pair
+    ssh-keygen -t ed25519 -C "$(git config user.email)" -f $keypath
+
+    # Re(Set) passphrase 
+    ssh-keygen -p -P $old -P $new -f $keypath
+
+    # Fingerprint (fpr)
+    # Show fpr of any key (public/private have common fpr)
+    ## -v show visual in addition to the hash.
+    ssh-keygen [-E md5|sha1(default)] -l[v] -f $keypath
+    # Show fpr of (remote) host(s) : VALIDATE host ON FIRST CONNECT
+    ssh-keygen [-E md5|sha1(default)] -l[v] -f $keypath
+
+    # Copy/Paste user's PUBLIC key (*.pub) to remote:
+    # Web GUI @ https://gitlab.com/-/profile/keys
+
+    # LOGIN to create SSH tunnel (sans TTY/PTY) 
+    ssh -T[v[v[v[v]]]] -i $keypath git@github.com # -v; verbosity [levels]
+
+        # Optionally : Requires Git 2.10+
+        git config core.sshCommand "ssh -o IdentitiesOnly=yes -i $keypath -F /dev/null"
 
 # CLONE a repo  
     git clone ${PROTO}://${REPO_URI}                 # TO ./REPONAME
@@ -41,11 +69,11 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     # BARE|MIRROR : read-only (sans working dir); bare not functional for push/updates
     git clone [-bare|-mirror]
 
-    # PROTOCOLs (SSH|GIT|HTTP[S])
-    git clone ssh://[user@]host.xz[:port]/${REPO_PATH}.git/  # ssh 
-    git clone git://host.xz[:port]/${REPO_PATH}.git/         # git 
-    git clone http[s]://host.xz[:port]/${REPO_PATH}.git/     # http[s]
-    # (The `.git/` suffix isn't necessary, but all references use it.)
+    # Git PROTOCOLs (SSH|HTTPS)
+    git clone ssh://[user@]server/project.git    # ssh 
+    #git clone [user@]server:project.git          # ssh : NOT @ `git clone ...`
+    git clone https://[user@]server/project.git  # https
+    git clone git://[user@]server/project.git    # git : fastest but NOT encrypted
         
 # CLONE a FOLDER of a repo 
     # Easy way (svn utility)
@@ -58,52 +86,79 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     echo "finisht/*" >> .git/info/sparse-checkout
     git pull --depth=1 origin master
 
-# HELP 
-    git help VERB  # html if so @ git config
-    man git -VERB  # man page
+# INIT a PROJECT
+    mkdir $_REPONAME 
+    cd $_REPONAME
+    vim .gitignore # Create/Edit as apropos 
+    
+    git config --list
+    # (Re)Set global/local(default) config param(s)
+    git config [--global] user.name "YOUR NAME"
+    git config [--global] user.email "YOUR_EMAIL"
+    git config user.username $_GIT_HOST_ACCOUNT_USERNAME
+    git config user.project ${PWD##*/}
 
-# INIT; @ (local) repo dir
-    pushd ${REPONAME}
-    echo "# REPO TITLE" >> README.md
+    # Set network params for SSH mode
+    proto='git@'
+    server='gitlab.com' # Domain name of the Git-server host
+    path="$(git config user.username)/$(git config user.project)"
+    keypath=~/.ssh/${server%.*}_$(git config user.username)
+
+    # Create a local Git repo
     git init
-    git add README.md
-    git commit -m "init"
-    # SSH mode
-    git remote add origin ${sshKeyUser}@${sshKeyHost}:${githubUser}/${githubRepo}.git 
-    git remote add origin git@github.com:$_USERNAME/$_REPONAME.git  # ssh mode
+    git add .
+    git commit -C "Init @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
-    # E.g.,
-    git clone ssh://git@github.com/$githubUser/test-ignores
-    git remote -v  # view/verify origin
-    . github ssh   # custom script, or otherwise login to GitHub or wherever
-    git push -u origin master  # TO origin (remote) FROM master (local)
+    # Add origin : SSH mode 
+    git remote add origin ${proto}${server}:${path}.git
+
+    # SSH login sans creds prompts
+    ssh -T -i $keypath git@${server}
+
+    # Push (securely)
+    git push -u origin main # initial
+    git push                # subsequent
 
 # BRANCHes 
     # Lists all branches (remote and local)
         git branch -a
 
     # ADD a new branch ("branch").
-        git branch NEWbr
+        git branch $name
 
     # DELETE a branch.
-        git branch -d brFoo             # Local
-        git push origin --delete brFoo  # Remote
+        git branch -d $name             # Local
+        git push origin --delete $name  # Remote
 
     # RENAME a branch.
-        git branch -m CURRENTname NEWname
+        git branch -m $old $new
 
     # EDIT/ADD branch DESCRIPTION (@ text editor)
-        git branch --edit-description NAME
+        git branch --edit-description $name
         #  VIEW the description 
-            git config branch.NAME.description
+            git config branch.$name.description
             # Does NOT display per listing @ `git branch`. Script to do so:
             # https://github.com/bahmutov/git-branches/blob/master/branches.sh 
 
     # MERGE source into target (if BOTH COMMITs up-to-date)
-        git checkout TARGET; git merge SOURCE
+        git checkout $target; git merge $source
 
-# CHECKOUT ("dispatch")
-    git checkout BRANCH
+# FETCH : download but don't change state of local branches
+# https://www.atlassian.com/git/tutorials/syncing/git-fetch
+    git fetch origin $name
+    git fetch origin # all branches
+    git fetch --all  # all origins
+    git fetch --dry-run 
+
+# CHECKOUT a.k.a. "dispatch" : integrate into local : creates detached HEAD 
+    git checkout $name # either updates from remote or creates anew
+    # In full; setup remote tracking otherwise Git sets implicitly.
+    git checkout -b $name --track $remote/$name
+    # E.g., 
+    git checkout -b foo --track origin/foo
+
+# PULL : fetch + merge (or rebase, per config settings).
+    git pull origin $name 
 
 # COMMIT 
     git commit -m 'Commit message'
@@ -113,15 +168,39 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     git rev-parse HEAD
     git rev-list HEAD #... last 40 revisions (SHA1)
 
+# MERGE main into feature : non-destructive, but commits cruft.
+    git merge $feature $main
+    # Is equiv to:
+    git checkout $feature
+    git merge $main  
+ 
+# MERGE feature into main 
+    git checkout $main     # Switch to main branch.
+    git pull origin $main  # Pull latest main from origin.
+    git merge $feature     # Merge (commit) feature branch into main.
+    git push origin $main  # Push updated (merged) main to origin.
+
+# REBASE feature onto main (@ HEAD; newest commit) : cleaner project history
+## Use only on your own branches; never on public branches.
+    git checkout $feature
+    git rebase $main
+    #... linear history : git log, git bisect, gitk
+
 # WORKFLOW to MINIMIZE repo HISTORY (noise) when modifying Master  
 
     # NEVER PUSH lest change is significant; to push is to PUBLISH. 
     # Save local versions per new branching and/or out-of-band process;
     # work @ branches dev1, dev2, ...; leave master unchanged (until end/merge).
         git checkout -b dev1 # create AND checkout temp development branch
+        # OR
+        git pull origin dev1
+        git commit #... now in synch with remote dev1
         # ... do work ..., then ...
         _max_squash=$(( $( git rev-list --count HEAD ) - 1 )) # commits count less 1.
         git add .*;git add -A;git commit -m 'x'
+        
+        # Merge into main (at HEAD)
+        git rebase main
         git rebase -i HEAD~$_max_squash 
         # Example command+syntax @ vim (automatic edit, during rebase) 
         :2,7s/pick/s/g  #... to squash commits 2-7
@@ -129,29 +208,35 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
                 # SQUASH commit history/log; (re)write summary commit message (@ dev br)
                 # per `HEAD~N` or HASH of `pick`; see `SQUASH per REBASE` section for details 
                 git rebase -i HEAD~N  # all commits/log-entries back to original  (@ dev1); 
-                # ...keep 1st (oldest) entry; `pick`; change all others (newer) to `s` (squash); 
+                #... may fail depending on the infinite labyrinth of Git-repo states.
+                # WANT: keep 1st (oldest) entry; `pick`; change all others (newer) to `s` (squash); 
                 # The 2nd menu is vim/edit of the squashed rebase-commit message. 
                 git checkout master; git merge dev1  # adds merge-commit history to master
 
         # SHORTer WAY ...
         # ... for zero additional history, from a clean branch, 
-        # delete then recreate master (locally) 
-        git branch -D master; git checkout -b master
-        # IF REMOTE master is messy, see "To DELETE REMOTE `master`" section
-        git push --force-with-lease  # safely force; 
+        # delete then recreate TARGET (locally) 
+        git branch -d $target    # Delete local only if fully merged
+        git branch -D $target    # Delete local regardless
+        git checkout -b $target  # Create anew
+        git push origin $target --force-with-lease  # safely force; 
         # need to force because origin (remote) will be "ahead" after squashing commits 
+        # ALTernative to --force-with-lease :
+        git push origin --delete $target  # Remote
+        git push origin $target 
+
 
 # CI/CD WORKFLOW 
 
     # MODIFY @ feature branch, NOT master branch  
-        git checkout -b 'feature'  # i.e., clone master and modify that,  
+        git checkout -b $feature  # i.e., clone master and modify that,  
         git add . ; git commit -m 'feature'  
-        git push origin 'feature'  # push to feature (creates on push)  
+        git push [origin $feature]  # push to feature (creates on push)  
         # Create Pull Request (PR) @ GitHub repo webpage  
             # Repo > Pull requests (tab) > "New pull request" (button)  
             # > "base:master <= compare:devel"  (dropdown-menus)  
             # > Create pull request  (button)  
-        # Wait for Travis test to report success
+        # Wait for (Travis) test to report success
             # Travis runs test, but no deploy, since it's not the master branch. 
             # (Is okay to instruct Travis to build only on PR).
         # Merge PR (into master) @ GitHub repo webpage
@@ -172,7 +257,7 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
 # RESTORE file mod times (mtime) of all files (after `git ...` destroys them)
     # https://stackoverflow.com/questions/2458042/restore-a-files-modification-time-in-git/22638823#22638823 
     git log --pretty=%at --name-status --reverse \
-        | perl -ane '($x,$f)=@F;next if !$x;$t=$x,next if !defined($f)||$s{$f};$s{$f}=utime($t,$t,$f),next if $x=~/[AM]/;' 
+        |perl -ane '($x,$f)=@F;next if !$x;$t=$x,next if !defined($f)||$s{$f};$s{$f}=utime($t,$t,$f),next if $x=~/[AM]/;' 
 
 # TAG : Used @ Golang Modules  https://git-scm.com/book/en/v2/Git-Basics-Tagging  
     git tag                         # List tags
@@ -247,12 +332,6 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     git push --set-upstream origin brName  # push brName, setting its "upstream" (REMOTE)  
     git push -u [origin brName]            # EQUIVALENT 
 
-# MERGE branch (dev) into master
-    git checkout master
-    git pull origin master
-    git merge dev
-    git push origin master
-
 # COMMON COMMANDs @ workflow
     mkdir ${REPONAME}          # create repo container                
     git init                   # create local repo
@@ -320,19 +399,15 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
         assets/* linguist-vendored  # ignore all /assets/ subfolders; 
         # used to FIX GitHub's mis-reporting of LANGUAGE 
 
-# CONFIG
-    git config --list --global
-    git config --list --local
+# CONFIG : READ/WRITE
+    git config --list [--global|--local] # Default: list all; locals are last
+    git config [--global] user.name "YOUR NAME"
+    git config [--global] user.email "YOUR_EMAIL"
 
-    # 3 levels of config 
-    .git/config     # per repo (`./.git` is dir @ current repo, created per `git init`)
-    ~/.gitconfig    # per user
-    /etc/gitconfig  # per system
-
-    git config ... # writes to ...
-        --local   # per repo; @ `.git/config`
-        --global  # per user; @ `~/.gitconfig`; `%USERPROFILE%\.gitconfig`
-        --system  # per platform; @ PLATFORM_PREFIX/etc/gitconfig; `%ProgramFiles%\Git\mingw64\etc`
+    # SEE : 3 levels of config      
+    .git/config     # per repo    : --local
+    ~/.gitconfig    # per user    : --global
+    /etc/gitconfig  # per system  : --system
 
         # --global @ Git-for-Windows
         "%USERPROFILE%\AppData\Local\GitHubDesktop\app-0.7.2\resources\app\git\mingw64\etc"
