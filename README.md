@@ -1,3 +1,3 @@
 # [`sempernow/refpages`](https://github.com/sempernow/refpages "GitHub") 
 
-A collection of reference notes, configuration files, and such.
+A collection of DevOps reference notes; usage of GNU utilities, networking, applications/frameworks, configuration files, shell scripts and such.
