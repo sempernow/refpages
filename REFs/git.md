@@ -5,19 +5,23 @@
 ```bash
 # Init SSH session (ssh-agent; long-lived)
 . github ssh
+git config --list # List all
+# Set globally
+git config --global user.name "John Doe"
+git config --global user.email johndoe@example.com
 # Add origin (run once)
 git remote add origin $_USERNAME/$_REPONAME.git 
 ```
 
-## `git` Functions/Aliases @ `${_PRJ_HOME}/.bash_functions`
+## `git` Functions/Aliases @ `~/.bash_functions`
 
 ```bash
 # Status 
 gs
 # Logs 
 gl
-# Commit
-gc [TAG]
+# Commit : Default message is is name of newest file 
+gc [MESSAGE]
 # Rebase
 gr
 # Push : git push --force-with-lease (required after rebase)
@@ -37,6 +41,9 @@ gbd NAME
 ## Workflow
 
 ```bash
+# Login per ssh : See github script @ ~/.bin
+. github ssh
+
 # Version (Tag) a commit
 git tag -a v0.1.2 $commit
 

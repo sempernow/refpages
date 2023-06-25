@@ -31,6 +31,10 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
 # SSH LOGIN [see details @ REF.GitHub.sh] 
     ssh -T git@github.com
 
+# HELP 
+    git help VERB  # html if so @ git config
+    man git -VERB  # man page
+
 # CLONE a repo  
     git clone ${PROTO}://${REPO_URI}                 # TO ./REPONAME
     git clone ${PROTO}://${REPO_URI} ${FOLDER}       # TO a specific (new) local FOLDER
@@ -58,25 +62,28 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     echo "finisht/*" >> .git/info/sparse-checkout
     git pull --depth=1 origin master
 
-# HELP 
-    git help VERB  # html if so @ git config
-    man git -VERB  # man page
-
-# INIT; @ (local) repo dir
-    pushd ${REPONAME}
-    echo "# REPO TITLE" >> README.md
+# INIT (locally) : SSH Mode
+    mkdir $_REPONAME 
+    pushd $_REPONAME
+    # Initialize
     git init
-    git add README.md
-    git commit -m "init"
-    # SSH mode
-    git remote add origin ${sshKeyUser}@${sshKeyHost}:${githubUser}/${githubRepo}.git 
-    git remote add origin git@github.com:$_USERNAME/$_REPONAME.git  # ssh mode
+    git add .
+    git commit -C "Init"
+    # Add origin : SSH mode : git@{gitlab,github}.com : Note USER is "git", *not* $_USERNAME
+    git remote add origin git@gitlab.com:$_USERNAME/$_REPONAME.git
+    # If upstream already set per HTTPS mode, then switch to SSH mode by set-url :
+    git remote set-url origin git@github.com:${_USERNAME}/${PWD##*/}.git
+    git remote -v  # verify (remote) origin
+    # Login : SSH mode : MUST have PKI + Host configured @ ~/.ssh/config
+    ssh -T git.gitlab.com # Tunnel sans tty allocation.
+    # OR
+    . github ssh   # custom script; otherwise
+    # Push : set upstream (-u)
+    git push -u origin master # TO origin (remote) FROM master (local)
 
-    # E.g.,
-    git clone ssh://git@github.com/$githubUser/test-ignores
-    git remote -v  # view/verify origin
-    . github ssh   # custom script, or otherwise login to GitHub or wherever
-    git push -u origin master  # TO origin (remote) FROM master (local)
+# INIT (locally) : HTTPS Mode
+    # Same as SSH mode, except for replacing "git@HOST:" with "https://HOST/"
+    # and login by password (prompt).
 
 # BRANCHes 
     # Lists all branches (remote and local)
@@ -119,6 +126,9 @@ winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
     # Save local versions per new branching and/or out-of-band process;
     # work @ branches dev1, dev2, ...; leave master unchanged (until end/merge).
         git checkout -b dev1 # create AND checkout temp development branch
+        # OR
+        git pull origin dev1
+        git commit #... now in synch with remote dev1
         # ... do work ..., then ...
         _max_squash=$(( $( git rev-list --count HEAD ) - 1 )) # commits count less 1.
         git add .*;git add -A;git commit -m 'x'
