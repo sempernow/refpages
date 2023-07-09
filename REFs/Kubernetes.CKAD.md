@@ -555,7 +555,7 @@ kubectl apply deploy -f app.yaml
 kubectl replace deploy -f app.yaml
 ```
 
-## Generate the `kubeconfig` (YAML) 
+## Generate the manifest (YAML) 
 
 For any single-container pod
 
@@ -716,7 +716,7 @@ kube-system   replicaset.apps/coredns-565d847f94   2         2         2       1
 
 # Link @ (HTML | MD)
 
-([HTML](___.md "___"))   
+([HTML](file:///d:/1%20Data/IT/___.html "@ browser") | [MD](file:///d:/1%20Data/IT/___.md "___"))   
 
 
 # Bookmark
@@ -1041,7 +1041,7 @@ NAME       READY   STATUS      RESTARTS   AGE
 j1-t99pw   0/1     Completed   0          5m44s
 ```
 
-Examine `kubeconfig` (YAML) defining the Job; its `restartPolicy`
+Examine manifest (YAML) defining the Job; its `restartPolicy`
 
 ```bash
 kubectl get pods $jobName-t99pw -o yaml |grep restartPolicy
@@ -1077,7 +1077,7 @@ job.batch "j1" deleted
 - Note `jobs.batch` reference.
 
 
-### Generate `kubeconfig` (YAML) for a (generic) Job
+### Generate manifest (YAML) for a (generic) Job
 
 Then edit it, and then `create` the job.
 
@@ -1538,7 +1538,7 @@ kubectl scale deployment $dname  --replicas=4
 
 #### Demo @ Invalid `apiVersion`
 
-Here, the kubeconfig file ([redis-deploy.obsolete.yaml](redis-deploy.obsolete.yaml)) declares an invalid API version, so the deployment fails.
+Here, the manifest file ([redis-deploy.obsolete.yaml](redis-deploy.obsolete.yaml)) declares an invalid API version, so the deployment fails.
 
 ```bash
 ☩ kubectl create -f redis-deploy.obsolete.yaml
@@ -1548,7 +1548,7 @@ ensure CRDs are installed first
 # Validate that apiVersion does NOT exist
 ☩ kubectl api-versions |grep 'apps/v1beta1'
 ```
-- The deployment's `kubeconfig` file ([redis-deploy.obsolete.yaml](redis-deploy.obsolete.yaml)) declares an obsolete API version; does not exist in current K8s build.
+- The deployment's manifest file ([redis-deploy.obsolete.yaml](redis-deploy.obsolete.yaml)) declares an obsolete API version; does not exist in current K8s build.
 ```yaml
 apiVersion: apps/v1beta1
 ```
@@ -1994,7 +1994,7 @@ Unlike Services of an OS (`systemctl`) or Application (microservices), a K8s Ser
 - Decoupling
     - Services exist independent of the apps to which they provide access.
     - One Service may handle several Deployments, and one Deployment may have many Services.
-- The `kube-proxy` agent on Nodes watches the K8s API for new Services and endpoints.
+- The [`kube-proxy`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/) agent on Nodes watches the K8s API for new Services and endpoints.
     - Opens random (high) ports and listens for traffic to Service port on Cluser Network (IP address), redirecting traffic to a Pod specified as endpoint.
     - Background process, normally sans configuration.
 
@@ -2279,7 +2279,7 @@ HTTP/1.1 200 OK
 Server: nginx/1.25.1
 ...
 ```
-- Edit again, restoring original kubeconfig (YAML),
+- Edit again, restoring original manifest (YAML),
   and validate no external access under its `ClusterIP` type Service.
 
 
@@ -2396,7 +2396,7 @@ Workflow
 
 ```bash
 # Apply a NetworkPolicy
-kubectl apply -f $kubeconfig
+kubectl apply -f $manifest
 # Create a Service
 kubectl expose pod nginx --post=80
 # Attempt HTTP GET request of the Service : FAIL 
@@ -2406,7 +2406,7 @@ kubectl label pod busybox access=true
 # Attempt HTTP GET request of the Service : SUCCESS
 kubectl exec -it busybox -- wget --spider --timeout=1 nginx
 ```
-- `kubeconfig` : [`nwpolicy-complete-example.yaml`](nwpolicy-complete-example.yaml)
+- manifest : [`nwpolicy-complete-example.yaml`](nwpolicy-complete-example.yaml)
     ```yaml
     ...
     spec:
@@ -2590,7 +2590,7 @@ Containers have ephemeral R/W layer that does not survive container.
 
 Kubernetes offers Pod Volumes ([Volume](https://kubernetes.io/docs/concepts/storage/volumes/) object) as persistent storage accessible to any container in the Pod; survives container, but not the Pod; [many types](https://kubernetes.io/docs/concepts/storage/volumes/#volume-types), Persistent or Ephemeral.
 
-- [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) (PV) is an API Resource; declared in Pod manifest (`kubeconfig`) using [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/); PV defines access to storage that is external to cluster, yet available in a specific cluster. PVC is used to connect to PV. PVs survive beyond Pod lifecycle.
+- [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) (PV) is an API Resource; declared in Pod manifest (YAML) using [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/); PV defines access to storage that is external to cluster, yet available in a specific cluster. PVC is used to connect to PV. PVs survive beyond Pod lifecycle.
 - Persistent Volume Claim (PVC) is a request for storage; declared in a Pod manifest; used to connect to PV; searches for available PV matching storage request. If perfect match not exist, then [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/)  can automatically allocate it. 
     - PVC decouples Pod from site-specific PV, declaring only storage size and [access modes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) (ReadWriteOnce, ReadOnlyMany, ReadWriteMany).
 - [Storage Class](https://kubernetes.io/docs/concepts/storage/storage-classes/) is site-specific storage; creates PV on demand, per PVC; a Volume plugin that creates a PV having a lifecycle independent of the Pod. Finding a storage provisioner (for this) remains "challenging". 
@@ -2697,7 +2697,7 @@ kubectl describe pv pvc-7fd...
         - `path:`
 
 Pod has 1:1 relation to PVC, 
-and so (normally) specified together (same kubeconfig).
+and so (normally) specified together (same manifest).
 
 >If PV matches PVC params, and storage is available, 
 then PV-PVC are mutually bound.
@@ -2774,7 +2774,7 @@ Source:
 Events:            <none>
 ```
 
-Verify that `HostPath` (Minikube VM) is that mounted per (kubeconfig) spec (`/usr/share/nginx/html`). To do that, we create a file in the container's mount point, and read it from the cluster host (VM) at `HostPath`.
+Verify that `HostPath` (Minikube VM) is that mounted per (manifest) spec (`/usr/share/nginx/html`). To do that, we create a file in the container's mount point, and read it from the cluster host (VM) at `HostPath`.
 
 ```bash
 ☩ kubectl get pod
@@ -2983,7 +2983,7 @@ kubectl get deploy $dname -o yaml > ${dname}.yaml
 
 ## 11.2 Understanding Why Decoupling is Important
 
-The kubeconfig (YAML) of a deployment should be static against varying environments; portable. For this, we need to segregate site-specific info from deployment configuration. This is why __ConfigMaps__ were created. They decouple the two.
+The manifest (YAML) of a deployment should be static against varying environments; portable. For this, we need to segregate site-specific info from deployment configuration. This is why __ConfigMaps__ were created. They decouple the two.
 
 ConfigMap declares site-specific variables and such, storing them in `etcd`, and the Deployment config points to the ConfigMap.
 
@@ -3046,7 +3046,7 @@ must create mount in YAML after the fact, or some other way.
 
 ### [Configure a Pod to Use a ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#populate-a-volume-with-data-stored-in-a-configmap)
 
-ConfigMap is mounted as if it's a file: Add the ConfigMap name under the `volumes:` section of Pod's kubeconfig (YAML).
+ConfigMap is mounted as if it's a file: Add the ConfigMap name under the `volumes:` section of Pod's manifest (YAML).
 
 #### [Populate a Volume with data stored in a ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#populate-a-volume-with-data-stored-in-a-configmap)
 
@@ -3249,7 +3249,7 @@ kubectl create secret docker-registry $sn \
 
 ### API Access
 
-#### `kube-apiserver`
+#### [`kube-apiserver`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/)
 
 - Exposes K8s functionality.
 - Typically started as `systemd` process.
@@ -3257,7 +3257,7 @@ kubectl create secret docker-registry $sn \
     - `kubectl` reads certs @ `~/.kube/config`
 - `kubectl` makes TLS-secured API requests (HTTPS).
 
-#### `kube-proxy`
+#### [`kube-proxy`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/)
 
 Allows using `curl` sans TLS/certs at the commandline to make cluster API requests.
 
@@ -3284,7 +3284,7 @@ curl: (7) Failed to connect to localhost port 8001: Connection timed out
 ```
 - Helper: `--connect-timeout 3`
 
-To access API using `curl`, start `kube-proxy` as a background process.
+To access API using `curl`, start [`kube-proxy`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/) as a background process.
 
 ```bash
 ☩ kubectl proxy --port=8001 &
@@ -3319,7 +3319,7 @@ fg
 
 Use `curl` to Access API Resources
 
-Start the `kube-proxy` process 
+Start the [`kube-proxy`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-proxy/) process 
 
 ```bash
 ☩ kubectl proxy --port=8001 &
@@ -3357,7 +3357,7 @@ kubectl get all
 
 - CNCF Kubernetes releases are in 3 month intervals. 
 - Deprications are common. 
-- SIX MONTH window to revise YAML manifests (kubeconfig).
+- SIX MONTH window to revise YAML manifests (YAML).
     - Depricated API versions are supported for only two releases.
 
 How to fix:
@@ -3438,7 +3438,7 @@ Accessing the API Server : `GET`/`POST`/... @ `etcd`
     - Contains credentials to authenticate against API Server
 - Pod automounts Secret of its ServiceAccount
 
-View a Pod's `default` ServiceAccount spec'd in its manifest (kubeconfig). Note the two params. One supports old API; the other the new API.
+View a Pod's `default` ServiceAccount spec'd in its manifest (YAML). Note the two params. One supports old API; the other the new API.
 
 ```bash
 kubectl get pods $name -o yaml |less
@@ -3529,9 +3529,969 @@ By either method:
 1. `kubectl set sa deploy $dname $sa`
 
 # Lesson 13 : Deploying Applications the DevOps Way <a name=Lesson13></a>
+ 
+## 13.1 Using the [Helm](https://helm.sh/) Package Manager
+
+Helm streamlines the K8s app installation and management; Helm is the tool (`helm`) and its charts (files). A chart is a Helm package containing a package description and one or more templates containing K8s manifest (YAML) files.
+
+### Charts : [`ArtifactHUB.io`](https://artifacthub.io/packages/search?category=7&sort=relevance&page=1)
+
+The defacto registry for Helm charts.
+Good place to search for Helm chart repositories (names).
+
+### [Install Helm](https://helm.sh/docs/intro/install/)
+
+Install a select version ([Releases](https://github.com/helm/helm/releases))
+
+```bash
+release='helm-v3.12.1-linux-amd64.tar.gz'
+tar -zaf $release
+sudo mv linux-amd64/helm /usr/local/bin/helm
+```
+
+Or install the latest
+
+```bash
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+vim get_helm.sh # Examine it.
+sudo /bin/bash ./get_helm.sh
+```
+
+Verify
+
+```bash
+☩ helm version
+version.BuildInfo{Version:"v3.12.1", GitCommit:"f32a52...", GitTreeState:"clean", GoVersion:"go1.20.4"
+```
+
+### Helm Usage
+
+[Search/Find `kubernetes-dashboard`](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard)
+
+```bash
+# Add repo
+☩ helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard
+"kubernetes-dashboard" has been added to your repositories
+
+# List all added repos
+☩ helm repo list 
+NAME                    URL
+kubernetes-dashboard    https://kubernetes.github.io/dashboard
+
+# Update repo info
+☩ helm repo update 
+
+# Search against all added repos
+☩ helm search repo dash
+NAME                                            CHART VERSION   APP VERSION     DESCRIPTION
+kubernetes-dashboard/kubernetes-dashboard       6.0.8           v2.7.0          General-purpose web UI for Kubernetes clusters
+...
+
+# Install the Dashboard software
+☩ helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard
+NAME: kubernetes-dashboard
+LAST DEPLOYED: Tue Jul  4 18:49:45 2023
+NAMESPACE: default
+...
+Get the Kubernetes Dashboard URL by running:
+  export POD_NAME=$(kubectl get pods -n default -l "app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard" -o jsonpath="{.items[0].metadata.name}")
+  echo https://127.0.0.1:8443/
+  kubectl -n default port-forward $POD_NAME 8443:8443
+
+```
+
+@ Minikube, use `addons` instead (easier than Helm).
+
+```bash
+minikube addons list # List
+minikube addons enable dashboard
+```
 
 
+## 13.2 Working with Helm Charts
 
+### Workflow 
 
+```bash
+# Update repos list (cache)
+helm repo update
+# Search for chart locally
+chart=bitnami/mysql
+docker image ls |grep $chart
+## Or, if apropos
+minikube ssh docker image ls |grep $chart
+# Search for a chart @ ArtifactHub.io (hub)
+helm search hub mysql |grep $chart
+# Install a chart
+helm install $chart
+# Show ... | {chart,values} are YAML
+helm show {chart,readme,crds,values,all} $chart
+# List installed chart(s) : k8s resources created per chart(s)
+helm list 
+# Status (+usage details) of chart's deployed service (from list)
+helm status $deployed_service
+```
+- See output of  '[`helm show all $chart`](helm.show.all.chart%5Bbitnami_mysql%5D.log)' (HUGE info)
+
+### Install a Chart
+
+```bash
+# Install a chart and auto-generate name of deployment
+helm install bitnami/mysql --generate-name
+```
+- See [`helm.status.deployed_service[bitnami_mysql].log`](helm.status.deployed_service%5Bbitnami_mysql%5D.log)
+    - Same output as : `helm status mysql-xxx`
+        - Obtain ___name___ of the ___depoyed service(s)___ : `helm list`
+
+### Customize the Service : `values.yaml`
+
+(Before installing)
+
+Helm chart has templates containing parameters (k-v pair), with settings at  the Chart's `values.yaml`. 
+
+```bash
+helm show values $chart
+```
+
+### Fetch the Chart (`tgz`)
+
+```bash
+chart=bitnami/nginx
+helm pull $chart  # 37KB
+tar -xaf nginx-15.1.0.tgz
+pushd nginx
+ls
+```
+```text
+total 100K
+   0 drwxrwxr-x 1 x1 x1 4.0K Jul  8 16:56 ..
+   0 drwxrwxr-x 1 x1 x1 4.0K Jul  8 16:56 templates
+   0 drwxrwxr-x 1 x1 x1 4.0K Jul  8 16:56 .
+   0 drwxrwxr-x 1 x1 x1 4.0K Jul  8 16:56 charts
+ 40K -rw-r--r-- 1 x1 x1  37K Jun 29 04:25 values.yaml
+4.0K -rw-r--r-- 1 x1 x1 2.2K Jun 29 04:25 values.schema.json
+ 52K -rw-r--r-- 1 x1 x1  49K Jun 29 04:25 README.md
+4.0K -rw-r--r-- 1 x1 x1  757 Jun 29 04:25 Chart.yaml
+   0 -rw-r--r-- 1 x1 x1  225 Jun 29 04:25 Chart.lock
+   0 -rw-r--r-- 1 x1 x1  333 Jun 29 04:25 .helmignore
+```
+
+### Edit the Service Parameters (`values.yaml`)
+
+```bash
+vim values.yaml
+```
+
+Once edited, see the resulting template 
+using `helm template --debug` :
+
+```bash
+# @ nginx dir
+popd
+# @ parent dir (else fail)
+helm template --debug nginx
+```
+- See [`helm.template--debug.nginx.log`](helm.template--debug.nginx.log)
+
+>Helm templates are (K8s) Service/Deployment manifest files.
+
+### Create Service from (new/edited) `values.yaml`
+
+Working from the parent of the downloaded and extracted `bitnami/nginx` chart (`./nginx`).
+
+```bash
+# Install the values-modified chart : PWD is parent of ./nginx
+helm install -f nginx/values.yaml $sname nginx/
+```
+
+## 13.3 Using [Kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) | `kustomization.yaml`
+
+(Not in CKAD exam.) 
+
+`kustomize` is a K8s tool to declaratively manage cluster Objects; 
+decouples deployment from source code. Useful for overriding parameters that may be outside user's control that may otherwise mutate per Git commit or whatever.
+
+```bash
+# @ parent of kustomization.yaml file
+kubectl {apply,delete} -k ./
+```
+
+Kustomization is used to define either a base configuration, or overlays thereupon to handle a range of deployment scenarios, e.g., development, staging, and production. 
+
+The main (base) config file (`kustomization.yaml`) defines the structure.
+
+### Workflow
+
+```bash
+cat deployment.yaml
+cat service.yaml
+kubectl apply -f deployment.yaml service.yaml
+cat kustomization.yaml
+kubectl apply -k .
+```
+
+### Demo
+
+```bash
+pushd kustomization
+kubectl apply -k .
+kubectl get all --selector environment=testing
+```
+- [`deployment.yaml`](kustomization/deployment.yaml)
+- [`service.yaml`](kustomization/service.yaml)
+- [`kustomization.yaml`](kustomization/kustomization.yaml)
+
+## 13.4 Implementing BlueGreen [Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+
+Zero-downtime upgrades using K8s Services.
+
+- Blue AKA current version
+- Green AKA new version
+    - First launch as Test Service
+
+__Service name__ is common and remains __unchanged__ in both Blue/Green.
+
+### Workflow 
+
+@ Blue
+
+```bash
+# Deploy Blue (perhaps long ago, with many mods since)
+svc=bg
+kubectl create deploy $blue --image=$iname --replicas=3
+kubectl expose deploy $blue --port=80 --name=$svc # Yes, THIS is the Service
+kubectl get deploy $blue -o yaml > ${green}.yaml # Capture (current) Blue manifest.
+```
+
+- Cleanup $green (Blue clone) YAML
+    - Delete the dynamic elements:
+        - `metadata:`
+            - `annotations:`
+            - `creationTimestamp:`
+            - `generation:`
+            - `resourcesVersion:`
+            - `uid:`
+        - `status:`
+    - Change "`image:`" version
+    - Change all prefixes '`blue`' to '`green`'
+
+@ Green
+
+```bash
+# Deploy Green
+tmp=bgX
+kubectl create -f ${green}.yaml
+kubectl get pods
+kubectl expose deploy $green --port=80 --name=$tmp
+kubectl get endpoints #... do test/validate Green here
+kubectl delete svc $tmp 
+# Swap Services : Blue with Green (temporary)
+kubectl delete svc $svc; kubectl expose deploy $green --port=80 --name=$svc
+# Verify Green endpoint
+kubectl get endpoints
+# Teardown Blue
+kubectl delete deploy $blue
+```
+
+## 13.5 Implementing Canary [Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+
+_Canary in a coal mine._ A deployment-update strategy whereof update (Canary) is deployed at small scale to see if it works well.
+
+- Deploy one instance (`--replicas=1`) of Canary using same label as the target Deployment.
+    - If it fails, the load balancing assures that only one out of total users are affected.
+- Create a Service that uses the same Selector Label for all.
+- When confident, change replicas over time; lower the old and increase the new (Canary).
+
+### Demo : Step 1 : Run the Old Version
+
+```bash
+old=old
+iname=nginx:1.14
+# Generate the Deployment manifest
+kubectl create deploy $old --image=$iname --replicas=3 \
+--dry-run=client -o yaml > ${old}.yaml
+# Set label type=canary in metadata of both Deployment and Pod 
+vim ${old}.yaml
+# Deploy the old
+kubectl create -f ${old}.yaml
+```
+- [`old.yaml`](old.yaml)
+
+Verify 
+
+```bash
+# Verify deployment
+☩ kubectl get all --selector type=canary
+NAME                       READY   STATUS    RESTARTS   AGE
+pod/old-7bb6f649c6-qhvz2   1/1     Running   0          14s
+pod/old-7bb6f649c6-stl26   1/1     Running   0          14s
+pod/old-7bb6f649c6-tzxkn   1/1     Running   0          14s
+
+NAME          TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+service/old   ClusterIP   10.99.155.200   <none>        80/TCP    5m27s
+
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/old   3/3     3            3           14s
+
+NAME                             DESIRED   CURRENT   READY   AGE
+replicaset.apps/old-7bb6f649c6   3         3         3       14s
+```
+
+Create Service : Expose the Deployment to Web
+
+```bash
+# Expose Deployment to web as Service : Add the common Label Selector
+☩ svc=$old
+☩ kubectl expose deploy $old --name=$svc --port=80 --selector type=canary
+service/old exposed
+
+# Verify the web Service of our Deployment
+☩ kubectl get svc --selector type=canary
+NAME   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+old    ClusterIP   10.99.155.200   <none>        80/TCP    7m22s
+
+# Verify endpoints of the three replicas
+☩ kubectl get endpoints --selector type=canary
+NAME   ENDPOINTS                                      AGE
+old    10.244.0.33:80,10.244.0.34:80,10.244.0.35:80   7m33s
+
+☩ kubectl get pods --selector type=canary -o wide
+NAME                   READY   STATUS    RESTARTS   AGE    IP           ...
+old-7bb6f649c6-qhvz2   1/1     Running   0          5m2s   10.244.0.33  ...
+old-7bb6f649c6-stl26   1/1     Running   0          5m2s   10.244.0.35  ...
+old-7bb6f649c6-tzxkn   1/1     Running   0          5m2s   10.244.0.34  ...
+```
+
+Test the _service_ from any node host
+
+```bash
+svc_addr='10.99.155.200'
+minikube ssh "curl -I $svc_addr" #=> HTTP/1.1 200 OK ...
+```
+
+### Demo : Step 2 : Create a ConfigMap
+
+Use ConfigMap to provide uniqueness to Canary version of the app.
+
+```bash
+# Show/Pick ctnr from which to pull the existing (old) index.html
+kubectl get pods --selector type=canary
+ctnr=${old}-7bb6f649c6-stl26
+from=/usr/share/nginx/html/index.html
+to_local=index.pulled.html
+# Copy from old : pull file(s) to local path.
+kubectl cp $ctnr:$from $to_local
+# Edit : make unique.
+vim $to_local
+# Store as ConfigMap
+cm=canary
+kubectl create cm $cm --from-file="index.canary.html"
+# Verify
+kubectl describe cm $cm
+# Generate ConfigMap manifest (YAML)
+kubectl get cm $cm -o yaml > cm.canary.yaml
+```
+
+### Demo : Step 3 : Prepare the New Version
+
+REF: [Configure Pod to use ConfigMap : Mount ConfigMap as Volume](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#populate-a-volume-with-data-stored-in-a-configmap "Kubernetes.io/Docs/...")
+
+```bash
+# Create canary manifest : start with clone of that from $old Deployment
+cp ${old}.yaml canary.yaml
+# Edit canary manifest : 
+## - Change name (from $old to $new)
+## - Mount the ConfigMap.
+## - Lessen replicas (to 1).
+## - Change image (tag) to :latest
+vim canary.yaml
+# Validate the YAML 
+kubeval canary.yaml
+# Deploy the canary
+kubectl create -f canary.yaml
+```
+- [`canary.yaml`](canary.yaml) v. [`${old}.yaml`](old.yaml)
+    - [`diff old.yaml canary.yaml`](diff.old.v.canary.log)
+- [`kubeval`](https://www.kubeval.com/installation/)  
+_Kubeval is used to validate one or more Kubernetes configuration files, and is often used locally as part of a development workflow as well as in CI pipelines._
+
+Monitor the Canary: 
+
+```bash
+☩ kubectl get pods --selector type=canary
+NAME                   READY   STATUS             RESTARTS      AGE
+new-5d98bd789b-t4g4g   0/1     CrashLoopBackOff   5 (70s ago)   3m55s
+old-7bb6f649c6-qhvz2   1/1     Running            0             11h
+old-7bb6f649c6-stl26   1/1     Running            0             11h
+old-7bb6f649c6-tzxkn   1/1     Running            0             11h
+```
+- The Canary (`new-`) pod/container is failing.
+
+Debug the Canary:
+
+```bash
+☩ kubectl describe po new-5d98bd789b-t4g4g
+...
+Events:
+  Type     Reason     Age                    From               Message
+  ----     ------     ----                   ----               -------
+  Normal   Scheduled  4m6s                   default-scheduler  Successfully assigned default/new-5d9... to minikube
+  Normal   Pulled     4m5s                   kubelet            Successfully pulled image "nginx:latest" ...
+  ...
+  Warning  Failed     2m45s (x5 over 4m5s)   kubelet  Error: failed to start container "nginx": Error response ... : error during ...: error mounting "/var/lib/kubelet/pods/d92...6ab/volumes/kubernetes.io~configmap/cm-vol" to rootfs at "/usr/share/nginx/html/index.html": ... Are you trying to mount a directory onto a file (or vice-versa)? ...
+```
+- "`Are you trying to mount a directory onto a file`"
+    - Yes, mistakenly mounting Canary's ConfigMap to:  
+    `/usr/share/nginx/html/index.html`
+        - The `mountPath:` should be the target DIR:  
+        `/usr/share/nginx/html/` 
+
+Fix the Canary's ConfigMap mount point. 
+(See [`canary.yaml`](canary.yaml)).
+
+```bash
+# Delete the Canary deployment
+☩ kubectl delete -f canary.yaml
+deployment.apps "new" deleted
+
+# Edit the Canary manifest
+☩ vim canary.yaml
+☩ kubectl create -f canary.yaml
+deployment.apps/new created
+
+☩ kubectl get po --selector type=canary -o wide
+NAME                   READY   STATUS    RESTARTS   AGE   IP          ...
+new-69dcbcbdbc-qzjqj   1/1     Running   0          22m   10.244.0.37 ...
+old-7bb6f649c6-qhvz2   1/1     Running   0          12h   10.244.0.33 ...
+old-7bb6f649c6-stl26   1/1     Running   0          12h   10.244.0.35 ...
+old-7bb6f649c6-tzxkn   1/1     Running   0          12h   10.244.0.34 ...
+
+☩ kubectl get endpoints --selector type=canary
+NAME   ENDPOINTS                                                  AGE
+old    10.244.0.33:80,10.244.0.34:80,10.244.0.35:80 + 1 more...   12h
+```
+
+Test the Canary
+
+```bash
+☩ kubectl get po --selector type=canary -o wide                                                                      
+NAME                   READY   STATUS    RESTARTS   AGE   IP            ...
+new-69dcbcbdbc-qzjqj   1/1     Running   0          46m   10.244.0.37   ...
+old-7bb6f649c6-qhvz2   1/1     Running   0          12h   10.244.0.33   ...
+old-7bb6f649c6-stl26   1/1     Running   0          12h   10.244.0.35   ...
+old-7bb6f649c6-tzxkn   1/1     Running   0          12h   10.244.0.34   ...
+
+☩ minikube ssh "curl -Is 10.97.235.146 |grep HTTP"   
+HTTP/1.1 200 OK                      
+
+☩ minikube ssh "curl -Is 10.97.235.146 |grep HTTP" 
+HTTP/1.1 200 OK      
+
+☩ minikube ssh "curl -Is 10.97.235.146 |grep HTTP"    
+HTTP/1.1 200 OK   
+
+☩ minikube ssh "curl -Is 10.97.235.146 |grep HTTP"   
+HTTP/1.1 403 Forbidden   
+
+☩ minikube ssh "curl -Is 10.244.0.37 |grep HTTP"   
+HTTP/1.1 403 Forbidden   
+```
+- Whether service endpoint (by round robin) or directy, 
+the Canary fails (403) every time.
+
+Debug Canary
+
+```bash
+
+☩ kubectl exec -it new-69dcbcbdbc-qzjqj -- bash
+root@new-69dcbcbdbc-qzjqj:/# ls -ahl /usr/share/nginx/html/
+...
+# OR
+☩ kubectl exec new-69dcbcbdbc-qzjqj -- ls -ahl /usr/share/nginx/html/
+total 12K
+drwxrwxrwx 3 root root 4.0K Jul  9 12:49 .
+drwxr-xr-x 3 root root 4.0K Jul  4 17:24 ..
+drwxr-xr-x 2 root root 4.0K Jul  9 12:49 ..2023_07_09_12_49_55.3261742907
+lrwxrwxrwx 1 root root   32 Jul  9 12:49 ..data -> ..2023_07_09_12_49_55.3261742907
+lrwxrwxrwx 1 root root   24 Jul  9 12:49 index.canary.html -> ..data/index.canary.html
+```
+- Bug: Our file name (`index.canary.html`) does not match that expected (`index.html`)
+
+Fix
+
+```bash
+# Delete the Canary deployment
+☩ kubectl delete -f canary.yaml
+deployment.apps "new" deleted
+
+# Delete Canary ConfigMap
+☩ kubectl delete -f cm.canary.yaml
+configmap "canary" deleted
+
+# Fix file name of Canary's ConfigMap manifest
+☩ vim cm.canary.yaml
+
+# Redeploy
+☩ kubectl create -f cm.canary.yaml
+configmap/canary created
+
+☩ kubectl create -f canary.yaml
+deployment.apps/new created
+```
+
+Test
+
+```bash
+# @ Canary Pod endpoint
+☩ kubectl get po --selector type=canary -o wide
+NAME                   READY   STATUS    RESTARTS   AGE     IP            
+new-69dcbcbdbc-5b849   1/1     Running   0          3m23s   10.244.0.38    
+old-7bb6f649c6-qhvz2   1/1     Running   0          13h     10.244.0.33    
+old-7bb6f649c6-stl26   1/1     Running   0          13h     10.244.0.35    
+old-7bb6f649c6-tzxkn   1/1     Running   0          13h     10.244.0.34    
+
+☩ minikube ssh "seq 4 |xargs -Iz curl -Is 10.244.0.38 |grep HTTP"
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+
+# @ Service endpoint 
+☩ kubectl get svc --selector type=canary
+NAME   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+old    ClusterIP   10.97.235.146   <none>        80/TCP    27m
+
+☩ minikube ssh "seq 4 |xargs -Iz curl -Is 10.97.235.146 |grep HTTP"
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+```
+- _Canary lives!_
+
+### Demo : Step 4 : Activate New (Canary-tested) Version
+
+```bash
+☩ kubectl get deploy --selector type=canary
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+new    1/1     1            1           17m
+old    3/3     3            3           13h
+
+☩ kubectl scale deploy new --replicas=3
+deployment.apps/new scaled
+
+☩ kubectl get deploy --selector type=canary
+NAME   READY   UP-TO-DATE   AVAILABLE   AGE
+new    3/3     3            3           18m
+old    3/3     3            3           13h
+
+☩ kubectl describe svc --selector type=canary
+Name:              old
+...
+Selector:          type=canary
+Type:              ClusterIP
+IP Family Policy:  SingleStack
+IP Families:       IPv4
+IP:                10.97.235.146
+IPs:               10.97.235.146
+Port:              <unset>  80/TCP
+TargetPort:        80/TCP
+Endpoints:         10.244.0.33:80,10.244.0.34:80,10.244.0.35:80 + 3 more...
+...
+
+☩ kubectl get endpoints --selector type=canary
+NAME   ENDPOINTS                                                  AGE
+old    10.244.0.33:80,10.244.0.34:80,10.244.0.35:80 + 3 more...   41m
+
+```
+
+Scale down the old
+
+```bash
+☩ kubectl get po --selector type=canary -o wide
+NAME                   READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+new-69dcbcbdbc-5b849   1/1     Running   0          22m     10.244.0.38   minikube   <none>           <none>
+new-69dcbcbdbc-dlxdv   1/1     Running   0          4m30s   10.244.0.39   minikube   <none>           <none>
+new-69dcbcbdbc-fskkp   1/1     Running   0          4m30s   10.244.0.40   minikube   <none>           <none>
+old-7bb6f649c6-qhvz2   1/1     Running   0          13h     10.244.0.33   minikube   <none>           <none>
+old-7bb6f649c6-stl26   1/1     Running   0          13h     10.244.0.35   minikube   <none>           <none>
+old-7bb6f649c6-tzxkn   1/1     Running   0          13h     10.244.0.34   minikube   <none>           <none>
+
+☩ kubectl scale deploy old --replicas=0
+deployment.apps/old scaled
+
+☩ kubectl get po --selector type=canary -o wide
+NAME                   READY   STATUS    RESTARTS   AGE     IP            NODE       NOMINATED NODE   READINESS GATES
+new-69dcbcbdbc-5b849   1/1     Running   0          22m     10.244.0.38   minikube   <none>           <none>
+new-69dcbcbdbc-dlxdv   1/1     Running   0          4m52s   10.244.0.39   minikube   <none>           <none>
+new-69dcbcbdbc-fskkp   1/1     Running   0          4m52s   10.244.0.40   minikube   <none>           <none>
+
+# -l, ---selector
+☩ kubectl get po -l type=canary -o json |jq . > k.get.po-l_type_canary.json
+
+☩ kubectl get po -l type=canary -o json |jq '.items[] | .metadata.name,.status.podIP'
+"new-69dcbcbdbc-5b849"
+"10.244.0.38"
+"new-69dcbcbdbc-dlxdv"
+"10.244.0.39"
+"new-69dcbcbdbc-fskkp"
+"10.244.0.40"
+```
+- See [`kubectl.get.po-l_type_canary-o.json`](kubectl.get.po-l_type_canary-o.json)
+
+## 13.6 Understanding [Custom Resource Definitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) (CRDs)
+
+__A resource is an endpoint__ in the Kubernetes API that stores a collection of API objects of a certain kind; for example, the built-in pods resource contains a collection of Pod objects.
+
+__A custom resource is an extension of the Kubernetes API__ that is not necessarily available in a default Kubernetes installation. 
+
+CRDs extend the original K8s API server by defining the custom resource.
+
+An alternative way to add a custom resource is through [API server aggregation](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#api-server-aggregation); build a custom API server. 
+This requires (Golang) programming.
+
+### [Create a CRD : Add a custom resource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) 
+
+CRD Spec : [`CustomResourceDefinition v1` : `apiextensions.k8s.io`](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#customresourcedefinition-v1-apiextensions-k8s-io)
+
+### Demo : Create a Custom Resource per CRD [`crd-object.yaml`](crd-object.yaml)
+
+Common use is to store site-specific information in the cloud. E.g., Data-store backups.
+
+```bash
+☩ kubectl create -f crd-object.yaml
+customresourcedefinition.apiextensions.k8s.io/backups.stable.example.com created
+
+☩ kubectl api-resources |grep backup
+backups                           bks          stable.example.com/v1                  true         BackUp
+```
+
+## 13.7 Using [Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/#operators-in-kubernetes) 
+
+Operators are clients of the Kubernetes API that act as controllers for a Custom Resource, extending the cluster's behaviour without modifying the code of Kubernetes itself; linking Controllers to one or more custom resources. 
+
+- Operators are custom applications, based on CRDs;
+  Operators are Application-specific Controllers.
+- Operators can package, run and manage applications in Kubernetes.
+    - Unlike Helm, Operators can add functionality by extending the K8s API through CRDs.
+- Operators are based on Controllers that coninuously operate.
+    - Controller Loop is the dynamic.
+    - Controller Manager runs a continuous reconciliation loop, 
+      comparing states (current versus desired), 
+      and adjusting as necessary to achieve desired state.
+
+Automation by Operators : Examples:
+
+- Deploying an application on demand
+- Backup/Restore of application state
+
+Available Operators:  
+
+- [OperatorHub.io](https://operatorhub.io/) registry; 
+  OpenShift oriented; tends to use resources not available 
+  in many K8s environments.
+- Prometheus; monitoring and alerting solution
+- Tigera: manages the Calico (NetworkPolicy) plugin
+- Jaeger: observability; 
+  tracing transactions between distributed services.
+
+### Demo : Install Calico
+
+For a fully functional Software-defined Network (SDN)
+
+__Teardown and Rebuild Minikube__ using the [Tigera Operator](https://docs.tigera.io/calico/latest/getting-started/kubernetes/minikube) to handle Calico.
+
+```bash
+# Teardown 
+minikube stop
+minikube delete
+# Create anew
+minikube start \
+    --network-plugin=cni \
+    --extra-config=kubeadm.pod-network-cidr=10.10.0.0/16
+
+# Verify cluster is up
+minikube status
+kubectl get node,svc
+```
+- Option `--cni calico` instead of `--extra-config` is the simpler way, 
+  but not useful for this Operator demo.
+
+#### Install the Tigera Operator
+
+```bash
+url='https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/tigera-operator.yaml'
+
+kubectl create -f $url
+
+```
+- See command output @ [`kubectl.create.tigera_calico_url.log`](kubectl.create.tigera_calico_url.log)
+
+Verify operator is created; get all @ `tigera-operator` namespace.
+
+```bash
+☩ kubectl get all -n tigera-operator
+NAME                                   READY   STATUS    RESTARTS   AGE
+pod/tigera-operator-78d7857c44-rkrmz   1/1     Running   0          4m58s
+
+NAME                              READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/tigera-operator   1/1     1            1           4m58s
+
+NAME                                         DESIRED   CURRENT   READY   AGE
+replicaset.apps/tigera-operator-78d7857c44   1         1         1       4m58s
+```
+
+Verify API resources are extended by Tigera's Operator.
+
+```bash
+☩ kubectl api-resources |grep tigera
+apiservers                                     operator.tigera.io/v1                  false        APIServer
+imagesets                                      operator.tigera.io/v1                  false        ImageSet
+installations                                  operator.tigera.io/v1                  false        Installation
+tigerastatuses                                 operator.tigera.io/v1                  false        TigeraStatus
+```
+
+#### Install Calico using Tigera Operator
+
+Deploy `Installation` and `APIServer` (`kind`s). 
+See [`custom-resources.yaml`](custom-resources.yaml)
+
+```bash
+# Fetch the Tigera/Calico manifest 
+wget https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/custom-resources.yaml
+# Mod as necessary : change CIDR to our minikube setup (10.10.0.0/16)
+vim custom-resources.yaml
+# Deploy 
+kubectl create -f custom-resources.yaml
+# Verify/Inspect
+kubectl get installation -o yaml
+```
+
+Deploy 
+
+```bash
+☩ kubectl create -f custom-resources.yaml
+installation.operator.tigera.io/default created
+apiserver.operator.tigera.io/default created
+```
+
+Verify
+
+```bash
+☩ kubectl get installation -o yaml >kubectl.get.installation.yaml
+
+☩ kubectl get pods -n calico-system
+NAME                                       READY   STATUS    RESTARTS   AGE
+calico-kube-controllers-8656896747-v5kg6   1/1     Running   0          2m29s
+calico-node-zkjmv                          1/1     Running   0          2m29s
+calico-typha-9f8467988-4848p               1/1     Running   0          2m29s
+csi-node-driver-bsr76                      2/2     Running   0          2m29s
+
+```
+- [`kubectl.get.installation.yaml`](kubectl.get.installation.yaml)
+
+## 13.8 Using [StatefulSets](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
+
+Deploying Apps the DevOps Way
+
+StatefulSet is the workload API object 
+used __to manage stateful applications__.
+
+- StatefulSet provides __persistent identity__ to Pods and Pod-specific storage. Manages the deployment and scaling of a set of Pods, and provides guarantees about the ordering and uniqueness of these Pods.
+    - Stable and unique network identifiers
+    - Stable persistent storage.
+    - Ordered deployment and scaling.
+    - Ordered automated rolling updates. 
+
+Limitations
+
+- StorageClass must be available for the Storage Provisioning.
+- Requires a Headless Service for API access to resources; 
+  for network identity of the StatefulSet's Pods.
+- Deleting a StatefulSet does not delete volumes created thereby.
+- Deleting a StatefulSet does not guarantee its Pods are deleted, 
+  so Pods of a StatefulSet must be scaled down to 0 prior to deletion.
+
+### Demo : Using a StatefulSet 
+
+See [`sfs.yaml`](sfs.yaml)
+
+```bash
+☩ kubectl get storageclass
+NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  74m
+
+☩ kubectl create -f sfs.yaml
+service/nginx created
+statefulset.apps/web created
+
+☩ kubectl get all
+NAME        READY   STATUS    RESTARTS   AGE
+pod/web-0   1/1     Running   0          31s
+pod/web-1   1/1     Running   0          11s
+pod/web-2   1/1     Running   0          8s
+
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   75m
+service/nginx        ClusterIP   None         <none>        80/TCP    31s
+
+NAME                   READY   AGE
+statefulset.apps/web   3/3     31s
+
+☩ kubectl get pvc
+NAME        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+www-web-0   Bound    pvc-7ee0ea1b-90a2-4672-9bb0-bde7e8aa3816   1Gi        RWO            standard       89s
+www-web-1   Bound    pvc-2f50b024-5aed-443c-92f6-c8a14c30d7d5   1Gi        RWO            standard       69s
+www-web-2   Bound    pvc-ea467f37-23bd-42f2-9c7b-0792ae89a2ce   1Gi        RWO            standard       66s
+```
+- StatefulSet does not use ReplicaSet.
+
+# Lesson 14 : Troubleshooting Kubernetes <a name=Lesson14></a>
+
+## 14.1 Determining a Troubleshooting Strategy
+
+![k8s.process.webp](k8s.process.webp)
+
+```bash
+# Process parts 2, 3, 4
+kubectl describe RESOURCE
+# If app status is off or if exit status is not 0,
+# then look at container's log
+kubectl logs pname-xxx-yyy
+```
+
+## 14.2 Analyzing Failing Applications
+
+Pod States:
+
+- Pending: Pod validated by API server, 
+  and etcd entry created, 
+  but some prerequite has not been met.
+- Running: Pod is successfully running.
+- Completed: Pod completed its work.
+- Failed: Pod finished, but something went wrong.
+- CrashLoopBackOff: Pod failed, and cluster restarted it.
+- Unknown: Pod status not known by API server.
+
+Troubleshooting Workflow
+
+```bash
+kubectl get pods
+kubectl describe RESOURCE # Check events, then (last) state
+```
+- If exit code 0, then app completed successfully. 
+  That implies it's not a Kubernetes problem.
+
+## 14.3 Analyzing Pod Access Problems
+
+- Service is required to access a Pod; 
+  load balaces between available pods.
+    - Service's Selector label must match Pod label.
+    - Use `kubectl get endpoints` to check Services 
+      and the corresponding Pod endpoints.
+    - Start by working from a host (a Cluster Node); 
+      some services (e.g., `ClusterIP`) __have no external access__.
+- Ingress uses a Service to forward traffic to Pods
+    - Pod labels are used, so check those.
+    - Ingress Controller is required; configured and running.
+        - Troubleshooting that is beyond scope of CKAD.
+- NetworkPolicy applies to Pods, NameSpaces 
+  and CIDRs to restrict traffic.
+    - Use `kubectl get netpol -A` to check for existence of such.
+        - Use `kubectl describe POLICY`; delete/modify as necessary.
+- Network Add-ons
+    - Adding/Modifying them may fix or break network related problems.
+        - E.g., Flannel addon does not support NetworkPolicy.
+        - Minikube default has no NetworkPolicy, 
+          and yet is required for some add-ons.
+    - Calico addon is advised for feature-rich support.
+
+### Demo : Troubleshooting Services
+
+## 14.4 Monitoring Cluster Event Logs
+
+```bash
+kubectl get events
+kubectl get events |grep Warning
+kubectl get events -o wide
+kubectl describe nodes
+```
+
+## 14.5 Troubleshooting Authentication Problems
+
+- RBAC is not on CKAD exam; covered in CKA and CKS.
+- See `~/.kube/config` for cluster access info.
+    - @ Control node, copied to `/etc/kubernetes/admin.conf`
+    - Use `kubectl config view` to inspect its content.
+- Use `kubectl auth can-i ...` 
+    - E.g., `kubectl auth can-i create pods`
+
+### DEMO : Restore `~/.kube/config` from Control node
+
+@ Host (local machine)
+
+```bash
+minikube ssh
+```
+
+@ minikube VM
+
+```bash
+# Copy config to path accessible by minikube's default user (docker)
+cp /etc/kubernetes/admin.conf /tmp
+chmod 644 /tmp/admin.conf
+exit
+```
+
+@ Host
+
+```bash
+# Pull to destination using minkube user's identity
+scp -i $(minikube ssh-key) docker@$(minikube ip):/tmp/admin.conf ~/.kube/config
+```
+
+## 14.6 Using Probes
+
+### Probes
+
+They are part of Pod spec.   
+They can be used to test access to Pods. 
+
+- `readinessProbe`; a Pod is published as available only after it is accessed by this probe.
+- `livenessProbe`; performs the recurring Pod-availability checks.
+- `startupProbe`; used at legacy apps that require additional startup time on init.
+
+### Probe Types : `pods.spec.container`
+
+The probe itself is a simple test; often a command.  
+
+- `exec: `  Defines a command to execute; return zero on success.
+- `httpGet: ` Defines a GET request to perform; return HTTP-response code 200-399 on success.
+- `tcpSocket:` Defines a TCP socket (available port) to test; success on connectivity.
+- Kubernetes API Server itself provides 3 endpoints to indicate its current status; can be used by differnt probes.
+    - `/healthz`
+    - `/livez`
+    - `/readyz`
+
+### Demo : Using Probes 
+
+```bash
+pname='busybox-ready'
+# Deploy 
+kubectl create -f ${pname}.yaml 
+# View READY state (0/1)
+kubectl get pods
+# Debug : investigate
+kubectl describe pods $pname
+# Edit /tmp/nothing <= (1/0) => /etc/hosts (affects readinessProbe)
+kubectl edit pods ${pname}
+# Debug : fix : exec a shell
+kubectl exec -it $pname -- /bin/sh
+    - `touch /tmp/nothing; exit`
+# Verify fix
+kubectl get pods 
+```
+- See [`busybox-ready.yaml`](busybox-ready.yaml)
 
 
