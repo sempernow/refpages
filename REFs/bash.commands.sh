@@ -38,11 +38,11 @@ exit
     CMD --help       # for info/help
     info CMD         # for more info/help
     CMD -v           # verbose; display what's executing
-    CMD --verbose	   # verbose; display what's executing
+    CMD --verbose    # verbose; display what's executing
 
 # BOOT PROCEDURE : systemd  >>>  See 'REF.RHEL7.config.sh'
     dmesg  # read boot messages AFTER boot 
-    
+ 
 # VIRTUAL CONSOLEs
     CTRL+ALT F1|F2|F3|... # Open/switch
 
@@ -77,12 +77,12 @@ exit
     id -g   GID
     
     # SUBSTITUTE [SWITCH] USER
-        sudo -E su  # preserve environment @ WSL
-
         su      # switch user to root;  keep current Env.Vars
         su foo  # switch user to 'foo'; keep current Env.Vars
+        
+        sudo -E su  # preserve environment (switching to root user)
 
-        # ... per LOGIN-SHELL; clear all Env.Vars
+        # invoke LOGIN-SHELL : clears all Env.Vars
         su -            # login-shell, root user
         su - foo        # login-shell, user 'foo'
         su -l foo       # login-shell, user 'foo'
@@ -95,7 +95,7 @@ exit
         sudo COMMAND 
         sudo su  # switch user to root
 
-    # reset terminal; fixed fubar @ pipe to vim 
+    # reset terminal; fix vim fubar
         reset 
     
     # (re)set tab-stops
@@ -111,8 +111,8 @@ exit
     history -c          # clear history
 
 # TERMINAL TEXT EDITORs (ubiquitous)
-    vi[m]       # text editor; terminal
-    nano        # text editor; terminal
+    vi[m]       # text editor
+    nano        # text editor
 
 # Bash shell Process ID (PID)
     $PPID       # PARENT SHELL PID 
@@ -257,10 +257,13 @@ exit
     #... + multiple commands (in bkgnd process), and sans any output to anywhere:
     nohup /bin/bash -c "sleep 30 && $_CMD_or_SCRIPT arg1 arg2 &" >/dev/null 2>&1
 
-# PERSISTENT (low resource) PROCESS : useful with containers; override default process (PID 1)
+# PERSISTENT (low resource) PROCESS
+    # @ Containers : Override default process (PID 1)
     sleep 1d
     # OR
     tail -f /dev/null
+    # Monitor something
+    watch COMMAND # Repeately run COMMAND; default once per second.
 
 # SHELL/EXE/SCRIPTs META
     # MAN PAGES; manuals per utility; online @ https://linux.die.net/man/
@@ -299,10 +302,9 @@ exit
 # Brace Expansion
     [ac]  # a,c 
     [a-c] # a,b,c
-    
-    ls ?oo.txt # start w/ any one char followed by 'oo.txt'
-    ls [ab]*   # starts w/ 'a' or 'b' 
-    ls [!ab]*  # starts w/ anything but 'a' or 'b' 
+    ?oo.txt # start w/ any one char followed by 'oo.txt'
+    [ab]*   # starts w/ 'a' or 'b' 
+    [!ab]*  # starts w/ anything but 'a' or 'b' 
     
     # Wildcards ( note that "^" is equivalent to "!" )
     ls -l [pa]*
@@ -417,7 +419,22 @@ exit
 
 # STORAGE : FOLDERs / FILEs 
 
-    # ARCHIVE tar/cpio/dd/gzip/bzip2/[7z|7za]
+    # ARCHIVE tar/cpio/dd/gzip/bzip2/[7z|7za] 
+
+        gzip  # Create/Extract a gzipped (html|image); THE standard for files over internet/web-servers 
+            gzip -9 < /dev/sdb > /tmp/foo.gz  # compress volume '/dev/sdb'
+            gzip foo.img                      # compress 'foo' (to *.gz), and erase original
+
+            gunzip foo.img.gz                 # uncompress (to foo.img) 
+
+        # Parallel Implementation of GZip; used w/ Netcat (nc)  http://www.zlib.net/pigz/
+        pigz  # file|STDIN compressed to file.gz|STDOUT; 
+            tar -cf - BIGfile |pigz > BIGfile.tgz 
+            tar -c --use-compress-program=pigz -f BIGfile.tgz BIGfile  # equiv; sans redirect
+
+        bzip2 foo.img # compress [newer algo]
+
+        # 7zip 
         7za a [-p"$_PASS_PHRASE"] "$_ARCHIVE_PATH" "$_SOURCE_PATH"
             -stl # set archive TIMESTAMP to newest file therein
 
@@ -437,60 +454,53 @@ exit
         find . -name "*.zip" |cpio -o > ../all_zips.cpio # create per find filter
         cpio -id < ../arch_name.cpio # extract; recreate folder structure
 
-        gzip  # Create/Extract a gzipped (html|image); THE standard for files over internet/web-servers 
-            gzip -9 < /dev/sdb > /tmp/foo.gz  # compress volume '/dev/sdb'
-            gzip foo.img                      # compress 'foo' (to *.gz), and erase original
+        tar # The workhorse of Linux archiving (originally "tape archive"):
+            # Compress/archive; recurses through dir tree by default.
+            # EXT: tgz, txz, tar, gz, tar.gz, bzip2, lzip, lzop, lzma, xz, ... 
 
-            gunzip foo.img.gz                 # uncompress (to foo.img) 
+            tar -caf ARCH_PATH.EXT [OPTIONS] -C PATH SOURCE  # CREATE of SOURCE; PATH is arch root; sans sets root to PWD.
+            tar -xaf ARCH_PATH.EXT [OPTIONS] -C PATH         # EXTRACT to PATH; sans extracts to PWD.
+            tar -taf ARCH_PATH.EXT                           # LIST all content (paths).
 
-        # Parallel Implementation of GZip; used w/ Netcat (nc)  http://www.zlib.net/pigz/
-        pigz  # file|STDIN compressed to file.gz|STDOUT; 
-            tar -cf - BIGfile |pigz > BIGfile.tgz 
-            tar -c --use-compress-program=pigz -f BIGfile.tgz BIGfile  # equiv; sans redirect
-
-        bzip2 foo.img # compress [newer algo]
-
-        tar # compress/archive recurse [tape archive, originally]; gz, bzip2, lzip, lzop, lzma, xz, ... 
-
-            tar -caf ARCH_PATH.EXT [OPTIONS] -C PATH SOURCE  # CREATE of SOURCE (PATH is archive root)
-            tar -xaf ARCH_PATH.EXT [OPTIONS] -C PATH         # EXTRACT to PATH/...; sans extracts to PWD
-            tar -taf ARCH_PATH.EXT                           # LIST all content (paths)
-
-            -f PATH # the archive file path
+            -f PATH # Archive file path
             -t, --list
             -x, --extract
             -c, --create
             -f, --file=ARCHIVE
             -v, --verbose
-            -a, --auto-compress [method per extension]
-            -j, --bzip2 [.tar.bz2 === .tbz2]
-            -z, --gz    [.tar.gz  === .tgz]
-            -J, --xz    [.tar.xz  === .txz]
-            -C PATH # change to PATH before processing; thus PATH is root
+            -a, --auto-compress # Archive by method/type inferred from EXT
+            -j, --bzip2         # .tar.bz2 is .tbz2
+            -z, --gz            # .tar.gz  is .tgz
+            -J, --xz            # .tar.xz  is .txz
+            -C PATH # change to PATH before processing, so arch root is PATH;
+                # typically set to PARENT of target dir;
+                # is unnecessary if working dir (PWD) is parent of target.
             --newer-mtime=DATE # Work on files whose data changed after DATE.  
             # If DATE starts with '/'' or '.', then treated as fname and DATE is its mtime. 
             # Exclude certain folders|files; multiple such excludes okay
-            --exclude=PATTERN  # Excude PATTERN; MULTIPLE use okay; place BEFORE source-path
+            --exclude=PATTERN  # Excude PATTERN; MULTIPLE use okay; place BEFORE source path
             --exclude-from <(find foo -size +1M)  # Exclude files in foo larger than 1 MB
             --dereference  # Include reparse points; SYMLINKs/Junction Points/...
 
-            # TARBALL : content @ archive root (no parent folder)
+            # TARBALL any PATH : content of PATH becomes archive root.
+                tar -caf NAME.tgz -C PARENT PATH # PARENT is that of PATH.
+
+            # TARBALL a SUBDIR : content of ./foo becomes archive root.
+                tar -caf foo.tgz ./foo
+
+            # TARBALL the PWD : content of PWD becomes archive root.
 
                 # Create TARBALL of $PWD; create .tgz @ parent, with content of $PWD at archive root
                     tar -caf "./../${PWD##*/}.tgz" -C "./../${PWD##*/}" .  
                 # Extract TARBALL
                 tar -xaf ARCHIVE  # extracts to (current) PWD
 
-            # Archive having PARENT FOLDER
+            # Archive having PARENT FOLDER (is NOT a canonical "tarball").
 
-                # Create tgz, @ parent of $PWD, having $PWD at archive root
+                # Create tgz, working from parent of PWD, having PWD FOLDERNAME as archive root
                 tar -caf "./../${PWD##*/}.tgz" -C ./../  "${PWD##*/}"  
                 # Extract archive
-                tar -xaf ARCHIVE  # extracts to FOLDERNAME of archived $PWD
-
-            # TARBALL vs Not ...
-                tar -caf ./TARGET.tgz -C ./TARGET . # tgz of TARGET; content @ archive root; "tarball"
-                tar -caf ./TARGET.tgz -C . ./TARGET # tgz of TARGET; TARGET @ archive root
+                tar -xaf ARCHIVE  # extracts to FOLDERNAME of archived PWD
 
             # CREATE : compression algos
 
@@ -515,6 +525,9 @@ exit
 
             # Create foo.tgz of all .* files @ root dir
             find . -maxdepth 1 -type f -iname '.*' -print0 |tar --null -caf foo.tgz --files-from - 
+
+
+
 
     # LIST FOLDERs/FILEs
         ls -al     # all files; long-listing format
@@ -784,6 +797,7 @@ exit
         find -name '*.jpg' |awk 'BEGIN{ a=1 }{ printf "mv %s PREFIX-%04d.jpg\n", $0, a++ }' |bash
 
     # RENAME FOLDERs 
+
         # rm : TEST
         find . -type d -name '* \[dev\]' -exec /bin/bash -c 'sed "s#\[.*\]##g" <<< "$@"' _ {} \;  # remove ' [dev]'
         find . -type d -name '*\(\)*'    -exec /bin/bash -c 'sed "s#()##g" <<< "$@"' _ {} \;      # remove '()'
@@ -826,56 +840,41 @@ exit
             |sed "s#${src}##" \
             |xargs -I{} mkdir -p ${tgt}{} 
 
-# STREAMs, PIPEs, REDIRECTs [stdin/stdout/stderr]
-    command < FILE # some commands accept stdin
+# PIPE helpers
 
-    # WORD COUNT 
-        wc FILE     #=> #newlines #words #bytes fname
-        wc -l FILE  #=> #newlines
-        wc < FILE   #=> #newlines #words #bytes; per redirect
+    tee # Pipe STDOUT to BOTH console (STDOUT) AND a file 
+        ls |tee FILE
+        # append STRING to file(s)
+        echo "STRING" |tee -a *.txt > /dev/null  # silently
 
-    ls >  ls.log # redirect stdout to log file
-    ls 1> ls.log # redirect stdout to log file
-    ls 2> ls.log # redirect stderr to log file
-    ls >> ls.log # append [redirect] to log file
-    ls >> ls_out.log 2>> ls_err.log # redirect out/err to seperate files
-    ls > ls.log 2>&1
+    xargs # Converts piped STDOUT of command1 to STDIN [args] for command2
+        command1 |xargs command2 # for when command2 doesn't accept piped STDIN 
 
-# xargs - converts piped stdout of command1 to stdin [args] for command2
-    command1 |xargs command2 # use when command2 doesn't accept piped stdin 
+        # E.g., gzip all ".*" files @ HOME root
+        find "$HOME" -maxdepth 1 -type f -name '.*' |xargs gzip 
+        # (See "GNU FINDUTILS" section for more detail)
 
-    # E.g., gzip all ".*" files @ HOME root
-    find "$HOME" -maxdepth 1 -type f -name '.*' |xargs gzip 
-    # (See "GNU FINDUTILS" section for more detail)
+        # REPEAT COMMANDs `$n` times (ignore arg $n)
+        seq $n |xargs -Iz COMMAND ARG1 ARG2 ...
 
-    # REPEAT COMMANDs `$n` times (ignore arg $n)
-    seq $n |xargs -Iz COMMAND ARG1 ARG2 ...
+        # LOOP, passing arg `$n` as `{}` to COMMANDs
+        seq $n |xargs -I {} sh -c "COMMAND {}" 
+        #... SECURELY (mitigate command injection)
+        ##   ALSO allows access to positional params and multiple useage
+        ##   ALSO allows injection of non-exported variable into subshell by replacing "_" with at variable
+        seq $n |xargs -I {} sh -c 'COMMAND "$@"' _ {}
+        #... E.g. ...
+        seq $n |xargs -I {} sh -c 'echo === "$@";printf "%.3d\n" "$1"' _ {}
 
-    # LOOP, passing arg `$n` as `{}` to COMMANDs
-    seq $n |xargs -I {} sh -c "COMMAND {}" 
-    #... SECURELY (mitigate command injection)
-    ##   ALSO allows access to positional params and multiple useage
-    ##   ALSO allows injection of non-exported variable into subshell by replacing "_" with at variable
-    seq $n |xargs -I {} sh -c 'COMMAND "$@"' _ {}
-    #... E.g. ...
-    seq $n |xargs -I {} sh -c 'echo === "$@";printf "%.3d\n" "$1"' _ {}
-
-    # List directories @ /mnt/assets @ each VM of list
-    printf "%s\n" vm1 vm2 vm3 |xargs -I{} docker-machine ssh {} '
-        echo "== @ {}";find /mnt/assets -maxdepth 1 -type d
-
-# tee 
-    # pipe stdout to BOTH console AND log-file 
-    ls |tee ls.log
-    # append STRING to file(s)
-    echo "STRING" |tee -a *.txt > /dev/null  # silently
+        # List directories @ /mnt/assets @ each VM of list
+        printf "%s\n" vm1 vm2 vm3 |xargs -I{} docker-machine ssh {} '
+            echo "== @ {}";find /mnt/assets -maxdepth 1 -type d
 
 # GNU FINDUTILS : FIND, LOCATE, XARGS
 # https://www.gnu.org/software/findutils/manual/html_mono/find.html#Introduction
 # ISSUEs @ find ... |xargs   http://www.etalabs.net/sh_tricks.html
-#
-    # locate
-        # like 'find' utility, but PROCESSES the special filenames DATABASE; 
+
+    locate # like 'find' utility, but PROCESSES the special filenames DATABASE; 
         locate [option...] pattern... # VERY FAST, but updated only once per day or so.
         updatedb # force locate-database update
         # CONFIGURE 
@@ -887,12 +886,11 @@ exit
         # Wildcards; print all fnames ending with ‘Makefile’ or ‘makefile’. 
          locate '*[Mm]akefile' # Wildcard handling differs from that of `find` utility. 
 
-    # find : very useful; very configurable; HOWEVER, lots of syntax quirks ...
-    #   - does NOT recognize Brace Expansion
-    #   - globbing : UNLIKE bash, must quote to protect from shell-expansion, e.g., 'foo*'
-    #     also UNLIKE bash, '*' matches both ‘/’ and leading dots in paths
-    #
-    # Using `find` http://mywiki.wooledge.org/UsingFind
+    find # very useful; very configurable; HOWEVER, lots of syntax quirks ...
+        # - does NOT recognize Brace Expansion
+        # - globbing : UNLIKE bash, must quote to protect from shell-expansion, e.g., 'foo*'
+        #   also UNLIKE bash, '*' matches both ‘/’ and leading dots in paths
+        # http://mywiki.wooledge.org/UsingFind
     
         find # list rel-paths of all folders & files within current dir [full depth]
     
@@ -1131,7 +1129,7 @@ exit
         # Prepend LINE_OF_TEXT to all files matching PATTERN
         find . -type f -name 'PATTERN' -exec sed -i '1s;^;LINE_OF_TEXT\n;' {} \;
 
-    # xARGS ('combine arguments'); pronounced EX-args
+    xargs # xARGS ('combine arguments'); pronounced EX-args
         # CONVERTS PIPED STDOUT of command1 TO STDIN [args] for command2
             command1 |xargs command2 # use when command2 doesn't accept piped stdin 
             # E.g., gzip all ".*" files @ HOME root
@@ -1271,13 +1269,14 @@ exit
          grep PATTERN FILE  # per line(s) in FILE; newline-delimited 
          ... |grep PATTERN  # per piped PATTERN(s); newline-delimited 
 
-        --  # END of ARGs, so PATTERN can have LEADING DASH(es), e.g., "-foo"
+        --  # Flag END of ARGs, so PATTERN can have LEADING DASH(es)
         -i  # ignore case
         -r  # recurse
         -v  # select non-matching lines
         -E  # extended grep; understands ALL RegEx
         -P  # Perl RegEx 
         -n  # prepend line number
+        -f  # ANY PATTERN in FILE; one pattern per line
         -F  # PATTERN is a set of newline-delimited strings
         -x  # force PATTERN to match only WHOLE LINES; --line-regexp
         -f  # obtain PATTERN from FILE
@@ -1286,15 +1285,26 @@ exit
 
         ... |grep -- '-foo-bar'
 
-        # if NULL char exists anywhere in the file, e.g., @ Windows *.reg file, 
-        # then grep TREATS it AS BINARY, and none of the suggestioned options fix it.
-            # Workaround is to strip NULL chars; '\000' is octal representation of the NULL char (U+0000)  
-            cat FILE |tr -d '\000' > FILE.sans_nulls
-            # or simply pipe-process further
-            cat FILE |tr -d '\000' |...
+        # ANY PATTERN listed in FILE (one pattern per line)
+ 		cat <<-EOH > FILE
+		500
+		501
+		503
+		504
+		EOH
+        
+        seq 1000 |grep FILE
+        # 500
+        # 501
+        # 503
+        # 504
 
-        # E.g., search for PATTERN in all *.reg files, which may contain null char(s)
-        cat $( find . -iname '*.reg' ) |tr -d '\000' |grep 'ProgID' 
+        # Strip NULL chars else grep treats FILE as BINARY; 
+        ## '\000' is octal representation of NULL char (U+0000)  
+            cat FILE |tr -d '\000' |grep ...
+
+            # E.g., Search for PATTERN in all *.reg files , which ontains NULL chars.
+            cat $( find . -iname '*.reg' ) |tr -d '\000' |grep PATTERN
 
         # List all files in $dir containing PATTERN
         grep -Ril 'PATTERN' $dir
@@ -1328,8 +1338,8 @@ exit
         fgrep  # fast grep; literal strings; does NOT recognize ANY regex
         egrep  # extended grep; recognize ALL RegEx; same (?) as grep -E
 
-    fold # wraps each input line to fit in a specified width.
-        fold -w n # folds the lines at n characters.
+    fold # Wraps each input line to fit specified (character) width. Breaks words.
+        ... |fold -w n # folds (character wraps) every line at n characters.
         
     awk  # field-oriented pattern-processing LANGUAGE; C-style syntax; gawk (GNU version);
          # data-driven; a set of actions taken against streams of textual data
@@ -1726,8 +1736,16 @@ exit
 
 
 # FILE PROCCESSING UTILITIES
-    wc FILE    # counts: #lines #words #bytes, & FILE 
-    wc -m FILE # counts: #chars, & FILE
+
+    # WORD COUNT : Count newlines, words, ...
+    ## Works on either a file or piped string.
+        wc FILE     #=> #newlines #words #bytes fname
+        wc < FILE   #=> #newlines #words #bytes
+        wc -l FILE  #=> #newlines FILE
+        wc -m FILE  #=> #chars FILE
+
+        # E.g., Get the number of commits in a Git repo
+        cn=$(git log --oneline |wc -l)
 
     file FILE  # info; ASCII or binary
     
@@ -2206,6 +2224,8 @@ exit
     ssh user@host.domain
     
     curl [options] URL  # transfer date between client and server
+        # Pull a script to ./a.sh; quitely, follow redirects, rpt only on err
+        curl -fsSL -o a.sh https://foo.com/path/to/a.sh
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 
     # SW FROM SOURCE : DOWNLOAD, COMPILE, INSTALL
@@ -2264,18 +2284,26 @@ exit
 
     # DATE/TIME (current)
 
-        date --rfc-email      # Sun, 02 Jan 2022 11:11:16 -0500
-        date --rfc-3339=date  # 2022-01-02 
+        date --rfc-email      # Sun, 23 Jan 2022 11:44:16 -0500
+        date --rfc-3339=date  # 2022-01-23 
+        date +%F              # 2022-01-23
 
         # File mtime
         date -r $file '+%Y-%m-%dT%H:%M:%S'  # YYYY-MM-DDTHH:MM:SS
         date -r $file '+%F %a %H.%M.%S.%N'  # YYYY-MM-DD DAY HH.MM.SS.nnnnnnnnn
 
-    # Both ISO8601 and RFC3339 : may (not) include SPACES; may (not) include 'T'; may (not) include 'Z'
+    # ISO8601/RFC3339 "specifications" allow for "date" that ... 
+        ##... may (not) include whitespace(s),
+        ##... may (not) include 'T',
+        ##... may (not) include 'Z',
+        ##... may (not) incl Timezone abbr name (EST, CET, UTC, ...).
 
-        date '+%Y-%m-%dT%H:%M:%SZ' -u   # 2022-01-05T14:34:01Z          (UTC Zulu) @ Golang: aTime.Format(time.RFC3339)
-        date --iso-8601=seconds -u      # 2022-01-05T14:34:01+00:00     (UTC Zulu)
-        date --iso-8601=seconds         # 2022-01-05T09:34:01-05:00     (UTC offset)
+        date -u '+%Y-%m-%dT%H:%M:%SZ'   # 2022-01-05T14:34:01Z 
+        #... For this UTC Zulu @ Golang : aTime.Format(time.RFC3339)
+        date --iso-8601=s -u            # 2022-01-05T14:34:01+00:00     (UTC Zulu)
+        date --iso-8601=s               # 2022-01-05T09:34:01-05:00     (UTC offset) 
+
+        # +/- is w.r.t. GMT, so -04:00 means add four to get Zulu time (GMT).
 
         date --rfc-3339=s               # 2022-01-05 09:35:39-05:00
         date '+%Y-%m-%dT%H:%M:%S%:z'    # 2022-01-05T09:36:25-05:00 
@@ -2349,8 +2377,8 @@ exit
     ssh ... "/bin/bash -c '$(</a/local/path/script.sh)' _ $arg1 $arg2"
     #... advantage over HEREDOC scheme is preservation of semantic highlighting @ code editor.
     # UPLOAD a file SANS "file upload" utility (rsync, scp, ftps):
-    # Reads local (SSH client) file into string as writes it to remote (SSH host) file
-    ssh ... "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
+    ## Local file is stringified by redirect in a subshell (command substitution), and printed to remote file by redirect.
+    ssh $user@$host "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
 
     # dialog utility : See 'man dialog' http://www.freeos.com/guides/lsst/ch04sec7.html
     dialog --common-options --boxType "Text" Height Width --box-specific-option

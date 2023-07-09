@@ -1,8 +1,17 @@
 # WSLtty ([`mintty/wsltty`](https://github.com/mintty/wsltty "@ GitHub"))
 
+## UPDATE : 2023-07-03 : This is now FAILing at all WSL 2 distros
+
+```powershell
+%USERPROFILE%\AppData\Local\wsltty\bin\mintty.exe --WSL="Ubuntu-18.04" --configdir="%USERPROFILE%\AppData\Roaming\wsltty" -
+```
+- At "Target" of distro Shortcut file(s) pinned to Start Menu.
+
 ## Integrated into Windows File Explorer 
 
-__Folder Context menu__ items per Registry keys referencing a central batch script, handling both `WSLtty` and `ConEmu` modes, per environment variable; `WSL_MODE`, `WSL_DISTROS` (See `config.bat`).
+__Folder Context menu__ items per Registry keys referencing a central batch script, 
+handling both `WSLtty` and `ConEmu` modes, 
+per environment variable; `WSL_MODE`, `WSL_DISTROS` (See `config.bat`).
 
 ### [`LinuxHere.cmd`](file:///c:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd "@ cmd_library")
 

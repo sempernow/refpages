@@ -12,16 +12,20 @@
     - [Lesson 7 : Managing Deployments](#Lesson7)
     - [Lesson 8 : Managing Networking](#Lesson8)
     - [Lesson 9 : Managing Ingress](#Lesson9)
-    - Lesson 10 : Managing Kubernetes Storage
-    - Lesson 11 : Managing ConfigMaps and Secrets
+    - [Lesson 10 : Managing Kubernetes Storage](#Lesson10)
+    - [Lesson 11 : Managing ConfigMaps and Secrets](#Lesson11)
 - Module 4 : Advanced CKAD Tasks
-    - Lesson 12 : Using the API
-    - Lesson 13 : Deploying Applications the DevOps Way
-    - Lesson 14 : Troubleshooting Kubernetes
+    - [Lesson 12 : Using the API](#Lesson12)
+    - [Lesson 13 : Deploying Applications the DevOps Way](#Lesson13)
+    - [Lesson 14 : Troubleshooting Kubernetes](#Lesson14)
 
 See folder @ `/Books/IT/Containers/Kubernetes/`
 
 # Lesson 4 : Creating a Lab Environment
+
+## TL;DR
+
+Kubernetes clusters are built using two methods. The first by way of Docker Desktop's Kubernetes feature. The second through a Minikube installation at an AlmaLinux 8 distro of WSL 2. All course work is performed at the WSL 2 commandline in both cases.
 
 ## [Kubernetes.io : Install Tools](https://kubernetes.io/docs/tasks/tools/)
 
@@ -31,11 +35,11 @@ See folder @ `/Books/IT/Containers/Kubernetes/`
 - `kubeadm`
 
 >Here are two methods of making a K8s cluster for this course. 
-Both create a single-node cluster, but are mutually incompatible; only one such cluster can be running on the machine. We use Method 1 for the remainder of this course, so we can work from WSL2 (Ubuntu 20 LTS) commandline and use the K8s CLI tools installed there.
+Both create a single-node cluster, but are mutually incompatible; only one such cluster can be running on the machine. We start the course using the K8s cluster feature of Docker Desktop (Method 1) and then switch to a (Linux) Minikube cluster (Method 2). In both cases, we work from WSL2 commandline and use the K8s CLI tools installed there. We used the Ubuntu 18.04 LTS distro with cluster of Method 1, and the AlmaLinux 8 distro with cluster of Method 2.
 
-## 1. Kubernetes Cluster by Docker Desktop
+## 1. K8s Cluster by Docker Desktop
 
-- Make a __K8s cluster @ WSL__ by enabling the Kubernetes feature in Settings GUI of Docker Desktop.
+Make a K8s cluster available @ WSL by enabling the Kubernetes feature in Settings GUI of Docker Desktop.
 
 ### Inspect cluster
 
@@ -76,9 +80,235 @@ CURRENT   NAME             CLUSTER          AUTHINFO         NAMESPACE
 ```
 - Their script FAILs @ WSL 
 
-## 2. Kubernetes Cluster by Minikube 
+## 2. K8s Cluster by [Minikube](https://minikube.sigs.k8s.io/docs/start/) 
 
-- Make a __K8s cluster @ CMD__; cluster and CLI tools available only to Windows commandline. This method is incompatible with the Kubernetes feature of Docker Desktop. Disable that feature before attempting this setup method. 
+Minikube is incompatible with the Kubernetes feature of Docker Desktop. Disable that feature before attempting this setup method. 
+
+### Commands
+
+```bash
+# Create cluster
+minikube start --driver=docker
+
+# Set config param key/val : ~/.kube/config
+minikube config set driver docker
+
+# Manage cluster
+minikube status|pause|unpause|stop|addons list
+
+# Get version
+minikube version
+
+# Launch GUI
+minikube dashboard
+
+# Shell @ cluster VM
+minikube ssh
+
+# Teardown
+minikube delete --all
+```
+
+[`addons`](https://minikube.sigs.k8s.io/docs/commands/addons/)
+
+## Minikube @ AlmaLinux 8
+
+### Install 
+
+```bash
+$ curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
+    && sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```
+
+Verify install
+
+```bash
+$ minikube version
+minikube version: v1.30.1
+commit: 08896fd1dc362c097c925146c4a0d0dac715ace0
+```
+
+Create the cluster
+
+```bash
+$ minikube start # FAIL
+#=> "Exiting due to DRV_UNSUPPORTED_OS... driver 'hyperv' is not supported..."
+```
+
+Try again, with driver explicitly set.
+
+```bash
+$ minikube start --driver=docker
+```
+- Losts of errors, but cluster created.   
+  See [`minikube.start.log`](minikube.start.log)
+
+Verify the cluster
+
+```bash
+$ minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+```
+```bash
+$ kubectl get po -A
+NAMESPACE     NAME                               READY   STATUS    RESTARTS      AGE
+kube-system   coredns-787d4945fb-hpskz           1/1     Running   0             10m
+kube-system   etcd-minikube                      1/1     Running   0             10m
+kube-system   kube-apiserver-minikube            1/1     Running   0             10m
+kube-system   kube-controller-manager-minikube   1/1     Running   0             10m
+kube-system   kube-proxy-h9tzt                   1/1     Running   0             10m
+kube-system   kube-scheduler-minikube            1/1     Running   0             10m
+kube-system   storage-provisioner                1/1     Running   1 (10m ago)   10m
+```
+```bash
+☩ kubectl get all -A
+NAMESPACE     NAME                                   READY   STATUS    RESTARTS        AGE
+kube-system   pod/coredns-787d4945fb-hpskz           1/1     Running   1 (7m9s ago)    18m
+kube-system   pod/etcd-minikube                      1/1     Running   1 (7m14s ago)   18m
+kube-system   pod/kube-apiserver-minikube            1/1     Running   1 (7m13s ago)   18m
+kube-system   pod/kube-controller-manager-minikube   1/1     Running   1 (7m14s ago)   18m
+kube-system   pod/kube-proxy-h9tzt                   1/1     Running   1 (7m14s ago)   18m
+kube-system   pod/kube-scheduler-minikube            1/1     Running   1 (7m14s ago)   18m
+kube-system   pod/storage-provisioner                1/1     Running   2 (7m14s ago)   18m
+
+NAMESPACE     NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)                  AGE
+default       service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP                  18m
+kube-system   service/kube-dns     ClusterIP   10.96.0.10   <none>        53/UDP,53/TCP,9153/TCP   18m
+
+NAMESPACE     NAME                        DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+kube-system   daemonset.apps/kube-proxy   1         1         1       1            1           kubernetes.io/os=linux   18m
+
+NAMESPACE     NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+kube-system   deployment.apps/coredns   1/1     1            1           18m
+
+NAMESPACE     NAME                                 DESIRED   CURRENT   READY   AGE
+kube-system   replicaset.apps/coredns-787d4945fb   1         1         1       18m
+```
+
+Minikube Stop/Start
+
+```bash
+$ minikube cstop
+$ minikube start
+```
+- Another batch of errors, but again the cluster starts.
+
+### Minikube Dashboard
+
+```bash
+$ minikube dashboard
+�  Enabling dashboard ...
+    ▪ Using image docker.io/kubernetesui/dashboard:v2.7.0
+    ▪ Using image docker.io/kubernetesui/metrics-scraper:v1.0.8
+�  Some dashboard features require the metrics-server addon. To enable all features please run:
+
+        minikube addons enable metrics-server
+
+�  Verifying dashboard health ...
+�  Launching proxy ...
+�  Verifying proxy health ...
+�  Opening http://127.0.0.1:43295/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/ in your default browser...
+�  http://127.0.0.1:43295/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
+```
+- Launch apps and such from GUI
+
+### Manage @ CLI
+
+```bash
+$ kubectl get all 
+NAME                        READY   STATUS    RESTARTS   AGE
+pod/app1-7f649c7bfb-42695   1/1     Running   0          4m1s
+pod/app1-7f649c7bfb-6nms9   1/1     Running   0          4m1s
+pod/app1-7f649c7bfb-ghnsg   1/1     Running   0          4m1s
+
+NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/app1         ClusterIP   10.108.127.161   <none>        80/TCP    4m1s
+service/kubernetes   ClusterIP   10.96.0.1        <none>        443/TCP   31m
+
+NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/app1   3/3     3            3           4m1s
+
+NAME                              DESIRED   CURRENT   READY   AGE
+replicaset.apps/app1-7f649c7bfb   3         3         3       4m1s
+```
+
+
+Launch SSH (shell) into `minikube` VM as `docker` user : `docker@minikube`
+
+```bash
+$ minikube ssh
+```
+
+Inspect VM's  network 
+
+```bash
+docker@minikube:~$ ip -4 addr
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default
+    inet 172.18.0.1/16 brd 172.18.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+3: bridge: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.244.0.1/16 brd 10.244.255.255 scope global bridge
+       valid_lft forever preferred_lft forever
+10: eth0@if11: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default  link-netnsid 0
+    inet 172.17.0.2/16 brd 172.17.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+
+docker@minikube:~$ ip route
+default via 172.17.0.1 dev eth0
+10.244.0.0/16 dev bridge proto kernel scope link src 10.244.0.1
+172.17.0.0/16 dev eth0 proto kernel scope link src 172.17.0.2
+172.18.0.0/16 dev docker0 proto kernel scope link src 172.18.0.1 linkdown
+```
+
+Docker Engine is running inside the minikube VM
+
+```bash
+docker@minikube:~$ docker image ls
+REPOSITORY                                TAG       IMAGE ID       CREATED         SIZE
+nginx                                     latest    eb4a57159180   2 weeks ago     187MB
+registry.k8s.io/kube-apiserver            v1.26.3   1d9b3cbae03c   3 months ago    134MB
+registry.k8s.io/kube-controller-manager   v1.26.3   ce8c2293ef09   3 months ago    123MB
+registry.k8s.io/kube-scheduler            v1.26.3   5a7904736932   3 months ago    56.4MB
+registry.k8s.io/kube-proxy                v1.26.3   92ed2bec97a6   3 months ago    65.6MB
+registry.k8s.io/etcd                      3.5.6-0   fce326961ae2   7 months ago    299MB
+registry.k8s.io/pause                     3.9       e6f181688397   8 months ago    744kB
+kubernetesui/dashboard                    <none>    07655ddf2eeb   9 months ago    246MB
+kubernetesui/metrics-scraper              <none>    115053965e86   13 months ago   43.8MB
+registry.k8s.io/coredns/coredns           v1.9.3    5185b96f0bec   13 months ago   48.8MB
+gcr.io/k8s-minikube/storage-provisioner   v5        6e38f40d628d   2 years ago     31.5MB
+```
+
+Teardown 
+
+```bash
+$ kubectl delete deploy app1
+deployment.apps "app1" deleted
+
+$ kubectl get all
+NAME                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+service/app1         ClusterIP   10.108.127.161   <none>        80/TCP    13m
+service/kubernetes   ClusterIP   10.96.0.1        <none>        443/TCP   40m
+
+$ kubectl delete svc app1
+service "app1" deleted
+
+$ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   42m
+
+```
+
+## Minikube @ Windows CMD (`choco`)
+
+Make a __K8s cluster @ CMD__; cluster and CLI tools available only to Windows commandline. No course work was performed using this method.
 
 ### Install
 
@@ -126,7 +356,7 @@ Note this setup does not allow for operating @ WSL:
 ❌  Exiting due to DRV_UNSUPPORTED_OS: The driver 'hyperv' is not supported on linux/amd64
 ```
 
-Back @ Window CMD &hellip;
+Back to Window CMD &hellip;
 
 #### Get cluster info 
 
@@ -2351,3 +2581,957 @@ Validate fix
 curl -I nginxsvc.info
 ```
 - HTTP 200
+
+# Lesson 10 : Managing Kubernetes [Storage](https://kubernetes.io/docs/concepts/storage/) <a name=Lesson10></a>
+
+## 10.1 Understanding Kubernetes Storage Options
+
+Containers have ephemeral R/W layer that does not survive container.
+
+Kubernetes offers Pod Volumes ([Volume](https://kubernetes.io/docs/concepts/storage/volumes/) object) as persistent storage accessible to any container in the Pod; survives container, but not the Pod; [many types](https://kubernetes.io/docs/concepts/storage/volumes/#volume-types), Persistent or Ephemeral.
+
+- [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) (PV) is an API Resource; declared in Pod manifest (`kubeconfig`) using [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/); PV defines access to storage that is external to cluster, yet available in a specific cluster. PVC is used to connect to PV. PVs survive beyond Pod lifecycle.
+- Persistent Volume Claim (PVC) is a request for storage; declared in a Pod manifest; used to connect to PV; searches for available PV matching storage request. If perfect match not exist, then [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/)  can automatically allocate it. 
+    - PVC decouples Pod from site-specific PV, declaring only storage size and [access modes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes) (ReadWriteOnce, ReadOnlyMany, ReadWriteMany).
+- [Storage Class](https://kubernetes.io/docs/concepts/storage/storage-classes/) is site-specific storage; creates PV on demand, per PVC; a Volume plugin that creates a PV having a lifecycle independent of the Pod. Finding a storage provisioner (for this) remains "challenging". 
+
+## 10.2 Configuring Pod Volume Storage
+
+Pod Local Storage is NOT portable; host bound.
+Pod local volumes are declared in Pod specification: 
+
+### `pod.spec.volume`
+
+- [Volume](https://kubernetes.io/docs/concepts/storage/volumes/) points to a specific [Volume Type](https://kubernetes.io/docs/concepts/storage/volumes/#volume-types): 
+    - @ testing (bound to specific hostq)
+        - `emptyDir`; temp dir created dynamically
+        - `hostPath`; persistent dir; outlives Pod.  
+           Bound to specific host.
+    - Storage types; wide range; cloud, local, ...
+    - Mounted through `pod.spec.containers.volumeMounts`
+
+Workflow
+
+```bash
+pod=morevol2
+kubectl explain pod.spec.volumes |less
+cat morevolumes.yaml
+kubectl get pods $pod
+kubectl describe pods $pod |less
+# Two containers accessing the same storage
+## Write @ ctnr 1
+kubectl exec -it $pod -c centos1 -- touch /centos1/foo 
+## Read @ ctnr 2
+kubectl exec -it $pod -c centos2 -- ls -l /centos2
+
+```
+- [morevolumes.yaml](morevolumes.yaml)
+
+## 10.3 Configuring PV Storage
+
+- Independent resource that connect to external storage.
+- All storage types
+- Use PVC to connect to PV 
+- PVC binds a PV according to availability of the requested volume accessModes and capacity.
+
+Workflow 
+
+```bash
+kubectl create -f pv.yaml
+```
+- [`pv.yaml`](pv.yaml)
+
+PV located @ Host; created upon deployment.
+
+```bash
+# Shell @ Host
+minikube ssh
+```
+```bash
+$ ls / # PV does not yet exist; created upon deployment.
+```
+
+## 10.4 Configuring PVCs
+
+PVC requests access to PV according to specified properties
+
+- `accessModes`
+- Availability of resources (capacity)
+
+PVC Binds
+
+- Exclusive; one PV per PVC
+- Bound when PVC connects PV
+
+Workflow 
+
+```bash
+kubectl create -f pvc.yaml
+kubectl get pvc
+kubectl get pv
+```
+- [`pvc.yaml`](pvc.yaml)
+
+PVC of 1Gi is bound to PV, yet Minikube's StorageClass allocated only that much, and so another 1Gi PVC remains available.
+
+```bash
+kubectl describe pvc pv-claim
+kubectl get pv
+kubectl describe pv pvc-7fd...
+```
+
+## 10.5 Configuring Pod Storage with PV and PVC
+
+- PV 
+    - `accessMode: RW`
+    - `size: 2GiB`
+    - type: <irrelevant>
+- PVC
+    - `accessMode: RW`
+    - `size: 2GiB`
+- Pod
+    - `type: pvc`
+    - `name: pvc1`
+    - `mount:` 
+        - `name: pvc1`
+        - `path:`
+
+Pod has 1:1 relation to PVC, 
+and so (normally) specified together (same kubeconfig).
+
+>If PV matches PVC params, and storage is available, 
+then PV-PVC are mutually bound.
+
+
+### PVCs for Pods | [`pvc-pod.yaml`](pvc-pod.yaml)
+
+Decoupled: site-specific information from generic Pod specification.
+The `pod.volume.spec` is set to `PersistentVolumeClaim`, 
+and it's up to the PVC to find available PV storage;
+and up to StorageClass to create the volume whenever necessary.
+
+Workflow
+
+```bash
+kubectl create -f pvc-pod.yaml
+kubectl get pvc
+kubectl get pv
+kubectl describe pv pvc-xxx-yyy
+kubectl exec nginx-pvc-pod -- touch /usr/share/nginx/html/testfile
+```
+- [`pvc-pod.yaml`](pvc-pod.yaml); PVC and Pod declared in same manifest.
+
+```bash
+# Shell @ Host
+minikube ssh
+```
+```bash
+# See testfile created in Pod
+$ ls -l /tmp/hostpath-provisioner/default/nginx-pvc
+```
+
+Demo
+
+```bash
+☩ kubectl create -f pvc-pod.yaml
+persistentvolumeclaim/nginx-pvc created
+pod/nginx-pvc-pod created
+```
+
+See PVC `nginx-pvc` bound to PV (`pvc-abc...7`). The volume was created dynamically by StorageClass; the PVC was for `RWX` storage of `2Gi`, and none existed, so StorageClass created it. 
+
+```bash
+☩ kubectl get pvc,pv
+NAME                              STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/nginx-pvc   Bound    pvc-abcc3649-a2b7-4d60-a48c-f84bdcb443d7   2Gi        RWX            standard       31s
+
+NAME                                                        CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   REASON   AGE
+persistentvolume/pvc-abcc3649-a2b7-4d60-a48c-f84bdcb443d7   2Gi        RWX            Delete           Bound    default/nginx-pvc   standard                19s
+```
+
+See path create at Host (`/tmp/hostpath-provisioner/default/nginx-pvc`).
+
+```bash
+☩ kubectl describe pv pvc-abcc3649
+Name:            pvc-abcc3649-a2b7-4d60-a48c-f84bdcb443d7
+Labels:          <none>
+Annotations:     hostPathProvisionerIdentity: f90b37b4-16eb-4308-84a2-413dd44b9c6f
+                 pv.kubernetes.io/provisioned-by: k8s.io/minikube-hostpath
+Finalizers:      [kubernetes.io/pv-protection]
+StorageClass:    standard
+Status:          Bound
+Claim:           default/nginx-pvc
+Reclaim Policy:  Delete
+Access Modes:    RWX
+VolumeMode:      Filesystem
+Capacity:        2Gi
+Node Affinity:   <none>
+Message:
+Source:
+    Type:          HostPath (bare host directory volume)
+    Path:          /tmp/hostpath-provisioner/default/nginx-pvc
+    HostPathType:
+Events:            <none>
+```
+
+Verify that `HostPath` (Minikube VM) is that mounted per (kubeconfig) spec (`/usr/share/nginx/html`). To do that, we create a file in the container's mount point, and read it from the cluster host (VM) at `HostPath`.
+
+```bash
+☩ kubectl get pod
+NAME                READY   STATUS    RESTARTS   AGE
+pod/nginx-pvc-pod   1/1     Running   0          14m
+
+☩ kubectl exec nginx-pvc-pod -- touch /usr/share/nginx/html/foo
+
+☩ minikube ssh #... Launch SSH @ Minikube VM
+```
+```bash
+Last login: Mon Jul  3 23:06:48 2023 from 172.17.0.1
+docker@minikube:~$ ls -ahl /tmp/hostpath-provisioner/default/nginx-pvc/
+total 8.0K
+drwxrwxrwx 2 root root 4.0K Jul  4 14:39 .
+drwxr-xr-x 3 root root 4.0K Jul  4 14:24 ..
+-rw-r--r-- 1 root root    0 Jul  4 14:39 foo
+```
+
+Teardown
+
+```bash
+# Delete deployment
+☩ kubectl delete -f pvc-pod.yaml
+persistentvolumeclaim "nginx-pvc" deleted
+pod "nginx-pvc-pod" deleted
+
+# Verify
+☩ kubectl get all
+NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   17h
+```
+
+## 10.6 Understanding [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/)
+
+Storage is environment specific; it varies per cloud provider and such. Either we create PVs manually, or create a `StorageClass` to handle that automatically, per PVC-PV binding.
+
+- [StorageClass](https://kubernetes.io/docs/concepts/storage/storage-classes/) handles automatic provisioning of PVs per PVC request; needn't manually configure PVs. The StorageClass handles the site-specific, per environment storage type.
+- StorageClass must be backed by a storage [provisioner](https://kubernetes.io/docs/concepts/storage/storage-classes/#provisioner), which handles volume configuration using a volume plugin.
+    - K8s has internal provisioners.
+    - Exertnal provisioners are installable using Operators.
+        - Typically, lab/dev environment storage has no provisioner lest has SAN environment. 
+        - __Minikube has a provisioner__.
+- Secondary use of StorageClass is as a Selector; 
+  to manipulate how PV are bound to PVC.
+
+### Workflow 
+
+Using StorageClass as a Selector Label (@ `storageClassName: manual`)
+
+```bash
+kubectl create -f pvc.yaml
+kubectl get pvc
+kubectl get pv
+kubectl get storageclass
+kubectl describe pv pvc-xxx-yyy
+kubectl create -f pv-pvc-pod.yaml
+kubectl get pv
+```
+- [`pvc.yaml`](pvc.yaml)
+- [`pv-pvc-pod.yaml`](pv-pvc-pod.yaml)
+    - Container PV, PVC and Pod
+
+### Demo
+
+Create a PVC 
+
+```bash
+☩ cat pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+☩ kubectl create -f pvc.yaml
+persistentvolumeclaim/pv-claim created
+
+☩ kubectl get pvc
+NAME       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+pv-claim   Bound    pvc-2f44d85f-9a08-4ca4-bc5f-9eaa98bcfa83   1Gi        RWO            standard       2s
+
+☩ kubectl get pv
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM              STORAGECLASS   REASON   AGE
+pvc-2f44d85f-9a08-4ca4-bc5f-9eaa98bcfa83   1Gi        RWO            Delete           Bound    default/pv-claim   standard                2m5s
+```
+
+Minikube has a StorageClass otherwise available locally only in SAN environments.
+
+```bash
+☩ kubectl get storageclass
+NAME                 PROVISIONER                RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+standard (default)   k8s.io/minikube-hostpath   Delete          Immediate           false                  17h
+```
+
+Note `StorageClass: standard`, and `Source:` `Type: ...` and `Path: ...`
+
+```bash
+☩ kubectl describe pv pvc-2f44d85f
+Name:            pvc-2f44d85f-9a08-4ca4-bc5f-9eaa98bcfa83
+Labels:          <none>
+Annotations:     hostPathProvisionerIdentity: f90b37b4-16eb-4308-84a2-413dd44b9c6f
+                 pv.kubernetes.io/provisioned-by: k8s.io/minikube-hostpath
+Finalizers:      [kubernetes.io/pv-protection]
+StorageClass:    standard   
+Status:          Bound
+Claim:           default/pv-claim
+Reclaim Policy:  Delete
+Access Modes:    RWO
+VolumeMode:      Filesystem
+Capacity:        1Gi
+Node Affinity:   <none>
+Message:
+Source:
+    Type:          HostPath (bare host directory volume)
+    Path:          /tmp/hostpath-provisioner/default/pv-claim
+    HostPathType:
+Events:            <none>
+```
+
+### Use StorageClass as Selector Label
+
+Manage StorageClass
+
+See [`pv-pvc-pod.yaml`](pv-pvc-pod.yaml), which specifies Container PV, PVC and Pod. 
+Specified therein is `storageClassName: manual`, but there is no such (`manual`) StorageClass. 
+That is a Selector Label spec.
+
+```bash
+☩ kubectl create ns myvol                                                                                                          
+namespace/myvol created                                                                                                            
+                                                                                                                                   
+☩ kubectl create -f pv-pvc-pod.yaml                                                                                                
+persistentvolume/local-pv-volume created                                                                                           
+persistentvolumeclaim/local-pv-claim created                                                                                       
+pod/local-pv-pod created                                                                                                           
+                                                                                                                                   
+☩ kubectl get pvc --namespace myvol                                                                                                
+NAME             STATUS   VOLUME            CAPACITY   ACCESS MODES   STORAGECLASS   AGE                                           
+local-pv-claim   Bound    local-pv-volume   10Gi       RWO            manual         45s                                           
+                                                                                                                                   
+☩ kubectl get pv --namespace myvol                                                                                                 
+NAME              CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                  STORAGECLASS   REASON   AGE           
+local-pv-volume   10Gi       RWO            Retain           Bound    myvol/local-pv-claim   manual                  49s           
+                                                                                                                                   
+```
+
+
+
+# Lesson 11 : Managing [ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/) and [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) <a name=Lesson11></a>
+
+ConfigMaps are the Cloud Native alternative to `*.conf` files.
+
+## 11.1 Providing Variables to Kubernetes Applications
+
+Can set environment variables imperatively @ `kubectl`
+
+- @ Deployment
+
+```bash
+# No option to set variables @ create deploy
+kubectl create deploy $dname --image=$iname
+# Set env variable here at a running deployment
+kubectl set env deploy $dname KEY=VAL
+```
+
+- @ Naked Pod
+
+```bash
+kubectl run $pname --image=$iname -- env="KEY=VAL" 
+```
+
+### Workflow : Generate YAML having varibles
+
+```bash
+kubectl create deploy $dname --image=$iname
+kubectl get all
+kubectl describe pods $dname
+kubectl describe pods ${dname}-xxx-yyy # Container
+kubectl logs ${dname}-xxx-yyy
+```
+- Error due to app requiring environment variable that is not set.
+
+Can set imperatively on a running deployment
+
+```bash
+kubectl set env deploy $dname KEY=VAL
+kubectl get all
+```
+- App is now running
+
+Capture the deployment configuration
+
+```bash
+kubectl get deploy $dname -o yaml > ${dname}.yaml
+```
+- Cleanup `${dname}.yaml` 
+    - Delete certain `metadata`: 
+        - `annotations:`, `creationTimestamp:`, `generations:`, `resourseVersion:`, `uid`
+    - Delete `status:` elements.
+
+## 11.2 Understanding Why Decoupling is Important
+
+The kubeconfig (YAML) of a deployment should be static against varying environments; portable. For this, we need to segregate site-specific info from deployment configuration. This is why __ConfigMaps__ were created. They decouple the two.
+
+ConfigMap declares site-specific variables and such, storing them in `etcd`, and the Deployment config points to the ConfigMap.
+
+ConfigMap has 3 types of configuration:
+
+1. Variables
+1. Configuration Files
+1. Command line arguments (unusual)
+
+ConfigMap must exist prior to Deployment, else failed deployment.
+
+## 11.3 Providing Variables with ConfigMaps
+
+### `kubectl create cm` : Two ways:
+
+Single use: `--from-env-file=FILE`
+
+```bash
+kubectl create cm ${dname}_cm \
+    --from-env-file=$cm_env_file_path
+```
+
+Multiple use: `--from-literal=KEY=VAL`
+
+```bash
+kubectl create cm ${dname}_cm \
+    --from-literal="KEY1=VAL1" \
+    --from-literals="KEY2=VAL2"
+```
+
+Use the ConfigMap
+
+```bash
+kubectl create deploy $dname --image=$iname --replicas=3
+
+# Old notation ???
+kubectl set env --from=configmap/${dname}_cm deployment/$dname
+# New notation ???
+kubectl set env deploy $dname --from=configmap/${dname}_cm
+```
+Create YAML afterward
+
+```bash
+kubectl get deploy $dname -o yaml |less
+```
+
+## 11.4 Providing Configuration Files Using ConfigMaps
+
+To store site-specific info.
+
+```bash
+kubectl create cm ${dname}_cm --from=file=/a/path/file.conf
+```
+- If path is a directory, then all `.conf` files therein are included in ConfigMap.
+
+ConfigMap must be mounted in the app.
+
+Kubernetes has no imperative way to mount; 
+must create mount in YAML after the fact, or some other way.
+
+### [Configure a Pod to Use a ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#populate-a-volume-with-data-stored-in-a-configmap)
+
+ConfigMap is mounted as if it's a file: Add the ConfigMap name under the `volumes:` section of Pod's kubeconfig (YAML).
+
+#### [Populate a Volume with data stored in a ConfigMap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#populate-a-volume-with-data-stored-in-a-configmap)
+
+```yaml
+apiVersion: v1
+kind: Pod
+ ...
+  volumes:
+    - name: config-volume
+      configMap:
+        name: special-config
+```
+
+```bash
+cm_name=index
+echo 'Hello world of ConfigMaps' > ${cm_name}.html
+kubectl create cm $cm_name --from-file="${cm_name}.html"
+kubectl describe $cm_name
+```
+```text
+Name:         index
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+
+Data
+====
+index.html:
+----
+Hello world of ConfigMaps
+
+
+BinaryData
+====
+
+Events:  <none>
+```
+
+```bash
+dname=web1
+iname=nginx
+kubectl create deploy $dname --image=$iname
+kubectl get all --selector app=$dname
+```
+- Runs but with (nginx) default webpage 
+
+Add our ConfigMap using `kubectl edit ...`
+
+```bash
+kubectl edit deploy $dname
+```
+
+Add @ `spec:` > `template:` > `spec:`,
+a.k.a. the "Pod Specification".
+
+```yaml
+    ...
+    spec:
+        template: 
+        ...
+            spec:
+                volumes:
+                    # Internal name
+                    - name: cmvol
+                      configMap:
+                        name: web1
+                containers:
+                    ...
+                    volumeMounts:
+                        - mountPath: /usr/share/nginx/html
+                          # Internal name
+                          name: cmvol
+```
+```bash
+kubectl get all --selector app=$dname
+# See the mounted volume
+kubectl describe pod $dname 
+# Verify @ container
+kubectl exec $dname-xxx-yyy -- cat /usr/share/nginx/html/${cm_name}.html
+```
+
+## 11.5 Understanding Secrets
+
+Secrets are, in effect, base64-encoded ConfigMaps; not encrypted.
+There are system-created Secrets and User-created Secrets. 
+System-created Secrets are used for inter-cluster connections 
+and to support Services.
+
+Three types of Secrets:
+
+- docker-registry: Docker Registry connection params
+- TLS; key material
+- Generic; from a local file, directory, or literal.
+
+Upon creation, the type of secret must be specified
+
+```bash
+kubectl create secret $type ...
+```
+
+## 11.6 Understanding How Kubernetes Uses Secrets
+
+Kubernetes Resources access the Kubernetes API using TLS keys. Those keys are provided by Secrets through ServiceAccount. Deployments (applications) access Secrets through ServiceAccount.
+
+Workflow 
+
+```bash
+kubectl get pods -n kube-system 
+# See serviceAccount: coredns
+kubectl get pods -n kube-system coredns-xxx-yyy -o yaml |less
+# See coredns-token-xxxxx; the name at secrets:
+kubectl get sa -n kube-system coredns -o yaml |less
+# See content (base64 value) of that secret : Use `base64 -d TEXT` to decode
+kubectl get secret -n kube-system coredns-token-xxxx -o yaml
+```
+- `serviceAccount: coredns`; a user account having creds allowing privileged access to read from Kubernetes-API endpoints.
+
+## 11.7 Configuring Applications to Use Secrets
+
+Type: `tls` : TLS Keys
+
+```bash
+kubectl create secret tls $sname --cert=tls/$certfile --key=tls/$keyfile 
+```
+
+Type: `generic` : Generic (passwords, SSH Keys, sensitive files)
+
+```bash
+# Password : generic : --from-literal (k=v)
+kubectl create secret generic $sname --from-literal=$key=$val
+# SSH key : generic  : --from-file (name=path)
+kubectl create secret generic $sname --from-file=ssh-private-key=$keypath
+# Sensitive file : generic : --from-file (path; mount @ deploy; root access only)
+kubectl create secret generic $sname --from-file=$fpath
+```
+
+- Use is same as that of ConfigMap
+- If variables, use `kubectl set env`
+- If files, mount the Secret
+    - `defaultMode: 0400`
+
+Mounted Secrets (TLS keys and such) are automatically updated in application 
+whenever the Secret is updated.
+
+```bash
+kubectl create secret generic -h |less
+kubectl set env -h |less
+```
+
+```bash
+kubectl create secret generic dbpw --from-literal=ROOT_PASSWORD=password
+kubectl set env --from=configmap/myconfigmap --prefix=MYSQL_ deployment/myapp
+```
+
+So, with such  `--prefix` option, app has environment variable: `MYSQL_ROOT_PASSWORD=password`. Many apps can utilize the same secret; each having its own prefix.
+
+```bash
+# Verify value @ data: ROOT_PASSWORD: cGFzc3...
+kubectl describe secret dbpw -o yaml
+```
+- `echo "cGFzc3..." |base64 -d` 
+
+```bash
+kubectl create deployment mynewdb --image=mariadb
+```
+
+## 11.8 Configuring the Docker Registry Access Secret
+
+Docker Registries typically require authentication. Pull rate of public Docker Hub doubles if authenticated using the Docker Hub creds of your free account; more for paid accounts.
+
+```bash
+kubectl create secret docker-registry -h |less
+```
+```bash
+kubectl create secret docker-registry $sn \
+    --docker-username=$user \
+    --docker-password=$pass \
+    --docker-email=$email_addr \
+    --docker-server=anyreg:5000 #... for pvt reg; docker.io or such for public.
+```
+
+# Lesson 12 : Using the API <a name=Lesson12></a>
+
+## 12.1 Understanding the [Kubernetes API](https://kubernetes.io/docs/reference/using-api/)
+
+"Vanilla Kubernetes" refers to CNCF's release.
+
+- Core API is Extensible (API Groups)
+    - NAME, SHORTNANES (useful), APIVERSION, NAMESPACED (bool), KIND
+        - Some resources are not namespaced
+    - APIVERSION
+        - `v1` is the core group
+        - `apps/v1` is the first extension added by CNCF.
+        - `crd.projectcalico.org/v1`; per CRD of Calico NetworkPolicy addon
+        - Two at once; current and beta
+            - `policy/v1` (`poddisruptionbudgets`; `pdb`)
+            - `policy/v1beta1` (`podsecuritypolicies`; `psp`)
+- Custom Resource Definition (CRD) to add resources to API and Operators.
+- See @ `kubectl api-resources` and subset `kubectl api-versions`
+
+### API Access
+
+#### `kube-apiserver`
+
+- Exposes K8s functionality.
+- Typically started as `systemd` process.
+- Allows TLS certificate-based access only.
+    - `kubectl` reads certs @ `~/.kube/config`
+- `kubectl` makes TLS-secured API requests (HTTPS).
+
+#### `kube-proxy`
+
+Allows using `curl` sans TLS/certs at the commandline to make cluster API requests.
+
+```text
+       HTTP                                  HTTPS
+curl | <===> | kube-proxy : ~/.kube/config | <===> | API Server
+```
+
+- Runs locally, not on the cluster nodes.
+- Provides a secure interface between 
+  `curl` (cURL) and the K8s API server, 
+   enabling access by HTTP; `curl http://...`. 
+- Reads certificates from `~/.kube/config`.
+- Handles K8s' RESTful APIs, which are accessible by HTTPS.
+    - `kubectl` uses `curl` too when running locally.
+    - See @ verbose level 10: 
+        - `kubectl --v=10 get pods`
+
+### Connecting to API
+
+```bash
+☩ curl http://localhost:8001
+curl: (7) Failed to connect to localhost port 8001: Connection timed out
+```
+- Helper: `--connect-timeout 3`
+
+To access API using `curl`, start `kube-proxy` as a background process.
+
+```bash
+☩ kubectl proxy --port=8001 &
+[1] 6644
+Starting to serve on 127.0.0.1:8001
+
+☩ jobs
+[1]+  Running                 kubectl proxy --port=8001 &
+```
+```bash
+☩ curl http://localhost:8001
+{
+  "paths": [
+    "/.well-known/openid-configuration",
+    "/api",
+    "/api/v1",
+    ...
+    "/readyz/poststarthook/storage-object-count-tracker-hook",
+    "/readyz/shutdown",
+    "/version"
+  ]
+}
+```
+Teardown : kill the kube-proxy process.
+
+```bash
+fg
+<CTRL-C>
+```
+
+## 12.2 Using curl to Work with API Objects
+
+Use `curl` to Access API Resources
+
+Start the `kube-proxy` process 
+
+```bash
+☩ kubectl proxy --port=8001 &
+[1] 6644
+Starting to serve on 127.0.0.1:8001
+
+☩ jobs
+[1]+  Running                 kubectl proxy --port=8001 &
+```
+
+Create a deployment with `kubectl`, and then use `curl` to read (GET) or modify (`POST`/`PUT`/`DELETE`) it over HTTP.
+
+```bash
+kubectl create deploy curlx --image=nginx --replicas=3
+
+curl http://localhost:8001/api/v1/namespaces/default/pods/ > curl.pods.json
+
+name=$(cat curl.pods.json |jq -Mr '.items [1].metadata.name') 
+#=> curlx-5cc99c874f-6t9pv
+
+curl http://localhost:8001/api/v1/namespaces/default/pods/$name > curl.pod.name.json
+```
+
+Whereas that was an HTTP `GET` request, we can delete that pod per HTTP `DELETE` :
+
+```bash
+# Delete container $name
+curl -X DELETE http://localhost:8001/api/v1/namespaces/default/pods/$name 
+
+# Verify that container $name was destroyed
+kubectl get all 
+```
+
+## 12.3 Understanding API Deprecations
+
+- CNCF Kubernetes releases are in 3 month intervals. 
+- Deprications are common. 
+- SIX MONTH window to revise YAML manifests (kubeconfig).
+    - Depricated API versions are supported for only two releases.
+
+How to fix:
+
+```bash
+kubectl api-versions
+kubectl explain --recursive deploy |less
+```
+
+## 12.4 Understanding Authentication and Authorization
+
+AKA: API Access Control : [Concepts](https://kubernetes.io/docs/concepts/security/controlling-access/) | [Reference](https://kubernetes.io/docs/reference/access-authn-authz/) 
+
+>Not a big topic for CKAD; mostly CKA and CKS. 
+CKAD exam uses a local K8s admin account, 
+so authentication is not required.
+
+In CKA, learn to create user accounts.
+
+`kubectl` config @ `~/.kube/config` specifies cluster/auth.
+
+View the config:
+
+```bash
+kubectl config view
+```
+
+- Authentication; validates user identity.
+- Authorization; endpoint access.
+    - RBAC (Role-Based Access Control) 
+
+Query your access:
+
+```bash
+kubectl auth can-i ... # E.g., ... get pods
+```
+
+### Understand RBAC
+
+- Set access to API Resources
+- Required to understand `ServiceAccounts`
+- Three Elements:
+    1. Defines access permissions to specific resources
+    2. `ServiceAccount` or user is identity (authentication); uses RBAC.
+    3. `RoleBinding` conncect user or ServiceAccount to a specific Role.
+
+### Demo : Current Authorizations
+
+Workflow
+
+```bash
+# Print config JSON
+cat ~/.kube/config
+# Print config YAML
+kubectl config view
+# Query RBAC  
+kubectl auth can-i get pods
+kubectl auth can-i get pods --as bob@example.com
+```
+
+## 12.5 Understanding API Access and ServiceAccounts
+
+Accessing the API Server : `GET`/`POST`/... @ `etcd`
+
+- All actions in K8s Cluster are protected; authenticated and authorized.
+- ServiceAccounts are used for basic authentication from within the cluster.
+    - Pod has ServiceAccount (SA)
+- RBAC connects SeriveAccount (SA) to Roles through a RoleBinding
+- Every Pod uses the `default` ServiceAccount to contact API server.
+    - Allows `GET` info, but not much else.
+- Every ServiceAccount uses a Secret to automount API credentials.
+    - Secret used as Access Token.
+
+### ServiceAccount Secrets
+
+- ServiceAccount has RBAC info.
+- ServiceAccount has Secret.
+    - Contains credentials to authenticate against API Server
+- Pod automounts Secret of its ServiceAccount
+
+View a Pod's `default` ServiceAccount spec'd in its manifest (kubeconfig). Note the two params. One supports old API; the other the new API.
+
+```bash
+kubectl get pods $name -o yaml |less
+```
+```yaml
+kind: Pod
+...
+spec:
+    ...
+    serviceAccount: default
+    serviceAccountName: default
+...
+```
+```bash
+kubectl  get sa -o yaml
+```
+```bash
+kubectl describe pod $name
+```
+- See mounted secret under `Mounts:`
+    - `/var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-xxxx (ro)`
+
+Every component has ServiceAccount; `kube-system` namespace has long list:
+
+```bash
+kubectl get sa -A
+```
+
+## 12.6 Understanding Role Based Access Control (RBAC)
+
+Needn't configure at CKAD exam.
+
+RBAC [Reference](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
+- Cluster Administrator configures RBAC authorization per ServiceAccount or user.
+- Role defines access permissions to API resources under Namespaces
+- RoleBinding connects ServiceAccount to Role
+- ClusterRole and ClusterRoleBinding are used to figure access to resources.
+
+### Role eample : [`list-pods.yaml`](list-pods.yaml)
+
+Creating a Role, by itself, allows no access. A RoleBinding is required too.
+
+```bash
+kubectl create -f list-pods.yaml
+```
+
+### RoleBinding example : [`list-pods-mysa-binding.yaml`](list-pods-mysa-binding.yaml)
+
+```bash
+sa=mysa
+kubectl create -f list-pods-${sa}-binding.yaml
+kubectl get sa #... does not exist yet.
+kubectl create sa $sa
+kubectl get sa $sa #... exists now.
+```
+
+## 12.7 Configuring a ServiceAccount
+
+Demo to bring it all together.  
+This is NOT on the CKAD.
+
+### Managing ServiceAccounts
+
+- Every Namesp  ace has a `default` ServiceAccount.
+- Additional ServiceAccounts may be created to provide additional access to resources.
+- ServiceAccounts get permissions through RBAC; by Role and RoleBinding
+
+### Demo : Using Service Accounts
+
+Modify RBAC by adding a custom ServiceAccount and Role, and binding SA to Role by creating a RoleBinding. Verify the additional access.
+
+### CKAD Exam 
+
+On an application (deployment) throwing security errors (@ `kubectl describe ...`). What to do:
+
+```bash
+# Show service accounts
+kubectl get sa
+```
+
+If more than `default` SA, then probably need to reconfigure app (deployment) to run with that ServiceAccount.
+
+By either method:
+
+1. Edit the manifest (YAML) using `vim`:
+    - Add `serviceAccountName: mysa` under `spec:`. And then run again.
+1. `kubectl set sa deploy $dname $sa`
+
+# Lesson 13 : Deploying Applications the DevOps Way <a name=Lesson13></a>
+
+
+
+
+
+

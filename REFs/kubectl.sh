@@ -9,6 +9,15 @@
 # kubectl is the main k8s client utility
 kubectl $command -h |less
 
+# Copy from a container : pull file(s) to local path.
+## Show/Pick ctnr from which to pull the existing ($old) file
+kubectl get pods --selector type=canary
+ctnr=${old}-7bb6f649c6-stl26
+from=/usr/share/nginx/html/index.html
+to_local=index.pulled.html
+## Copy from $old : pull file(s) to local path.
+kubectl cp $ctnr:$from $to_local
+
 # Workflow
 kubectl create deploy $dname --image=$img
 kubectl scale deploy $dname --replicas=3 
@@ -16,6 +25,11 @@ kubectl scale deploy $dname --replicas=3
 kubectl apply -f . # Process all kubeconfig files (YAML) in $PWD
 kubectl get all [-ns $ns] 
 kubectl get pods   # Monitor the startup process
+## Get all Pods having Label/Selector (--selector KEY=VAL, -l KEY=VAL)
+kubectl get po -l type=canary -o json |jq . > k.get.po-l_type_canary.json
+## Get the keys 'name' and 'podID' of all Pods so labelled.
+kubectl get po -l type=canary -o json |jq '.items[] | .metadata.name,.status.podIP'
+
 kubectl get deploy $dname -o yaml |less  # Get deployment details
 kubectl edit deploy $dname               # Edit (vi; limited per K8s rules)
 kubectl describe pod $podName  # Examine the pod's (current) State / Reason, and Last State / Reason
@@ -33,6 +47,10 @@ kubectl describe pods $podName
     ###    State: Waiting
     ###      Reason: PodInitializing
     ###  Events:
+
+## Get pod name (POD_NAME) : E.g., 'kubernetes-dashboard-8665bfb777-vx5z2'
+export POD_NAME=$(kubectl get pods -n default -l "app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard" -o jsonpath="{.items[0].metadata.name}")
+
 ## Explain : (sub)field(s) from `kubernetes describe ... -o yaml`
 kubectl explain $_OBJECT.$_FIELD.$_SUB_FIELD
 kubectl explain pod.metadata

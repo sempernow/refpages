@@ -20,12 +20,15 @@ exit
 touch README.md
 git init
 gc # (See script) ... or ...
-git add README.md
+git add .
 git commit -m "first commit"
 # then ...
 git branch -M master
-git remote add origin https://github.com/${user_name}/${repo_name}.git
-git push -u origin master
+git remote add origin git@github.com/${user_name}/${repo_name}.git      # SSH mode
+git remote add origin https://github.com/${user_name}/${repo_name}.git  # HTTPS mode
+#... if already added; to switch modes:
+git remote set-url origin ${PER_MODE}github.com/${user_name}/${repo_name}.git # "git@" OR "https://""
+git push -u origin master # Push local to remote master 
 
 # Creating a PULL REQUEST FROM a FORK  https://help.github.com/articles/creating-a-pull-request-from-a-fork/
 

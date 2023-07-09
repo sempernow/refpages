@@ -14,19 +14,30 @@ exit
 # CLIENT services :   (client;you)    <==>    sshd (server)
 
     # SSH : TL;DR
-        ssh -i $_PRIVATE_KEY ${user}@${host_name_OR_public_ip}
-        # !!!  @ GitHub/GitLab : $user is "git", NOT account's username  !!!
-        ssh -i ~/.ssh/gitlab_key git@gitlab.com
 
-        # Generate key pair
-        ssh-keygen -t ed25519 -C "you@emailer.com" -f ~/.ssh/keyname
-        # Show fingerprint of any key (public/private have common fingerprint)
-        ssh-keygen -E md5 -lvf ~/.ssh/keyname[.pub] # -v show visual in addition to the hash.
+        # Launch a login shell through an SSH tunnel
+        ssh -i $_PRIVATE_KEY_PATH ${user}@${hostname_OR_ip}
+            ## Note @ Git servers (GitHub/GitLab), $user is 'git', NOT that account's username. E.g., 
+            ssh -T -i $keypath git@gitlab.com # -T for SSH tunnel only; sans shell/terminal (TTY/PTY).
+
+        # Generate elliptical key pair : default type (sans -t) is 'rsa'.
+        ssh-keygen -t ed25519 -C $email_addr -f ~/.ssh/keyname 
+        #... If RSA type, use at least `-b 2048` (bit length) option; OpenSSL default.
+
+            # Re(Set) key's passphrase (local security)
+            ssh-keygen -p -P $old -P $new -f $keypath
+            
+            # Re(Set) key's comment 
+            ssh-keygen -c -C $email_addr -f $keypath
+
+            # Show fingerprint of any key (public/private have same fingerprint)
+            ssh-keygen [-E md5] -l[v] -f $keypath # -v : show visual in addition to the hash.
+
         # Show fingerprint of (remote) host(s) : VALIDATE against remote's claim ON FIRST CONNECT
-        ssh-keygen -E md5 -lvf ~/.ssh/known_hosts   # -v show visual in addition to the hash.
+        ssh-keygen [-E md5] -l[v] -f ~/.ssh/known_hosts   # -v : show visual in addition to the hash.
 
-        # Push user's PUBLIC key to remote by referencing PRIVATE key "identity file" (-i)
-        ssh-copy-id -i $_PRIVATE_KEY -p $_PORT_NUMBER ${user}@${host_name_OR_public_ip}
+        # Push user's PUBLIC key to remote by referencing PRIVATE key a.k.a. "identity file" (-i)
+        ssh-copy-id -i $_PRIVATE_KEY_PATH -p $_PORT_NUMBER ${user}@${hostname_OR_ip}
         #... requires the remote already has an existing key or allows password auth.
 
         # Remotely run LOCAL script and args (environment) through a secure shell
@@ -35,32 +46,32 @@ exit
         ssh ... "/bin/bash -c '$(</a/local/path/script.sh)' _ $arg1 $arg2"
         #... advantage over HEREDOC scheme is preservation of semantic highlighting @ code editor.
 
-        # UPLOAD file SANS "file upload"
+        # UPLOAD a FILE sans scp, rsync, ... or any other utility.
         # Read local (SSH client) file into string and write it to a remote (SSH host) file
-        ssh ... "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
+        ssh ... "printf '$(</from/this/local/FILE)' > /to/this/remote/FILE"
 
     # SCP : Secure Copy  https://en.wikipedia.org/wiki/Secure_copy
         scp # Secure Copy per ssh(1)
-            -r      # Recursive copy; else ignores all files under any directory
-            -p      # Preserve mtime 
             -C      # Compress during transfer
             -i      # ssh identity file
             -o      # ssh(1) options
+            -p      # Preserve mtime 
             -q      # Quiet; sans progress
+            -r      # Recursive copy; else ignores all files under any directory
             -T      # Disable strict filename checking; mitigate per-distro quirks in file-handling conventions
 
-        # E.g., {PUSH,PULL} the {local,remote} SOURCE directory content to TARGET: 
-        scp -rpC -i ~/.ssh/key2  SOURCE  user2@host2:TARGET  # PUSH : local source, remote target
-        scp -rpC -i ~/.ssh/key1  user1@host1:SOURCE  TARGET  # PULL : remote source, local target
-        # Where ~/.ssh/key{2,1} is the private key of user{2,1} at host{2,1} during {PUSH,PULL} 
+        scp -i $keypath ...
 
-        scp $source user@host:$target     # upload source FILE to host @ target
-        scp -r $source user@host:$target  # upload source FOLDER to host @ target 
-        scp user@host:$source $target     # download from host
-            -p  # preserve mtime, atime, mode 
-            -r  # recurse (folder)
-        scp -i ~/.ssh/aKey.pem -r ./foo   ${user}@${host}:~  # Copy local ./foo to ~/foo @ host 
-        scp -i ~/.ssh/aKey.pem -r ./foo/* ${user}@${host}:~  # Copy CONTENT of local ./foo to ~/ @ host 
+        # E.g., {PUSH,PULL} the {local(1),remote(2)} SOURCE directory content to TARGET: 
+        scp -Cpr -i ~/.ssh/key2 SOURCE  user2@host2:TARGET  # PUSH : local source, remote target
+        scp -Cpr -i ~/.ssh/key1 user1@host1:SOURCE  TARGET  # PULL : remote source, local target
+        # Where ~/.ssh/key{2,1} is the private key of user{2,1} at host{2,1} during {PUSH,PULL} 
+        
+        scp -p $source user@host:$target   # push FILE 
+        scp -pr $source user@host:$target  # push DIR
+        
+            scp -pr ./foo   ${user}@${host}:~  # Push local DIR,            ./foo, to ~/foo @ host.
+            scp -pr ./foo/* ${user}@${host}:~  # Push CONTENT of local DIR, ./foo, to ~/    @ host.
 
     # SFP : Secure FTP (SFTP)  https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
         sfp ; scp2 
@@ -122,13 +133,15 @@ exit
     # CONNECT/login [local client to remote server]
 
         # BYOC (Bring your own creds)
-        ssh -i ${_PRIVATE_KEY} ${user}@${host_name_OR_public_ip} #... e.g., ...
+        ssh -i ${_PRIVATE_KEY} ${user}@${hostname_OR_ip} #... e.g., ...
         ssh -i ~/.docker/machine/machines/${_VM}/id_rsa ubuntu@kvpairs.com
-        
+        #... If `-i ...` is ommitted, then ALL KEYS @ ~/.ssh/ are tried,
+        #    unless $user@$host matches a configuration @ ~/.ssh/config .
+
         # @ public key @ ~/.ssh/config
-        ssh ${user}@${host_name_OR_public_ip}
+        ssh ${user}@${hostname_OR_ip}
         # OR
-        ssh -l $user ${host_name_OR_public_ip}
+        ssh -l $user ${hostname_OR_ip}
         # OR, if `Host ...` @ `~/.ssh/config` 
         ssh xMachine
         # Host xMachine
@@ -142,8 +155,9 @@ exit
             'Permission denied (publickey).' # See PERMISSIONS section
 
         # options; overrides those of default config 
-            -F CONFIG_FILE             # use specified config file instead of defaults.
-            -i PRIVATE_KEY_FILE    # identity file; defaults: ~/.ssh/id_rsa @ ssh-v.2
+            -i PRIVATE_KEY_FILE # identity file; defaults: ~/.ssh/id_rsa @ ssh-v.2
+            -v[v[v[v]]]         # Verbosity (level)
+            -F CONFIG_FILE      # use specified config file instead of defaults.
             
             -G  # print configuration (per host) and exit; no connection made
 
@@ -151,28 +165,27 @@ exit
             -Y  # Enables trusted X11 forwarding; bypass X11 SECURITY ext controls
             
             # pseudo-tty allocation (shell access) 
-            -T  # Disable pseudo-terminal allocation; GitHub disables shell access 
-            -t  # force pseudo-terminal allocation; 
-            # solved an X-Cygwin issue: 'TERM ... variable not set' warning[s]
+            -t  # force pseudo-terminal (TTY/PTY) allocation; 
+                #... may solve: 'TERM ... variable not set' warning[s]
+            -T  # Disable TTY/PTY allocation (Git servers disable shell access) 
                 
-            # port forwarding [see man pages for more]    
+            # Port forwarding [see man pages for more]    
             -L local_socket:host:hostport    # local (client) port forwarded to remote.
             -R remote_socket:host:hostport   # remote (server) port forwarded to local. 
             -p PORT_NUMBER user@host.domain  # remote port for this connection    
             # https://help.ubuntu.com/community/SSH/OpenSSH/PortForwarding    
 
-            # port forwarding MULTIPLE PORTS 
+            # Port forwarding MULTIPLE PORTS 
 
                     # ... then can ...
                         ssh localhost -p 8822  # connects to REMOTE_IP_FOO
                         ssh localhost -p 9922  # connects to REMOTE_IP_BAR 
 
-        # if key-based login, then can automate pass phrase entry;
-        # (private key may be protected by passphrase)    
+        # Automate passphrase entry (private key may be protected by passphrase; see ssh-keygen.)
         ssh-agent /bin/bash  # launch ssh-agent into subshell    
-        ssh-add              # prompts for pass phrase; caches it until (sub)shell exited    
+        ssh-add              # prompts for pass phrase; caches for lifetime of (sub)shell.
 
-        # ADD host's key to known hosts file 
+        # ADD host's key to ~/.ssh/known_hosts file 
             # Get the host key
             ssh-keyscan -t rsa $_HOST_IP
                 #=> 

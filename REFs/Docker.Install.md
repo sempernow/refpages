@@ -1,5 +1,12 @@
 # Docker Install | [Kill Docker Auto Updates](https://github.com/RektInator/kill-docker-auto-update "GitHub")
 
+UPDATE : 2023-07-03 : Docker Desktop 4.19.0 (106363) 
+
+```
+wsl --update
+```
+- BREAKS Docker Desktop; requiring reset to "factory defaults".
+
 Docker for Windows a.k.a. Docker Desktop
 
 Current setup &hellip;
@@ -171,6 +178,8 @@ service docker start     # equiv. non-systemd (AWS AMI)
 
 # Allow user access Docker CLI, sans root.
 sudo usermod -aG docker $USER  # 'ec2-user' @ AWS EC2, 'vagrant' @ Vagrant box, ... 
+# Update to take effect now
+sudo newgrp docker
 ```
 
 - If no `usermod`, then tool requires `sudo ...`, e.g.,  

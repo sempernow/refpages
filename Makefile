@@ -15,14 +15,15 @@ menu:
 	@echo '	getrefs   : Copy all REF* files to a tmp folder at ${TEMP}/$$( mktemp -d ).'
 	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
 
+foo:
+	bash make.recipes.sh foo 
+
 getrefs:
-	refsync temp
-	find ./REFs -type f -exec rm "{}" \+ 
-	cp -p $$TEMP/$(shell ls $$TEMP -ahsrt --group-directories-first |grep tmp. |tail -n 1 |awk '{print $$NF}')/* ./REFs
+	bash make.recipes.sh getrefs 
+
+# refsync temp
+# find ./REFs -type f -exec rm "{}" \+ 
+# cp -p $$TEMP/$(shell ls $$TEMP -ahsrt --group-directories-first |grep tmp. |tail -n 1 |awk '{print $$NF}')/* ./REFs
 
 normalize:
-	find ./REFs -type f -iname '*.html' -exec rm "{}" \+
-	find ./REFs -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
-	find ./REFs -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/.*/##g"
-	cd ./REFs && fname 'REF.'
-
+	bash make.recipes.sh normalize
