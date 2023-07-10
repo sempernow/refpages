@@ -11,6 +11,7 @@
 !.dockerignore
 !Makefile
 !Makefile.settings
+!favicon.png
 
 # Whitelist per file type
 !*.sh
