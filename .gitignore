@@ -15,6 +15,10 @@
 
 # Whitelist per file type
 !*.sql
+!*.cmd
+!*.ps
+!*.bat
+!*.reg
 !*.sh
 !*.yml
 !*.yaml
