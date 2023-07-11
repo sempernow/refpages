@@ -14,6 +14,7 @@ menu:
 	$(INFO) 'Recipes'
 	@echo '	getrefs   : Copy all REF* files to a tmp folder at ${TEMP}/$$( mktemp -d ).'
 	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
+	@echo '	index     : Process MD files into HTML and create index.html'
 
 foo:
 	bash make.recipes.sh foo 
@@ -21,9 +22,8 @@ foo:
 getrefs:
 	bash make.recipes.sh getrefs 
 
-# refsync temp
-# find ./REFs -type f -exec rm "{}" \+ 
-# cp -p $$TEMP/$(shell ls $$TEMP -ahsrt --group-directories-first |grep tmp. |tail -n 1 |awk '{print $$NF}')/* ./REFs
+index:
+	bash make.recipes.sh index
 
 normalize:
 	bash make.recipes.sh normalize

@@ -3,10 +3,6 @@
 #  normalize refpages : for use @ Makefile 
 # -----------------------------------------------------------------------------
 
-normalize () {
-    find ./REFs -type f -iname '*.html' -exec rm "{}" \+
-    find ./REFs -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
-}
 
 getrefs() {
 	refsync temp
@@ -16,10 +12,25 @@ getrefs() {
 }
 
 normalize(){
-    find ./REFs -type f -iname '*.html' -exec rm "{}" \+
-    find ./REFs -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
-    find ./REFs -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/.*/##g"
-    cd ./REFs && fname 'REF.'
+    pushd ./REFs
+    find . -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
+    find . -type f -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/.*/##g"
+    popd
+}
+
+index() {
+    pushd ./REFs
+    rm index.md index.html 2> /dev/null
+    find . -type f -iname '*.md' -exec md2html.exe "{}" \;
+    fname 'REF.'
+    # find . -type f -printf "%f\n" >> 'html.log'
+    # awk '{print "(" $1 ")"}' html.log > html2.log
+    # find . -exec /bin/bash -c 'echo "## [${@##*/}]" >> "names.log"' _ "{}" \;
+    # sed -i 's/.html//g; s/REF.//g' "names.log"
+    #paste -d '' "names.log" "html2.log" | sort > 'index.md'
+    find . -type f ! -iname '*.md' -printf "## [%f](%f)\n" >>index.md
+    md2html.exe 'index.md'
+    popd
 }
 
 "$@"
