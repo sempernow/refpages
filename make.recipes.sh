@@ -20,7 +20,7 @@ normalize(){
 
 index() {
     pushd ./REFs
-    rm index.md index.html 2> /dev/null
+    rm index.md index.html Links.md Links.html 2> /dev/null
     find . -type f -iname '*.md' -exec md2html.exe "{}" \;
     fname 'REF.'
     # find . -type f -printf "%f\n" >> 'html.log'
