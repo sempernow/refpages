@@ -716,7 +716,7 @@ kube-system   replicaset.apps/coredns-565d847f94   2         2         2       1
 
 # Link @ (HTML | MD)
 
-([HTML](file:///d:/1%20Data/IT/___.html "@ browser") | [MD](file:///d:/1%20Data/IT/___.md "___"))   
+([HTML](___.md "___"))   
 
 
 # Bookmark
