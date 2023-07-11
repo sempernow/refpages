@@ -14,6 +14,7 @@
 !favicon.png
 
 # Whitelist per file type
+!*.sql
 !*.sh
 !*.yml
 !*.yaml
