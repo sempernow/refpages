@@ -137,6 +137,8 @@
 ## [Go.Templates.html](Go.Templates.html)
 ## [Gulp.sh](Gulp.sh)
 ## [HDMI.vs.DisplayPort.txt](HDMI.vs.DisplayPort.txt)
+## [Helm.html](Helm.html)
+## [helm.sh](helm.sh)
 ## [HTML.DOM.js](HTML.DOM.js)
 ## [HTML.DOM.JS.html](HTML.DOM.JS.html)
 ## [HTML.Unicode.UTF-8.py](HTML.Unicode.UTF-8.py)
