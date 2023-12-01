@@ -111,9 +111,12 @@ exit
 # CHECKOUT a.k.a. "dispatch" : integrate into local : creates detached HEAD 
     git checkout $name # either updates from remote or creates anew
     # In full; setup remote tracking otherwise Git sets implicitly.
-    git checkout -b $name --track $remote/$name
+    git checkout -b $name --track origin/$name
     # E.g., 
-    git checkout -b foo --track origin/foo
+    
+    # Checkout from remote
+    git checkout -b $name origin/$name
+
 
 # PULL : fetch + merge (or rebase, per config settings).
     git pull origin $name 
@@ -286,7 +289,7 @@ exit
     git remote set-url origin git@github.com:${acct}/${PWD##*/}.git     # SSH mode
     git remote set-url origin https://github.com/${acct}/${PWD##*/}.git # HTTP mode
     # ADD remote ORIGIN per PROTOCOL/MODE
-    git remote add origin git@github.com:${acct:}/${PWD##*/}.git        # SSH mode 
+    git remote add origin git@github.com:${acct}/${PWD##*/}.git         # SSH mode 
     git remote add origin https://github.com/${acct}/${PWD##*/}.git     # HTTP mode
     # ADD UPSTREAM (to corroborate @ FORK) 
     git remote add upstream https://github.com/$original_acct_slash_repo.git
