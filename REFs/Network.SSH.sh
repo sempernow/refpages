@@ -20,12 +20,21 @@ man ssh_config
 
         # Launch a login shell through an SSH tunnel
             ssh -i $_KEY_PATH ${user}@${hostname_OR_ip}
-            ## If host is Git server (GitHub/GitLab), then $user is 'git' *not* the user.
-            ssh -T -i ~/.ssh/gitlab git@gitlab.com # -T for sans tty/pty allocation.
+            ## If host is Git server (GitHub/GitLab), then user is 'git' *not* the ssh user.
+            ssh -T -i ~/.ssh/gitlab git@gitlab.com # -T to DISABLE tty/pty allocation.
+            ## If connection parameters are DECLARED at ~/.ssh/config  (See man ssh_config)
+                # Host abox 
+                #   HostName 10.111.0.101 www.foo.org foo.org 
+                #   User user1
+                #   CheckHostIP yes
+                #   Port 2222
+                #   IdentityFile ~/.ssh/abox
+            ## Then simply:
+            ssh abox 
 
         # Generate elliptical key pair : Default type (-t) is 'rsa'.
-            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default).
-                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -f ~/.ssh/keyname 
+            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default); no passphrase.
+                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname # id_ed25519
 
             # Re(Set) key's passphrase (local security)
                 ssh-keygen -p -P $old -P $new -f $_KEY_PATH
@@ -34,10 +43,10 @@ man ssh_config
                 ssh-keygen -c -C "$(id -un)@$(hostname)" -f $_KEY_PATH
 
             # Show fingerprint (FPR) of keypair : either key of a pair have same FPR
-                ssh-keygen [-E md5] -l[v] -f $_KEY_PATH # -v : show visual in addition to the hash.
+                ssh-keygen -l[v] -f $_KEY_PATH # -v : show visual in addition to the hash.
 
             # Show fingerprint(s) of KNOWN (remote) HOST(s) 
-                ssh-keygen [-E md5] -lf ~/.ssh/known_hosts
+                ssh-keygen -lf ~/.ssh/known_hosts
 
         # Copy user's PUBLIC key to remote (SSH server) by reference to either key of a pair AKA Identity File (-i)
             ssh-copy-id -i $_KEY_PATH -p $_PORT_NUMBER ${user}@${hostname_OR_ip}
@@ -69,14 +78,11 @@ man ssh_config
                     # This key is not known by any other names
                     # Are you sure you want to continue connecting (yes/no/[fingerprint])? 
 
-        # PUSH (upload) a static FILE sans file-copy utility:
-            ssh ... "printf '$(</local/path/of/FILE)' >/remote/path/of/FILE"
-
         # REMOTEly execute a LOCAL script via secure shell, injecting both local and remote ENVIRONMENTs ...
-            ssh ... '/bin/bash -s' < "/local/path/of/script.sh '$local_foo' '2nd arg is static' '\$remote_foo'" |& tee bash.log
-            #... and log STDOUT + STDERR locally too. This scheme writes nothing to remote filesystem.
-            # For other script types, ...
-            ssh ... '/usr/bin/python3 -s' < /local/path/of/script.py
+            ssh ... /bin/bash -s < /path/to/local/script.sh "$local_foo" "\$remote_foo"
+            #... This scheme writes nothing to remote filesystem.
+            # For other interpreters, ...
+            ssh ... /usr/bin/python3 -s < /local/path/to/script.py
 
     # SCP : Secure Copy  https://en.wikipedia.org/wiki/Secure_copy
         scp # Secure Copy per ssh(1)
@@ -178,11 +184,6 @@ man ssh_config
         ssh -l $user ${hostname_OR_ip}
         # OR, if `Host ...` @ `~/.ssh/config` 
         ssh xMachine
-        # Host xMachine
-        #   HostName centos
-        #   User rbox
-        #   CheckHostIP yes
-        #   IdentityFile ~/.ssh/centosvm_ed25519
 
         # most commmon connection ISSUES are due to FILE OWNER/PERMISSIONS
         # on private key or folder (see CLIENT section), or  USERNAME@HOST spelling
@@ -228,48 +229,48 @@ man ssh_config
 
         # REMOVE an "offending" key
             ssh-keygen -f ~/.ssh/known_hosts -R $_OFFENDING_IP_ADDR
-            #... this occurs whenever any network params change, 
-            #     e.g., when re-attaching EIP to a new instance (AWS EC2); 
-            #     public key of old instance is retained in client's known_hosts.
+                #... this occurs whenever any network params change, 
+                #     e.g., reprovisioned VM(s), or re-attach EIP to another VM (AWS EC2); 
+                #     public key of old instance is retained in client's known_hosts.
 
-        # Establish SOCKET for CONNECTION SHARING/REUSE, 
-            mkdir ~/.ssh/sockets # So may terminate a (non-terminal Git server) session.
-            # OPEN Socket
-            ssh  -S ~/.ssh/sockets/%r@%h:%p $user@$host
-            # CLOSE Socket
-            ssh -O exit -S $socket_path $user@$host # Quirky method, though advised.
-            rm $socket_path                         # Robust method 
-                
-                -S  # ControlPath; SOCKET for connection sharing/reuse
-                    -o ControlMaster=auto # auto|yes|no 
-                        #... 'auto' FAILs @ WSL; 'yes' FAILs on 1st connect.
-                    -o ControlPersist=600
-                -fNM
-                    -f  # go to background just before command execution; implies (includes) -n ().
-                    -N  # Do not execute a remote command; useful for forwarding ports.
-                    -n  # Redirects STDIN to /dev/null; MUST BE USED if ssh is run as background process
-                    -M  # “master” mode for connection sharing.
+        # Establish UNIX SOCKET for connection REUSE / SHAREing (multiple sessions)
+            # ControlMaster (man ssh_config) : FAILs @ WSL(2)
+            # @ ~/.ssh/config
+                # Host github
+                #     Hostname www.github.com
+                #     ControlMaster auto                    # Automatically use if exist; create socket otherwise
+                #     ControlPersist 600                    # TTL (seconds) after idle; forever if 0 or yes 
+                #     ControlPath ~/.ssh/master-%r@%h:%p    # master-USER@HOST:PORT
+                # Thereafter:
+                ssh github          # logon
+                ssh -O exit github  # kill that socket
 
-            # set config 
-            ssh -o ControlPath=~/.ssh/sockets/%r@%h-%p
-            # OR @ ~/.ssh/config 
-            ControlMaster auto
-            ControlPath    ~/.ssh/sockets/%r@%h-%p
-            ControlPersist 600
-            # https://www.tecmint.com/speed-up-ssh-connections-in-linux/
-            # https://www.cyberciti.biz/faq/linux-unix-reuse-openssh-connection/
+            # @ Imperatively
 
-            # Thereafter, once configured at ~/.ssh/config,
-            ssh github          # logon
-            ssh -O exit github  # terminate
+                # Open : See TOKENS section (%r, %h, %p, ...) of man ssh_config
+                ssh  -S ~/.ssh/master-%r@%h:%p $user@$host
+                # Show
+                ssh -O check $user@$host
+                # Close
+                ssh -O exit $user@$host 
+                    # Options
+                    -S  # ControlPath; SOCKET for connection sharing/reuse
+                        -o ControlMaster=auto # auto|yes|no 
+                            #... 'auto' FAILs @ WSL; 'yes' FAILs on 1st connect.
+                        -o ControlPersist=600
+                    -fNM
+                        -f  # go to background just before command execution; implies (includes) -n ().
+                        -N  # Do not execute a remote command; useful for forwarding ports.
+                        -n  # Redirects STDIN to /dev/null; MUST BE USED if ssh is run as background process
+                        -M  # “master” mode for connection sharing.
 
         # TCP Forwarding  https://blog.fatedier.com/2015/07/22/ssh-port-forwarding/
         ssh -oPort=22 -CNfg -R 40000:localhost:22 root@11.11.11.11
 
         # RUN SCRIPT per redirect 
-        ssh user@host /bin/bash -s < "script" arg1 arg2 
+        ssh user@host /bin/bash -s < script $local_arg \$remote_arg 
         # RUN SCRIPT in background process
-        ssh -n -f user@host "/bin/bash -c 'cd /whereever; nohup ./whatever > /dev/null 2>&1 &'"
+        ssh -n -f user@host /bin/bash -c 'nohup /where/what >/dev/null 2>&1 &'
 
     # CONFIG CLIENT MACHINE
 
@@ -507,31 +508,55 @@ man ssh_config
             ssh -R 2222:localhost:22 $user@$ssh_host 
             ssh -p 2222 username@localhost
 
-        # SOCKS[5] proxy server (@ local/client) per SSH tunnel (dynamic port-forwarding)   
-            # SSH acts as a SOCKS5 server, forwarding the local port to wherever requested (dymanic).
+        # SOCKS[5] : local proxy server per SSH tunnel (dynamic port-forwarding).
+            # SSH acts as a SOCKS5 server at a local port to dynamically route traffic 
+            # of various protocols to remote destinations/ports based on client(s) requests, 
+            # without the need for predefined port forwarding rules for each service.
             # USE CASE: Local node has no web access, or restricted web access, 
             # but has access to a remote node that has (better) web access.
             # Configure (OS/App) PER APPLICATION https://wiki.archlinux.org/index.php/OpenSSH#Encrypted_SOCKS_tunnel
                 ssh -D 5555 -fNqTCv $user@$host #... tunnel from localhost:5555 to remote host
-                    -D  # Dynamic port forwarding; specify the local port (1025-65536).
-                    -f  # fork process to background
-                    -N  # disable interactive prompt; no commands sent once tunnel is up.
-                    -q  # quiet mode
-                    -T  # disable pseudo-tty allocation
-                    -C  # compress data before sending
-                    -v  # verbose (optionally)
-                #... (local) client apps use the local entry point; localhost:5555
-
-            # More detailed description ...
-            # https://en.wikibooks.org/wiki/OpenSSH%2FCookbook%2FProxies_and_Jump_Hosts#SOCKS_Proxy
-                # Verify up
-                ps aux |grep ssh 
-
-                -D [bind_address:]port  # Dynamic (per request) APPLICATION-LEVEL port forwarding (1025-65536); 
-                # The APPLICATION PROTOCOL determines where to connect at remote machine;
-                # Allocates a socket on whatever HTTP(S) host machine per request thereafter, hence "dynamic".
-                # `bind_address` of `localhost` indicates that the listening port be bound for local use only, 
-                # while an empty address or `*` indicates that the port should be available from all interfaces.
+                    # Options:
+                        -D [$bind_address:]$port  # Dynamic APPLICATION-LEVEL port forwarding; 
+                            # Create SOCKS5 server listen on local port (1025-65536).
+                            # The APPLICATION PROTOCOL determines destination IP:PORT;
+                            # A $bind_address of localhost would indicate listening port bound FOR LOCAL USE ONLY, 
+                            # whereas an empty address or "*"" indicates that port should be available from all interfaces.
+                        -f  # fork process to background
+                        -N  # No commands; not interactive once tunnel is up.
+                        -q  # quiet mode; suppress messages
+                        -T  # disable pseudo-tty allocation; establish a tunnel-only connection
+                        -C  # compress all data 
+                        -v  # verbose (optional); use for debugging.
+                # So (local) client apps use the local entry point : localhost:5555
+                # Optionally set binding address (network interface) "-D $BIND:$PORT",
+                # else SOCKS5 server listens on ALL network interfaces.
+                # More detailed description ...
+                # https://en.wikibooks.org/wiki/OpenSSH%2FCookbook%2FProxies_and_Jump_Hosts#SOCKS_Proxy
+                #
+                # In a setup where back-end data stores are protected in a private subnet having no direct internet access, 
+                # a SOCKS proxy server RUNNING ON THE JUMP BOX would allow for time sync and other controlled internet access.
+                    ssh -D $jump_box_ip:$jump_box_port  ...
+                    # - Security and Isolation: 
+                        # The primary role of the "jump box" AKA "bastion host" 
+                        # is to act as a secure gateway between different network zones, 
+                        # particularly between a less secure zone and a secure zone. 
+                        # Running the SOCKS proxy on the jump box aligns with this purpose 
+                        # because it centralizes access control and monitoring.
+                    # - Reduced Exposure: 
+                        # By running the SOCKS proxy on the jump box, 
+                        # the back-end data stores remain isolated 
+                        # and their exposure to the network is minimized. 
+                        # This configuration helps in maintaining the principle of least privilege, 
+                        # reducing the attack surface by not adding additional services on the data store servers themselves.
+                    # - Ease of Management: 
+                        # Managing network configurations, access rules, and monitoring on a single jump box is simpler and more secure 
+                        # than managing these settings across multiple back-end servers. 
+                        # This setup also makes it easier to enforce consistent security policies and to audit access logs.
+                    # - Flexibility and Efficiency: 
+                        # The jump box can handle requests from multiple back-end servers in a centralized manner, 
+                        # making network management more efficient. It also simplifies the network architecture by avoiding the need for each back-end server 
+                        # to run its own instance of the proxy software.
 
                 # APPLICATIONS MUST BE CONFIGURED to use SOCKS proxy server, e.g., 
                     # Firefox > Options > Advanced > Network > Settings 
@@ -543,18 +568,24 @@ man ssh_config
                         export http_proxy=http://$_USERNAME:$_PASSWORD@$_SERVER:$_PORT/
 
                     # Example
-                        # From pvt box having NO WEB ACCESS (subnet allows no comms to/from anywhere outside VPC), 
-                        # establish jump box (that has web access) as SOCKS server, to proxy for the pvt box:
+                        # From pvt box having NO WEB ACCESS (subnet deny comms to/from anywhere outside VPC), 
+                        # establish jump box (that has web access) as SOCKS server, to proxy for pvt box:
                         user='ubuntu'
-                        #ip_jump='34.203.218.222'
-                        ip_jump_pvt='10.0.101.194' #... since we can't get to jump's public IP.
-                        key_jump=/home/ubuntu/.ssh/swarm-aws.pem 
+                        ip_jump_pvt='10.0.101.194' # Private IP of jump box
+                        key_jump=/home/ubuntu/.ssh/cluster-aws.pem 
 
                         # Establish jump box as web proxy (server), accessible from 127.0.0.1:5128
                         ssh -D 5128 -f -C -q -N ${user}@$ip_jump_pvt -i $key_jump # 3128 is IANA proxy; 5128 no IANA
                         
                         # Validate the tunnel is up
                         ps aux |grep ssh
+
+                        export http_proxy='socks5h://127.0.0.1:5522'
+                        curl -sI keycloak.local             # HTTP/1.1 200 OK ...
+                        export https_proxy='socks5h://127.0.0.1:5522'
+                        curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
+
+                        # Configure the box (All The Things) to use SOCKS
 
                             # Declare proxy params : current shell (cofigures OS and some utilities @ this shell)
                             export port='5128'
@@ -609,6 +640,7 @@ man ssh_config
 
                         kill -9 $_PID 
                         #... terminate the tunnel; does not survive the session, regarldess
+
 
         # SSH-based VPN 
             # TUN device: A virtual network device for point-to-point IP tunneling.

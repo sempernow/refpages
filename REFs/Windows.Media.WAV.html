@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Windows.Media.WAV</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>How to mute (radically lower the volume of) Win10 OS <code>*.wav</code> file(s)</h1>
+
+<p>The malware that is Win10 OS entirely ignores the user's sound volume settings, playing the WAV files instead at ear-popping volumes per OS-triggered events. This is how to fix that.</p>
+
+<ol>
+<li>Take ownership of the folder, subfolders and files
+
+<ul>
+<li><code>C:\Windows\Media</code> &gt; Properties &gt; Security &gt; Advanced
+
+<ul>
+<li>Owner &gt; Change &gt; Administrators
+
+<ul>
+<li>Checkbox @ apply to all objects thereunder.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Close the window</li>
+<li>Reset ACLs of all thereunder
+
+<ul>
+<li><code>C:\Windows\Media</code> &gt; Properties &gt; Security</li>
+<li>Administrators &gt; Edit &gt; Full ...</li>
+</ul></li>
+<li>Adjust volume per file
+
+<ul>
+<li>@ PortableApps &gt; Audacity
+
+<ul>
+<li>Open &gt; <code>C:\Windows\Media</code> &gt; <code>FNAME.wav</code></li>
+<li>Select &gt; All</li>
+<li>Effects &gt; Amplify
+
+<ul>
+<li>-24 (db)</li>
+</ul></li>
+<li>Export &gt; WAV (to a temp dir)</li>
+</ul></li>
+</ul></li>
+<li>Copy the modified files back to their origin.</li>
+</ol>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

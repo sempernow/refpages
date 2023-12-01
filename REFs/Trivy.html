@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Trivy</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Trivy : <a href="https://aquasecurity.github.io/trivy/v0.52/docs/">Docs</a> | <a href="https://hub.docker.com/r/aquasec/trivy" title="hub.docker.com">Trivy image</a></h1>
+
+<h2>Scan a container image for CVEs</h2>
+
+<p>Workflow:</p>
+
+<pre><code class="language-bash">img='python:3.4-alpine3.9'
+
+# Download DB
+trivy image --download-db-only
+
+# Scan a container image 
+trivy image $img
+
+</code></pre>
+
+<h3>Other scans and commands</h3>
+
+<pre><code class="language-bash"># Scan a container image only for CVEs (faster; does not search for secrets)
+trivy image --skip-db-update --scanners vuln $img
+
+# Scan K8s cluster (experimental)
+trivy k8s --report summary
+
+# Scan host filesystem path for secrets
+trivy fs /path/to/project
+
+# Scan a remote repo
+trivy repo https://github.com/aquasecurity/trivy-ci-test
+
+# Scan a virtual machine image
+trivy vm --scanners vuln disk.vmdk
+
+# Scan AWS machine image
+trivy vm ami:$ami_id
+
+# Scan AWS EBS snapshot
+trivy vm ebs:$ebs_snapshot_id
+
+# Remove DBs
+trivy image --reset
+
+</code></pre>
+
+<h2>Scan a container image from a Trivy container</h2>
+
+<p>Use the Trivy container image instead of installing Trivy on the host:</p>
+
+<pre><code class="language-bash">trivy_image=aquasec/trivy:0.52.2
+target_image=registry.local:5000/rhel:ubi9
+
+docker run --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /tmp/trivy:/root/.cache/ \
+    $trivy_image \
+        image --scanners vuln \
+        $target_image \
+        |&amp; tee trivy.scan.log
+</code></pre>
+
+<ul>
+<li><code>--rm</code> : Delete container upon completion.</li>
+<li><code>-v /var/...</code> : Bind mount to host's Docker-server socket.</li>
+<li><code>-v /tmp/...</code> : Bind mount to an empty host store to persist Trivy's DB download(s).</li>
+</ul>
+
+<h3>Advanced Configuration</h3>
+
+<p>Wanting to run containerized Trivy scans from WSL2
+by declaring Docker's listening socket instead of mounting it,
+we reconfigure the Docker daemon to listen at <code>eth0</code> of WSL2 host
+instead of its nominal (systemd set) configuration.</p>
+
+<h4>1. Get address</h4>
+
+<pre><code class="language-bash">ip -4 -brief addr # show dev eth0
+
+    # lo               UNKNOWN        127.0.0.1/8 10.255.255.254/32
+    # eth0             UP             172.25.164.157/20
+    # docker0          DOWN           172.17.0.1/16
+</code></pre>
+
+<h4>2. Create/mod the Docker Engine configuration:</h4>
+
+<p>@ <code>/etc/docker/daemon.json</code></p>
+
+<pre><code class="language-json">{
+  &quot;hosts&quot;: [
+    &quot;tcp://172.25.164.157:2375&quot;,
+    &quot;unix:///var/run/docker.sock&quot;
+    ]
+}
+</code></pre>
+
+<p>Verify the configuation file</p>
+
+<pre><code class="language-bash">sudo systemctl stop docker.service
+sudo dockerd --config-file /etc/docker/daemon.json
+</code></pre>
+
+<h4>3. Mod its systemd service configuration via drop-in file</h4>
+
+<p>This method leaves the default unit file unaltered,
+which is advised for managing systemd unit-file configurations.</p>
+
+<blockquote>
+<p>Remove the <code>-H fd://</code> flag, which is used to tell Docker to listen on a socket activated by systemd. We rather declared its listening socket by above method (<code>/etc/docker/daemon.json</code>).</p>
+</blockquote>
+
+<pre><code class="language-bash"># Override the default unit file by adding a drop-in file
+sudo mkdir -p /etc/systemd/system/docker.service.d
+cat &lt;&lt;-EOH |sudo tee /etc/systemd/system/docker.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
+EOH
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+sudo systemctl status docker
+
+</code></pre>
+
+<p>Now Trivy can be run by declaring the socket instead of mounting it.</p>
+
+<pre><code class="language-bash">trivy_image=aquasec/trivy:0.52.2
+target_image=registry.local:5000/rhel:ubi9
+
+docker run --rm \
+    -v /tmp/trivy:/root/.cache/ \
+    $trivy_image image \
+        --scanners vuln \
+        --docker-host tcp://172.25.164.157:2375 \
+        $target_image \
+        |&amp; tee trivy.scan.log
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

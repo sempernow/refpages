@@ -124,6 +124,10 @@ exit
     ~                # Toggle letter case of selected text
     u                # Selected text to lower case
     U                # Selected text to upper case
+
+    # Change case (upper/lower) : at either command or visual mode
+    g~w              # Toggle case; each letter of current word (if at beginning)   
+    guw              # Change to LOWERcase; each letter of current word (if at beginning)   
     
     # Fold text
     zf               # Create fold from selected text

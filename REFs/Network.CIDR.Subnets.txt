@@ -1,5 +1,48 @@
-TCP/IP Subnet Addressing
-========================
+# CIDR Notation
+
+    Classless Inter-Domain Routing (CIDR), 
+    is an IP addressing scheme for subnets that replaces 
+    the older (1981-1993) system based on 
+    [classes A, B, C, D and E](https://en.wikipedia.org/wiki/Classful_network).
+
+    A CIDR defines the subnet's IP address range, the network part (Netmask) shared by all subnet addresses (hosts), 
+    and the host part (Wildcard) that is unique. The CIDR has two values. 
+    First is the first IP address of its range. Second, after the slash, is the number of bits in the Netmask. 
+    The more bits in the mask, the fewer IP addresses (hosts) for the subject subnet. 
+    E.g., `192.168.0.100/32` is a single IP address.
+
+
+    |CIDR         |IP Address Range           |Netmask    |Wildcard    |Hosts    |
+    |-------------|---------------------------|-----------|------------|---------|
+    |10.10.0.0/16 |10.10.0.0 - 10.10.255.255  |255.255.0.0|0.0.255.255 |65,536   |
+    |172.16.0.0/12|172.16.0.0 - 172.31.255.255|255.240.0.0|0.15.255.255|1,048,576|
+
+    |Class|CIDR        |
+    |-----|------------|
+    |A    |0.0.0.0/8   |
+    |B    |128.0.0.0/16|
+    |C    |192.0.0.0/24|
+    |D    |224.0.0.0/4 | (Multicast)
+    |E    |240.0.0.0/? | (Reserved)
+
+# RFC-1918
+
+    Address Allocation for Private Internets
+    https://www.ietf.org/rfc/rfc1918.txt
+    ...
+    
+    3. Private Address Space
+
+       The Internet Assigned Numbers Authority (IANA) has reserved the
+       following three blocks of the IP address space for private internets:
+
+         10.0.0.0        -   10.255.255.255  (10/8 prefix)
+         172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
+         192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+
+
+# TCP/IP Subnet Addressing
+
     Subnet is a range of IP addresses in a network;    
     IP Address is typically a DECIMAL REPRESENTATION thereof; 
     DOT NOTATION: a 32 bit binary number separated into four sets of bytes (octets); DECIMAL <==> BINARY  

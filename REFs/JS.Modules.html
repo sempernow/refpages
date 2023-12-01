@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JS.Modules</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="http://exploringjs.com/es6/ch_modules.html" title="exploringjs.com">Modules</a> / Module Patterns</h1>
+
+<h2>tl;dr</h2>
+
+<p>Virtually all modules are <strong>CommonJS</strong>, of the Node.js / <code>npm</code> ecosystem, and so require Babel or some such compiler along with their chain of bundlers/builders/..., all from that black-hole of dependency hell, to &quot;<em>broswerify</em>&quot; it. We've gone from <em>spaghetti code</em> to recursively dependent modules.</p>
+
+<p>Though each is atomic, such is fractal. That is, the modules are not separable, and that includes their build tools too. That's <em>spaghetti code</em> with superglue as the sauce.</p>
+
+<p><em>Want to change the color of a component element? Well, you'll first have to update and manually repair the broken build tool chain from its year-old repo. And then start working on all its dependencies. Have a fun year.</em></p>
+
+<h2>(Nebulous) Lingo</h2>
+
+<p>The term <strong><em>module</em></strong> in the javascript world is generally applied to script(s), function(s), object(s), name(s), and/or <em>whatev(s)</em>; both or either importing and/or exporting any such thing(s). Anytime and everywhere the context is about injecting any javascript thing from <strong>one file</strong> into some scope at <strong>another file</strong>, its all about &quot;<strong><em>the module</em></strong>&quot;.</p>
+
+<h2>AMD / <a href="https://requirejs.org/docs/whyamd.html" title="Requiresjs.org">RequireJS</a> Modules</h2>
+
+<ul>
+<li>Asynchronous Module Definition (AMD)</li>
+<li><strong><em>For browers</em></strong>; allows <strong><em>asynchronous loading</em></strong>.</li>
+<li><strong>RequireJS</strong> is <em>the most popular implementation</em> of AMD</li>
+<li>More complicated syntax, and <code>eval()</code> (a compilation step)</li>
+</ul>
+
+<h3><strong><em>Incompatible with CommonJS</em></strong> modules</h3>
+
+<ul>
+<li><p>Hence the <strong><em>labyrinth of dependency managers</em></strong>; Webpack and such.</p>
+
+<pre><code class="language-js">define(['require', 'dependency1', 'dependency2'], function (require) {
+var dependency1 = require('dependency1'),
+    dependency2 = require('dependency2');
+
+return function () {};
+});
+</code></pre></li>
+</ul>
+
+<h2><a href="https://en.wikipedia.org/wiki/CommonJS" title="@ Wikipedia">CommonJS</a> / Node.js Modules</h2>
+
+<ul>
+<li><strong><em>For servers, not browsers</em></strong>; <strong><em>synchronous loading</em></strong>; <em>pure genius!</em></li>
+<li>Node.js modules are <em>based on this standard</em>, and extend it.</li>
+<li>Compact syntax.</li>
+</ul>
+
+<h3><strong><em>Must be bundled</em></strong> for browser</h3>
+
+<ul>
+<li><p>Hence the <strong><em>labyrinth of dependency managers</em></strong>; Webpack and such.</p></li>
+
+<li><p><strong><em>Convert</em></strong> from <strong>CommonJS to ES6</strong> modules<br>
+<code>Rollup.js</code> (<a href="li>
+</ul>
+
+<h3>CommonJS Export @ <code>exporter.js</code></h3>
+
+<pre><code class="language-js">module.exports.func1Exported = func1Private
+// and/or 
+module.exports = func2
+// and/or 
+exports.func3Exported = func3
+// and/or 
+module.exports = {
+    someFunc2: aFuncX,
+    someThing: aFunc1('aArg')
+}
+// and/or
+var otherModule= require( &quot;path/to/module/foo&quot; );
+exports.aFooFunc99 = function(){
+    return otherModule.someFunc3();
+}
+</code></pre>
+
+<h3>CommonJS Import @ <code>importer.js</code></h3>
+
+<pre><code class="language-js">// Import
+// IF @ ./node_modules or ~/node_modules
+const o = require('exporter')  
+// Else, ... abs|rel path ...
+const o = require('path/to/exporter') 
+// Use
+o.func1Exported()
+const bar = o.func2
+o.func3Exported()
+o.someFunc2()
+const x = o.someThing
+o.aFooFunc99()
+</code></pre>
+
+<ul>
+<li><a href="https://www.freecodecamp.org/news/requiring-modules-in-node-js-everything-you-need-to-know-e7fbd119be8/" title="'Requiring Modules in Node.js ...' @ FreeCodeCamp.org">Import per <code>require()</code></a></li>
+<li>Note the <strong>file</strong> being imported is referenced <strong><em>sans extension</em></strong> (<code>.js</code>).</li>
+</ul>
+
+<h2><a href="https://github.com/umdjs/umd" title="@ GitHub">UMD</a> (Universal Module Definition)</h2>
+
+<p>A pattern supporting <strong>CommonJS</strong>, <strong>AMD</strong>,  and the <a href="https://developer.mozilla.org/en-US/docs/Glossary/Global_object">Global (<code>global</code>)</a> Window object:</p>
+
+<pre><code class="language-js">(function (root, factory) {
+    if (typeof define === 'function' &amp;&amp; define.amd) {
+        // AMD
+        define(['jquery', 'underscore'], factory);
+    } else if (typeof exports === 'object') {
+        // Node, CommonJS-like
+        module.exports = factory(require('jquery'), require('underscore'));
+    } else {
+        // Browser globals (root is window)
+        root.returnExports = factory(root.jQuery, root._);
+    }
+}(this, function ($, _) {
+    //    methods
+    function a(){};    //    private because it's not returned (see below)
+    function b(){};    //    public because it's returned
+    function c(){};    //    public because it's returned
+
+    //    exposed public methods
+    return {
+        b: b,
+        c: c
+    }
+}));
+</code></pre>
+
+<h2><a href="https://exploringjs.com/es6/ch_modules.html#sec_basics-of-es6-modules" title="exploringjs.com">ES6 Modules</a></h2>
+
+<ul>
+<li><strong><em>For both servers and</em></strong> <a href="https://exploringjs.com/es6/ch_modules.html#sec_modules-in-browsers"><strong><em>browsers</em></strong></a></li>
+<li>No dependency manager required.</li>
+<li><a href="https://v8.dev/features/modules#bundle" title="v8.dev"><strong><em>3x slower</em></strong> than an optimized bundle</a>; time to first render.</li>
+<li>Compact, declarative syntax</li>
+<li>Support for cyclic dependencies.</li>
+<li>Support for <em>asynchronous</em> loading
+
+<ul>
+<li>Programmatic loader API; configurable loading.</li>
+</ul></li>
+<li>Can be statically analyzed.</li>
+</ul>
+
+<h3>Support (sort of)</h3>
+
+<ul>
+<li>Chrome/Firefox/Edge/Safari
+
+<ul>
+<li><a href="https://caniuse.com/#feat=es6-module" title="@ CanIUse.com">@ <code>&lt;script&gt;</code></a></li>
+<li><a href="https://caniuse.com/#feat=es6-module-dynamic-import" title="@ CanIUse.com"> @ <code>import()</code></a></li>
+</ul></li>
+</ul>
+
+<h3><a href="https://exploringjs.com/es6/ch_modules.html#sec_importing-exporting-details">Import/Export</a></h3>
+
+<h3>ES6 Export @ <code>exporter.js</code></h3>
+
+<pre><code class="language-js">// per function, object or whatever
+export function aFunc(){/*...*/}
+// and/or a group of such
+export { aFunc, aObj, aVar, ... }
+// and/or
+export { aThing as FOO, aThing2, ...}
+// and/or (re-export) all from another file
+export * from 'path/to/someOtherModule'
+</code></pre>
+
+<ul>
+<li>The <code>export</code> statement is <strong>hoisted</strong>.</li>
+</ul>
+
+<h3>ES6 Import @ <code>importer.js</code></h3>
+
+<pre><code class="language-js">// Import 
+import { aFunc, aObj } from 'path/rel-to-this-js-file/exporter.js'
+// Use
+aFunc()
+const x = aObj
+</code></pre>
+
+<h3>ES6 Import @ HTML (<code>&lt;script type=&quot;module&quot; src=&quot;...&quot;&gt;</code>)</h3>
+
+<ul>
+<li><p>Note the <strong><em>importer</em></strong> is the &quot;<code>module</code>&quot; here. Nowhere is the <em>exporter</em> (module) referenced in the HTML file, since the ES6 runtime is handling that, per <code>import</code> statement(s).</p>
+
+<pre><code class="language-html">&lt;script type=&quot;module&quot; src=&quot;path/rel-to-this-html-file/importer.js&quot;&gt;&lt;/script&gt;
+&lt;!-- FALLBACK :: `nomodule` --&gt;
+&lt;script nomodule src=&quot;fallback.js&quot;&gt;&lt;/script&gt;
+</code></pre></li>
+</ul>
+
+<h3>ES6 Import @ HTML (<code>&lt;script type=&quot;module&quot;&gt;</code>)</h3>
+
+<pre><code class="language-html">&lt;script type=&quot;module&quot;&gt;
+    // Import
+    import { aFunc } from 'path/rel-to-this-html-file/exporter.js'
+    // USe
+    aFunc()
+&lt;/script&gt;
+</code></pre>
+
+<ul>
+<li>Requires relative path and filename, including extension (<code>.js</code>), <strong>unlike CommonJS</strong>.</li>
+</ul>
+
+<h3><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules" title="MDN">Dynamic (a.k.a. Lazy) Loading</a></h3>
+
+<pre><code class="language-js">aButton.addEventListener('click', () =&gt; {
+    import('./modules/dynamo.mjs').then(M =&gt; {
+        // Use module (M) here, after it loads ...
+        const dyn = new M
+        dyn.aDynamoFunc()
+    })
+})
+</code></pre>
+
+<h4><a href="https://v8.dev/features/modules#other-features">@ HTML <code>&lt;script&gt;</code></a></h4>
+
+<pre><code class="language-html">&lt;script type=&quot;module&quot;&gt;
+    (async () =&gt; {
+        const moduleSpecifier = './lib.mjs'
+        const {repeat, shout} = await import(moduleSpecifier)
+        repeat('hello')
+        // → 'hello hello'
+        shout('Dynamic import in action')
+        // → 'DYNAMIC IMPORT IN ACTION!'
+    })()
+&lt;/script&gt;
+</code></pre>
+
+<blockquote>
+<p>HTTP header for &quot;<code>.mjs</code>&quot; file(s) <strong><em>must declare</em></strong> <code>MIME-type</code>: <code>javascript/esm</code> or <code>application/javascript</code> .</p>
+</blockquote>
+
+<h1><a href="https://stackoverflow.com/questions/1479319/simplest-cleanest-way-to-implement-singleton-in-javascript" title="@ StackOverflow">Singleton / Module Pattern</a> | <a href="https://addyosmani.com/resources/essentialjsdesignpatterns/book/#singletonpatternjavascript" title="'Learning JavaScript Design Patterns' @ addyosmani.com">Namespace Injection</a></h1>
+
+<h3>HTML</h3>
+
+<pre><code class="language-html">&lt;script src=&quot;./scripts/jquery.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;./scripts/app.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+
+<h3>JS</h3>
+
+<pre><code class="language-js">;(function (o,Z){
+    // Use jQuery, as Z, herein only.
+    Z('#target').html(&quot;&lt;h4&gt;Hello from the app (JS file).&lt;/h4&gt;&quot;)
+
+    // App definition/instantiation.
+    o.x = 44
+    o.foo = function Foo() { /* ... */}
+    // ...
+
+    return o // Return everything (our `this`).
+})(window.App = window.App || {}, jQuery) 
+</code></pre>
+
+<ul>
+<li>That exposes <code>App</code>, e.g., <code>App.foo()</code>, globally; available to another IIFE per so-named (<code>window.App</code>) injection, at another file.</li>
+<li>Do 3rd-party mixins sans ES6 <code>module</code> method.<br>
+
+<ul>
+<li>This is the only (practical) way to do it, currently. The claimed browser support is sketchy, and the module authors are all CommonJS, requiring the <em>browserify</em> process to shoehorn it into something usable by a brower. So, further requiring that it's a valid ES6 module is a bit optimistic.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

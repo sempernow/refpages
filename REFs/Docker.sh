@@ -66,30 +66,96 @@ docker-machine
 # Restart Docker daemon : if Linux/install @ systemd
 sudo systemctl restart docker
 
-# Docker Registry API 
-    # https://docs.docker.com/registry/spec/api/#detail
+# Docker Registry v2 API 
+    # https://distribution.github.io/distribution/spec/api/
     # Validate the registry abides /v2/
-    curl -I https://index.docker.io/v2/
+    registry=index.docker.io
+    curl -I https://$registry/v2/
         # HTTP/1.1 401 Unauthorized                       <<< REQUIRED of v2
         # content-type: application/json
         # docker-distribution-api-version: registry/2.0   <<< REQUIRED of v2
         # www-authenticate: Bearer realm="https://auth.docker.io/token",service="registry.docker.io"
         # ... The WWW-Authenticate header value provides token-request params, so ...
     # GET token : scoped to target image (library/busybox)
-    curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/busybox:pull"
-        # {"token":"...","access_token": "...", ...}
-    # Use token to GET the manifest (JSON),
-    # which is NOT what `docker image inspect` prints to STDOUT.
-    curl --header "Authorization: Bearer $token" \
-        https://index.docker.io/v2/library/busybox/manifests/latest   
-    # Run a Local Registry : Distribution : https://hub.docker.com/_/registry  
-    # https://docs.docker.com/registry/deploying/
-    docker run --rm -d --restart always --name registry -p 5000:5000 registry:2.8.3
-    echo "127.0.0.1 dev.ops" |sudo tee /etc/hosts
-    docker tag $imgNameAndTag dev.ops:5000/$imgNameAndTag
-    docker push dev.ops:5000/$imgNameAndTag
-    docker image ls
-# Docker-out-of-Docker (DooD) : See alpinelinux/docker-cli:latest
+        # See WWW-Authenticate header for the actual auth endpoint, which may be other than "/v2/"
+        curl "https://$registry/token?service=registry.docker.io&scope=repository:$app:pull"
+            # {"token":"...","access_token": "...", ...}
+
+    # GET manifest : The DIGEST is NOT in the JSON, but in the HEADER
+        ## @ v2.3+, with GET or HEAD request MUST include else bogus reponse:
+        auth="Authorization: Bearer $token"
+        accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
+        repo=''
+        app='busybox'
+        name="$repo/$app"
+        tag='latest'
+        curl -H "$auth" -H "$accept" -isS https://$registry/v2/$name/manifests/$tag 
+
+    # GET catalog of its image repos : JSON response body
+        curl -s http://$registry/v2/_catalog  # {"repositories: ["repo/app:tag",...]"}
+
+    # GET tags/list : all tags of an image APP : JSON response body
+        curl -X GET -u $user:$pass \
+            https://$registry/v2/$name/tags/list \
+            |tee list.$app.tags.json # {"name":"repo/app","tags":["a","b",...]}
+
+    # GET flat list of ALL IMAGES of a Distribution Registry v2 
+    # in a single pipeline of two GET requests using jq to flatten 
+    # JSON responses to resulting format ([REPO/]APP:TAG).
+        curl -s http://$registry/v2/_catalog \
+            |jq -Mr .[][] \
+            |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+            |jq -Mr '.tags[] as $tag | "\(.name):\($tag)"'
+                # busybox:1.31.1-musl
+                # nginx:1.25-alpine3.18
+                # nginx:1.25.4-alpine-otel
+                # redhat/ubi8:8.7
+
+    # DELETE an image from Registry v2 
+        # 1. HEAD : returns the digest required of any subsequent DELETE request.
+        # Digest is returned in HTTP response header: "Docker-Content-Digest: sha256:abc...123"
+            digest="$(
+                curl -H "$accept" -H "$auth" -siSX HEAD \
+                    https://$registry/v2/$name/manifests/$tag \
+                    |grep -i docker-content-digest \
+                    |awk '{printf "%s\n",$2}' \
+                    |sed 's/\W//g' \
+                    |sed 's/sha256/sha256:/' \
+            )"  
+                # HTTP/1.1 200 OK
+                # ...
+                # docker-content-digest: sha256:521...945
+                # ...
+                    # Note the /v2 API will FAIL SILENTLY, REGARDLESS of reason 
+                    # (auth fail, no Accept header, ...). 
+                    # Yet its HEAD response ALWAYS INCLUDES a digest. 
+                    # The sole distinction between success and failure 
+                    # is that the digest is real on success and bogus on failure.
+                    # Attempting step 2 or other /manifest/ request with bogus digest will fail (HTTP 4xx or 5xx)
+
+        # 2. DELETE : /v2/<app>/manifests/<reference>
+        # HTTP 202 response on success
+            curl -H "$auth" -H "$accept" -sSX DELETE \
+                https://$registry/v2/$name/manifests/$digest 
+
+    # Run a LOCAL Registry : Distribution Registry
+        # https://distribution.github.io/distribution/
+        docker run --rm -d --restart always --name registry \
+            -p 5000:5000 \
+            -v /tmp/local_registry:/var/lib/registry \
+            registry:2.8.3
+        # If want local DNS resolution of registry.local:5000
+        export reg='registry.local'
+        echo "127.0.0.1 $reg" |sudo tee /etc/hosts
+        docker tag abox:v0.1.2 $reg:5000/abox:v0.1.2
+        docker push $reg:5000/abox:v0.1.2
+        docker image ls # ... registry.local:5000/abox     v0.1.2 ...
+
+# Docker in Docker (DinD) : https://hub.docker.com/_/docker
+    # Use to build images in a (containerized) CI pipeline, such as at Jenkins, GitLab, ...
+    docker run -it -v /var/run/docker.sock:/var/run/docker.sock docker
+# Docker-out-of-Docker (DooD) 
+    # Predecessor to DinD : Prefer DinD to DooD
     # Exploit a host's Docker server; it listens on UNIX SOCKET /var/run/docker.sock 
     # Build & run container that has only docker (CLI) installed; mount host's docker.sock
         # Dockerfile : Build $_IMG
@@ -100,22 +166,60 @@ sudo systemctl restart docker
         # Run docker client @ container, yet comms to host's docker server, per bind mount to host's docker.sock:
             docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock $_IMG docker version
             #… if require only reads, then use `ro` option: `-v HOST:CTNR:ro`
-# Docker daemon API access per UNIX SOCKET : Request/Response @ SERVER (daemon) HOST:
+# Docker daemon API access via UNIX SOCKET : Request/Response @ SERVER (daemon) HOST:
     curl -s --unix-socket /var/run/docker.sock http://localhost/version |jq .
     # https://docs.docker.com/engine/api/v1.40/
         # /version  docker ps
         # /images/json
         # /containers/json
         # …
+    # On err
+    sudo chmod 666 /var/run/docker.sock
+    # Docker Engine AKA Docker Server AKA Docker Daemon
+        systemctl status docker.service	
+    # Config listening address to other than default (tcp:0.0.0.0:2375)
+        # This is WSL2 setup, which allows containerized Triy scans to function:
+        ip -4 -brief addr show dev eth0 #=> eth0    UP    172.25.164.157/20
+        #>>>  PRESERVE TABs of heredoc  <<<
+		cat <<-EOH |sudo tee /etc/docker/daemon.json
+		{
+		  "hosts": [
+		    "tcp://172.25.164.157:2375",
+		    "unix:///var/run/docker.sock"
+		    ]
+		}
+		EOH
+    # @ Journald
+        sudo journalctl -u docker.service --no-pager -n 50		
+    # @ WSL2 : Forward WSL2 port to Windows host using PowerShell:
+        netsh interface portproxy add v4tov4 listenport=2375 listenaddress=0.0.0.0 connectport=2375 connectaddress=127.0.0.1
+    # @ systemd : Override the default unit file by adding a drop-in file
+        # Removing the default flag `-H fd://`, which allows systemd to set the socket,
+        # we must otherwise declare the listening socket, 
+        # as done above (/etc/docker/daemon.json)
+        sudo mkdir -p /etc/systemd/system/docker.service.d
+        #>>>  PRESERVE TABs of heredoc  <<<
+		cat <<-EOH |sudo tee /etc/systemd/system/docker.service.d/override.conf
+		[Service]
+		ExecStart=
+		ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
+		EOH
+        sudo systemctl daemon-reload
+        sudo systemctl restart docker
+        sudo systemctl status docker
+        # @ dev environment, may want to delete all prior journald logs
+            sudo systemctl stop systemd-journald
+            sudo rm -rf /var/log/journal/*/*.journal
+            sudo systemctl start systemd-journald
 # Memory/CPU/… Resource Constraints : Runtime options 
     # https://docs.docker.com/config/containers/resource_constraints/
     # https://ram.tianon.xyz/post/2021/03/16/docker-setup-reredux.html
 
-# Restart Docker Engine 
-service docker restart 
-
 docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (dockerd) 
     # CONFIG / OPTIONS 
+        # https://docs.docker.com/engine/reference/commandline/dockerd/
+        # https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file
+        dockerd --validate --config-file=/tmp/valid-config.json
         /etc/docker/daemon.json
         # AND/OR 
         ~/.docker/daemon.json
@@ -132,11 +236,12 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             Kernel Version:  4.9.184-linuxkit
             Storage Driver:  overlay2
                 Backing Filesystem: extfs
+
     # LOGIN to Docker Hub (public images repository)
         docker login  # Requies auth only ONCE per platform/environment; 
         #… creds stored UNENCRYPTED, base64 encoded @ ~/.docker/config.json
         # OR, login using one liner sans prompt; pipe password to prevent recording it.
-        echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
+         echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
             # On ANY repeated ERRORS at LOGIN (ANY SORT; even HTTP 502, 503, …), 
             # FIX by:
                 # 1. Logout : docker logout
@@ -181,6 +286,7 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         docker [system|container|volume|image] prune [-f]
         docker system prune --all --force   # @ Swarm node
         docker image prune --force          # @ docker-desktop
+        docker buildx prune                 # Build cache 
     # IMAGEs image https://docs.docker.com/engine/reference/commandline/image/#child-commands  
         # Format to specify a repo (registry) image:
         [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_IMG_NAME:$_TAG  # Format 
@@ -192,23 +298,23 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             docker image ls             # list all images
             docker images               # list al images; alias
             docker images -q            # list all images; ID only
-            docker image ls --digests   # show SHA256
+            docker image ls --digests   # show sha256:hhh...hhh
             # Format  https://docs.docker.com/engine/reference/commandline/images/#format-the-output
             # JSON 
-            docker image ls --digests --format "{{json .}}" |jq -Mr . --slurp 
+            docker image ls --digests --format '{{json .}}' |jq -Mr . --slurp 
             # Table
             docker image ls \
-                --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}"
+                --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}' --digests
+                --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}'
                 # OR
-                --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}"  # default
-            
+                --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'  # default
         # DELETE
             docker image rm $_IMG  # delete an image 
             docker rmi $_IMG       # delete an image per id (tag); effectively an untag command 
             docker rmi $(docker images -q)  # delete ALL images 
             # E.g., remove tag (image listing), but not the image if others tagged to it
             docker rmi 'foo/bar:1.2'  
-            # delete per FILTER
+            # delete per FILTER 
             docker images | grep "$_FILTER" | gawk '{print $3}' | xargs docker rmi;
             drmi(){ [[ "$@" ]] && docker images | grep "$@" | gawk '{print $3}' | xargs docker rmi; }  
         # LAYERs @ (ls -l …)
@@ -217,6 +323,11 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             ls -l /var/lib/docker/$_STORAGE_DRIVER/diff/$_SHA256
             docker history $_IMG
             docker inspect $_IMG
+        # BUILDx https://docs.docker.com/engine/reference/commandline/buildx_build/
+            # Build, tag, and push
+            docker buildx build -t TAG --annotation "foo=bar" --push .
+                # Other flags
+                --sbom=true --provenance=true
         # BUILD (image)  https://docs.docker.com/engine/reference/commandline/build/#options  
             docker build [OPTIONS] PATH | URL | -
             ## build Docker image from Dockerfile per “context”; the set of files @ PATH or URL. 
@@ -236,6 +347,9 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             docker build -t $_REPO_NAME/$_IMG_NAME:$_VER  . # Format (convention) 
             docker build -t [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO_NAME/$_IMG_NAME:$_TAG  $_ABS_PATH
             #... Format full 
+            # Alternate syntax
+            docker build - < Dockerfile
+            cat Dockerfile |docker build -
             # BUILD @ STDIN ("-") per HEREDOC : entirely from commandline (sans Dockerfile)
                 # $ docker build -t foo -f - . <<-EOH
                 # > FROM busybox:1.34.1-musl

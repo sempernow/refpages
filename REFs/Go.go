@@ -102,20 +102,20 @@
 		// ☩ sudo chmod 755 <FILE>  
 
 // ENVIRONMENT VARIABLES  https://golang.org/cmd/go/#hdr-Environment_variables 
-	GOROOT  // Golang tools, compiler, etc.; root of the "Go tree" 
-	GOPATH  // Workspaces (projects); go tools' auto-search path(s); LIST okay 
-	GOBIN   // binaries; path to go tools. 
+	GOROOT  // Golang install directory, e.g., /usr/local/go1.22.2 
+	GOBIN   // Path to go tools and other binaries of Golang proper; $GOROOT/bin
+	GOPATH  // Workspaces (projects) default; ignored by modules (Projects of `go mod init`)
 	// Golang sets DEFAULTs if unset, so needn't set any of these environment vars; 
 	// HOWEVER, the GOBIN path must be in PATH. (Default GOBIN is '/usr/local/go/bin'.)
 	export PATH=$PATH:$GOBIN  // May add additional binaries path(s), e.g., those of project(s); 
 	// I.e., the OS itself must be able to find the binary, whether of a go tool or a project.
 
-	// @ Linux/MinGW/Cygwin      @ Windows/Cygwin 
-	// ====================      =================
-	GOROOT=/usr/local/go         GOROOT=%SystemDrive%\go
-	GOPATH="/c/Users/${USER^^}/go" GOPATH=%USERPROFILE%\go
-	GOBIN=$GOROOT/bin            GOBIN=%GOROOT%\bin       // @ install Golang TOOLS (default)
-	GOBIN=$GOPATH/bin            GOBIN=%GOPATH%\bin       // @ install project binaries
+	// @ Linux/MinGW/Cygwin      	@ Windows/Cygwin 
+	// ====================      	=================
+	GOROOT=/usr/local/go         	GOROOT=%SystemDrive%\go
+	GOPATH="/c/Users/${USER^^}/go" 	GOPATH=%USERPROFILE%\go
+	GOBIN=$GOROOT/bin            	GOBIN=%GOROOT%\bin       // @ install Golang TOOLS (default)
+	GOBIN=$GOPATH/bin            	GOBIN=%GOPATH%\bin       // @ install project binaries
 
 	go env            // Print all Golang Environment variables 
 	go env GOPATH     // Print GOPATH Env. var. 
@@ -280,6 +280,12 @@
 
 	// COMPILE & RUN @ TMP`
 		go run . 
+		go run -a -mod=mod . // Force rebuild; do NOT use existing artifacts
+			// `go help cache` WRONGFULLY claims:
+			// The build cache correctly accounts for changes to Go source files,
+			// compilers, compiler options, and so on: cleaning the cache explicitly
+			// should not be necessary in typical use.
+
 		// IF ONE source FILE (sans dependencies)
 			go run absPATH/pkgName/fileName.go  // creates & runs binary @ TMP
 		// ELSE MUST setup entire Golang env; all env-vars and rigid directory structures

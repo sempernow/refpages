@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win10.Update.per.ISO</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Win10 Update (live) using the install ISO</h1>
+
+<ol>
+<li><strong>Mount it</strong> (from a location that survives reboots):
+
+<ul>
+<li>RT-CLICK the ISO file &gt; &quot;Open with&quot; &gt; &quot;Windows Explorer&quot;</li>
+</ul></li>
+<li><strong>Run <code>Setup.exe</code></strong>
+
+<ul>
+<li>&quot;Change how &hellip;&quot; &gt; &quot;<strong>Not right now</strong>&quot; (check box)</li>
+<li>Next (button)</li>
+<li>&quot;Change what to keep&quot;
+
+<ul>
+<li>Can leave unchanged; however, at <strong><em>version 1903</em></strong>, this results in a <strong><em>reset</em></strong> of many OS configurations <strong><em>back to their default</em></strong>; folder views, SendTo endpoints, shortcut (name and icon-overlay), &hellip;.</li>
+<li>TODO: find what is changeable; find PowerShell script to handle this.</li>
+</ul></li>
+</ul></li>
+</ol>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

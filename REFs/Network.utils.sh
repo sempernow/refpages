@@ -20,40 +20,62 @@ exit
 
         # e.g., eth0 => enp1s0 :: en=Ethernet, p1=PCI-bus1, s0=slot-0
 
-    # -----[ Private IP Address Ranges ]--------------------  
+    # -----[ Private IP Address Ranges : RFC-1918 ]--------- 
     # CIDR block      Class    Start         End  
     # --------------  -----    -----------   ---------------  
     # 0.0.0.0/8        A       0.0.0.0       0.0.0.255         This Network  
-    # 10.0.0.0/8       A       10.0.0.0      10.255.255.255    Private Use  
     # 127.0.0.0/8      A       127.0.0.0     127.255.255.255   Loopback  
+    # 10.0.0.0/8       A       10.0.0.0      10.255.255.255    Private Use  
+    # 172.16.0.0/12    B       172.16.0.0    172.31.255.255    Private Use
+    # 192.168.0.0/16   C       192.168.0.0   192.168.255.255   Private Use
     # 169.254.0.0/16   C       169.254.0.0   169.254.255.255   Link Local  
-    # 172.16.0.0/12    B       172.16.0.0    172.31.255.255  
-    # 192.168.0.0/16   C       192.168.0.0   192.168.255.255  
     # 224.0.0.0/4      D       224.0.0.0     239.255.255.255   Multicast  
 
-# MIME types @ HTTP POST Header:
-    # If sending binary (non-alphanumeric) data, or significantly sized payload, use 
-    'Content-Type: multipart/form-data'
-    # Else send per URL-encoded string 
-    'Content-Type: application/x-www-form-urlencoded'
-        # Body is one giant query-string equivalent; 
-            k1=v1&k2=v2
-        # CAN send binary per URL-encoding, but is INEFFICIENT; one byte => three 7-bit bytes
+sysctl 
+    # Get : Read ephemeral-ports Range @ OS
+        cat /proc/sys/net/ipv4/ip_local_port_range #=> 32768   60999
+        # OR
+        sysctl net.ipv4.ip_local_port_range
+    
+    # Set : Configure kernel-network stack for K8s/containerd (CRI runtime)
+        # Bridging : Ensure that packets traversing a bridge are processed by iptables (IPv4/IPv6). 
+        net.bridge.bridge-nf-call-iptables  = 1
+        net.bridge.bridge-nf-call-ip6tables = 1
+        # Packet forwarding : Enable it, allowing inter-Pod comms across different network interfaces.
+        net.ipv4.ip_forward = 1:
 
-# NIS (Network Information Service)  https://en.wikipedia.org/wiki/Network_Information_Service
-# YP (Yellow Pages); precursor to NIS
-# An NIS/YP system maintains and distributes a central directory of user and group information, 
-# hostnames, e-mail aliases and other text-based tables of information in a computer network.
-    # Password File  https://en.wikipedia.org/wiki/Passwd#Password_file
-        /etc/passwd  # jsmith:x:1001:1000:Joe Smith,Room 1007,(234)555-8910,(234)555-0044,email:/home/jsmith:/bin/sh 
-    # Shadow File    https://en.wikipedia.org/wiki/Passwd#Shadow_file
-        /etc/shadow  # Shadow File; authentication hashes; the "x" of /etc/passwd
-# LDAP (Lightweight Directory Access Protocol)  
-    # https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol
-    # Successor to NIS/YP
-    # Based on DAP (X.500 protocol)
-    # DSA (Directory System Agent) is LDAP Server 
-    # DNS (Domain Name Service) is in effect the LDAP for WANs 
+        # Do by /etc/sysctl.d/ drop-in file :
+        cat <<-EOF |sudo tee /etc/sysctl.d/k8s-containerd.conf
+		net.bridge.bridge-nf-call-iptables  = 1
+		net.bridge.bridge-nf-call-ip6tables = 1
+		net.ipv4.ip_forward                 = 1
+		EOF
+
+        # Apply this kernel (re)config sans reboot
+        sudo sysctl --system
+
+# AUTHENTICATION/AUTHORIZATION (Identity/Access)
+    # NIS (Network Information Service)  https://en.wikipedia.org/wiki/Network_Information_Service
+        # YP (Yellow Pages); precursor to NIS
+        # An NIS/YP system maintains and distributes a central directory of user and group information, 
+        # hostnames, e-mail aliases and other text-based tables of information in a computer network.
+        # Password File  https://en.wikipedia.org/wiki/Passwd#Password_file
+            /etc/passwd  # jsmith:x:1001:1000:Joe Smith,Room 1007,(234)555-8910,(234)555-0044,email:/home/jsmith:/bin/sh 
+        # Shadow File    https://en.wikipedia.org/wiki/Passwd#Shadow_file
+            /etc/shadow  # Shadow File; authentication hashes; the "x" of /etc/passwd
+
+    # Federated Auth schemes, e.g., Active Directory (AD)
+        # Integrate into Linux using : Samba, Winbind, SSSD, or RealmD
+        # @ https://chat.openai.com/share/73401243-5ea0-4cdc-9090-d6dd709ada10
+
+    # LDAP (Lightweight Directory Access Protocol)  
+        # https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol
+        # Successor to NIS/YP
+        # Based on DAP (X.500 protocol)
+        # DSA (Directory System Agent) is LDAP Server 
+        # DNS (Domain Name Service) is in effect the LDAP for WANs 
+        
+            # See REF.Network.LDAP.*
 
 # CLIENT  
 
@@ -94,6 +116,12 @@ exit
         # HTTP 
 
             wrk # HTTP benchmarking tool  https://github.com/wg/wrk 
+                # Install from source: 
+                    git clone https://github.com/wg/wrk.git
+                    cd wrk 
+                    make # Requires: gcc package
+                    sudo install wrk /usr/local/bin/
+
                 wrk -t12 -c400 -d30s http://127.0.0.1:8080/index.html
                     -c, --connections  # number of HTTP connections to keep open 
                                        # N = connections/threads
@@ -104,6 +132,12 @@ exit
                         --latency:     # print detailed latency statistics
                         --timeout:     # record max timeout @ no response thereunder
 
+            hey # ApacheBench replacement (Golang)  https://github.com/rakyll/hey 
+                # Load test an API endpoint
+                # Reports include LATENCIES; distributions, percentiles, ...
+                # To install, download binary, `cp` to /bin/hey, then `chmod +x /bin/hey`. 
+                hey -m GET -c 10 -n 10000 "http://localhost:3000/v1/u" 
+
             ab  # ApacheBench : HTTP benchmarking : apache2-utils
                 # Load test an API endpoint
                 ab -c $concurrently -n $iterations "$url"
@@ -113,12 +147,6 @@ exit
                 # If "socket: Too many open files (24)" @, e.g., `... -c 2000`
                 # then increase MAX open FDs:
                     ulimit -n 10000  # 1024 is default
-
-            hey # ApacheBench replacement (Golang)  https://github.com/rakyll/hey 
-                # Load test an API endpoint
-                # Reports include LATENCIES; distributions, percentiles, ...
-                # To install, download binary, `cp` to /bin/hey, then `chmod +x /bin/hey`. 
-                hey -m GET -c 10 -n 10000 "http://localhost:3000/v1/u" 
 
             # pprof @ Golang  https://golang.org/pkg/net/http/pprof/  
                 go pprof ...
@@ -288,18 +316,20 @@ exit
             -t N, --tries=N         # retry link(s) `N` times
             -O FILE                 # redirect ALL response bodies to `FILE` (concat); 
             -O -                    # ... to STDOUT
+            -nv                     # not verbose (no progress % report)
 
         # Validate endpoint/resource and print only the response-code line (lines on redirect)
             wget -Sq --spider $url 2>&1 |grep HTTP
         # Download and execute a shell script (COMMON, INSECURE, and DANGEROUS)
             wget -O - $_bash_script_url |sh
+        # Download binary directly into its install location
+            wget -O $destination $url
         # Download server response body to FILE @ $PWD; report meta @ STDERR
-            wget $url 
+            wget [-nv] $url # Silently: -nv 
             # IF compressed ...
-                $ file 'index.html'  # get file info
-                index.html: gzip compressed data, from Unix 
-                $ mv 'index.html' 'index.html.gz'  # move (rename) to 'index.html.gz'
-                $ gunzip 'index.html.gz'           # uncompress to 'index.html'
+                file index.html  # get file info : "index.html: gzip compressed data, from Unix"
+                mv index.html index.html.gz  # move (rename) to 'index.html.gz'
+                gunzip index.html.gz         # uncompress to 'index.html'
 
         # Download a Web page +ALL REQUISITES (css, js, images), posing as specified User-Agent. 
         # NOPE -- FAILS -- NEARLY NEVER WORKS
@@ -396,7 +426,11 @@ exit
     host HOSTNAME        # DNS info
     dig HOSTNAME         # DNS info; @SUCCESS: 'status: NOERROR'; @FAIL: 'status: NXDOMAIN'
     traceroute           # hostname resolution test; routing info [blocked by many routers]
-    
+
+    # SCAN SUBNET for hosts
+        netaddr=192.168.28 # Subnet: 192.168.28.0/24
+        seq 254 |xargs -I{} ping -ci -w1 ${netaddr}.{} |grep -B1 ttl |grep $netaddr
+
     # TEST CONNECTIVITY 
         export ip=10.0.101.130
         export port=22
@@ -412,24 +446,31 @@ exit
             # Attempt TCP connection
             nc $host $port # `nc -u ...` for UDP
             # SCAN for a specific OPEN PORT by NUMBER quickly
-            nc -zNvw 1 $ip_or_domain $port_number 
+            nc -zvw 1 $ip_or_domain $port_number 
             # PORT RANGE is NOT RELIABLE (false negatives are typical)
-            nc -zNvw 1 $ip_or_domain $port_range # Don't use, e.g., nc ... 1-1000
+            nc -zvw 1 $ip_or_domain $port_range # Don't use, e.g., nc ... 1-1000
             # SCAN a PORT RANGE quickly and RELIABLY:
             seq ${pSTART:-1} ${pSTOP:-1000} \
-                |xargs -IX nc -zNvw 1 $ip_or_domain X 2>&1 >/dev/null \
+                |xargs -IX nc -zvw 1 $ip_or_domain X 2>&1 >/dev/null \
                 |grep Connected
 
-            echo 'EXIT' |nc $ip 22 # Get version info of target's OpenSSH server
+            # Get version info of target's OpenSSH server
+            echo 'EXIT' |nc $ip 22 
 
             # # @ Windows CMD
             # netstat -aon | findstr :%_port%
 
-    nmap # advanced tool regarding remote services availability 
-                         #   WARNING: nmap use considered HOSTILE by ISPs etal
-                         #   @ Win: `chocolatey install nmap`
+            ####################
+            # See MORE nc below
+            ####################
+
+    nmap # Network Mapper : Security Scanner : Port Scanner  
+        # Advanced tool regarding remote services availability 
+        # Features: Host discovery, Port scanning, Version detection, OS detection  
+        # WARNING: nmap use considered hostile by ISPs etal
+        # https://en.wikipedia.org/wiki/Nmap
         nmap HOST                       # Regular scan 
-        nmap -sn HOST                   # Ping scan
+        nmap -sn CIDR                   # Ping scan : Discover nodes on subnet, e.g., 192.168.0.0/24
         nmap -T4 -F HOST                # Quick scan
         nmap -sn --traceroute HOST      # Quick traceroute
         nmap -T4 -A -v HOST             # Intense scan  
@@ -437,6 +478,9 @@ exit
         # Slow comprehensive scan
         nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default or (discovery and safe)" HOST 
 
+        # Get CIDR in which current machine exists
+            dev=eth0 # eth0 or ens192 
+            cidr=$(ip -4 -brief addr show $dev |awk '{print $3}')
 
     nm-tool  # RedHat; NetworkManager Tool; reports status
              # ... Type, driver, speed, IP, MAC, Gateway IP, DNS, Subnet Netmask
@@ -457,15 +501,16 @@ exit
     ethtool NIC  # get info on NIC, e.g., 'ethtool eth0' 
             -i NIC   # driver info
             
-    ss      # Socket Statistics; IP:PORT
+    ss      # Socket Statistics; IP:PORT; like netstat
      -r     # resolve names
      -n     # numeric; don't resolve names
      -p     # incl. processes
      -at4r  # all-sockets, tcp, IPv4, resolve-names
 
-    netstat # Network Connections, routing tables, ... stats ... [OBSOLETE; use 'ss']
+    netstat # Print network connections, routing tables, interface stats, ...
         netstat -i       # Interface Table; packet info for network cards
-        netstat -tulpen  # Active Internet connections; listening ports
+        netstat -tulpen  # Active TCP and UDP connections; servers (listening ports)
+        netstat -4tlpn   # Active TCP connections of IPv4; servers (listening ports)
         netstat -nr      # IP Routing Table; numeric [IP] instead of HOSTNAME
         netstat -a       # Active UNIX domain sockets; list all network ports
         netstat -at      # Active Internet Connections; list all TCP ports
@@ -475,7 +520,7 @@ exit
         lsof -U                 # List info of all UNIX socks
         lsof /tmp/demo.sock     # Info of only this one
         
-        # List all OPEN PORTs list : All LISTENING PORTs
+        # List all OPEN PORTs : All LISTENING PORTs
         sudo lsof -i -n -P |grep LISTEN
         # Is port 22 open?
         sudo lsof -i:22
@@ -487,27 +532,33 @@ exit
         # https://linux.die.net/man/1/nc   https://en.wikipedia.org/wiki/Netcat
         [-46DdhklnrStUuvzC] [-i interval] [-p source_port] [-s source_ip_address] [-T ToS] 
         [-w timeout] [-X proxy_protocol] [-x proxy_address[:port]] [hostname] [port[s]]
+        -N # Shutdown network socket after EOF on the input.
 
-        -l # to listen; default is to initiate; do NOT use -l with -p, -s, or -z
+        # Listen (default is to initiate) : Use to test a client or reverse proxy
+            # Inspect client's request, or reverse-proxy's forwarded headers, proxy protocol, and such.
+            nc -l -p $port  # -k for repeatedly 
         
         # Port Scanning
-            # Attempt TCP connection
-            nc $host $port 
             # SCAN for a specific OPEN PORT by NUMBER quickly
-            nc -zNvw 1 $ip_or_domain $port_number 
+            nc -zvw 1 $ip_or_domain $port_number 
             # PORT RANGE is NOT RELIABLE (false negatives are typical)
-            nc -zNvw 1 $ip_or_domain $port_RANGE # Don't use, e.g., nc ... 1-1000
+            nc -zvw 1 $ip_or_domain $port_RANGE # Don't use, e.g., nc ... 1-1000
             # SCAN a PORT RANGE quickly and RELIABLY:
             seq ${pSTART:-1} ${pSTOP:-1000} \
-                |xargs -IX nc -zNvw 1 $ip_or_domain X 2>&1 >/dev/null \
+                |xargs -IX nc -zvw 1 $ip_or_domain X 2>&1 >/dev/null \
                 |grep Connected
+
+        # Attempt TCP connection
+            nc $host $port 
 
         # Snoop : Get version info of target's OpenSSH server
             echo 'EXIT' |nc $ip 22 
 
-        # Chat client/server : peers-ish for 2-way comms
-            nc -l 1234            # @ listener  machine/terminal
-            nc $listener 1234     # @ connector machine/terminal 
+        # Chat : client/server (peers) : Two-way comms channel (STDIN/STDOUT)
+            # @ Server (listener) terminal
+            nc -l $port # Listen on all interface at port $port
+            # @ Client terminal
+            nc -N $ip $port # -N to shutdown the network socket after EOF (CTRL-D)
             #... thereafter, anything typed at one terminal is sent to the other 
 
         # Create a UNIX Socket 
@@ -515,27 +566,24 @@ exit
             # -l : act as the server-side; listen for incoming connections.
             nc -U /tmp/demo.sock -l
 
-        # File transfer 
+        # File transfer (PUSH)
             # @ target machine; listen; dump output to file
                 nc -l 8888 > /path/to/target/file
             # @ source machine; connect to the listen process, feeding it the file
-                nc target.machine 8888 < /path/to/source/file
+                nc $target_ip 8888 < /path/to/source/file
                 # ... connection closes upon transfer completion.
             
-        # FASTer [nc + pigz]  http://petrushin.org/
+        # FASTer file transfer (PULL) http://petrushin.org/
             # @ source machine; tar option `-` sets .tar output (BIGFILE.gz) to STDOUT (piped)
                 tar -cf - /path/to/BIGFILE |pigz |nc -l -p 8888  # pigz is a mutlithreaded gz archiver
             # @ target machine; tar option `-` sets source .tar (BIGFILE.gz) to STDIN (piped) 
-                nc target.machine 8888 |pigz -d |tar xf - [-C /target/dir]
+                nc $target_ip 8888 |pigz -d |tar xf - [-C /target/dir]
 
             # Parallel Implementation of GZip; used w/ Netcat (nc)  http://www.zlib.net/pigz/
             pigz  # file|STDIN compressed to file.gz|STDOUT; 
 
         # HTTP request 
             echo -n "GET / HTTP/1.0\r\n\r\n" |nc $host 80
-
-    nmap # Network Mapper : Security Scanner / Port Scanner  https://en.wikipedia.org/wiki/Nmap
-        nmap serverName  # features: Host discovery, Port scanning, Version detection, OS detection  
 
     socat  # SOcket CAT : netcat for sockets : multipurpose relay
         # Bidirectional data transfers between any two byte streams, each of almost any type.
@@ -546,6 +594,13 @@ exit
         socat -h[h[h]]  # List options and address types
         socat -d[d[d]]  # Verbosity
 
+        # TCP listener : Listen for (Proxy-forwarded) request; dump it to stdout
+            socat -v TCP-LISTEN:30080,fork -
+
+        # HTTP server : Echo server : Response container IP:PORT of both client and server
+            socat -v TCP-LISTEN:30080,fork SYSTEM:'(echo -ne "HTTP/1.1 200 OK\nDocumentType: text/plain\n\nserver: \$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\nclient: \$SOCAT_PEERADDR:\$SOCAT_PEERPORT\n";hostname;date --rfc-3339=s)'
+            #... ignores Proxy Protocol (headers), and so will not preserve client IP address.
+
         # Chat client/server : Bidirectional 
 
             # @ machine 1 
@@ -554,9 +609,9 @@ exit
             nc -l -p 1234
 
             # @ machine 2 
-            socat  STDIN TCP4:$m1_ip:1234
+            socat  STDIN TCP4:$machine1_ip:1234
             #... does same ...
-            socat TCP4:$m1_ip:1234 STDOUT
+            socat TCP4:$machine1_ip:1234 STDOUT
             #... type anything; transmits per newline.
 
         # Get time from time server : "-" or "STDOUT"
@@ -584,9 +639,9 @@ exit
         socat READLINE,history=$HOME/.cmd_history /dev/ttyS0,raw,echo=0,crnl 
 
         # File tranfer
-            # Listener
-            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat
-            # Connect and send
+            # Listener (@ destination)
+            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat  # Yes, "creat" NOT "create"
+            # Connect and send 
             socat -dd TCP-CONNECT:$listener_machine_ip:1234 FILE:/path/to/source/file
 
         # mTLS : Securing Traffic Between two Socat Instances Using SSL
@@ -601,11 +656,11 @@ exit
 
         # Remote bash session within an encrypted (OpenSSL) tunnel (sans ssh)
             # @ Local : Create a self-signed cert and its key : EMPTY FIELDS (all) OK
-            openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 1000 -out cert.crt
+            openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 1000 -out cert.crt # -nodes is depricated; prefer -noenc.
             # @ Local : Create PEM from key and cert
             cat cert.key cert.crt > sslkey.pem 
-            # @ Local : Listener : self signing necessitates `verify=0`.
-            socat -dd STDIN OPENSSL-LISTEN:1234,cert=sslkey.pem,verify=0
+            # @ Local : Listener : self signing necessitates `verify=0` 
+            socat -dd STDIN OPENSSL-LISTEN:1234,cert=sslkey.pem,verify=0 # many need to adjust tty params
             # @ Remote : Connector : execute the shell and forward it, encrypted
             socat -dd OPENSSL-CONNECT:$client_ip_or_hostname:1234,verify=0 EXEC:/bin/bash
 
@@ -632,11 +687,10 @@ exit
         nslookup -type=soa $domain  # query Start of Authority
         nslookup -port 56 $domain   # query port number
 
-        dig $domain                 # query DNS (yum install bind-utils; apt install dnsutils)
-        dig $domain | grep 'time'   # time (ms) to resolve
-        dig $domain +nssearch       # SOA record per Authoritative Name Server, & RESOLVE TIME
-        # Per DNS Name Server IP Address; resolve time of $domain name
-        dig @${dns_name_server_ip} $domain | grep time  
+        dig $domain                 # query DNS : yum install bind-utils : apt install dnsutils
+        
+        # DNS latency due to the nameserver
+        dig @$nameserver_ip $domain |grep time #=> ;; Query time: 249 msec
 
     # DHCP release/renew IP Address
         dhclient 
@@ -757,17 +811,50 @@ exit
         # Connect w/ WiFi password
         iwconfig wlan0 essid $wifi_ssid key s:$wifi_password
 
-    # Bridge (ethernet) configuration; setup, maintain, inspect
-    brctl  # https://linux.die.net/man/8/brctl
-        apt-get install bridge-utils
+    
+    wl  # WiFi utility for ROUTER FIRMWARE : Package per HW/firmware of your device
+        # List of commands : https://wiki.DD-WRT.com/wiki/index.php/Wl_command
+        Usage: /usr/sbin/wl [-a|i <adapter>] [-h] [-d|u|x] <command> [arguments]
+            -h [cmd]  command description for cmd
+            -a, -i    adapter name or number
+            -d        output format signed integer
+            -u        output format unsigned integer
+            -x        output format hexdecimal
+
+        wl -i eth1|eth2 up|down  # on|off; reset adapter and mark as up|down 
+        wl -i eth1|eth2 restart  # restart (must already be down).
+        wl -i eth1|eth2 out      # mark adapter down but do not reset hardware. 
+
+        wl -i eth1 radio on|off # 2.4 GHz on|off  
+        wl -i eth2 radio on|off # 2.4 GHz on|off 
+        wl -i eth1 status
+        # After turning radio off, e.g., `wl -i eth2 radio off`, Web UI shows wrong status 
+        # @ "Wireless" > "Professional" > "5GHz" > "Enable Radio" > "yes" 
+    
+        wl -i eth1 bssid         # Adapter MAC (BSSID); must be on.
+
+    iwlist # Get current SSID Listing ...
+        iwlist 'wlan0' scan | grep 'ESSID'
+
+    brctl # Bridge (ethernet) configuration : setup, maintain inspect 
+        # E.g., combine two subnets into one
+        # bridge-utils (Bridge Utilities) : Sniff the (Gateway-to-ISP) network 
+        # https://linux.die.net/man/8/brctl
         brctl show
+        brctl addbr br0             # Add (Create) a bridge 
+        brctl addif br0 eth0 eth1   # Bond interfaces to bridge 
+ 
+         # Bridge addresses and devices; show, manipulate
+        bridge fdb show dev $name
+     
+        #... @ topology:  ISP  ===(eth1)===  PC  ===(eth0)===  Gateway Router
 
-    # Bridge addresses and devices; show, manipulate
-    bridge fdb show dev $name
-      
-    # Get current SSID Listing ...
-    iwlist 'wlan0' scan | grep 'ESSID'
+        # Disable multicast snooping:
+        echo 0 > /sys/devices/virtual/net/br0/bridge/multicast_snooping
+        # ... THEN RUN Wireshark on eth0 or eth1.
 
+        # TR-069 - Protocol used by ISP (ACS) for managing CPE [CWMP] [Wikipedia]
+        # REF: https://0x90.psaux.io/2020/03/01/Taking-Back-What-Is-Already-Yours-Router-Wars-Episode-I/  
     route # OBSOLETE; fails to see 'src' here; use 'ip -r route'
         Kernel IP routing table
         Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
@@ -790,19 +877,6 @@ exit
 
         sudo service network restart    # restart network @ RHEL/aHOST 6
 
-    # bridge-utils (Bridge Utilities), e.g., to SNIFF the (Gateway-to-ISP) network 
-
-        brctl addbr br0             # Add (Create) a bridge 
-        brctl addif br0 eth0 eth1   # Bond interfaces to bridge 
-     
-        #... @ topology:  ISP  ===(eth1)===  PC  ===(eth0)===  Gateway Router
-
-        # Disable multicast snooping:
-        echo 0 > /sys/devices/virtual/net/br0/bridge/multicast_snooping
-        # ... THEN RUN Wireshark on eth0 or eth1.
-
-        # TR-069 - Protocol used by ISP (ACS) for managing CPE [CWMP] [Wikipedia]
-        # REF: https://0x90.psaux.io/2020/03/01/Taking-Back-What-Is-Already-Yours-Router-Wars-Episode-I/  
 
     # CONFIGURE NIC PERMANENTly 
         #  Write to NetworkManager service;
@@ -962,7 +1036,6 @@ exit
         # sftp> get $srcFname $dstFname     # Download remote src to dst
         # sftp> put -r $localDir            # Upload a local directory
 
-
 # CIFS/SAMBA
     # cifs-utils samba-client samba-common [3 packages]
 
@@ -987,54 +1060,19 @@ exit
         umount -a      # umounts ALL listed @ '/etc/mtab'
         cat /etc/mtab  # show mounts
 
-# FIREWALL  
-    firewalld      # Linux firewall daemon (See REF.RHCE.sh)
-    systemctl status firewalld 
-    # Apply changes made to config(s) of any systemd unit files 
-    sudo systemctl daemon-reload 
-    sudo systemctl $action firewalld # start|stop|restart|enable|disable
-    firewall-cmd # CLI for firewalld
-    sudo firewall-cmd --list-all 
-    sudo firewall-cmd --reload
-    # Per port
-    sudo firewall-cmd --permanent --add-port=10255/tcp 
-    # Per existing service 
-    sudo firewall-cmd --permanent --zone=public --add-service=http
-    sudo firewall-cmd --permanent --zone=public --add-service=https
-    # Add a service (having ports)
-    sudo firewall-cmd --permanent --new-service=istiod
-    sudo firewall-cmd --permanent --service=istiod --set-description="Istio control plane (istiod)"
-    sudo firewall-cmd --permanent --service=istiod --add-port=15010/tcp 
-    sudo firewall-cmd --permanent --service=istiod --add-port=15014/tcp 
-    ...
-    sudo firewall-cmd --permanent --add-service=istiod
+# FIREWALL : firewalld, nftables/iptables
+    #>>>  See REF.Network.firewalld.sh  <<<
+    # firewall-cmd is the CLI for firewalld.service : systemd service and interface wrapping iptables/nftables 
+    systemctl status firewalld.service 
+    
+    sudo firewall-cmd ... # CLI for firewalld
 
-	iptables  # IP Tables; tool for PACKET FILTERING and NAT [IPv4/IPv6] 
-	#  an extremely powerful FIREWALL 
-    # - listing contents of the PACKET FILTER RULESET
-    # - adding/removing/modifying rules in PACKET FILTER RULESET
-    # - listing/zeroing per-rule counters of PACKET FILTER RULESET
-    # http://www.netfilter.org/ 
-	# https://wiki.centos.org/HowTos/Network/IPTables
-    # https://www.digitalocean.com/community/tutorials/how-to-list-and-delete-iptables-firewall-rules 
-
-    # list rule(s); output looks just like the commands that were used to create them 
-        iptables -S        # List Rules by Specification
-        iptables -S TCP    # List Rules of a Specific Chain [TCP]
-        iptables -L        # List Rules as Tables
-        iptables -L INPUT  # List Input Chain Rule Table 
-        # Listen on port 22
-        sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-
-        # 4 commands to view ALL iptables rules
-        # https://jvns.ca/blog/2017/06/07/iptables-basics/ [Julia Evans]
-            iptables -L            # lists the filter table; implicit `-t` here
-            iptables -L -t nat
-            iptables -L -t mangle
-            iptables -L -t raw 
-
-	nft  # nftables [nft] is newer 'version' of iptables  
-	# http://www.netfilter.org/projects/nftables/index.html
+    # Show/Verify settings 
+        zone=public
+        svc=halb
+        sudo firewall-cmd --zone=$zone --list-all
+        sudo firewall-cmd --direct --get-all-rules
+        sudo firewall-cmd --info-service=$svc
 
     ufw  # Uncomplicated Firewall  https://help.ubuntu.com/community/UFW
         ufw enable|disble|status 
@@ -1044,9 +1082,8 @@ exit
             ufw deny 53/udp  # deny UDP packets on port 53 
             ufw deny ssh     # deny all SSH connections
 
-
 # IRC 
-    # an ancient text-based chat protocol that is still very popular among programmers.
+    # an ancient text-based chat protocol; remains very popular among programmers.
     nc irc.freenode.net 6667
     # irc commands
         nick     # identify as a user
@@ -1267,4 +1304,5 @@ exit
         sudo firewall-cmd --zone=public --add-service=https --permanent
         sudo firewall-cmd --reload
         # SELinux fix
-        sudo chcon -R -t httpd_sys_rw_content_t /var/www/html
+        sudo semanage -a -t httpd_sys_content_t "/var/www/html(/.*)?" # GOOD
+        #sudo chcon -R -t httpd_sys_rw_content_t /var/www/html   # BAD1

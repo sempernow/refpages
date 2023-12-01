@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Docker.Install</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Docker Install | <a href="https://github.com/RektInator/kill-docker-auto-update" title="GitHub">Kill Docker Auto Updates</a></h1>
+
+<p>UPDATE : 2023-07-03 : Docker Desktop 4.19.0 (106363)</p>
+
+<pre><code>wsl --update
+</code></pre>
+
+<ul>
+<li>BREAKS Docker Desktop; requiring reset to &quot;factory defaults&quot;.</li>
+</ul>
+
+<p>Docker for Windows a.k.a. Docker Desktop</p>
+
+<p>Current setup &hellip;</p>
+
+<pre><code class="language-shell">choco install docker-desktop --version 3.2.2
+</code></pre>
+
+<ul>
+<li>With auto-updater disabled per <code>dnSpy.exe</code>. (See details below.)</li>
+</ul>
+
+<p>History &hellip;</p>
+
+<pre><code class="language-shell">:: Tested : ok : Updater disabled
+choco install docker-desktop --version 3.1.0
+:: Tested : ok : Updater disabled
+choco install docker-desktop --version 3.2.2
+:: Tested : FAILs @ recompile to disable Updater
+choco install docker-desktop --version 3.3.3
+:: Tested : FAILs @ WSL
+choco install docker-desktop --version 3.5.0
+</code></pre>
+
+<ul>
+<li>Disable the auto-updater using <a href="https://github.com/dnSpy/dnSpy" title="GitHub"><code>dnSpy.exe</code></a>
+
+<ul>
+<li>Run as Administrator</li>
+<li>File &gt; Open &gt; <code>Docker.ApiServices.dll</code> (copy)
+
+<ul>
+<li>Copy from <code>%ProgramFiles%\Docker\Docker\</code></li>
+</ul></li>
+<li>Find function &quot;<code>Updater</code>&quot; (class) &gt; &quot;<code>CheckForUpdates</code>&quot; (function)
+
+<ul>
+<li>Replace entire function body with &quot;return;&quot;</li>
+</ul></li>
+<li>Compile (button)</li>
+<li>File &gt; Save Module</li>
+<li>Copy the file back to origin.</li>
+</ul></li>
+</ul>
+
+<h1>2021-07-01</h1>
+
+<h2><del>FIX</del> : <a href="https://stackoverflow.com/questions/63416280/how-to-expose-docker-tcp-socket-on-wsl2-wsl-installed-docker-not-docker-deskt" title="StackOverflow.com 2020">Expose <code>tcp://0.0.0.0:2376</code></a> (for WSL etal)</h2>
+
+<p>Does nothing.</p>
+
+<h3>Add these key-val pair(s) to <code>~/.docker/daemon.json</code></h3>
+
+<p>Insecure</p>
+
+<pre><code class="language-json">&quot;hosts&quot;: [&quot;unix:///var/run/docker.sock&quot;, &quot;tcp://0.0.0.0:2376&quot;],
+</code></pre>
+
+<p>+Secure</p>
+
+<pre><code class="language-json">&quot;hosts&quot;: [&quot;unix:///var/run/docker.sock&quot;, &quot;tcp://0.0.0.0:2376&quot;],
+&quot;tlscacert&quot;: &quot;~/.docker/certs/ca.pem&quot;,
+&quot;tlscert&quot;: &quot;~/.docker/certs/server-cert.pem&quot;,
+&quot;tlskey&quot;: &quot;~/.docker/certs/server-key.pem&quot;,
+&quot;tlsverify&quot;: true
+</code></pre>
+
+<pre><code class="language-bash">mkdir ~/.docker/certs
+cd ~/.docker/certs
+openssl genrsa -aes256 -out ca-key.pem 4096  # enter passphrase
+openssl req -new -x509 -days 365 -key ca-key.pem -sha256 -out ca.pem  # enter localhost or FQDN
+openssl genrsa -out server-key.pem 4096
+openssl req -subj &quot;/CN=localhost&quot; -sha256 -new -key server-key.pem -out server.csr
+openssl x509 -req -days 365 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem
+echo subjectAltName = DNS:localhost,IP:127.0.0.1 &gt;&gt; extfile.cnf
+echo extendedKeyUsage = serverAuth &gt;&gt; extfile.cnf
+openssl x509 -req -days 365 -sha256 -in server.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -extfile extfile.cnf
+openssl genrsa -out key.pem 4096
+openssl req -subj '/CN=client' -new -key key.pem -out client.csr
+echo extendedKeyUsage = clientAuth &gt; extfile-client.cnf
+openssl x509 -req -days 365 -sha256 -in client.csr -CA ca.pem -CAkey ca-key.pem -CAcreateserial -out cert.pem -extfile extfile-client.cnf
+</code></pre>
+
+<h2>2020-09-14</h2>
+
+<ul>
+<li><code>docker-credential-desktop</code> @ WSL/Ubuntu
+
+<ul>
+<li><p>ISSUE: Fail @ <code>docker-compose up</code> of <code>openzipkin/zipkin</code> (Tag: <code>2.11</code>):</p>
+
+<pre><code class="language-plaintext">docker.credentials.errors.InitializationError: docker-credential-desktop not installed or not available in PATH
+</code></pre></li>
+
+<li><p>SOLN: Delete <code>credsStore</code> key-val pair @ <code>~/.docker/config.json</code></p></li>
+</ul></li>
+</ul>
+
+<h2>@ Windows 10 (Pro/Ent)</h2>
+
+<ol>
+<li>Enable Hyper-V (Win10 OS Feature), and reboot</li>
+
+<li><p>Download and install</p>
+
+<ul>
+<li>per <a href="https://store.docker.com/editions/community/docker-ce-desktop-windows" title="store.docker.com"><del>Docker-for-Windows</del> Docker Desktop</a> installer (2018)</li>
+
+<li><p>per <a href="https://chocolatey.org/packages?q=docker" title="@ chocolatey.org/packages">Chocolatey</a> (2019-11-07)</p>
+
+<pre><code class="language-powershell">choco install -y docker-desktop docker-cli docker-compose docker-machine
+</code></pre></li>
+</ul></li>
+
+<li><p>Installs as a VM (<del><code>MobyLinuxVM</code></del> <code>DockerDesktopVM</code>) under Hyper-V, which is a Type-1 (hardware virtualization) hypervisor. Requires an Intel CPU with <code>VT-x</code>.</p>
+
+<ul>
+<li>Docker VM: <code>2</code></li>
+<li>CPU, <code>2GB</code></li>
+<li>RAM, <code>DockerNAT</code></li>
+<li>Virtual Switch, <code>60GB</code></li>
+<li>@ <code>MobyLinuxVM.vhdx</code>
+(<code>docker-for-win.iso</code>) @ <code>%ProgramFiles%\Docker\Docker\Resources</code>.</li>
+</ul></li>
+
+<li><p>PowerShell native, but can get other shells to work.</p>
+
+<ul>
+<li>Also works @ WSL, but for certain <strong>credentials</strong> access, (<code>credstore</code>), e.g., can't <code>push</code> to Docker Hub.
+
+<ul>
+<li><p><a href="https://github.com/docker/docker-credential-helpers/issues/24" title="GitHub.com/docker/.../issues">To fix certain related issues</a>, remove: <code>&quot;credsStore&quot;: &quot;wincred&quot;</code> <a href="file:///c:/HOME/.docker/config.json">@ <code>~/.docker/config.json</code></a>.</p>
+
+<pre><code class="language-json">{
+    &quot;stackOrchestrator&quot;: &quot;swarm&quot;,
+    &quot;auths&quot;: {},
+    &quot;credsStore&quot;: &quot;wincred&quot;
+}
+</code></pre></li>
+</ul></li>
+</ul></li>
+</ol>
+
+<h3>@ Win7/8/8.1/10-Home</h3>
+
+<ul>
+<li>Use <strong>Docker Toolbox</strong><br></li>
+</ul>
+
+<h2>@ Linux</h2>
+
+<p>The main Docker CLI tool, <code>docker</code>, is the &quot;Docker Engine&quot; (tool). Depending on Linux distro/version,   the package manager/repo may identify it only by <code>docker</code>, <code>docker-ce</code>, <code>docker-engine</code>, or something else. (See <a href="p>
+
+<h3>@ CentOS/RHEL 7</h3>
+
+<p>Method 1</p>
+
+<pre><code class="language-bash">sudo yum update -y             # Update pkg-mgr index
+sudo yum install -y docker     # Install latest Docker CE 
+</code></pre>
+
+<p>Method 2</p>
+
+<pre><code class="language-bash"># Setup repo
+sudo yum install -y yum-utils
+sudo yum-config-manager \
+    --add-repo \
+    'https://download.docker.com/linux/centos/docker-ce.repo'
+sudo yum makecache fast
+# Install
+sudo yum install -y docker-ce # latest version
+</code></pre>
+
+<h3>@ Debian/Ubuntu 18</h3>
+
+<pre><code class="language-bash"># per Docker repo
+export DOCKER_CHANNEL='edge'
+export DOCKER_COMPOSE_VERSION='1.21.0'
+sudo apt-get update -y  # Update pkg-mgr index
+# Install packages that allow apt to use a repo over HTTPS.
+sudo apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common
+# Add Docker's official GPG key.
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+# Verify the fingerprint.
+sudo apt-key fingerprint 0EBFCD88
+# Pick the release channel.
+sudo add-apt-repository \
+   &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   ${DOCKER_CHANNEL}&quot;
+# Update the apt package index.
+sudo apt-get update
+# Install the latest version of Docker CE.
+sudo apt-get install -y docker-ce
+</code></pre>
+
+<h2>Config</h2>
+
+<pre><code class="language-bash">systemctl start docker   # systemd
+service docker start     # equiv. non-systemd (AWS AMI)
+
+# Allow user access Docker CLI, sans root.
+sudo usermod -aG docker $USER  # 'ec2-user' @ AWS EC2, 'vagrant' @ Vagrant box, ... 
+# Update to take effect now
+sudo newgrp docker
+</code></pre>
+
+<ul>
+<li><p>If no <code>usermod</code>, then tool requires <code>sudo ...</code>, e.g.,</p>
+
+<pre><code class="language-bash">sudo docker build .
+</code></pre></li>
+</ul>
+
+<p>Docker bash completion<br>
+(<em>Had no effect whatsoever @ WSL Ubuntu</em>.)</p>
+
+<pre><code class="language-bash">sudo curl https://raw.githubusercontent.com/docker/docker-ce/master/components/cli/contrib/completion/bash/docker -o /etc/bash_completion.d/docker.sh
+</code></pre>
+
+<h2>Test Install</h2>
+
+<pre><code class="language-bash"># Test (sans sudo) 
+docker info                # prints Docker env. info 
+# Docker's &quot;Hello World&quot; container 
+docker run hello-world     # prints to STDOUT
+# Busybox
+docker run -it busybox sh  # interactive terminal  
+# Alpine Linux
+docker run -it alpine      # default (auto) CMD is `sh` (ash shell)
+# Nginx server @ bkgnd process ...
+docker run -d -p 80:80 --name 'proxy' nginx  
+# ... then browse or curl http://localhost:80 
+</code></pre>
+
+<h2>Install other Docker CLI tools</h2>
+
+<h3>Docker Compose (<a href="https://github.com/docker/compose/releases" title="GitHub repo">releases</a>)</h3>
+
+<pre><code class="language-bash"># Install Docker Compose
+export _v='1.23.2'  # https://github.com/docker/compose/releases
+base=https://github.com/docker/compose/releases/download/${_v} \
+    &amp;&amp; sudo curl -L $base/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose \
+    &amp;&amp; sudo chmod +x /usr/local/bin/docker-compose
+</code></pre>
+
+<h3>Docker Machine (<a href="https://github.com/docker/machine/releases" title="GitHub repo">releases</a>)</h3>
+
+<pre><code class="language-bash"># Install Docker Machine
+export _v='v0.16.0'  # https://github.com/docker/machine/releases
+base=https://github.com/docker/machine/releases/download/${_v} \
+    &amp;&amp; curl -L $base/docker-machine-$(uname -s)-$(uname -m) -o /tmp/docker-machine \
+    &amp;&amp; sudo install /tmp/docker-machine /usr/local/bin/docker-machine
+
+# Config CURRENT SHELL per SWARM_MGR so can use docker CLI tool
+export DOCKER_TLS_VERIFY=&quot;1&quot;
+export DOCKER_HOST=&quot;tcp://192.168.1.11:2376&quot;  
+# port 2376 supposedly problematic, but lack certs for 2377
+export DOCKER_CERT_PATH=&quot;/c/Users/X1/.docker/machine/machines/$_SWARM_MGR&quot;
+export DOCKER_MACHINE_NAME=&quot;$_SWARM_MGR&quot;
+export COMPOSE_CONVERT_WINDOWS_PATHS=&quot;true&quot;
+</code></pre>
+
+<h2><a href="https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly">Docker @ WSL</a></h2>
+
+<p>Install/setup such that Docker <em>client</em> @ WSL communicates with Docker-for-Windows <em>server</em>, instead of its own. This is analogous to the Kubernetes method for integrating the Docker-for-Windows client with Minikube's docker-server. See <code>Minikube.Install.md</code> (<a href="file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.md">MD</a> | <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.html" title="@ browser">HTML</a>).</p>
+
+<ol>
+<li>Select @ Docker-for-Windows (GUI)
+
+<ul>
+<li>&gt; Settings &gt; &quot;Expose daemon on <code>tcp://loc...</code>&quot;  (check-box)<br></li>
+</ul></li>
+<li>Install Docker (<code>docker-engine</code>), @ WSL console, per distro (methods above)</li>
+
+<li><p>@ <code>~/.bashrc</code></p>
+
+<pre><code class="language-bash">export DOCKER_HOST=tcp://0.0.0.0:2375
+</code></pre></li>
+
+<li><p>Ensure Volume Mounts Work</p>
+
+<ul>
+<li><p>@ <code>/etc/wsl.conf</code></p>
+
+<pre><code class="language-conf">[automount]
+root = /
+options = &quot;metadata&quot;
+</code></pre>
+
+<pre><code class="language-bash"># fix /mnt/c (if need be)
+sudo mkdir /c
+sudo mount --bind /mnt/c /c
+</code></pre></li>
+
+<li><p>Test @ WSL, while Docker-for-Windows is running ...</p>
+
+<pre><code class="language-bash">docker info  # should print its settings
+</code></pre></li>
+</ul></li>
+</ol>
+
+<h2><code>Docker.md</code> (<a href="h2>
+
+<h2><a href="file:///D:/1%20Data/IT/Container/Docker/Docker.sh"><code>Docker.sh</code> (link)</a></h2>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

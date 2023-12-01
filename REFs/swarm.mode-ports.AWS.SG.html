@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>swarm.mode-ports.AWS.SG</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Docker Swarm Mode Ports</h1>
+
+<p>Starting with 1.12 in July 2016, Docker <em>Swarm Mode</em> is a built-in solution with built-in key/value store. Easier to get started, and fewer ports to configure.</p>
+
+<h3>Swarm Mode</h3>
+
+<pre><code class="language-plaintext">TCP 3376 # Swarm Manager to/from remote client; docker-machine 
+TCP 2376 # Swarm Control Plane (TLS); Docker REST API; NEVER USE it.
+TCP 2377 # Swarm Commands; Docker Swarm RPC; cluster management per CLI.
+UDP 4789 # Swarm Data; overlay network (VXLAN); container ingress; DATA PATH default
+TCP 7946 # Swarm Node-to-node traffic; container network discovery
+UDP 7946 # Swarm Node-to-node traffic; container network discovery
+</code></pre>
+
+<h2>Inbound Traffic for Swarm Management</h2>
+
+<ul>
+<li>TCP port 3376 for <code>docker-machine</code>; activate node, certs upload, etc</li>
+<li>TCP port 2377 for cluster management &amp; raft sync communications</li>
+<li>TCP and UDP port 7946 for &quot;<em>control plane</em>&quot; gossip discovery communication between all nodes</li>
+<li>UDP port 4789 for &quot;<em>data plane</em>&quot; VXLAN overlay network traffic</li>
+<li>IP Protocol 50 (ESP) if you plan on using overlay network with the encryption option</li>
+</ul>
+
+<h2>AWS Security Group Example (Also @ NACL, Inbound AND Outbound)</h2>
+
+<p>AWS Tip: Use Security Groups in AWS's &quot;source&quot; field rather then subnets,
+so SG's will all dynamically update when new nodes are added.</p>
+
+<h3>Inbound to Swarm Managers (superset of worker ports)</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>3376</td>
+<td>swarm @ <a href="https://docs.docker.com/machine/drivers/aws/">AWS SG</a></td>
+</tr>
+
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>2376</td>
+<td>swarm @ <a href="https://docs.docker.com/machine/drivers/aws/">AWS SG</a></td>
+</tr>
+
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>2377</td>
+<td>swarm + remote mgmt</td>
+</tr>
+
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>7946</td>
+<td>swarm</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>7946</td>
+<td>swarm</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>4789</td>
+<td>swarm</td>
+</tr>
+
+<tr>
+<td>Custom Protocol</td>
+<td>50</td>
+<td>all</td>
+<td>swarm</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Inbound to Swarm Workers</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>7946</td>
+<td>swarm</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>7946</td>
+<td>swarm</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>4789</td>
+<td>swarm</td>
+</tr>
+
+<tr>
+<td>Custom Protocol</td>
+<td>50</td>
+<td>all</td>
+<td>swarm</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h1>Docker Swarm &quot;Classic&quot; Ports, with Consul</h1>
+
+<p>For Docker 1.11 and older. I Used <a href="https://docs.docker.com/swarm/plan-for-production/#/network-access-control">this list from Docker Docs on Swarm Classic</a>, then tested on multiple swarms.</p>
+
+<h3>Inbound to Swarm Nodes</h3>
+
+<ul>
+<li>2375 TCP for swarm manger -&gt; nodes (LOCK PORT DOWN, no auth)</li>
+<li>7946 TCP/UDP for container network discovery from other swarm nodes</li>
+<li>4789 UDP container overlay network from other swarm nodes</li>
+</ul>
+
+<h3>Inbound to Swarm Managers</h3>
+
+<ul>
+<li>3375 TCP for spawner -&gt; swarm manager (LOCK PORT DOWN, no auth)</li>
+</ul>
+
+<h3>Inbound to Consul</h3>
+
+<ul>
+<li>8500 TCP for swarm manager/nodes -&gt; consul server (LOCK PORT DOWN, no auth)</li>
+<li>8300 TCP for consul agent -&gt; consul server</li>
+<li>8301 TCP/UDP for consul agent -&gt; consul agent</li>
+<li>8302 TCP/UDP for consul server -&gt; consul server</li>
+</ul>
+
+<h2>Swarm Classic Inbound Ports In AWS Security Group Format, with Consul</h2>
+
+<p>AWS Tip: You should use Security Groups in AWS's &quot;source&quot; field rather then subnets, so SG's will all dynamically update when new nodes are added.</p>
+
+<p>This is another way to look at the above lists, in a format that makes sense for AWS SG's</p>
+
+<ul>
+<li>assume AWS inbound from:
+
+<ul>
+<li>Internet ELB -&gt; Swarm Managers</li>
+<li>Swarm Managers -&gt; Swarm Nodes</li>
+<li>Swarm Managers -&gt; Consul Internal ELB</li>
+<li>Swarm Nodes -&gt; Consul Internal ELB</li>
+<li>Consul Internal ELB -&gt; Consul Nodes</li>
+</ul></li>
+</ul>
+
+<h3>ELB Swarm Manager</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>3375</td>
+<td>spawners</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Swarm Managers</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>3375</td>
+<td>elb-swarm-manager</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Swarm Nodes</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>2375</td>
+<td>swarm-managers</td>
+</tr>
+
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>7946</td>
+<td>swarm-nodes</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>7946</td>
+<td>swarm-nodes</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>4789</td>
+<td>swarm-nodes</td>
+</tr>
+</tbody>
+</table>
+
+<h3>ELB Consul</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>8500</td>
+<td>swarm-nodes</td>
+</tr>
+
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>8500</td>
+<td>swarm-managers</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Consul Nodes</h3>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Protocol</th>
+<th>Ports</th>
+<th>Source</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>8500</td>
+<td>elb-consul</td>
+</tr>
+
+<tr>
+<td>Custom TCP Rule</td>
+<td>TCP</td>
+<td>8300-8302</td>
+<td>consul-nodes</td>
+</tr>
+
+<tr>
+<td>Custom UDP Rule</td>
+<td>UDP</td>
+<td>8301-8302</td>
+<td>consul-nodes</td>
+</tr>
+</tbody>
+</table>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

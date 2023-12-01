@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Frontend.BuildTools</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Front-End Build Tools</h1>
+
+<h2> <code>npx</code> / <code>npm</code></h2>
+
+<pre><code class="language-bash"># npx :: Run a module sans install
+npx $_module@$_version $_ARGs
+# npm :: Install a module 
+npm i $_module@$_version
+</code></pre>
+
+<h2>Markdown to HTML</h2>
+
+<ul>
+<li><a href="https://github.com/russross/blackfriday" title="russross/... @ GitHub"><code>blackfriday</code></a></li>
+<li><a href="https://github.com/gomarkdown/markdown" title="gomarkdown/... @ GitHub"><code>markdown</code></a> &mdash; fork of <code>blackfriday</code></li>
+<li><a href="https://github.com/mmarkdown/mmark" title="mmarkdown/... @ GitHub"><code>mmark</code></a> &mdash; IETF; based on <code>markdown</code></li>
+
+<li><p><a href="https://github.com/shurcooL/github_flavored_markdown" title="shurcooL/... @ GitHub"><code>github_flavored_markdown</code></a> | API</p>
+
+<pre><code class="language-bash">$ curl https://api.github.com/markdown/raw \
+    -X &quot;POST&quot; \
+    -H &quot;Content-Type: text/plain&quot; \
+    -d &quot;$(cat README.md)&quot; &gt; 'README.html'
+</code></pre></li>
+</ul>
+
+<h2>Syntax Highlighter :: <a href="https://highlightjs.org/usage/" title="highlightjs.org"><code>highlightjs</code></a></h2>
+
+<pre><code class="language-js">document.addEventListener('DOMContentLoaded', (event) =&gt; {
+    document.querySelectorAll('pre').forEach((block) =&gt; {
+        hljs.highlightBlock(block)
+    })
+})
+</code></pre>
+
+<h2><a href="https://github.com/npm/npx" title="npm/npx @ GitHub"><code>npx</code></a> :: use an <code>npm</code> module (e.g., CLI tool) <strong><em>sans install</em></strong></h2>
+
+<p>Run <strong><em>anywhere</em></strong>, sans install &hellip;</p>
+
+<pre><code class="language-bash">npx MODULE[@VERSION] ARGs
+</code></pre>
+
+<h2><a href="https://www.npmjs.com/" title="Node Package Manager @ npmjs.com"><code>npm</code></a> :: install a <a href="https://nodejs.org" title="nodejs.org">Node.js</a> module</h2>
+
+<ul>
+<li>It is <strong><em>not uncommon</em></strong> for a module to <strong><em>not declare</em></strong> dependencies of submodules in the root <code>package.json</code>, and yet such are required for both Node.js functionality and by client-side bundler/build tools.</li>
+<li>(Sub)Projects can can share one <code>node_modules</code>, at project root. The Node.js Module System will resolve them, as long as their <code>require(..)</code> declaration(s) have no path references; are module-name only; i.e., <code>require('foo')</code>, not <code>require(./foo)</code>. They must be installed first, obviously.</li>
+<li>Install all submodules of every <code>require(..)</code>, manually, <strong><em>at root folder</em></strong>; either per <code>npm i SUBMODULE</code>, or add dependencies to <code>package.json</code>, and then run <code>npm i</code>.</li>
+<li>After install, copy the app files, not the build meta, to the project root (plucked out from its <code>node_modules/project/SUBMODULE</code> folder), so it (and any changes) will be saved per tarball or whatever. (The <code>node_modules</code> folder is treated as disposable.)</li>
+<li>Do <strong><em>not</em></strong> use <code>git clone ...</code> to fetch; that's a different version, and it's for its development, <strong><em>not</em></strong> for its usage; it  <strong><em>will</em></strong> fail, as will its <code>example</code>s, and by many, many modes.</li>
+</ul>
+
+<p>@ Local install &hellip;</p>
+
+<pre><code class="language-bash">npm init   
+npm i MODULE[@VERSION] [--save-dev]
+</code></pre>
+
+<ul>
+<li>The <code>init</code> argument creates the <code>package.json</code> directives file, per user queries and module dependencies.</li>
+<li>The '<code>--save-dev</code>' argument <em>limits dependency declaration(s)</em> to <em>development mode</em>; '<code>&quot;devDependencies&quot;:</code>' at <code>package.json</code>.
+
+<ul>
+<li>Build tools, and any other modules not of the application itself, should be kept out of the project's (build) dependencies ('<code>&quot;dependencies&quot;:</code>').</li>
+</ul></li>
+</ul>
+
+<p>@ Global install &hellip; (used for certain build tools)</p>
+
+<pre><code class="language-bash">npm i MODULE[@VERSION] -g
+# ... then run (anywhere)
+MODULE ARGs
+</code></pre>
+
+<p>Or <a href="https://docs.npmjs.com/cli/link" title="docs.npmjs.com">use <code>link</code></a>, if installed only locally &hellip;</p>
+
+<pre><code class="language-bash">npm i MODULE[@VERSION]
+npm link MODULE[@VERSION]
+# ... run here
+MODULE ARGs
+</code></pre>
+
+<h2>Minify for production</h2>
+
+<ul>
+<li>Sans &quot;build tools&quot; horror.</li>
+</ul>
+
+<h2><a href="https://www.npmjs.com/package/terser" title="@ npm"><code>terser</code></a> :: ES6 <code>js</code></h2>
+
+<p>@npx</p>
+
+<pre><code class="language-js">npx terser@4.3.1 --compress --mangle -- 's1.js' 's2.js' ... &gt; 'bundle.js'
+</code></pre>
+
+<h2><a href="https://github.com/mishoo/UglifyJS2" title="@ GitHub">UglifyJS 3</a></h2>
+
+<h2><a href="https://www.npmjs.com/package/uglify-js" title="@ npm"><code>uglify-js@3</code></a> ::  ES5 <code>js</code> (+ Beautify)</h2>
+
+<p>@ <code>npx</code></p>
+
+<pre><code class="language-bash">npx uglify-js@3.6.0 --compress \
+    --mangle reserved=['$','require','exports'] \
+    -- 'pretty.js'
+</code></pre>
+
+<p>@ <code>npm</code></p>
+
+<pre><code class="language-bash"># Install 
+npm i uglify-js@3.6.0 -g
+# CLI usage :: Compress +Mangle
+uglifyjs --compress --mangle -- 'pretty.js'
+# CLI usage :: Beautify 
+uglifyjs --beautify wrap_iife -- 'ugly.js'
+</code></pre>
+
+<h2><a href="https://www.npmjs.com/package/uglify-es" title="@ npm"><code>uglify-es</code></a> :: for pre-ES5 <code>js</code> (+Beautify)</h2>
+
+<p>@ <code>npx</code></p>
+
+<pre><code class="language-bash">npx uglify-es@3.3.9 $_FILE --compress --mangle
+</code></pre>
+
+<p>@ <code>npm</code></p>
+
+<pre><code class="language-bash"># Install as CLI
+# ES6 compatible
+npm install uglify-es -g
+# Compress + Mangle
+uglifyjs 'pretty.js'  --compress --mangle
+# Beautify 
+uglifyjs --beautify wrap_iife -- 'ugly.js'
+</code></pre>
+
+<ul>
+<li>To use as CLI command, install globally (<code>-g</code>),<br>
+or run &quot;<code>npm link uglifyjs</code>&quot;.</li>
+</ul>
+
+<h2><a href="https://www.npmjs.com/package/minify" title="@ npm"><code>minify</code></a> :: for <code>js</code>, <code>css</code>, &AMP; <code>html</code></h2>
+
+<p>@ <code>npx</code></p>
+
+<pre><code class="language-bash">npx minify@4.1.1 $_FILE
+</code></pre>
+
+<p>@ <code>npm</code></p>
+
+<pre><code class="language-bash"># Install as CLI
+npm i minify@4.1.1 -g
+# Compress (+ Mangle if javascrpt)
+minify $_FILE
+</code></pre>
+
+<h2><a href="https://github.com/svg/svgo" title="@ GitHub"><code>svgo</code></a> :: Minify SVG</h2>
+
+<pre><code class="language-bash">npx svgo SOURCE.svg  # Overwrites source
+npx svgo SOURCE.svg -o OUT.svg
+</code></pre>
+
+<h2><a href="https://parceljs.org/" title="parceljs.org">Parcel</a> &mdash; <em>zero-configuration bundler !</em></h2>
+
+<h3><a href="https://parceljs.org/cli.html">CLI usage</a> | <a href="https://github.com/parcel-bundler/parcel">GitHub</a></h3>
+
+<ul>
+<li>Handles all assets.</li>
+<li>Entry point can be <code>.html</code> or <code>.js</code> .</li>
+</ul>
+
+<p>@ Local install (but use as stand-alone CLI tool) &hellip;</p>
+
+<pre><code class="language-bash">npm i parcel-bundler
+nmp link parcel
+</code></pre>
+
+<p>@ Global install &hellip;</p>
+
+<pre><code class="language-bash">npm i -g parcel-bundler
+</code></pre>
+
+<p>Run :: to build (production) &hellip;</p>
+
+<pre><code class="language-bash">parcel build index.js
+</code></pre>
+
+<p>Run :: dev-mode build and start server w/ hot loading &hellip;</p>
+
+<pre><code class="language-bash">parcel index.js  
+</code></pre>
+
+<p><del><strong>Warning</strong>: @ test, the built bundle uses a <strong>global path</strong> (<code>nvm</code>), as an injected parameter.</del>  <strong>UPDATE</strong>:That's only in the developer-mode build (&quot;<code>parcel index.js</code>&quot;).</p>
+
+<pre><code class="language-js">parcelRequire = (function (...) { 
+    // ...
+},{}]},{},[&quot;... /c/HOME/.nvm/... /node_modules/parcel/src/builtins/hmr-runtime.js&quot;,&quot;index.js&quot;], null)
+</code></pre>
+
+<h2>Rollup | <code>Rollup.js</code> (<a href="h2>
+
+<h2>Webpack | <code>Webpack</code> (<a href="h2>
+
+<h2><a href="https://www.npmjs.com/package/gulp" title="@ npmjs.com">Gulp</a>  | <a href="h2>
+
+<ul>
+<li><a href="https://developers.google.com/web/ilt/pwa/lab-sw-precache-and-sw-toolbox" title="@ developers.google.com">Example @ PWA build</a>.</li>
+</ul>
+
+<p>@ Globally, as stand-alone CLI tool &hellip;</p>
+
+<pre><code class="language-bash">npm i -g gulp-cli
+</code></pre>
+
+<p>@ Locally, for use per <code>npm ...</code></p>
+
+<pre><code class="language-bash">npm init
+npm i gulp --save-dev
+</code></pre>
+
+<h2><a href="https://yarnpkg.com/en/docs/install#windows-stable" title="yarnpkg.com">Yarn</a></h2>
+
+<ul>
+<li>Run @ Git <code>bash</code> or <code>cmd</code>.<br></li>
+<li>Install  using &quot;<code>choco install yarn</code>&quot;.
+
+<ul>
+<li>Yarn @ &quot;<code>Program Files x86</code>&quot;  <strong><em>interferes</em></strong> with Yarn @ WSL.</li>
+</ul></li>
+</ul>
+
+<h2><a href="http://browserify.org/">browserify</a> | @<a href="https://github.com/substack">GitHub</a></h2>
+
+<pre><code class="language-bash">npm i browserify                # install
+browserify main.js &gt; bundle.js  # use 
+</code></pre>
+
+<h1>OLDER [2017]</h1>
+
+<h2>Modularization / Bundlers</h2>
+
+<blockquote>
+<p><a href="https://mithril.js.org/archive/v1.1.6/installation.html#quick-start-with-webpack">Mithril.js.org @ 2017</a>
+:<br>
+Modularization is the practice of separating the code into files. Doing so makes it easier to find code, understand what code relies on what code, and test. <a href="https://en.wikipedia.org/wiki/CommonJS" title="@ Wikipedia"><strong>CommonJS</strong></a> is <strong><em>a de-facto standard</em></strong> for modularizing Javascript code <em>for use</em> <strong><em>outside the browser</em></strong>;  used by <strong>Node.js</strong>, and buld tools; <strong>Browserify</strong>, <strong>Webpack</strong>, ....</p>
+
+<p>It's a robust, battle-tested precursor to ES6 modules, whereas the ES6 module loading mechanism is not. To use <strong><em>non-standardized module loading</em></strong>, use tools like <strong>Rollup</strong>, <strong>Babel</strong> or <strong>Traceur</strong>.</p>
+
+<p>Most <strong>browsers do not support modularization</strong> (CommonJS or ES6), so modularized <strong>code must be bundled into a single Javascript file</strong> before running in a client-side application. A popular way for creating a bundle is to setup an NPM script for <strong>Webpack</strong>.</p>
+</blockquote>
+
+<h2><code>npm</code> :: <a href="https://docs.npmjs.com/" title="docs.npmjs.com">Node Package Manager</a> (NPM)</h2>
+
+<pre><code class="language-bash">npm i $_MODULE -g      # Install globally
+npm i $_MODULE --save  # Install locally
+npm ls                 # List all LOCAL installs
+</code></pre>
+
+<ul>
+<li>PKGs are installed to <code>./node_modules</code> .</li>
+
+<li><p>The &quot;<code>--save</code>&quot; flag inserts dependency declarations into <code>package.json</code>; subsequent &quot;<code>npm i $PKG</code>&quot; command fetches all dependencies; allows delete of (heavy) <code>node_modules</code> folder, for portability.</p>
+
+<ul>
+<li><p>Use &quot;<code>--save-dev</code>&quot; instead when installing <strong>build tools</strong> and any other modules not of the application itself:</p>
+
+<pre><code class="language-bash">npm i $_BUILD_TOOLs --save-dev
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h3><a href="h3>
+
+<ul>
+<li><a href="https://docs.npmjs.com/cli/npm.html"><code>npm</code> CLI commands</a> | <a href="https://docs.npmjs.com/cli/install.html">@ <code>install</code></a></li>
+<li>Online module search @ <a href="http://npmsearch.com/">npmSearch.com</a></li>
+</ul>
+
+<h2><code>npx</code> ::  <a href="https://github.com/zkat/npx" title="@ GitHub">Execute an <code>npm</code> module binary</a> <strong><em>sans install</em></strong></h2>
+
+<pre><code class="language-bash"># Run a pkg/command
+npx $pkg_name@$pkg_version              # If pkg has one binary (command)
+npx -p $pkg_name@$pkg_version $command  # If pkg has several binaries (commands)
+# E.g.,
+npx cowsay &quot;Hello&quot;                      # run cowsay (nothing lands @ PWD)
+# E.g., 
+npx create-react-app 'app-1'            # Create a react app
+npx vue create 'app-1'                  # Create a vue app
+</code></pre>
+
+<h2>Typical <code>nmp</code> Project Setup</h2>
+
+<pre><code class="language-bash">$ mkdir $_PKG &amp;&amp; cd $_PKG
+$ npm init --yes
+$ npm install $_PKG --save
+$ npm install webpack webpack-cli --save-dev
+# ... + other tools/dependencies ...
+$ npm install budo -g
+</code></pre>
+
+<pre><code>$ tree -L 1
+.
+├── bin         # target of build tools
+├── index.html
+├── node_modules
+├── package-lock.json
+├── package.json
+└── src         # sources for build tools
+</code></pre>
+
+<ul>
+<li><p>Source and target files set @ <code>package.json</code>, in <code>&quot;scripts&quot;: {...}</code>, per task/tool.<br>
+E.g., may want <code>./dev</code> and <code>./prod</code>; <code>./dist</code> is a commonly used target dir for prod version.</p>
+
+<h3>Add/Mod <code>scripts</code> section @ <code>package.json</code></h3>
+
+<pre><code class="language-json">{
+// ...
+&quot;scripts&quot;: {
+    &quot;dev&quot;: &quot;webpack src/index.js --output bin/app.js -d --watch&quot;,
+    &quot;hot&quot;: &quot;budo --live --open index.js&quot;,
+    &quot;prod&quot;: &quot;webpack src/index.js --output bin/app.js -p&quot;
+}
+}
+</code></pre></li>
+</ul>
+
+<h1>Packages @ <code>Node.js</code> Ecosystem</h1>
+
+<h2><a href="https://www.npmjs.com/package/http-server#available-options" title="NPMjs.com">http-server</a></h2>
+
+<h3>Run @ <code>npx</code></h3>
+
+<pre><code class="language-bash">npx http-server -p 5555
+</code></pre>
+
+<h3>Install &amp; Run @ <code>npm</code></h3>
+
+<pre><code class="language-bash">npm install http-server -g # @ http://127.0.0.1:8080/
+cd &quot;$_web_app_dir&quot;
+http-server  # index.html @ PWD; careful about path chars; map to a:\
+</code></pre>
+
+<h2><a href="https://code.visualstudio.com/docs/typescript/typescript-compiling" title="code.VisualStudio.com">Typescript</a> Compiler</h2>
+
+<p>Install</p>
+
+<pre><code class="language-bash">$ npm install -g typescript  # install globally
+$ tsc --version              # version/verify
+Version 3.4.5
+</code></pre>
+
+<p>Use</p>
+
+<pre><code class="language-bash">$ tsc 'hello.ts'   # Compile .ts file to .js
+$ node 'hello.js'  # Run compiled .js file
+Hello World
+</code></pre>
+
+<h2><a href="https://www.npmjs.com/package/">markdown-to-html</a></h2>
+
+<pre><code class="language-bash">npm install markdown-to-html --save
+</code></pre>
+
+<h2><a href="https://www.npmjs.com/package/web-push">web-push</a></h2>
+
+<pre><code class="language-bash">npm install web-push -g
+</code></pre>
+
+<ul>
+<li>VAPID Protocol
+
+<ul>
+<li><p>Generate keys [URL Safe Base64 encoded strings.]</p>
+
+<pre><code class="language-bash">web-push generate-vapid-keys [--json] &gt; web-push-VAPID-key-pair
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://daneden.github.io/animate.css/">Animate.css</a> (<code>9KB</code>)</h2>
+
+<pre><code class="language-bash">$ npm install 'animate.css' --save  # Dumps files to PWD
+</code></pre>
+
+<h2><a href="https://ant.design/docs/react/use-in-typescript" title="ant.design/docs/react/...">Ant UI/UX Design @React @Typescript</a>  | <a href="https://facebook.github.io/create-react-app/docs/adding-typescript" title="facebook.github.io">Typescript @ React</a></h2>
+
+<ul>
+<li><p>Install <code>create-react-app</code> (boilerplate)</p>
+
+<pre><code class="language-bash"># Create/Launch React app boilerplate (create-react-app)
+$ npx create-react-app antd-demo-ts --typescript
+$ cd antd-demo-ts
+$ yarn start
+</code></pre>
+
+<ul>
+<li><p>Browser @ <a href="http://localhost:3000/">http://localhost:3000/</a></p></li>
+
+<li><p>Yarn failed @ WSL terminal; worked @ Git bash.</p></li>
+</ul></li>
+
+<li><p>Import <code>antd</code> UI/UX modules (Stop the server beforehand; <code>CTRL-C</code>)</p>
+
+<pre><code class="language-bash">$ yarn add antd
+</code></pre></li>
+
+<li><p><a href="src/App.tsx">Modify <code>src/App.tsx</code></a>; import Button component from <code>antd</code>.<br>
+<em>Hot-reloads !!!</em></p></li>
+
+<li><p>Build (for production)</p>
+
+<pre><code class="language-bash">$ yarn build 
+</code></pre>
+
+<ul>
+<li><p>Target/build @ <code>./build</code> ; generates <code>.js</code> @ <code>675 KB</code> and <code>.css</code> @ <code>436 KB</code></p></li>
+
+<li><p>Served per <code>http</code> (a Golang server), and saved Web page @ Firefox,<br>
+which confirms total size of served assets; <code>1.08 MB</code>.</p></li>
+</ul></li>
+
+<li><p><a href="https://facebook.github.io/create-react-app/docs/code-splitting">Code Splitting</a><br>
+Instead of downloading the entire app;<br>
+split code into small chunks which are load on demand.</p></li>
+
+<li><p>See <a href="https://github.com/facebook/create-react-app/blob/master/packages/react-scripts/template/README.md#making-a-progressive-web-app" title="GitHub/Facebook/... CRA PWA">CRA-PWA info</a></p></li>
+</ul>
+
+<h2>More <code>npm</code> / <code>node</code> Commands</h2>
+
+<h3>(See: <a href="h3>
+
+<pre><code class="language-bash">npm search moduleName     # Package Search
+npm docs moduleName       # Package Documentation [online] 
+
+-g	# GLOBAL; run as root (Administrator) whenever using the `-g` option
+
+npm install npm@latest -g  # update npm to latest
+npm install node &lt;ver&gt; -g  # NOT advised though npm can be used to install/upgrade Node.js
+
+# version info
+node -v  
+npm -v
+
+# test that it's working ... 
+$ echo &quot;console.log('Test foo!')&quot; &gt; index.js
+node index.js  #=&gt; Test foo!
+
+# npm account (to contribute packages)
+npm whoami 
+npm adduser 
+
+# @ CLONEd project dir
+npm install  # fetch/install per 'package.json' instructions
+npm start    # or whatever command, per 'package.json'
+
+# start NEW project
+npm init [--scope=Uzer] # @ project dir
+npm init                # create package.json to track dependencies etal
+# once command(s) configured, e.g., 
+npm start                    # per 'package.json' :: &quot;scripts&quot; &gt; &quot;start&quot; 
+# e.g., 
+&quot;scripts&quot;: {
+&quot;start&quot;: &quot;electron .&quot;
+...
+
+vim index.js   
+&quot;
+const express = require('express')
+const app = express()
+
+app.get('/', (req, res) =&gt; {
+res.send('index.js app per NodeJS/Express')
+})
+
+app.listen(5555, () =&gt; console.log('Server running on port 5555'))
+&quot;
+# @ AWS, Must add SG rule @ EC2 instance: TCP @ Port 5555
+
+git init # to start new git repo
+npm install express --save-dev
+
+# npm works @ project dir; expects package.json
+# install, etc, all from there, so first ...
+cd PROJECT_PATH  # ... go to app folder
+# if dir does not have package.json, then expect warnings thereof on every npm install
+
+# project workflow; add dev-dependencies to install task @ package.json using 
+npm install pkg1 pkg2 ... --save-dev 
+# install libraries for client-side dev ...
+npm install budo watchify --save-dev 
+# so, future ...
+npm install  # handles all the dev-dependencies
+
+# remove module 
+npm rm moduleName --save # or ...
+npm uninistall moduleName --save 
+
+# list dependencies
+npm ls 
+
+# publish, per &quot;name&quot;:&quot;MODULE&quot; [package.json]
+npm publish
+
+# view published module 
+npm view MODULE
+
+# update version number @ package.json 
+npm version # can't publish w/out new version number 
+
+# distribution tag [custom]; default is 'latest'
+npm dist-tag add &lt;module&gt;@&lt;version&gt; [&lt;tag&gt;]
+
+# detect outdated dependencies 
+npm outdated 
+
+# update dependencies 
+npm install # or ...
+npm update 
+
+# tests 
+npm test  # runs ./test.js, 
+# also insert @ package.json
+&quot;scripts&quot;: {
+&quot;test&quot;: &quot;node test.js&quot;
+},
+
+# run a javascrpt file
+node fname.js
+
+# passing arguments
+# modules
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

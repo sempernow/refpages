@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>sockets.UNIX.TCP</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.digitalocean.com/community/tutorials/understanding-sockets" title="DigitalOcean 2021">Sockets</a> | <a href="https://en.wikipedia.org/wiki/Unix_domain_socket">UNIX Domain Socket (IPC)</a> | <a href="https://en.wikipedia.org/wiki/Network_socket">Network Socket</a></h1>
+
+<p>Enable inter-process communication (IPC) between programs running on a server, or between programs running on separate servers. Communication between servers relies on network sockets, which use the Internet Protocol (IP) to encapsulate and handle sending and receiving data.</p>
+
+<p>Network sockets on both clients and servers are referred to by their socket address. An address is a unique combination of a transport protocol like the Transmission Control Protocol (TCP) or User Datagram Protocol (UDP), an IP address, and a port number. A network socket is effectively a network port (location) as seen from inside the target node (machine).</p>
+
+<blockquote>
+<p>The server <em>listens</em> (passive socket); the client <em>connects</em> (active socket).</p>
+</blockquote>
+
+<h2>Socket Types</h2>
+
+<ul>
+<li>TCP Stream Sockets use TCP as the underlying protocol.</li>
+<li>UDP Datagram Sockets</li>
+<li><a href="https://medium.com/swlh/getting-started-with-unix-domain-sockets-4472c0db4eb1" title="Getting Started With Unix Domain Sockets @ 2020">Unix Domain Sockets</a>
+
+<ul>
+<li>Use local files, instead of network interfaces and IP packets, to send and receive data.<br></li>
+</ul></li>
+</ul>
+
+<h2>Utilities</h2>
+
+<ul>
+<li><a href="https://linux.die.net/man/1/socat" title="man page @ linux.die.net"><code>socat(1)</code></a>  : SOcket <code>cat</code>; Multipurpose relay; establishes <em>two bidirectional byte streams</em> and transfers data between them. Streams can be constructed from a large set of different types of data sinks and sources; lots of address options may be applied to the streams; used for many different purposes.
+
+<ul>
+<li>The life cycle of a <code>socat</code> instance typically consists of four phases.
+
+<ol>
+<li>In the init phase, the command line options are parsed and logging is initialized</li>
+<li>The first address and then second address are opened. These steps are usually blocking; thus, especially for complex address types like SOCKS, connection requests or authentication dialogs must be completed before the next step is started.</li>
+<li>In the transfer phase, <code>socat</code> watches both <code>streamscq</code> read and write file descriptors; when data is available on one side and can be written to the other side, socat reads it, performs newline character conversions if required, and writes the data to the write file descriptor of the other stream, then continues waiting for more data in both directions.</li>
+<li>When one of the streams effectively reaches <code>EOF</code>, the closing phase begins; the <code>EOF</code> condition is transfered to the other stream, i.e. tries to shutdown only its write stream, giving it a chance to terminate gracefully. For a defined time <code>socat</code> continues to transfer data in the other direction, but then closes all remaining channels and terminates.</li>
+</ol></li>
+</ul></li>
+<li><a href="https://linux.die.net/man/8/ss" title="man page @ linux.die.net"><code>ss(8)</code></a> : socket statistics; newer and similar to <a href="https://linux.die.net/man/8/netstat" title="man page @ linux.die.net"><code>netstat(8)</code></a> utility.</li>
+<li><a href="https://linux.die.net/man/1/nc" title="man page @ linux.die.net"><code>nc(1)</code></a> : AKA <code>netcat</code>; arbitrary TCP and UDP connections and listens; just about anything involving TCP or UDP. It can open TCP connections, send UDP packets, listen on arbitrary TCP and UDP ports, do port scanning, and deal with both IPv4 and IPv6. Unlike <code>telnet(1)</code>, <code>nc</code> scripts nicely, and separates <code>STDERR</code> from <code>STDOUT</code>.</li>
+</ul>
+
+<h2>Use <a href="http://rpm.pbone.net/manpage_idpl_25675711_numer_1_nazwa_socat.html" title="rpm.pbone.net"><code>socat(1)</code></a></h2>
+
+<pre><code class="language-ini"># Usage syntax
+socat [options] &lt;address&gt; &lt;address&gt;
+# &lt;address&gt;
+protocol:ip:port
+</code></pre>
+
+<h2><a href="https://www.digitalocean.com/community/tutorials/understanding-sockets#what-is-a-stream-socket" title="DigitalOcean 2021">TCP-based Stream Sockets</a></h2>
+
+<p>Stream sockets are connection oriented; packets sent to and received from a network socket are delivered by the host operating system in order for processing by an application. Network based stream sockets typically use the Transmission Control Protocol (TCP) to encapsulate and transmit data over a network interface.</p>
+
+<p>TCP is designed to be a reliable network protocol that <em>relies on a stateful connection</em>. Data that is sent by a program using a TCP-based stream socket will be successfully received by a remote system (assuming there are no routing, firewall, or other connectivity issues). TCP packets can arrive on a physical network interface in any order. In the event that packets arrive out of order, the network adapter and host operating system will ensure that they are reassembled in the correct sequence for processing by an application.</p>
+
+<p>A typical use for a TCP-based stream socket would be for a web server like Apache or Nginx handling HTTP requests on port <code>80</code>, or HTTPS on port <code>443</code>. For HTTP, a socket address would be similar to <code>203.0.113.1:80</code>, and for HTTPS it would be something like <code>203.0.113.1:443</code>.</p>
+
+<h3>Creating TCP-based Stream Sockets</h3>
+
+<p>Emulate a web server listening for HTTP requests on port <code>8080</code> (the alternative HTTP port); create two TCP-based sockets that are listening for connections on port <code>8080</code> using IPv4 and IPv6 interfaces:</p>
+
+<pre><code class="language-bash">socat TCP4-LISTEN:8080,fork /dev/null &amp;
+socat TCP6-LISTEN:8080,ipv6only=1,fork /dev/null &amp;
+</code></pre>
+
+<ul>
+<li><code>TCP4-LISTEN:8080</code> and <code>TCP6-LISTEN:8080</code> <em>args</em> are protocol type and port number to use; creates TCP sockets on port <code>8080</code> on all IPv4 and IPv6 interfaces, and listens to each socket for incoming connections. Valid port range is <code>0</code> to <code>65535</code>.</li>
+<li><code>fork</code> <em>option</em> prevents the <code>socat</code> process from termating after it handles a connection.</li>
+<li><code>/dev/null</code> path is used here in place of what would be the <em>remote socket address</em>; prints (<code>cat</code>) incoming input to that file, which silently discards it.</li>
+<li><code>ipv6only=1</code> <em>flag</em> is used for the IPv6 socket to tell the operating system that the socket is not configured to send packets to IPv4-mapped IPv6 addresses. Without this flag, socat will bind to both IPv4 and IPv6 addresses.</li>
+<li><code>&amp;</code> <em>character</em> instructs the shell to run the command (process) in the background, so we can invoke other commands on this terminal to examine the socket.</li>
+</ul>
+
+<h3>Examining TCP-based Stream Sockets</h3>
+
+<p>Show socket statistics</p>
+
+<pre><code class="language-bash">ss -tln
+</code></pre>
+
+<pre><code class="language-text">State          Recv-Q         Send-Q     Local Address:Port    Peer Address:Port   Process
+LISTEN         0              5          0.0.0.0:8080          0.0.0.0:*
+LISTEN         0              5           [::]:8080             [::]:*
+...
+</code></pre>
+
+<ul>
+<li>The <code>Local</code> field, <code>0.0.0.0:8080</code>, shows the IPv4 TCP socket is listening on all available IPv4 interfaces on port <code>8080</code>. A service that is only listening on a specific IPv4 address will show only that IP in that field, e.g., <code>203.0.113.1:8080</code> . Similarly for the IPv6 TCP socket.</li>
+<li>&quot;<code>::</code>&quot; is IPv6 addresss of all zeros.
+
+<ul>
+<li>Example report at <code>Local</code> field if listening to a specific IPv6 address:
+<code>[2604:a880:400:d1::3d3:6001]:8080</code></li>
+</ul></li>
+
+<li><p>Use<code>-4</code> and <code>-6</code> <em>flags</em> to examine only one (IPv4 or IPv6).</p>
+
+<pre><code class="language-bash">ss -4 -tln
+</code></pre>
+
+<ul>
+<li><code>t</code> <em>flag</em> filters out all but for TCP sockets.</li>
+<li><code>l</code> <em>flag</em> filters out all but for listening sockets.
+Without this flag, all TCP connections would be displayed, which would include things like SSH, clients that may be connected to a web-server, or connections that your system may have to other servers.</li>
+<li><code>n</code> <em>flag</em> reports port numbers instead of service names, e.g., <code>8080</code> is <code>http-alt</code>.</li>
+</ul></li>
+</ul>
+
+<h3>Connecting to TCP-Based Stream Sockets</h3>
+
+<p>Connect to the IPv4 socket, created to listen on all interfaces, over the local loopback address.</p>
+
+<pre><code class="language-bash">nc -4 -vz 127.0.0.1 8080
+</code></pre>
+
+<pre><code class="language-text">Connection to 127.0.0.1 8080 port [tcp/http-alt] succeeded!
+</code></pre>
+
+<ul>
+<li><code>-4</code> <em>flag</em> tells netcat to use IPv4.</li>
+<li><code>-v</code> <em>flag</em> is used to print verbose output to your terminal.</li>
+<li><code>-z</code> <em>option</em> ensures that <code>netcat</code> connects to the socket without sending any data.</li>
+
+<li><p>The local loopback <code>127.0.0.1</code> IP address is used since your system will have its own unique IP address. If you know the IP for your system you can test using that as well. For example, if your system’s public or private IP address is 203.0.113.1 you could use that in place of the loopback IP.</p>
+
+<pre><code class="language-bash">nc -4 -vz 10.0.100.52 8080
+</code></pre></li>
+</ul>
+
+<p>Similarly for IPv6 connection</p>
+
+<pre><code class="language-bash">nc -6 -vz ::1 8080
+</code></pre>
+
+<ul>
+<li><code>::1</code> is IPv6 loopback.</li>
+</ul>
+
+<h4>Cleanup : Disconnect/Delete Sockets</h4>
+
+<p>Bring each background socket process (job) to the foreground and kill it;
+first display all by number (<code>jobs</code>),
+then bring each to foreground (<code>fg %$n</code>), killing each in turn (<code>CTRL-C</code>) .</p>
+
+<pre><code class="language-bash">/mnt/shared # jobs
+[2]+  Running                    socat TCP6-LISTEN:8080,ipv6only=1,fork /dev/null
+[1]-  Running                    socat TCP4-LISTEN:8080,fork /dev/null
+/mnt/shared # fg %2
+socat TCP6-LISTEN:8080,ipv6only=1,fork /dev/null    # CTRL-C
+/mnt/shared # fg %1
+socat TCP4-LISTEN:8080,fork /dev/null               # CTRL-C
+/mnt/shared # jobs
+/mnt/shared #
+</code></pre>
+
+<h2><a href="https://www.digitalocean.com/community/tutorials/understanding-sockets#what-is-a-datagram-socket" title="DigitalOcean 2021">Datagram Sockets</a></h2>
+
+<p>Datagram sockets are connectionless, which means that packets sent and received from a socket are <em>processed individually</em> by applications. Network-based datagram sockets typically use the User Datagram Protocol (UDP) to encapsulate and transmit data.</p>
+
+<p>UDP <em>does not encode sequence information</em> in packet headers, and there is <em>no error correction</em> built into the protocol. Programs that use datagram-based network sockets must build in their own error handling and data ordering logic to ensure successful data transmission.</p>
+
+<p>UDP sockets are commonly used by Domain Name System (DNS) servers. By default, DNS servers use port <code>53</code> to send and receive queries for domain names. An example UDP socket address for a DNS server would be similar to <code>203.0.113.1:53</code>.</p>
+
+<blockquote>
+<p>Note: The protocol (TCP/UDP) is not included in the human-readable version of the socket address, but operating systems differentiate socket addresses by including TCP and UDP protocols as part of the address. So a human-readable socket address like <code>203.0.113.1:53</code> could be using either protocol. Tools like <code>ss</code>, and the older <code>netstat</code> utility, are used to determine which kind of socket is being used.</p>
+</blockquote>
+
+<p>The Network Time Protocol (NTP) uses a UDP socket on port <code>123</code> to synchronize clocks between computers. An example UDP socket for the NTP protocol would be <code>203.0.113.1:123</code>.</p>
+
+<h3>Creating Datagram Sockets</h3>
+
+<p>Emulate an NTP server listening for requests on UDP port <code>123</code> using sockets. Then examine them using the <code>ss</code> and <code>nc</code> commands.</p>
+
+<p>First create two UDP sockets that are listening for connections on port <code>123</code>,
+using IPv4 and IPv6 interfaces:</p>
+
+<pre><code class="language-bash">socat UDP4-LISTEN:123,fork /dev/null &amp;
+socat UDP6-LISTEN:123,ipv6only=1,fork /dev/null &amp;
+</code></pre>
+
+<ul>
+<li>Privileged user (<code>sudo</code>) required to create ports <code>0-1024</code> .</li>
+</ul>
+
+<h3>Examining Datagram Sockets</h3>
+
+<p>Show socket statistics</p>
+
+<pre><code class="language-bash">ss -uln |grep 123
+</code></pre>
+
+<pre><code class="language-text">UNCONN 0      0            0.0.0.0:123        0.0.0.0:*
+UNCONN 0      0               [::]:123           [::]:*
+</code></pre>
+
+<h3>Testing Datagram Sockets</h3>
+
+<p>Connect</p>
+
+<pre><code class="language-bash">nc -4 -u -vz 127.0.0.1 123
+</code></pre>
+
+<pre><code class="language-text">Connection to 127.0.0.1 123 port [udp/ntp] succeeded!
+</code></pre>
+
+<ul>
+<li><code>-u</code> to connect per UPD instead of (default) TCP</li>
+<li>See TCP section for explanation of other options.</li>
+</ul>
+
+<p>Cleanup using same method as with TCP Sockets</p>
+
+<h2><a href="https://www.digitalocean.com/community/tutorials/understanding-sockets#what-is-a-unix-domain-socket" title="DigitalOcean 2021">Unix Domain Socket</a> | <a href="https://en.wikipedia.org/wiki/Unix_domain_socket" title="Wikipedia : Unix Domain Socket">Wikipedia</a></h2>
+
+<h3>About</h3>
+
+<blockquote>
+<p>A Unix domain socket aka UDS or IPC socket (inter-process communication socket) is a data communications endpoint for exchanging data between processes executing on the same host operating system; UDS <em>data is exchanged between programs directly</em> in the OS kernel via files on the host filesystem; programs read and write to their shared socket file, <em>bypassing network based sockets and protocols entirely</em>. It is also referred to by its address family <code>AF_UNIX</code>. UDS may be stream-based or datagram-based. Valid socket types in the UNIX domain are:</p>
+</blockquote>
+
+<ul>
+<li><code>SOCK_STREAM</code> (compare to TCP) – for a stream-oriented socket</li>
+<li><code>SOCK_DGRAM</code> (compare to UDP) – for a datagram-oriented socket that preserves message boundaries (as on most UNIX implementations, UNIX domain datagram sockets are always reliable and don't reorder datagrams)</li>
+<li><code>SOCK_SEQPACKET</code> (compare to SCTP) – for a sequenced-packet socket that is connection-oriented, preserves message boundaries, and delivers messages in the order that they were sent</li>
+</ul>
+
+<p>The Unix domain socket facility is a standard component of POSIX operating systems.</p>
+
+<p>The API for Unix domain sockets is similar to that of an Internet socket, but rather than using an underlying network protocol, <strong><em>all communication occurs entirely within the operating system kernel</em></strong>.</p>
+
+<p>UDS is used widely by database systems that do not need to be connected to a network interface; MySQL on Ubuntu defaults to using a file named <code>/var/run/mysqld/mysql.sock</code> for communication with local clients. Clients read from and write to the socket, as does the MySQL server itself.</p>
+
+<p>PostgreSQL is another database system that uses a socket for local, non-network communication. Typically it defaults to using <code>/run/postgresql/.s.PGSQL.5432</code> as its socket file.</p>
+
+<h3>Creating Unix Domain Sockets</h3>
+
+<p>Create both stream-based and datagram-based Unix Domain Sockets without using TCP or UDP to encapsulate data to send over networks.</p>
+
+<pre><code class="language-bash"># Create stream-based UDS
+socat UNIX-LISTEN:/tmp/stream.sock,fork /dev/null &amp;
+# Create datagram-based UDS
+socat UNIX-RECVFROM:/tmp/datagram.sock,fork /dev/null &amp;
+</code></pre>
+
+<ul>
+<li>Both commands specify a filename after the &quot;<code>:</code>&quot; separator. The filename is <em>the address</em> of the socket itself. The name of a socket is arbitrary but it helps if it is descriptive when you are troubleshooting.</li>
+<li><code>fork</code> <em>option</em> prevents the <code>socat</code> process from termating after it handles a connection.</li>
+<li><code>/dev/null</code> path is used here in place of what would be the <em>remote socket address</em>; prints (<code>cat</code>) incoming input to that file, which silently discards it.</li>
+<li><code>&amp;</code> <em>character</em> instructs the shell to run the command (process) in the background, so we can invoke other commands on this terminal to examine the socket.</li>
+</ul>
+
+<h3>Examining Unix Domain Sockets</h3>
+
+<pre><code class="language-bash">ss -xln 
+</code></pre>
+
+<pre><code class="language-text">Netid         State       Recv-Q    Send-Q   Local Address:Port          Peer Address:Port   Process
+u_str         LISTEN      0         5        /tmp/stream.sock 269122     * 0
+u_dgr         UNCONN      0         0        /tmp/datagram.sock 269288   * 0
+...
+</code></pre>
+
+<ul>
+<li><code>-x</code> <em>flag</em> to filter out all but for domain sockets.</li>
+<li><code>u_str</code> indicates the UDS is stream-based.</li>
+<li><code>u_dgr</code> indicates the UDS is datagram-based.</li>
+</ul>
+
+<p>Since UDSs are files, the usual Linux user and group permissions and access controls can be used to restrict who can connect to the socket. You can also use filesystem tools like <code>ls</code>, <code>mv</code>, <code>chown</code> and <code>chmod</code> to examine and manipulate UDS files. Tools like <code>SELinux</code> can also be used to label UDS files with different security contexts.</p>
+
+<p>To check if a file is a UDS socket, use the <code>ls</code>, <code>file</code> or <code>stat</code> utilities. However, it is important to note that none of these tools can determine if a UDS is stream or datagram-based. Use the <code>ss</code> tool for the most complete information about a Unix Domain Socket.</p>
+
+<p>@ <code>ls</code></p>
+
+<pre><code class="language-bash">/mnt/shared # ls /tmp
+...
+srwxr-xr-x    1 root     root           0 Dec  8 14:34 datagram.sock
+srwxr-xr-x    1 root     root           0 Dec  8 14:33 stream.sock
+</code></pre>
+
+<p>@ <code>stat</code></p>
+
+<pre><code class="language-bash">/mnt/shared # stat /tmp/stream.sock /tmp/datagram.sock
+  File: /tmp/stream.sock
+  Size: 0               Blocks: 0          IO Block: 4096   socket
+Device: 9eh/158d        Inode: 1366937     Links: 1
+Access: (0755/srwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2022-12-08 14:33:03.611342000 -0500
+Modify: 2022-12-08 14:33:03.611342000 -0500
+Change: 2022-12-08 14:33:03.611342000 -0500
+  File: /tmp/datagram.sock
+  Size: 0               Blocks: 0          IO Block: 4096   socket
+Device: 9eh/158d        Inode: 1366942     Links: 1
+Access: (0755/srwxr-xr-x)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2022-12-08 14:34:06.231657000 -0500
+Modify: 2022-12-08 14:34:06.231657000 -0500
+Change: 2022-12-08 14:34:06.231657000 -0500
+</code></pre>
+
+<h3>Connecting to Unix Domain Sockets</h3>
+
+<pre><code class="language-bash"># Connect to stream-based UDS
+nc -U -z /tmp/stream.sock
+# Connect to datagram-based UDS
+nc -uU -z /tmp/datagram.sock
+</code></pre>
+
+<p>Cleanup using same method as with TCP Sockets</p>
+
+<h2><a href="https://en.wikipedia.org/wiki/File_descriptor">File Descriptors</a></h2>
+
+<p>In Unix and Unix-like computer operating systems, a file descriptor (<code>FD</code>, less frequently <code>fildes</code>) is <strong><em>a process-unique identifier</em></strong> (handle) for a file or other input/output resource, such as a pipe or network socket.</p>
+
+<p>File descriptors typically have non-negative integer values, with negative values being reserved to indicate &quot;no value&quot; or error conditions.</p>
+
+<p>File descriptors are a part of the POSIX API. Each Unix process (except perhaps daemons) should have three standard POSIX file descriptors, corresponding to the three standard streams:</p>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>symbolic constant <code>&lt;unistd.h&gt;</code></th>
+<th>file stream <code>&lt;stdio.h&gt;</code></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Standard input</td>
+<td><code>STDIN_FILENO</code></td>
+<td><code>stdin</code></td>
+</tr>
+
+<tr>
+<td><code>1</code></td>
+<td>Standard output</td>
+<td><code>STDOUT_FILENO</code></td>
+<td><code>stdout</code></td>
+</tr>
+
+<tr>
+<td><code>2</code></td>
+<td>Standard error</td>
+<td><code>STDERR_FILENO</code></td>
+<td><code>stderr</code></td>
+</tr>
+</tbody>
+</table>
+
+<h3><a href="https://unix.stackexchange.com/questions/181183/opening-a-socket-in-kali-linux-using-bash-scripts/" title="StackExchange.com 2015">File Descriptor 3</a></h3>
+
+<pre><code class="language-bash"># Needn't exist
+☩ ls /dev/tcp                                                             
+ls: cannot access '/dev/tcp': No such file or directory                   
+
+# Create
+☩ exec 3&lt;&gt;/dev/tcp/google.com/80                                          
+
+# Not seen as either a file or directory
+☩ ls /dev/tcp                                                             
+ls: cannot access '/dev/tcp': No such file or directory                   
+
+# Send GET request
+☩ echo -e &quot;GET / HTTP/1.1\n\r&quot; &gt;&amp;3                                        
+
+# Read response
+☩ cat &lt;&amp;3                                                                 
+HTTP/1.1 200 OK                                                           
+...                                      
+Content-Type: text/html; charset=ISO-8859-1                               
+...                                                                                              
+Transfer-Encoding: chunked  
+
+539e                                                                      
+&lt;!doctype html&gt;&lt;html ...
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

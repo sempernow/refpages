@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.Minikube.Install</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://github.com/kubernetes/minikube" title="Kubernetes @ GitHub">Minikube</a> :: Kubernetes Local Dev/Ops</h1>
+
+<p><img src="Minikube0.png" alt="Minikube"></p>
+
+<p>Minikube is a single-node Kubernetes cluster on a local VM; for development (local) ONLY.<br>
+Its CLI tool, <code>minikube</code>, is the cluster manager. It can configure the Kubernetes <code>kubectl</code> tool,<br>
+which is used in both development and production, to communicate with the Minikube cluster.</p>
+
+<ul>
+<li><p>Typically runs on a hypervisor (Hyper-V or VirtualBox).<br>
+It's a huge CPU/RAM hog, on Hyper-V (<code>vmmem.exe</code>),<br>
+even if nothing is deployed.</p></li>
+
+<li><p>Sans hypervisor, @  <strong><code>none</code> driver option</strong>,<br>
+it runs Kubernetes on the host instead of a VM.<br>
+This option requires Docker; has <strong>security issues</strong>. (<a href="Kubernetes.minik_NONE_DRIVER.md" title="Kubernetes.minik_NONE_DRIVER.md">MD</a> | <a href="Kubernetes.minik_NONE_DRIVER.html" title="@ browser">HTML</a>)</p>
+
+<ul>
+<li><code>minikube start --vm-driver=none</code><br></li>
+</ul></li>
+</ul>
+
+<h2>Globally Applicable References</h2>
+
+<ul>
+<li><a href="https://github.com/kubernetes/minikube">Minikube @ GitHub</a></li>
+
+<li><p>Install <a href="https://kubernetes.io/docs/tasks/tools/install-minikube/">minikube</a> and <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">kubectl</a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/tools/">Tools</a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/setup/minikube/">Running Kubernetes Locally via Minikube</a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/tutorials/hello-minikube/">Hello Minikube :: QuickStart</a> | Local Reference ( <a href="li>
+
+<li><p><a href="https://kubernetes.io/docs/tutorials/">Interactive Tutorials</a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/setup/minikube/#managing-your-cluster" title="kubernetes.io/docs/setup/minikube/..."><code>minikube</code> commands</a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands" title="kubernetes.io/docs/reference/..."><code>kubectl</code> commands</a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/">Web UI (Dashboard)</a></p></li>
+</ul>
+
+<h2>@ Mac &mdash; xhyve</h2>
+
+<pre><code class="language-bash"># Install client (kubectl)
+brew install kubectl 
+# Validate
+kubectl version --client
+# Install minikube
+brew cask install minikube
+# Install xhyve 
+brew install docker-machine-driver-xhyve
+# Requires/Instructs to set privileges 
+sudo chown root:wheel /usr/local/opt/docker-machine...
+sudo chmod u+s /usr/local/opt/docker-machine...
+</code></pre>
+
+<h2><a href="https://github.com/kubernetes/minikube#linux" title="Minikube @ GitHub">@ Linux &mdash; VirtualBox</a></h2>
+
+<h3>Install VirtualBox (<a href="h3>
+
+<ul>
+<li>This does <strong>not</strong> work if Linux is on VM @ Hyper-V (<a href="li>
+</ul>
+
+<h3><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl">Install <code>kubectl</code></a></h3>
+
+<pre><code class="language-bash"># @ CentOS
+# Add Kubernetes repo 
+cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+yum install -y kubectl  # (x86_64/1.12.2-0)
+</code></pre>
+
+<h3><a href="https://github.com/kubernetes/minikube#linux">Install <code>minikube</code></a></h3>
+
+<pre><code class="language-bash">curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 \
+  &amp;&amp; sudo install minikube-linux-amd64 /usr/local/bin/minikube
+</code></pre>
+
+<h2><a href="https://www.c-sharpcorner.com/article/getting-started-with-kubernetes-on-windows-10-using-hyperv-and-minikube/" title="Getting Started With Kubernetes On Windows 10 Using HyperV And MiniKube [2018]">@ Win10 (R4) &mdash; Hyper-V</a></h2>
+
+<h3>CLI Tools @ PowerShell: <code>minikube</code> (@ <code>SystemDrive</code> only)  + <code>kubectl</code></h3>
+
+<h3>References @ Win10/Hyper-V</h3>
+
+<ul>
+<li><p><a href="https://www.c-sarpcorner.com/article/getting-started-with-kubernetes-on-windows-10-using-hyperv-and-minikube/" title="Jan 2018">Get Started with Kubernetes on Win 10 using Hyper-V and Minikube</a></p></li>
+
+<li><p><a href="https://medium.com/@maumribeiro/running-your-own-docker-images-in-minikube-for-windows-ea7383d931f6" title="Medium.com 2017">Running your own Docker containers in Minikube for Windows</a></p></li>
+
+<li><p>Others<br>
+May 2018  <a href="https://www.marksei.com/minikube-kubernetes-windows/">https://www.marksei.com/minikube-kubernetes-windows/</a><br>
+Jun 2018  <a href="https://learnk8s.io/blog/installing-docker-and-kubernetes-on-windows">https://learnk8s.io/blog/installing-docker-and-kubernetes-on-windows</a></p></li>
+</ul>
+
+<h3>Prep/Download/Install</h3>
+
+<ul>
+<li><p><a href="https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v" title="Microsoft 2016">Enable Hyper-V</a></p>
+
+<pre><code class="language-powershell">PS&gt; Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+</code></pre></li>
+
+<li><p><em>Check for a Docker-for-Windows installed version of <code>kubectl</code>.</em></p></li>
+
+<li><p>Install <a href="https://kubernetes.io/docs/tasks/tools/install-minikube/">minikube</a> and <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">kubectl</a> per <a href="https://chocolatey.org/search?q=minikube" title="Package Manager for Windows">Chocolatey</a></p>
+
+<pre><code class="language-powershell">choco install minikube -y        # minikube; ~/.minikube/config.json   
+choco install kubernetes-cli -y  # kubectl;  ~/.kube/config
+</code></pre></li>
+
+<li><p><a href="https://kubernetes.io/docs/tasks/tools/install-minikube/">Install manually</a> per Kubernetes.io<br>
+Download <code>kubectl.exe</code> and <code>minikube.exe</code>, and place in folder <code>C:\Minikube</code>; add to <code>PATH</code>.</p>
+
+<pre><code class="language-bash"># kubectl.exe
+curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.12.0/bin/windows/amd64/kubectl.exe
+</code></pre>
+
+<ul>
+<li>Download Minikube <a href="https://storage.googleapis.com/minikube/releases/v0.30.0/minikube-windows-amd64.exe">latest version @ Kubernetes.io</a>, rename and place in folder with <code>kubectl.exe</code></li>
+</ul></li>
+
+<li><p><strong>Docker for Windows</strong> (Optional Install)<br>
+(Minikube runs its own Docker server/client inside the VM.)</p>
+
+<ul>
+<li><a href="https://docs.docker.com/v17.09/docker-for-windows/install/#download-docker-for-windows">Docker for Windows Installer</a></li>
+<li><code>choco install docker-for-windows -y</code></li>
+</ul></li>
+</ul>
+
+<h3>Configure</h3>
+
+<ul>
+<li><p>Using PowerShell, or Hyper-V GUI, <strong>create</strong> an <a href="https://docs.microsoft.com/en-us/windows-server/virtualization/hyper-v/get-started/create-a-virtual-switch-for-hyper-v-virtual-machines">External Virtual Switch</a> for it, <strong>from</strong> a <strong><em>physical</em></strong> network interface (e.g., Intel 1219V Gigabit Ethernet Adapter):</p>
+
+<pre><code class="language-powershell">PS&gt; New-VMSwitch -name minikube-GbE -NetAdapterName GbE -AllowManagementOS $true  
+</code></pre></li>
+
+<li><p><code>config.json</code> @ <code>~/.minikube/config/</code></p>
+
+<pre><code class="language-json">{
+    &quot;WantReportError&quot;: false,
+    &quot;WantReportErrorPrompt&quot;: false,
+    &quot;hyperv-virtual-switch&quot;: &quot;minikube-GbE&quot;,
+    &quot;profile&quot;: &quot;minikube&quot;,
+    &quot;v&quot;: 1,
+    &quot;vm-driver&quot;: &quot;hyperv&quot;,
+    &quot;memory&quot;: 2048
+}
+</code></pre>
+
+<ul>
+<li><a href="https://github.com/kubernetes/minikube/blob/master/cmd/minikube/cmd/config/config.go" title="config.go #46"><strong>All</strong> configurable settings (<strong>keys</strong>)</a></li>
+</ul></li>
+
+<li><p>On 1<sup>st</sup> Start, (re)set hypervisor &amp; virtual-switch, and tee verbose log to <code>STDERR</code>. The minikube-titled VM is created upon this 1<sup>st</sup> <code>start</code> command.</p>
+
+<pre><code class="language-powershell">PS&gt; minikube start --vm-driver=hyperv --hyperv-virtual-switch=minikube-GbE --v=7 --alsologtostderr
+</code></pre>
+
+<ul>
+<li><p>Such command options are handled per <code>config.json</code> (above) if exist.</p></li>
+
+<li><p>1st run may fail if not run from system drive.</p></li>
+</ul></li>
+
+<li><p>Then stutdown the VM to tweak its Hyper-V setting(s)</p>
+
+<pre><code class="language-powershell">PS&gt; minikube ssh   # ssh into the running Minikube
+$ sudo poweroff    # turn it off 
+</code></pre>
+
+<pre><code class="language-powershell">PS&gt; minikube stop  # don't use; hangs and fails.
+</code></pre></li>
+
+<li><p>Disable <strong>dynamic memory</strong> for the VM. (Use either method.)</p>
+
+<ul>
+<li><p>@ Hyper-V (GUI)<br>
+<code>Hyper-V &gt; minikube &gt; Settings &gt; Memory &gt; &quot;Enable Dynamic Memory&quot; &gt; UNCHECK (check-box)</code></p></li>
+
+<li><p>@ Powershell <a href="https://docs.microsoft.com/en-us/powershell/module/hyper-v/set-vmmemory?view=win10-ps#required-parameters" title="docs.microsoft.com/.../hyper-v/... 2016">Set-VMMemory</a></p>
+
+<pre><code class="language-powershell"># disable dynamic memory, set static size, and validate the changes
+PS&gt; Set-VMMemory &quot;minikube&quot; -DynamicMemoryEnabled $false -StartupBytes 2GB 
+PS&gt; Get-VMMemory &quot;minikube&quot;
+</code></pre></li>
+</ul></li>
+
+<li><p>Minikube VM config, including <code>IPAddress</code> and such, set<br>
+@ <code>~/.minikube/machines/minikube/config.json</code></p></li>
+
+<li><p>Configure <code>kubectl</code> for Minikube<br>
+<code>kubectl config use-context minikube</code></p>
+
+<pre><code class="language-bash"># Check kubectl &quot;context&quot;
+kubectl config get-contexts
+# If need be, switch kubectl to Minikube context
+kubectl config use-context minikube
+# Get config  
+kubectl config view 
+# Get the Minikube system (VM) pods
+kubectl get pods -n kube-system
+</code></pre></li>
+</ul>
+
+<h3>Configure Docker for Minikube (<em>temporarily</em>)</h3>
+
+<p><code>minikube docker-env</code><br>
+Use to configure <strong><em>the current shell</em></strong> such that the <code>docker</code> CLI tool (Docker-for-Windows client) binds to Minikube's Docker server instead of its own.</p>
+
+<p><img src="Multiple.Docker.Installations-@-minikube.docker-env.jpg" alt="Multiple Docker Installations @ minikube docker-env (StephenGrider/DockerCasts)" title="StephenGrider/DockerCasts @ GitHub"></p>
+
+<ul>
+<li><p>@ Windows</p>
+
+<pre><code class="language-powershell">PS&gt; minikube docker-env | Invoke-Expression
+</code></pre></li>
+
+<li><p>@ Unix (Mac/Linux)</p>
+
+<pre><code class="language-bash">$ eval $(minikube docker-env)
+</code></pre></li>
+</ul>
+
+<p>Verify ...</p>
+
+<pre><code class="language-powershell"># List containers running @ minikube pod(s) ...
+PS&gt; docker ps 
+# List all images thereof 
+PS&gt; docker images
+</code></pre>
+
+<p>The command itself prints Minikube's Docker (server) Env. vars., and instructs</p>
+
+<pre><code class="language-powershell">PS&gt; minikube docker-env
+$Env:DOCKER_TLS_VERIFY = &quot;1&quot;
+$Env:DOCKER_HOST = &quot;tcp://192.168.1.105:2376&quot;
+$Env:DOCKER_CERT_PATH = &quot;C:\Users\X1\.minikube\certs&quot;
+$Env:DOCKER_API_VERSION = &quot;1.35&quot;
+# Run this command to configure your shell:
+# &amp; minikube docker-env | Invoke-Expression
+</code></pre>
+
+<h2>Kubernetes (<code>kubectl</code>) @ WSL <a href="file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/WSL.md" title="See WSL.md">MD</a> | <a href="file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/WSL.html" title="If @ browser">HTML</a></h2>
+
+<ul>
+<li>Problematic integration.</li>
+</ul>
+
+<h2>Hello Minikube :: Quickstart  <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Kubernetes.QuickStart.md" title="See Kubernetes.QuickStart.md">MD</a> | <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Kubernetes.QuickStart.html" title="If @ browser">HTML</a></h2>
+
+<ul>
+<li>A one-pod cluster exposed to the standard HTTP listening port.</li>
+</ul>
+
+<h2>Environment variables read by <code>minikube</code></h2>
+
+<pre><code class="language-bash">export MINIKUBE_WANTUPDATENOTIFICATION=false
+export MINIKUBE_WANTREPORTERRORPROMPT=false
+export MINIKUBE_HOME=$HOME
+export CHANGE_MINIKUBE_NONE_USER=true
+mkdir -p $HOME/.kube
+mkdir -p $HOME/.minikube
+touch $HOME/.kube/config
+</code></pre>
+
+<h2>Profile, per VM, defined at its <code>config.json</code> file</h2>
+
+<p>The values therein are dynamically set per <code>minikube start</code>. However, <code>NodeIP</code> (the <strong>public IP address</strong> of the minikube VM; cluster endpoint) can be set at the Gateway router &gt; LAN &gt; DHCP ... ;  &quot;Manually Assigned&quot; around the Gateway's specified/limited range of dynamically assigned IPs, per client (minikube) MAC.</p>
+
+<p>@ <a href="file:///C:/HOME/.minikube/profiles/minikube/config.json">~/.minikube/profiles/minikube/config.json</a></p>
+
+<pre><code class="language-json">{
+    &quot;MachineConfig&quot;: {
+        &quot;MinikubeISO&quot;: &quot;https://storage.googleapis.com/minikube/iso/minikube-v0.30.0.iso&quot;,
+        &quot;Memory&quot;: 2048,
+        &quot;CPUs&quot;: 2,
+        &quot;DiskSize&quot;: 20000,
+        &quot;VMDriver&quot;: &quot;hyperv&quot;,
+        ...
+        &quot;HostOnlyCIDR&quot;: &quot;192.168.99.1/24&quot;,
+        &quot;HypervVirtualSwitch&quot;: &quot;minikube-GbE&quot;,
+        ...
+        &quot;NFSSharesRoot&quot;: &quot;/nfsshares&quot;,
+        ...
+    },
+    &quot;KubernetesConfig&quot;: {
+        &quot;KubernetesVersion&quot;: &quot;v1.10.0&quot;,
+        &quot;NodeIP&quot;: &quot;192.168.1.105&quot;,  
+        &quot;NodeName&quot;: &quot;minikube&quot;,
+        &quot;APIServerName&quot;: &quot;minikubeCA&quot;,
+        ...
+        &quot;DNSDomain&quot;: &quot;cluster.local&quot;,
+        ...
+        &quot;ServiceCIDR&quot;: &quot;10.96.0.0/12&quot;,
+        ...
+    }
+}
+</code></pre>
+
+<p>.</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

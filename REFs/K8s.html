@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://kubernetes.io/docs" title="Kubernetes.io">Kubernetes</a> (K8s) | <a href="https://kubernetes.io/releases/">Releases</a></h1>
+
+<h2><a href="https://kubernetes.io/docs/home/?path=users&amp;persona=app-developer&amp;level=foundational">Overview</a> | <a href="https://kubernetes.io/docs/reference/tools/" title="kubernetes.io/docs/...">Tools</a> | <a href="https://github.com/kubernetes" title="Kubernetes repo">GitHub</a> | <a href="https://en.wikipedia.org/wiki/Kubernetes">Wikipedia</a></h2>
+
+<h2><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">Admission Controller</a></h2>
+
+<p>An admission controller is code of <code>kube-apiserver</code> that intercepts requests to the Kubernetes API server prior to persistence of the object, but after the request is authenticated and authorized.</p>
+
+<p>Admission controllers may be validating, mutating, or both. Mutating controllers may modify objects related to the requests they admit; validating controllers may not.</p>
+
+<p>Admission controllers limit requests to create, delete, modify objects. Admission controllers can also block custom verbs, such as a request connect to a Pod via an API server proxy. Admission controllers do not (and cannot) block requests to read (get, watch or list) objects.</p>
+
+<pre><code class="language-bash"># List all enabled admission controllers
+kube-apiserver -h |grep enable-admission-plugins
+
+# Enable some admission controllers
+kube-apiserver --enable-admission-plugins=NamespaceLifecycle,LimitRanger ...
+
+# Disable some 
+kube-apiserver --disable-admission-plugins=PodNodeSelector,AlwaysDeny ...
+</code></pre>
+
+<h2><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/operator/">Operator (Pattern)</a></h2>
+
+<p>The goal of an Operator is to put operational knowledge into software. Previously this knowledge only resided in the minds of administrators, various combinations of shell scripts or automation software like Ansible. It was outside of your Kubernetes cluster and hard to integrate. With Operators, CoreOS changed that.</p>
+
+<p>Operators implement and automate common Day-1 (installation, configuration, etc.) and Day-2 (re-configuration, update, backup, failover, restore, etc.) activities in a piece of software running inside your Kubernetes cluster, by integrating natively with Kubernetes concepts and APIs. We call this a Kubernetes-native application.</p>
+
+<p>With Operators an application is treated as a single object, and exposes only that
+which makes sense for the application to work.</p>
+
+<h2>Topics of Interest</h2>
+
+<h3>Naming convention</h3>
+
+<p><strong>Q:</strong> Kubernetes is written in Golang. And best practices of Golang include naming convention that names should not &quot;stutter&quot;. For example, if a struct value should not include the struct key name. However, it seems that Kubernetes has adopted the exact opposite convention. For example pod.volume.name=this-volume is the typical namiing convention. What's going on here? Is that just bad practices proliferating, or is this intentional?</p>
+
+<p><strong>A:</strong> The naming patterns you've observed, such as the redundancy in Kubernetes object names (e.g., appending <code>-service</code> to service names), highlight an interesting intersection between Kubernetes' declarative, self-describing architecture and the practical aspects of managing resources in a complex system. This redundancy, while seemingly at odds with the principles of naming clarity and efficiency, serves several purposes in the Kubernetes ecosystem:</p>
+
+<ol>
+<li><p><strong>Contextual Clarity</strong>: In large, complex deployments, where dozens or even hundreds of services, pods, and other resources interact, the additional context provided by such suffixes (<code>-service</code>, <code>-pod</code>, etc.) can be invaluable for quick identification and differentiation of resources. This is particularly true when resources of different types share similar base names, or when viewing aggregated logs or metrics across the system.</p></li>
+
+<li><p><strong>Convention and Consistency</strong>: Kubernetes has spawned its own set of conventions and best practices, developed by the community and the experiences of its users. These conventions, including naming patterns, help maintain consistency across different deployments and projects. For new users, learning these patterns can make it easier to understand and navigate Kubernetes resources.</p></li>
+
+<li><p><strong>Automation and Tooling Compatibility</strong>: Many tools and scripts are built around these naming conventions, expecting certain patterns to be present in resource names. This can help in automating tasks such as monitoring, logging, or CI/CD processes, where being able to predict and parse resource names based on their suffixes or prefixes becomes a powerful feature.</p></li>
+
+<li><p><strong>Namespacing and Scope</strong>: Kubernetes allows for complex scoping and namespacing of resources. The redundant naming conventions can help in scoping resources appropriately, making it clearer which resources belong to which domain or functional area within a larger system.</p></li>
+
+<li><p><strong>Human Factors</strong>: Ultimately, Kubernetes is used by humans, and the naming conventions reflect a balance between machine efficiency and human readability. While the redundancy might be &quot;noise&quot; in a strictly informational sense, it aids in quick comprehension and reduces cognitive load when scanning through resource lists or configurations.</p></li>
+</ol>
+
+<p>Despite these reasons, it's important for users and teams to develop and follow their own conventions that best suit their workflows and organizational practices. Kubernetes is flexible enough to accommodate different naming strategies, and what might be redundant or noisy in one context could be clarity-enhancing in another. The key is finding the right balance between Kubernetes' declarative nature, the practical requirements of managing complex systems, and the preferences and practices of the teams involved.</p>
+
+<h3><a href="https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/">Static Pods</a></h3>
+
+<p><strong>Q:</strong> Why does <code>kubeadm init --pod-network-cidr=&quot;10.100.0.0/12&quot;</code> assign each Static Pod (of the K8s-core Pods) an IP address in the node-network (host) CIDR versus that of the explicitly-declared Pod Network?</p>
+
+<p><strong>A:</strong> Static Pods are a special type of pods in Kubernetes that are <strong>managed directly by the <code>kubelet</code> on a specific node</strong>. Unlike regular pods, which are part of a deployment or replica set, static pods are defined as YAML files on the node itself. <strong>They do not reside in the etcd datastore</strong> like other pods.</p>
+
+<p>The reason static pods are assigned IP addresses on the node network (host network) rather than the explicitly-declared pod network CIDR is due to their unique nature:</p>
+
+<ul>
+<li><p>Local Management:<br>
+Static pods are managed locally by the <code>kubelet</code> running on the node.
+<strong>They do not go through the Kubernetes control plane</strong> (API server, controller manager, scheduler).
+As a result, they are not subject to the same network overlay and pod networking rules as regular pods.
+The <code>kubelet</code> on each node is responsible for managing Static Pods. It directly interacts with the container runtime (such as Docker or containerd) to start and stop containers for these pods. Since the <code>kubelet</code> is responsible for managing these pods on the node level, it assigns IP addresses to them based on the node's network.</p></li>
+
+<li><p>Early Bootstrapping:<br>
+Static pods are created during the early bootstrapping phase of the <code>kubelet</code>.
+At this point, the full Kubernetes control plane (including the network overlay) may not be fully operational.
+Assigning an IP address from the node network ensures that static pods can communicate with each other and with other local services (such as the <code>kubelet</code> itself) immediately after boot.</p></li>
+
+<li><p>Minimal Dependencies:<br>
+Static pods have minimal dependencies.
+They rely only on the <code>kubelet</code> and the local Docker runtime (or other container runtime).
+By using the node network, they avoid any potential issues related to network plugins or overlay networks.</p>
+
+<ul>
+<li>No involvement of <code>kube-proxy</code>: Regular Pods created through the API server go through <code>kube-proxy</code>, which sets up the necessary network rules to enable communication between Pods across the cluster. Static Pods, being managed by the <code>kubelet</code>, don't go through <code>kube-proxy</code>, and their networking is more direct.</li>
+</ul></li>
+
+<li><p>No Network Abstraction:<br>
+Unlike regular pods, which are part of a logical network abstraction,
+static pods are tightly coupled to the node.
+Their IP addresses are directly associated with the node’s network interfaces.
+This simplicity allows them to function reliably
+even in scenarios where the full Kubernetes networking stack is not yet available.</p></li>
+</ul>
+
+<p>In summary, static pods serve as a bridge between the host system and the Kubernetes world. Their direct association with the node’s network ensures their availability and functionality during the early stages of cluster bootstrapping. However, it’s essential to understand that static pods are an exception, and regular pods follow the rules defined by the pod network overlay (such as Calico, Flannel, or others) once the cluster is fully operational .</p>
+
+<p><strong>Q:</strong> Why declare <code>10.244.0.0/12</code> as Kubernetes default Pod Network CIDR when it is exactly the same as <code>10.240.0.0/12</code>, the latter of which reveals the first IP address of that declared range?</p>
+
+<p><strong>A:</strong> The choice of <code>10.244.0.0/12</code> as the default Pod Network CIDR in Kubernetes is indeed interesting. Let’s explore why this seemingly redundant range was selected:</p>
+
+<ul>
+<li><p>Historical Context:<br>
+The <code>10.244.0.0/12</code> range was chosen early in Kubernetes development.
+At that time, the decision might not have been as deliberate as it appears now.
+It’s possible that the choice was made without considering the similarity to <code>10.240.0.0/12</code>.</p></li>
+
+<li><p>Avoiding Commonly Used Ranges:<br>
+Kubernetes needed a private IP address range for pod networking.
+The <code>10.0.0.0/8</code> address space is commonly used for private networks.
+To avoid conflicts with existing networks, Kubernetes opted for a less common range.</p></li>
+
+<li><p>Granularity and Address Space:<br>
+The <code>/12</code> subnet provides a large address space (<code>4096</code> addresses).
+Kubernetes clusters can scale significantly, and having ample IP addresses is essential.
+The granularity allows for efficient allocation of pod IPs.</p></li>
+
+<li><p>Consistency and Predictability:<br>
+Kubernetes aims for consistency across clusters.
+By using a specific range like <code>10.244.0.0/12</code>,
+administrators can predict the IP addresses assigned to pods.
+This consistency simplifies network management and troubleshooting.</p></li>
+
+<li><p>Avoiding Ambiguity:<br>
+The choice of <code>10.244.0.0/12</code> avoids ambiguity.
+If <code>10.240.0.0/12</code> were used, the first IP address (10.240.0.1)
+might be mistaken for a special purpose (such as a gateway or DNS server).
+By starting at <code>10.244.0.1</code>, Kubernetes ensures that the entire range is available for pod IPs.</p></li>
+</ul>
+
+<p>In summary, while the similarity between <code>10.244.0.0/12</code> and <code>10.240.0.0/12</code> might raise eyebrows, the decision likely prioritized consistency, predictability, and avoiding common address spaces. Kubernetes architects aimed for a balance between practicality and uniqueness when defining the default Pod Network CIDR.</p>
+
+<h1><a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service</a></h1>
+
+<p>Exposes a Deployment to a port under a protocol, sans IP Address(es).
+E.g., Create <code>my-service</code> to target TCP port <code>9376</code> on any Pod having the label <code>app.kubernetes.ip/name: MyApp</code> :</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app.kubernetes.io/name: MyApp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
+</code></pre>
+
+<h2>Auth : <a href="https://kubernetes.io/docs/concepts/security/controlling-access/">Controlling Access</a></h2>
+
+<h2><code>kubectl</code></h2>
+
+<p>Client CLI to communicate with Kubernetes API server</p>
+
+<p>Must be configured to cluster, context and have user of <code>kubeadm</code>'s config.</p>
+
+<h2><a href="https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/">kubeconfig</a> file</h2>
+
+<blockquote>
+<p>A reference to any file that is used to configure access to clusters.
+This is a generic way of referring to configuration files.
+It does not mean that there is a file named <code>kubeconfig</code>.</p>
+</blockquote>
+
+<p>Optionally set using K8s environment variable: <code>KUBECONFIG=/path/to/that/file</code></p>
+
+<p>Example @ <code>~/.kube/config</code> (default location)</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Config
+preferences: {}
+current-context: kubernetes-admin@kubernetes
+clusters:
+- cluster:
+    server: https://192.168.0.81:6443
+    certificate-authority-data: REDACTED    # CA certificate        (public)
+    # CA Certificate : /etc/kubernetes/pki/ca.crt
+    # CA Key         : /etc/kubernetes/pki/ca.key
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: kubernetes-admin
+    namespace: default
+  name: kubernetes-admin@kubernetes
+users:
+- name: kubernetes-admin
+  user
+    client-key-data: REDACTED               # Client key            (private)
+    client-certificate-data: REDACTED       # Client certificate    (public)
+</code></pre>
+
+<ul>
+<li>This kubeconfig may be clone of server config (only of a control node).
+
+<ul>
+<li><code>/etc/kubernetes/admin.conf</code>.</li>
+</ul></li>
+<li>This client (<code>kubectl</code>) configuration file AKA kubeconfig
+holds <code>clusters</code>, <code>contexts</code>, and <code>users</code>.</li>
+
+<li><p>The <strong>client</strong> is <strong>configured to the <code>current-context</code></strong>
+by that declared <code>contexts[].name</code> value, having form <code>USER@CLUSTER</code>,
+which is <code>&lt;context.user&gt;@&lt;context.cluster&gt;</code>.</p>
+
+<pre><code class="language-bash"># Get the current context 
+kubectl config current-context #=&gt; kubernetes-admin@kubernetes
+</code></pre>
+
+<ul>
+<li>A <code>context</code> has <code>contexts[].name</code>, and is defined by
+
+<ul>
+<li><code>cluster</code></li>
+<li><code>user</code></li>
+<li><code>namespace</code></li>
+<li>A <code>cluster</code> has <code>clusters[].name</code>, and is defined by
+
+<ul>
+<li><code>server: https://&lt;ip-address&gt;:&lt;port&gt;</code></li>
+<li><code>certificate-authority-data: &lt;ca-certificate&gt;</code>
+
+<ul>
+<li>The public element of CA's key-cert pair.</li>
+</ul></li>
+</ul></li>
+<li>A <code>user</code> has <code>users[].name</code>, and is defined by it key-cert pair
+
+<ul>
+<li><code>client-key-data: &lt;private-key&gt;</code></li>
+<li><code>client-certificate-data: &lt;public-certificate&gt;</code></li>
+</ul></li>
+<li>A <code>namespace</code> is just a <code>&lt;string&gt;</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>Select a <code>context</code> (<code>current-context</code>)</h3>
+
+<pre><code class="language-bash">contexts_name=${user}@$cluster # contexts[].name: &lt;context.user&gt;@&lt;context.cluster&gt;
+kubectl config use-context $contexts_name 
+</code></pre>
+
+<h3><a href="https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/#define-clusters-users-and-contexts">Configure Access to Multiple Clusters</a></h3>
+
+<p>Add/Modify context(s), cluster(s), and/or credentials (user(s))</p>
+
+<pre><code class="language-bash">kubectl config --kubeconfig=$file set-context $contexts_name ...
+kubectl config --kubeconfig=$file set-cluster $clusters_name ...
+kubectl config --kubeconfig=$file set-credentials $users_name ...
+</code></pre>
+
+<p>Create and set the target kubeconfig (template)</p>
+
+<p>@ <code>/tmp/config-demo</code></p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Config
+preferences: {}
+
+clusters:
+- cluster:
+  name: development
+- cluster:
+  name: test
+
+users:
+- name: developer
+- name: experimenter
+
+contexts:
+- context:
+  name: dev-frontend
+- context:
+  name: dev-storage
+- context:
+  name: exp-test
+</code></pre>
+
+<p>Modify that kubeconfig</p>
+
+<pre><code class="language-bash">file='/tmp/config-demo'
+
+# Add CLUSTER details
+
+clusters_name='development'
+server='https://1.2.3.4'
+kubectl config --kubeconfig=$file set-cluster $clusters_name \
+    --server=$server \
+    --certificate-authority=$ca_cert
+
+clusters_name='test'
+server='https://5.6.7.8'
+kubectl config --kubeconfig=$file set-cluster $clusters_name \
+    --server=$server \
+    --insecure-skip-tls-verify
+
+# Add USER details
+
+users_name='developer'    # users[].name NOT user.username 
+kubectl config --kubeconfig=$file set-credentials $users_name \
+    --client-certificate=&quot;$cert&quot; \
+    --client-key=&quot;$key&quot;
+
+users_name='experimenter' # users[].name
+username='exp'            # users[].name.user.username
+password='abc123'
+kubectl config --kubeconfig=$file set-credentials $users_name \
+    --username=$username \
+    --password=$password  # BAD PRACTICE
+
+# Add CONTEXT details
+
+contexts_name='dev-frontend'
+clusters_name='development'
+ns='frontend'
+users_name='developer'    
+kubectl config --kubeconfig=$file set-context $contexts_name \
+    --cluster=$clusters_name \
+    --namespace=$ns \
+    --user=$users_name
+
+contexts_name='dev-storage'
+ns='storage'
+kubectl config --kubeconfig=$file set-context $contexts_name \
+    --cluster=$clusters_name \
+    --namespace=$ns \
+    --user=$users_name
+
+contexts_name='exp-text'
+clusters_name='test'
+ns='default'
+users_name='experimenter' 
+kubectl config --kubeconfig=$file set-context $contexts_name \
+    --cluster=$clusters_name \
+    --namespace=$ns \
+    --user=$users_name
+
+</code></pre>
+
+<ul>
+<li><code>user.{username,password}</code>
+exist only for normal users,
+not for ServiceAccounts.</li>
+<li>Use <a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#client-go-credential-plugins"><code>client-go</code> credential plugins</a></li>
+</ul>
+
+<h2>Kubernetes API Server (Master)</h2>
+
+<h3><a href="https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/"><code>kube-apiserver</code></a></h3>
+
+<p>The Kubernetes API server validates and configures data for
+the api objects which include pods, services, replicationcontrollers,
+and others. The API Server services REST operations and
+provides the frontend to the cluster's shared state through
+which all other components interact.</p>
+
+<p>The API is extensible. The core is <code>v1</code> .
+An important add-on API is <code>apps/v1</code>,
+which defines the <code>Deployment</code> and <code>ReplicaSet</code> objects.</p>
+
+<h2>Cluster Management</h2>
+
+<p><code>kubeadm</code></p>
+
+<p>Install/Upgrade tools using zero-downtime method</p>
+
+<pre><code class="language-bash"># Install kubeadm
+sudo apt-get install -y --allow-change-held-packages \
+    kubeadm=1.21.1-00
+kubeadm version
+
+# Inform the node
+sudo kubeadm upgrade node
+
+# Upgrade kubectl and kubelet to match kubeadm version
+sudo apt-get install -y --allow-change-held-packages \
+    kubectl=1.21.1-00 \
+    kubelet=1.21.1-00
+
+# Restart kubelet
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+
+kubectl get nodes
+</code></pre>
+
+<h2>K8s API Server Objects</h2>
+
+<h3>Resources Available</h3>
+
+<pre><code class="language-bash"># List all API resources (v1)
+kubectl api-resources |less
+</code></pre>
+
+<pre><code class="language-text">NAME                              SHORTNAMES   APIVERSION                             NAMESPACED   KIND
+bindings                                       v1                                     true         Binding
+configmaps                        cm           v1                                     true         ConfigMap
+endpoints                         ep           v1                                     true         Endpoints
+events                            ev           v1                                     true         Event
+namespaces                        ns           v1                                     false        Namespace
+nodes                             no           v1                                     false        Node
+persistentvolumeclaims            pvc          v1                                     true         PersistentVolumeClaim
+persistentvolumes                 pv           v1                                     false        PersistentVolume
+pods                              po           v1                                     true         Pod
+podtemplates                                   v1                                     true         PodTemplate
+replicationcontrollers            rc           v1                                     true         ReplicationController
+resourcequotas                    quota        v1                                     true         ResourceQuota
+secrets                                        v1                                     true         Secret
+serviceaccounts                   sa           v1                                     true         ServiceAccount
+services                          svc          v1                                     true         Service
+...
+controllerrevisions                            apps/v1                                true         ControllerRevision
+daemonsets                        ds           apps/v1                                true         DaemonSet
+deployments                       deploy       apps/v1                                true         Deployment
+replicasets                       rs           apps/v1                                true         ReplicaSet
+statefulsets                      sts          apps/v1                                true         StatefulSet
+...
+</code></pre>
+
+<ul>
+<li>Extensible API</li>
+<li><code>apps/v1</code> is the most important add-on API.</li>
+</ul>
+
+<p>Have hierarchy:</p>
+
+<ul>
+<li><code>Deployment</code>: Represents tha deployed app.
+
+<ul>
+<li><code>ReplicaSet</code>: Manages app replicas.
+
+<ul>
+<li><code>Pods</code>: Adds features required to run the app.</li>
+</ul></li>
+</ul></li>
+<li><code>ConfigMap</code></li>
+<li><code>Secrets</code></li>
+<li><code>PersistentVolumes</code></li>
+</ul>
+
+<h2>Object : <code>Node</code> (Minion)</h2>
+
+<ul>
+<li>A k8s minion server that runs a <code>kubelet</code>.</li>
+<li>A compute unit.</li>
+<li>May run on a multitue of platforms:
+
+<ul>
+<li>A server</li>
+<li>An OS</li>
+<li><code>systemd</code> (Linux system and service manager)</li>
+<li><code>kubelet</code> (node agent) that runs on every node.</li>
+<li>Container runtime (e.g., Docker engine)</li>
+<li>Network proxy (<code>kube-proxy</code>) that handles K8s Services:
+
+<ul>
+<li>ClusterIP; internal Service that load balances k8s Pods</li>
+<li>NodePort; open port on k8s node that load balances Pods</li>
+<li>LoadBalancer; external to the cluster</li>
+</ul></li>
+<li>Container Network Interface (CNI) provider</li>
+</ul></li>
+</ul>
+
+<h3>Object : <code>Pod</code></h3>
+
+<ul>
+<li>An abstraction of a server running an app.</li>
+<li>Can run one or more containers with a single NameSpace,
+exposed by a single IP address.</li>
+<li>Typically created automatically by <code>Deployment</code>, or other API objects.</li>
+<li>Regarding Docker image tags, do NOT use <code>latest</code> .</li>
+<li>A collection of Kubernetes <strong><em>namespaces</em></strong> in a specific configuration; contains the following Linux namespaces (kernel filesystem component); provides the base functionality to create a running container from an image, and to scale and load balance per service within the software-defined networking (SDN) system spanning a K8s cluster.
+
+<ul>
+<li>PID namespaces</li>
+<li>A single networking namespace</li>
+<li>IPC namespace</li>
+<li><code>cgroup</code> (control group) namespace.</li>
+<li><code>mnt</code> (mount) namespace</li>
+<li><code>user</code> (user ID) namespace</li>
+</ul></li>
+</ul>
+
+<h3>Object : Higer-level Abstractons</h3>
+
+<p>Typically spawn one or more Pods; typically create <strong><em>replica objects</em></strong>, which then create Pods.</p>
+
+<h4><code>Deployment</code></h4>
+
+<p>The most common object; deploys a mircroservice</p>
+
+<h4><code>Job</code></h4>
+
+<p>Run a Pod as a batch process</p>
+
+<h4><code>StatefulSet</code></h4>
+
+<p>Host applications requiring specific needs; oftten stateful, e.g., data store.</p>
+
+<p>Features</p>
+
+<ul>
+<li>Ordinal Pod naming to ensure unique network identifiers</li>
+<li>Persistent storage always mounted to same Pod</li>
+<li>Ordered start/scale/update</li>
+</ul>
+
+<h4><code>DaemonSet</code></h4>
+
+<p>Run a single Pod as an &quot;agent&quot; on every node in a cluster; system services, storage, logging, ...</p>
+
+<h2>YAML Manifest</h2>
+
+<h3>Ingredients (fields):</h3>
+
+<ul>
+<li><code>apiVersion:</code> K8s API-server version</li>
+<li><code>kind:</code> K8s Object type</li>
+<li><code>metadata:</code> K8s Object sdministrative information</li>
+<li><code>spec:</code> K8s Object specifics; <code>container:</code>(s) <code>name:</code>, <code>image:</code>, <code>command:</code></li>
+</ul>
+
+<p>Get more info about the field</p>
+
+<pre><code class="language-bash">kubectl explain $type.$fieldName[.$fieldName]
+# E.g., 
+kubectl explain pods.metadata
+kubectl explain pods.spec.restartPolicy
+# ALL possibilities
+kubectl explain --recursive  pod.spec
+</code></pre>
+
+<ul>
+<li>Use JSONPath identifer syntax</li>
+</ul>
+
+<h3>Generate YAML</h3>
+
+<pre><code class="language-bash">kubectl create|run --dry-run=client -o yaml &gt; app.yaml
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

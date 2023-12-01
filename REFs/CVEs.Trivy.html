@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CVEs.Trivy</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Trivy : CVEs Scanner</h1>
+
+<p>Targets (what Trivy can scan):</p>
+
+<ul>
+<li>Container Image</li>
+<li>Filesystem</li>
+<li>Git Repository (remote)</li>
+<li>Virtual Machine Image</li>
+<li>Kubernetes</li>
+<li>AWS</li>
+</ul>
+
+<p>Scanners (what Trivy can find there):</p>
+
+<ul>
+<li>OS packages and software dependencies in use (SBOM)</li>
+<li>Known vulnerabilities (CVEs)</li>
+<li>IaC issues and misconfigurations</li>
+<li>Sensitive information and secrets</li>
+<li>Software licenses</li>
+</ul>
+
+<p>References:</p>
+
+<ul>
+<li><a href="https://github.com/aquasecurity/trivy">GitHub</a></li>
+<li><a href="https://aquasecurity.github.io/trivy">Documentaion</a></li>
+<li>OCI image : <a href="https://hub.docker.com/r/aquasec/trivy"><code>aquasec/trivy</code></a></li>
+<li><a href="https://aquasecurity.github.io/trivy/v0.49/docs/advanced/air-gap/">Air-gapped Environment</a></li>
+</ul>
+
+<h2>Install</h2>
+
+<p>Binary:</p>
+
+<pre><code class="language-bash">mkdir -p trivy
+cd trivy 
+
+# Download/Extract the binary
+ver='0.49.1'
+tarball=&quot;trivy_${ver}_Linux-64bit.tar.gz&quot;
+url=https://github.com/aquasecurity/trivy/releases/download/v${ver}/$tarball
+curl -LO $url &amp;&amp; tar -xvaf $tarball
+
+# Install it
+sudo cp trivy /usr/local/bin/
+</code></pre>
+
+<p>Helm <a href="https://aquasecurity.github.io/helm-charts/">Charts</a> : <a href="https://aquasecurity.github.io/trivy-operator/latest/">Trivy Operator</a> :</p>
+
+<pre><code class="language-bash">ver='0.20.5' # Chart; trivy v0.18.4
+helm repo add trivy-operator https://aquasecurity.github.io/helm-charts/
+helm install trivy trivy-operator/trivy-operator --version $ver
+</code></pre>
+
+<ul>
+<li>OCI Images<br>
+Registry: <code>ghcr.io</code> or <code>docker.io</code>
+
+<ul>
+<li><code>aquasecurity/trivy:0.49.1</code></li>
+<li><code>aquasec/trivy-operator:0.18.5-ubi8-amd64</code></li>
+<li><code>aquasecurity/node-collector</code></li>
+<li><code>aquasecurity/trivy-db</code></li>
+<li><code>aquasecurity/trivy-java-db</code></li>
+</ul></li>
+</ul>
+
+<h2>Use</h2>
+
+<p>Binary:</p>
+
+<pre><code class="language-bash"># Download DB updates (CVEs)
+trivy image --download-db-only
+# Scan cached image (pull if needed)
+trivy image python:3.4-alpine
+# Scan saved image (tar)
+trivy image python_3.4-alpine.tar
+# Scan filesystem
+trivy fs --scanners vuln,secret,misconfig myproject/
+# Scan K8s cluster 
+trivy k8s --report summary cluster
+# Generate SBOM (Software Bill of Materials)
+trivy sbom /path/to/sbom_file
+</code></pre>
+
+<p>Container:</p>
+
+<pre><code class="language-bash">trivy=aquasec/trivy:0.49.1-amd64
+target=python:3.4-alpine
+mkdir -p /tmp # Persist DB-updates downloads at /tmp/trivy/
+docker run -v /tmp:/root/.cache $trivy image $target 
+</code></pre>
+
+<ul>
+<li>CVE updates: <code>/root/.cache</code></li>
+</ul>
+
+<p>Other tools:</p>
+
+<ul>
+<li><code>kube-bench</code> : Test cluster security against <a href="https://www.cisecurity.org/benchmark/kubernetes">CIS Kubernetes Benchmark</a> (Kubernetes 1.24)
+
+<ul>
+<li><a href="https://hub.docker.com/r/aquasec/kube-bench"><code>aquasec/kube-bench:v0.7.2-ubi-fips</code></a></li>
+</ul></li>
+<li><code>aqua-scanner</code> : Aqua Security Trivy Plugin is a premium offering designed to enhance the security of your code repositories by seamlessly integrating with Trivy. Exclusively available for Aqua Security customers, this plugin provides advanced security features beyond standard vulnerability scanning.
+
+<ul>
+<li><a href="https://hub.docker.com/r/aquasec/aqua-scanner"><code>aquasec/aqua-scanner:v0.160.10-amd64</code></a></li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

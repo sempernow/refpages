@@ -1,64 +1,66 @@
 #!/usr/bin/env bash
 #------------------------------------------------------------------------------
-# @ Makefile recipes
+# See Makefile recipes
 # -----------------------------------------------------------------------------
 
+_NEWEST=/tmp/REFs.newest.file
+
+gitpush() {
+    REQUIREs gc git gl
+    unset newest 
+    [[ -f "$_NEWEST" ]] && newest=$(cat $_NEWEST)
+    gc "$newest" && git push && gl
+    [[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
+}
+
 getrefs() {
-    mkdir -p {HOME/.bin,REFs}
+    mkdir -p REFs
 
     # Purge folders
     find ./REFs -type f -exec rm "{}" \+ 
-    find ./HOME -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -iname '*.zip' -exec rm "{}" \+ 
 
-    # Dump all REF.* files to tmp folder under $TEMP dir
-	refsync temp
-    
-    # Find the most recent tmp.* dump folder
-    tmp=$(ls $TEMP -ahsrt --group-directories-first |grep tmp. |tail -n 1 |awk '{print $NF}')
+    # Dump all REF.* files to tmp folder under $TEMP dir unless already created less than 5min ago
+    tmp(){ find /c/TEMP -type d -ctime -.003  -iname 'tmp.*' |tail -n1; }
+    [[ -d $(tmp) ]] || refsync temp
 
     # Copy content to this project's REFs folder
-	cp -p $TEMP/$tmp/* REFs/
-    
+    cp -p $(tmp)/* REFs/
+
     # Remove some
-    rm REFs/REF.Biz*md REFs/REF.L9s.*md 2>/dev/null
+    rm REFs/REF.{Biz,L9s}*md 2>/dev/null
 
-    # CKAD
-    ckad='/d/1 Data/IT/Container/Kubernetes/CKAD'
-    [[ -d '/d/1 Data/IT/Container/Kubernetes/CKAD' ]] && cp -rp '/d/1 Data/IT/Container/Kubernetes/CKAD/'* REFs/CKAD/
+    # CKAD : Copy entire source dir
+    dir='/d/1 Data/IT/Container/Kubernetes/CKAD'
+    [[ -d "$dir" ]] && cp -rp "$dir/"* REFs/CKAD/
     rm REFs/CKAD/LOG.* REFs/REF.Kubernetes.CKAD.* 2>/dev/null
-
-    # CKA
-    ckad='/d/1 Data/IT/Container/Kubernetes/CKA'
-    [[ -d '/d/1 Data/IT/Container/Kubernetes/CKA' ]] && cp -rp '/d/1 Data/IT/Container/Kubernetes/CKA/'* REFs/CKA/
+    # CKA : Copy entire source dir
+    dir='/d/1 Data/IT/Container/Kubernetes/CKA'
+    [[ -d "$dir" ]] && cp -rp "$dir/"* REFs/CKA/
     rm REFs/CKA/LOG.* REFs/REF.Kubernetes.CKA.* 2>/dev/null
 
+    # Capture the newest of all REFs/* (in UTC Zulu) before downstream mods (normalize and such) update file mtimes and otherwise ruin the record.
+    printf "$(find REFs -type f -printf '%TY-%Tm-%TdT%TH:%TM %P @ ' -exec env TZ=UTC date -r {} +'%Y-%m-%dT%H:%MZ' \; |sort -r |head -n 1 |cut -d' ' -f2-)" \
+        |tee $_NEWEST 
 
-    # Copy/Update the specified ~/.* scripts to this project's HOME folder
-    cp -p ~/{.profile,.bash_profile,.bashrc,.bash_win,.bash_functions,.vimrc,.terraformrc,.gitconfig,.gitignore,.gitignore_global} HOME/
-
-    # Copy/Update all ...
-    cp -rp ~/.bin/* HOME/.bin/
-
+    return 0
 }
 
 normalize(){
     # Reset paths at internal links : strip the distributed-source parent.
     pushd ./REFs
-    find . -type f ! -path './.git/*' -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
-    find . -type f ! -path './.git/*' -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/.*/##g"
+    find . -type f ! -path './.git/*' -iname '*.html' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
+    find . -type f ! -path './.git/*' -iname '*.html' |xargs sed -i "s#file:///d:/1%20Data/.*/##g"
+    find . -type f ! -path './.git/*' -iname '*.html' |xargs sed -i "s/REF.//g"
     popd
 }
 
 index() {
-    REQUIREs md2html.exe || exit
-    
     # Purge obsolete MD/HTML, and then refresh HTML
-    rm index.md *.html 2>/dev/null
+    REQUIREs md2html.exe || exit
+    rm _index.md index.md *.html 2>/dev/null
     pushd ./REFs
     rm index.md *.html 2>/dev/null
-    # find . -type f -iname '*.md' -exec md2html.exe "{}" \;
+    find . -type f ! -path './.git/*' -iname '*.md' -exec md2html.exe "{}" \;
 
     # Strip namespace used for the distributed source reference files
     fname 'REF.'
@@ -69,25 +71,35 @@ index() {
     fname 'REF.'
     popd
 
+
     popd
 
     # Build index of links
-    find ./REFs -maxdepth 1 -type f ! -iname '*.html' \
+    find ./REFs -maxdepth 1 -type f ! -path './.git/*' ! -iname '*.md' \
         -printf "## [%f](%p)\n" >>index.md
-    find ./REFs/CKAD -maxdepth 1 -type f -iname 'Kubernetes.CKAD.md' \
+    find ./REFs/CKAD -maxdepth 1 -type f -iname 'Kubernetes.CKAD.html' \
         -printf "## [%f](%p)\n" >>index.md
-    find ./REFs/CKA -maxdepth 1 -type f -iname 'Kubernetes.CKA.md' \
+    find ./REFs/CKA -maxdepth 1 -type f -iname 'Kubernetes.CKA.html' \
         -printf "## [%f](%p)\n" >>index.md
 
-    # Sort links alphabetically and build README.md .
-    cat README.src.md >README.md
-    sort -f index.md >>README.md
-    md2html.exe README.md
-
-    # Cleanup
-    rm index.md 2>/dev/null
-    find . -type f ! -path './.git/*' -iname '*.html' -exec rm "{}" \+
+    # Sort links alphabetically and build the landing page (index.html).
+    sort -f index.md >>_index.md
+    echo '# [`sempernow/refpages`](https://github.com/sempernow/refpages "sempernow/refpages @ GitHub")' >index.md
+    cat _index.md >>index.md
+    
+    # Process md2html 
+    md2html.exe index.md
+    
+    # Delete markdowns
+    find . -type f ! -path './.git/*' -iname '*.md' -and ! -iname 'README.md' -exec rm "{}" \+
+    
     perms
+}
+
+links() {
+    # Replace Win-configured URIs of md2html.exe with their local-project equivalents.
+    #sed -i 's#https://sempernow.github.io/web#/refpages#g' index.html
+    find . -type f ! -path './.git/*' -iname '*.html' -exec sed -i 's#https://sempernow.github.io/web#/refpages#g' "{}" \+
 }
 
 perms() {

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>READMEv2-etcdctl</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>etcdctl</h1>
+
+<p><code>etcdctl</code> is a command line client for <a href="https://github.com/coreos/etcd">etcd</a>.
+It can be used in scripts or for administrators to explore an etcd cluster.</p>
+
+<h2>Getting etcdctl</h2>
+
+<p>The latest release is available as a binary at <a href="https://github.com/coreos/etcd/releases/">Github</a> along with etcd.</p>
+
+<p>etcdctl can also be built from source using the build script found in the parent directory.</p>
+
+<h2>Configuration</h2>
+
+<h3>--debug</h3>
+
+<ul>
+<li>output cURL commands which can be used to reproduce the request</li>
+</ul>
+
+<h3>--no-sync</h3>
+
+<ul>
+<li>don't synchronize cluster information before sending request</li>
+<li>Use this to access non-published client endpoints</li>
+<li>Without this flag, values from <code>--endpoint</code> flag will be overwritten by etcd cluster when it does internal sync.</li>
+</ul>
+
+<h3>--output, -o</h3>
+
+<ul>
+<li>output response in the given format (<code>simple</code>, <code>extended</code> or <code>json</code>)</li>
+<li>default: <code>&quot;simple&quot;</code></li>
+</ul>
+
+<h3>--discovery-srv, -D</h3>
+
+<ul>
+<li>domain name to query for SRV records describing cluster endpoints</li>
+<li>default: none</li>
+<li>env variable: ETCDCTL_DISCOVERY_SRV</li>
+</ul>
+
+<h3>--peers</h3>
+
+<ul>
+<li>a comma-delimited list of machine addresses in the cluster</li>
+<li>default: <code>&quot;http://127.0.0.1:2379&quot;</code></li>
+<li>env variable: ETCDCTL_PEERS</li>
+</ul>
+
+<h3>--endpoint</h3>
+
+<ul>
+<li>a comma-delimited list of machine addresses in the cluster</li>
+<li>default: <code>&quot;http://127.0.0.1:2379&quot;</code></li>
+<li>env variable: ETCDCTL_ENDPOINT</li>
+<li>Without <code>--no-sync</code> flag, this will be overwritten by etcd cluster when it does internal sync.</li>
+</ul>
+
+<h3>--cert-file</h3>
+
+<ul>
+<li>identify HTTPS client using this SSL certificate file</li>
+<li>default: none</li>
+<li>env variable: ETCDCTL_CERT_FILE</li>
+</ul>
+
+<h3>--key-file</h3>
+
+<ul>
+<li>identify HTTPS client using this SSL key file</li>
+<li>default: none</li>
+<li>env variable: ETCDCTL_KEY_FILE</li>
+</ul>
+
+<h3>--ca-file</h3>
+
+<ul>
+<li>verify certificates of HTTPS-enabled servers using this CA bundle</li>
+<li>default: none</li>
+<li>env variable: ETCDCTL_CA_FILE</li>
+</ul>
+
+<h3>--username, -u</h3>
+
+<ul>
+<li>provide username[:password] and prompt if password is not supplied</li>
+<li>default: none</li>
+<li>env variable: ETCDCTL_USERNAME</li>
+</ul>
+
+<h3>--timeout</h3>
+
+<ul>
+<li>connection timeout per request</li>
+<li>default: <code>&quot;1s&quot;</code></li>
+</ul>
+
+<h3>--total-timeout</h3>
+
+<ul>
+<li>timeout for the command execution (except watch)</li>
+<li>default: <code>&quot;5s&quot;</code></li>
+</ul>
+
+<h2>Usage</h2>
+
+<h3>Setting Key Values</h3>
+
+<p>Set a value on the <code>/foo/bar</code> key:</p>
+
+<pre><code class="language-sh">$ etcdctl set /foo/bar &quot;Hello world&quot;
+Hello world
+</code></pre>
+
+<p>Set a value on the <code>/foo/bar</code> key with a value that expires in 60 seconds:</p>
+
+<pre><code class="language-sh">$ etcdctl set /foo/bar &quot;Hello world&quot; --ttl 60
+Hello world
+</code></pre>
+
+<p>Conditionally set a value on <code>/foo/bar</code> if the previous value was &quot;Hello world&quot;:</p>
+
+<pre><code class="language-sh">$ etcdctl set /foo/bar &quot;Goodbye world&quot; --swap-with-value &quot;Hello world&quot;
+Goodbye world
+</code></pre>
+
+<p>Conditionally set a value on <code>/foo/bar</code> if the previous etcd index was 12:</p>
+
+<pre><code class="language-sh">$ etcdctl set /foo/bar &quot;Goodbye world&quot; --swap-with-index 12
+Goodbye world
+</code></pre>
+
+<p>Create a new key <code>/foo/bar</code>, only if the key did not previously exist:</p>
+
+<pre><code class="language-sh">$ etcdctl mk /foo/new_bar &quot;Hello world&quot;
+Hello world
+</code></pre>
+
+<p>Create a new in-order key under dir <code>/fooDir</code>:</p>
+
+<pre><code class="language-sh">$ etcdctl mk --in-order /fooDir &quot;Hello world&quot;
+</code></pre>
+
+<p>Create a new dir <code>/fooDir</code>, only if the key did not previously exist:</p>
+
+<pre><code class="language-sh">$ etcdctl mkdir /fooDir
+</code></pre>
+
+<p>Update an existing key <code>/foo/bar</code>, only if the key already existed:</p>
+
+<pre><code class="language-sh">$ etcdctl update /foo/bar &quot;Hola mundo&quot;
+Hola mundo
+</code></pre>
+
+<p>Create or update a directory called <code>/mydir</code>:</p>
+
+<pre><code class="language-sh">$ etcdctl setdir /mydir
+</code></pre>
+
+<h3>Retrieving a key value</h3>
+
+<p>Get the current value for a single key in the local etcd node:</p>
+
+<pre><code class="language-sh">$ etcdctl get /foo/bar
+Hello world
+</code></pre>
+
+<p>Get the value of a key with additional metadata in a parseable format:</p>
+
+<pre><code class="language-sh">$ etcdctl -o extended get /foo/bar
+Key: /foo/bar
+Modified-Index: 72
+TTL: 0
+Etcd-Index: 72
+Raft-Index: 5611
+Raft-Term: 1
+
+Hello World
+</code></pre>
+
+<h3>Listing a directory</h3>
+
+<p>Explore the keyspace using the <code>ls</code> command</p>
+
+<pre><code class="language-sh">$ etcdctl ls
+/akey
+/adir
+$ etcdctl ls /adir
+/adir/key1
+/adir/key2
+</code></pre>
+
+<p>Add <code>--recursive</code> to recursively list subdirectories encountered.</p>
+
+<pre><code class="language-sh">$ etcdctl ls --recursive
+/akey
+/adir
+/adir/key1
+/adir/key2
+</code></pre>
+
+<p>Directories can also have a trailing <code>/</code> added to output using <code>-p</code>.</p>
+
+<pre><code class="language-sh">$ etcdctl ls -p
+/akey
+/adir/
+</code></pre>
+
+<h3>Deleting a key</h3>
+
+<p>Delete a key:</p>
+
+<pre><code class="language-sh">$ etcdctl rm /foo/bar
+</code></pre>
+
+<p>Delete an empty directory or a key-value pair</p>
+
+<pre><code class="language-sh">$ etcdctl rmdir /path/to/dir
+</code></pre>
+
+<p>or</p>
+
+<pre><code class="language-sh">$ etcdctl rm /path/to/dir --dir
+</code></pre>
+
+<p>Recursively delete a key and all child keys:</p>
+
+<pre><code class="language-sh">$ etcdctl rm /path/to/dir --recursive
+</code></pre>
+
+<p>Conditionally delete <code>/foo/bar</code> if the previous value was &quot;Hello world&quot;:</p>
+
+<pre><code class="language-sh">$ etcdctl rm /foo/bar --with-value &quot;Hello world&quot;
+</code></pre>
+
+<p>Conditionally delete <code>/foo/bar</code> if the previous etcd index was 12:</p>
+
+<pre><code class="language-sh">$ etcdctl rm /foo/bar --with-index 12
+</code></pre>
+
+<h3>Watching for changes</h3>
+
+<p>Watch for only the next change on a key:</p>
+
+<pre><code class="language-sh">$ etcdctl watch /foo/bar
+Hello world
+</code></pre>
+
+<p>Continuously watch a key:</p>
+
+<pre><code class="language-sh">$ etcdctl watch /foo/bar --forever
+Hello world
+.... client hangs forever until ctrl+C printing values as key change
+</code></pre>
+
+<p>Continuously watch a key, starting with a given etcd index:</p>
+
+<pre><code class="language-sh">$ etcdctl watch /foo/bar --forever --index 12
+Hello world
+.... client hangs forever until ctrl+C printing values as key change
+</code></pre>
+
+<p>Continuously watch a key and exec a program:</p>
+
+<pre><code class="language-sh">$ etcdctl exec-watch /foo/bar -- sh -c &quot;env | grep ETCD&quot;
+ETCD_WATCH_ACTION=set
+ETCD_WATCH_VALUE=My configuration stuff
+ETCD_WATCH_MODIFIED_INDEX=1999
+ETCD_WATCH_KEY=/foo/bar
+ETCD_WATCH_ACTION=set
+ETCD_WATCH_VALUE=My new configuration stuff
+ETCD_WATCH_MODIFIED_INDEX=2000
+ETCD_WATCH_KEY=/foo/bar
+</code></pre>
+
+<p>Continuously and recursively watch a key and exec a program:</p>
+
+<pre><code class="language-sh">$ etcdctl exec-watch --recursive /foo -- sh -c &quot;env | grep ETCD&quot;
+ETCD_WATCH_ACTION=set
+ETCD_WATCH_VALUE=My configuration stuff
+ETCD_WATCH_MODIFIED_INDEX=1999
+ETCD_WATCH_KEY=/foo/bar
+ETCD_WATCH_ACTION=set
+ETCD_WATCH_VALUE=My new configuration stuff
+ETCD_WATCH_MODIFIED_INDEX=2000
+ETCD_WATCH_KEY=/foo/barbar
+</code></pre>
+
+<h2>Return Codes</h2>
+
+<p>The following exit codes can be returned from etcdctl:</p>
+
+<pre><code>0    Success
+1    Malformed etcdctl arguments
+2    Failed to connect to host
+3    Failed to auth (client cert rejected, ca validation failure, etc)
+4    400 error from etcd
+5    500 error from etcd
+</code></pre>
+
+<h2>Endpoint</h2>
+
+<p>If the etcd cluster isn't available on <code>http://127.0.0.1:2379</code>, specify a <code>--endpoint</code> flag or <code>ETCDCTL_ENDPOINT</code> environment variable. One endpoint or a comma-separated list of endpoints can be listed. This option is ignored if the <code>--discovery-srv</code> option is provided.</p>
+
+<pre><code class="language-sh">ETCDCTL_ENDPOINT=&quot;http://10.0.28.1:4002&quot; etcdctl set my-key to-a-value
+ETCDCTL_ENDPOINT=&quot;http://10.0.28.1:4002,http://10.0.28.2:4002,http://10.0.28.3:4002&quot; etcdctl set my-key to-a-value
+etcdctl --endpoint http://10.0.28.1:4002 my-key to-a-value
+etcdctl --endpoint http://10.0.28.1:4002,http://10.0.28.2:4002,http://10.0.28.3:4002 etcdctl set my-key to-a-value
+</code></pre>
+
+<h2>Username and Password</h2>
+
+<p>If the etcd cluster is protected by <a href="https://github.com/etcd-io/website/blob/main/content/docs/v2/authentication.md">authentication</a>, specify username and password using the <a href="#--username--u"><code>--username</code></a> or <code>ETCDCTL_USERNAME</code> environment variable. When <code>--username</code> flag or <code>ETCDCTL_USERNAME</code> environment variable doesn't contain password, etcdctl will prompt password in interactive mode.</p>
+
+<pre><code class="language-sh">ETCDCTL_USERNAME=&quot;root:password&quot; etcdctl set my-key to-a-value
+</code></pre>
+
+<h2>DNS Discovery</h2>
+
+<p>To discover the etcd cluster through domain SRV records,  specify a <code>--discovery-srv</code> flag or <code>ETCDCTL_DISCOVERY_SRV</code> environment variable. This option takes precedence over the <code>--endpoint</code> flag.</p>
+
+<pre><code class="language-sh">ETCDCTL_DISCOVERY_SRV=&quot;some-domain&quot; etcdctl set my-key to-a-value
+etcdctl --discovery-srv some-domain set my-key to-a-value
+</code></pre>
+
+<h2>Project Details</h2>
+
+<h3>Versioning</h3>
+
+<p>etcdctl uses <a href="http://semver.org/">semantic versioning</a>.
+Releases will follow lockstep with the etcd release cycle.</p>
+
+<h3>License</h3>
+
+<p>etcdctl is under the Apache 2.0 license. See the <a href="../LICENSE">LICENSE</a> file for details.</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

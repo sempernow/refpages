@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PSPs</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/List_of_online_payment_service_providers" title="List of online PSPs @ Wikipedia">Payment Service Provider</a> (PSP) | <a href="file:///D:/1%20GD/Trending/Biz/admin/Sempernow-LLC/Banks/Merchant.Account Acquiring.Bank/Merchant.Account.html"><code>Merchant.Account</code></a></h1>
+
+<p>Add fees of <code>0.80%</code> - <code>1.5%</code></p>
+
+<blockquote>
+<p><strong>Payment Processor</strong> a.k.a. <a href="https://en.wikipedia.org/wiki/Merchant_account#Payment_gateway" title="Wikipedia"><strong>Payment Gateway</strong></a>; credit card processors, with two-way payment flow.</p>
+</blockquote>
+
+<h2><a href="https://developer.authorize.net/api/reference/index.html" title="developer.authorize.net">Authorize.net / API</a> (Visa)</h2>
+
+<p><strong><em>No customer signup/account necessary</em></strong> (unlike Stripe, PayPal, &hellip;). One of the oldest and still largest of the PSPs. Began in Utah; bought over and over; now owned by Visa Corporation.</p>
+
+<ul>
+<li><a href="https://developer.authorize.net/api/reference">API Reference</a>
+
+<ul>
+<li>Apple Pay</li>
+<li>Google Pay</li>
+<li>PayPal Express</li>
+<li>Subscriptions (Recurring Billing)</li>
+<li>Fraud Management</li>
+</ul></li>
+</ul>
+
+<h2>PCI DSS Compliance : <a href="pci-dss-merchant-Compliance-Levels.webp" title="graphic">Levels</a> | <a href="pci-dss-merchant-Compliance-Requirements.webp" title="graphic">Requirements</a></h2>
+
+<h2><a href="https://www.firstdata.com/en_gr/home.html/index.html">First Data/fiserv</a> (<a href="https://en.wikipedia.org/wiki/Alipay">AliPay</a>/Alibaba partner)</h2>
+
+<p>... the corporate changeover (from First Data to fiserv) has their top-level site in a chaotic and useless state, but the API looks promising:</p>
+
+<ul>
+<li><a href="https://cardconnect.com/cardpointe">CardPointe</a> | <a href="https://cardconnect.com/merchant-payments">Merchant Accounts</a> | <a href="https://developer.cardpointe.com/cardconnect-api" title="developer.cardpointe.com">CardPointe Gateway / API</a></li>
+<li>Alipay Wallet app:<br>
+
+<ul>
+<li>in-store payments per QR code; CC bills payment, bank acct mgmt, P2P transfer, prepay mobile top-up, bus/train tickets, food order, ride hailing; online check-out @ most Chinese websites.</li>
+<li>Funds transfer is not immediate; settlement time depends on the payment method; unlike <em>Instant Pay</em> systems.</li>
+<li>USA affiliate <a href="https://en.wikipedia.org/wiki/First_Data">First Data</a>; PoS purchases @ 4M US stores.</li>
+</ul></li>
+</ul>
+
+<h2><a href="https://pay.amazon.com/secure-checkout/small-merchants">Amazon Pay</a> | <a href="https://developer.amazon.com/docs/amazon-pay-onetime/intro.html" title="for site managers">Integration</a> | <a href="https://developer.amazon.com/docs/amazon-pay-api/intro.html" title="for developers">API</a></h2>
+
+<ul>
+<li>2.9% + $0.30</li>
+</ul>
+
+<h2><a href="https://en.wikipedia.org/wiki/Stripe_%28company%29">Stripe</a></h2>
+
+<ul>
+<li>APIs; integrate payment processing into websites and mobile applications; anti-fraud tools to block fraudulent transactions; a billing product for online businesses; subscription recurring revenue and invoicing.</li>
+<li>Requires app account to generate a &quot;Connected Account&quot; for each user (to payout); effectively, <strong><em>turns your web app into an onboarding mechanism for new Stripe customers</em></strong>.</li>
+</ul>
+
+<h2><a href="https://en.wikipedia.org/wiki/WeChat#WeChat_Pay_payment_services">WeChat Pay</a> | <a href="https://pay.weixin.qq.com/index.php/xphp/v/coversea_pay_applyment/index#/guide/solution">USA Merchant accounts</a>  (not yet)</h2>
+
+<ul>
+<li>MP (<a href="https://en.wikipedia.org/wiki/WeChat#WeChat_Mini_Program" title="Wikipedia">Mini-Program</a>) users have access to WeChat payment services.<br>
+
+<ul>
+<li>MPs are 3rd party apps that embed in the WeChat app.</li>
+</ul></li>
+<li>Funds transfer is not immediate; bank account linked; Visa, MasterCard &amp; JCB (Discover/UnionPay/RuPay)<br></li>
+<li>Digital Wallet; money transfers between contacts, and to 3rd parties;<br></li>
+<li><a href="https://en.wikipedia.org/wiki/WeChat_red_envelope" title="@ Wikipedia">Red Packet</a> app to send money as gift; <strong>very popular</strong>; users give monetary gifts in the form of virtual 'credits' to other users; deposited into a user's WeChat Pay account, which can be used for purchases; app allows withdrawals from that account.
+
+<ul>
+<li><a href="https://www.webnots.com/how-to-send-red-packet-in-wechat/" title="'How to send Red Packet in WeChat' 2018">Two types</a>:
+
+<ol>
+<li>Individual Chat: Sent a Red Packet to an individual, per chat.</li>
+<li>Group Chat: Send Red Packet (Lucky Draw); <strong>fixed or random distribution</strong>. E.g., enter 600 CNY to a group chat of 12 members. If fixed amount, then each person in the group will get 50 CNY. For the random amount, each person will get different random amount; highest amount is considered as the luckiest draw; any remaining amount in the red packet after 24 hours will be returned to your account.</li>
+</ol></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://en.wikipedia.org/wiki/Zelle_%28payment_service%29" title="@ Wikipedia">Zelle</a></h2>
+
+<ul>
+<li>No API; zero developer info; zero app-integration info.</li>
+<li>Bigger than Venmo by transactions value; backed by BoA, Chase, ...</li>
+<li>Zelle-to-Zelle (user) payments</li>
+</ul>
+
+<h2>Progressive Degenerates (Political Commissars / Blacklisters)</h2>
+
+<blockquote>
+<p>These fraudsters masquerade as payment processors, yet operate as political commissars, colluding with a horde of judeo-athiest mystics to blacklist anyone they deem, by their inverted metrics, a heretic. And if you're not actively aiding and abetting the gang raping of Christendom unto her death, then you're a heretic.</p>
+</blockquote>
+
+<ul>
+<li><p>PSP</p>
+
+<ul>
+<li>PayPal / <a href="https://en.wikipedia.org/wiki/Venmo" title="Mobile version of PayPal">Venmo</a></li>
+<li>Eventbrite</li>
+<li>Shopify</li>
+<li>Stripe - blacklisted US President during election</li>
+<li><a href="https://squareup.com/us/en/online-store">Square</a> (Jack Dorsey/Twitter)</li>
+<li>Chase Paymentstech</li>
+<li>Patreon</li>
+<li>IndieGoGo</li>
+<li>Coinbase</li>
+<li>Periscope</li>
+</ul></li>
+
+<li><p>Tech/Infra</p>
+
+<ul>
+<li>Google</li>
+<li>Facebook</li>
+<li>Twitter</li>
+<li>AWS</li>
+<li>Cloudflare</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Go.Templates</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://golang.org/pkg/text/template/" title="text/template pkg @ golang.org">Templates</a></h1>
+
+<p>Data-driven templates for generating textual output.</p>
+
+<pre><code class="language-golang">type Stuff struct {
+	Material string
+	Count    uint
+}
+foo := Stuff{&quot;wool&quot;, 17}
+tmpl, _ := template.New(&quot;test&quot;).Parse(&quot;These {{.Count}} items are {{.Material}}&quot;)
+tmpl.Execute(os.Stdout, foo)
+</code></pre>
+
+<p><code>Stdout</code>: &quot;These 17 items are wool&quot;</p>
+
+<ul>
+<li>Templates are first <em>parsed</em>, and then <em>applied</em> to a data structure.</li>
+<li>Template <em>annotations</em> refer to elements of the data structure, e.g., a <code>struct</code> field, or a <code>map</code> key).</li>
+<li><em>Execution</em> <strong><em>walks the structure</em></strong> and sets the <strong><em>cursor</em></strong>, called &quot;dot&quot; (&quot;<code>.</code>&quot;), which is the value at the current location. So, &quot;<code>.Method</code>&quot; result is the value of invoking the method with dot as the
+receiver, e.g., <code>dot.Method()</code>.</li>
+<li><a href="https://golang.org/pkg/text/template/#hdr-Actions">Actions</a> &mdash; data evaluations or control structure; delimited by &quot;<code>{{</code>&quot; and &quot;<code>}}</code>&quot;;
+
+<ul>
+<li><a href="https://golang.org/pkg/text/template/#hdr-Arguments">Arguments</a> &mdash; a simple value denoted by: a Golang variable value, <code>nil</code>, <code>.</code>, <code>$aVarName</code>, <code>.Field</code>, <code>.Field1.Field2</code>, <code>.Key</code>, <code>.Method</code>
+
+<ul>
+<li><a href="https://golang.org/pkg/text/template/#hdr-Text_and_spaces">Text and spaces</a>
+
+<ul>
+<li>&quot;<code>{{23 -}} &lt; {{- 45}}</code>&quot; renders &quot;<code>23&lt;45</code>&quot;</li>
+</ul></li>
+</ul></li>
+<li><a href="https://golang.org/pkg/text/template/#hdr-Pipelines">Pipelines</a>; <code>Argument</code>, <code>.Method [Argument...]</code>, <code>functionName [Argument...]</code></li>
+</ul></li>
+<li><a href="https://golang.org/pkg/text/template/#hdr-Variables">Variables</a></li>
+</ul>
+
+<h2>Nested Templates</h2>
+
+<pre><code>{{ template &quot;header&quot; .App }}
+
+{{ template &quot;main&quot; . }}
+
+{{ template &quot;footer&quot; }}
+</code></pre>
+
+<ul>
+<li>The <code>header</code> template takes the <code>App</code> struct (<code>.App</code>), and the <code>main</code> template takes all (<code>.</code>), which may be a nested (composite) struct. A Golang <strong><em>design pattern</em></strong> is to create such an anonymous struct comprised of all the structs required by the template.</li>
+</ul>
+
+<h2>Data @ Multiple Structs</h2>
+
+<p>Compose the requiste <code>data</code> struct, which can be anonymous, by <strong><em>nesting whatever structs are necessary</em></strong> to fulfill template requirements, declaring which elements are <em>applied</em> where, using the template-dot notation, e.g., <code>{{.Page.Name}}</code>.</p>
+
+<pre><code class="language-html">&lt;h1&gt;{{.Page.Name}}&lt;/h1&gt;
+&lt;h2&gt;Wisdom&lt;/h2&gt;
+&lt;ul&gt;
+    {{if .Wisdom}}
+        {{range .Wisdom}}
+        &lt;li&gt;{{.Name}} - {{.Motto}}&lt;/li&gt;
+        {{end}}
+    {{end}}
+
+&lt;/ul&gt;
+&lt;h2&gt;Transport&lt;/h2&gt;
+&lt;ul&gt;
+    {{range .Transport}}
+    &lt;li&gt;{{.Name}} - {{.Model}} - {{.Doors}}&lt;/li&gt;
+    {{end}}
+&lt;/ul&gt;
+</code></pre>
+
+<pre><code class="language-golang">data := struct {
+    Page      pg
+    Wisdom    *[]sage
+    Transport []car
+}{
+    page,
+    &amp;sages,
+    cars,
+}
+
+b := &amp;strings.Builder{}
+tpls.ExecuteTemplate(b, page.fname+&quot;.gohtml&quot;, data)
+</code></pre>
+
+<ul>
+<li>Note a struct field that is a struct type may be named (aliased) or not.</li>
+</ul>
+
+<h2>Most Common Functions</h2>
+
+<h3>Parse Template(s)</h3>
+
+<h4>Read/parse template file(s) per GLOB @ <code>dir</code></h4>
+
+<pre><code class="language-golang">paths = filepath.Join(dir, &quot;templates&quot;, &quot;*&quot;)
+tpls = template.Must(template.ParseGlob(paths))
+</code></pre>
+
+<h4>Read/parse a template (@ <code>path</code>)</h4>
+
+<pre><code class="language-golang">path = filepath.Join(dir, &quot;templates&quot;, &quot;foo.tpl&quot;)
+tpl = template.Must(template.ParseFiles(path))
+</code></pre>
+
+<h4>Read a template file into a slice (<code>[]byte</code>)</h4>
+
+<pre><code class="language-golang">data, err := ioutil.ReadFile(tplPath)
+chk(err)
+</code></pre>
+
+<h4>Parse a string</h4>
+
+<pre><code class="language-golang">tpl, err = template.New(tplPath).Parse(string(data))
+chk(err)
+</code></pre>
+
+<h3>Execute Parsed Template(s) (<code>tpl *Template</code>)</h3>
+
+<h4>@ <code>tpl</code> is <strong><em>one</em></strong> parsed template file</h4>
+
+<pre><code class="language-golang">tpl.Execute(out,data)
+</code></pre>
+
+<h5><code>Execute()</code> signature</h5>
+
+<pre><code class="language-golang">func (tpl *Template) Execute(w io.Writer, data interface{}) error
+</code></pre>
+
+<h4>@ <code>tpl</code> is <strong><em>several</em></strong> parsed template files.</h4>
+
+<pre><code class="language-golang">tpl.ExecuteTemplate(out, tplName, data)
+</code></pre>
+
+<h5><code>ExecuteTemplate()</code> signature</h5>
+
+<pre><code class="language-golang">func (tpl *Template) ExecuteTemplate(w io.Writer, tplName string, data interface{}) error
+</code></pre>
+
+<p>==== Goes To Eleven ====</p>
+
+<h1>Passing Data To Templates</h1>
+
+<p>You get to pass in one value - that's it!</p>
+
+<p>Fortunately, we have many different types which that value can be including composite types which compose together values. (These are also known as aggregate data types - they aggregate together many different values).</p>
+
+<h2>Slice</h2>
+
+<p>Use this for passing in a bunch of values of the same type. We could have a []int or a []string or a slice of any type.</p>
+
+<h2>Map</h2>
+
+<p>Use this for passing in key-value data.</p>
+
+<h2>Struct</h2>
+
+<p>This is probably the most commonly used data type when passing data to templates. A struct allows you to compose together values of different types.</p>
+
+<h1>Template variables</h1>
+
+<h2><a href="https://godoc.org/text/template#hdr-Variables">template variables</a></h2>
+
+<h3>ASSIGN</h3>
+
+<pre><code class="language-Go">{{$wisdom := .}}
+</code></pre>
+
+<h3>USE</h3>
+
+<pre><code class="language-Go">{{$wisdom}}
+</code></pre>
+
+<p>A pipeline inside an action may initialize a variable to capture the result. The initialization has syntax</p>
+
+<p>$variable := pipeline</p>
+
+<p>where $variable is the name of the variable. An action that declares a variable produces no output.</p>
+
+<p>If a &quot;range&quot; action initializes a variable, the variable is set to the successive elements of the iteration. Also, a &quot;range&quot; may declare two variables, separated by a comma:</p>
+
+<p>range $index, $element := pipeline</p>
+
+<p>in which case $index and $element are set to the successive values of the array/slice index or map key and element, respectively. Note that if there is only one variable, it is assigned the element; this is opposite to the convention in Go range clauses.</p>
+
+<p>A variable's scope extends to the &quot;end&quot; action of the control structure (&quot;if&quot;, &quot;with&quot;, or &quot;range&quot;) in which it is declared, or to the end of the template if there is no such control structure. A template invocation does not inherit variables from the point of its invocation.</p>
+
+<p>When execution begins, $ is set to the data argument passed to Execute, that is, to the starting value of dot.</p>
+
+<h1>Using functions in templates</h1>
+
+<h2><a href="https://godoc.org/text/template#hdr-Functions">template function documentation</a></h2>
+
+<hr>
+
+<h2><a href="type FuncMap map[string]interface{}">template.FuncMap</a></h2>
+
+<p>FuncMap is the type of the map defining the mapping from names to functions. Each function must have either a single return value, or two return values of which the second has type error. In that case, if the second (error) return value evaluates to non-nil during execution, execution terminates and Execute returns that error.</p>
+
+<h2><a href="https://godoc.org/text/template#Template.Funcs">template.Funcs</a></h2>
+
+<pre><code class="language-Go">func (t *Template) Funcs(funcMap FuncMap) *Template
+</code></pre>
+
+<hr>
+
+<p>During execution functions are found in two function maps:
+- first in the template,
+- then in the global function map.</p>
+
+<p>By default, no functions are defined in the template but the Funcs method can be used to add them.</p>
+
+<p>Predefined global functions are defined in text/template.</p>
+
+<h1>Global Functions</h1>
+
+<p>There are &quot;predefined global functions&quot; which you can use.</p>
+
+<p><a href="https://godoc.org/text/template#hdr-Functions">You can read about these functions here</a></p>
+
+<p>The following code samples will demonstrate some of these &quot;predefined global functions&quot;:</p>
+
+<ul>
+<li><p>index</p></li>
+
+<li><p>and</p></li>
+
+<li><p>comparison</p></li>
+</ul>
+
+<h1>Nested templates</h1>
+
+<p><a href="https://godoc.org/text/template#hdr-Nested_template_definitions">nested templates documentation</a></p>
+
+<h2>define:</h2>
+
+<pre><code class="language-Go">{{define &quot;TemplateName&quot;}}
+insert content here
+{{end}}
+</code></pre>
+
+<h2>use:</h2>
+
+<pre><code class="language-Go">{{template &quot;TemplateName&quot;}}
+</code></pre>
+
+<h1>Passing data to templates</h1>
+
+<h2><code>011_composition-and-methods</code></h2>
+
+<p>These files provide you with more examples of passing data to templates.</p>
+
+<p>These files use the <a href="https://en.wikipedia.org/wiki/Composition_over_inheritance">composition</a> design pattern. You should favor this design pattern.</p>
+
+<p>Read more about <a href="https://www.goinggo.net/2015/09/composition-with-go.html">composition with Go here</a>.</p>
+
+<h1>Hands-on exercises</h1>
+
+<p>These hands-on exercises will help you learn how to pass data to templates.</p>
+
+<p>I have found that many students need practice with passing data to templates.</p>
+
+<h2>Take-away</h2>
+
+<p>One of the main take-aways is to use a composite data type. Often this data type will be a struct. Build a struct to hold the different pieces of data you'd like to pass to your template, then pass that to your template.</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

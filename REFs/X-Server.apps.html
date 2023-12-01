@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>X-Server.apps</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Windows <a href="https://en.wikipedia.org/wiki/X_Window_System">X Server</a> (<code>X11</code>)</h1>
+
+<p>Allows GUI apps installed at a session host (WSL distro) to launch as a client GUI app (at Windows).</p>
+
+<h3>Setup @ <code>~/.bashrc</code></h3>
+
+<pre><code class="language-bash">export DISPLAY=:0
+</code></pre>
+
+<h2>Apps</h2>
+
+<h3><a href="https://sourceforge.net/projects/vcxsrv/">VcXsrv</a></h3>
+
+<pre><code class="language-shell">choco install vcxsrv -y
+</code></pre>
+
+<ul>
+<li><p>Settings for X-Server auto-launch. Copy/paste into shortcut for GUI use, or script (<code>.cmd</code> | <code>.bat</code>) for CLI use.</p>
+
+<pre><code class="language-shell">&quot;%ProgramFiles%\VcXsrv\vcxsrv.exe&quot; :0 -ac +bs -reset -terminate -dpi auto -render color -lesspointer -multiwindow -multimonitors +xinerama -clipboard -emulate3buttons -hostintitle -keyhook -wgl -swrastwgl -winkill
+</code></pre></li>
+
+<li><p>Running the X-Server fixes <code>xclip</code> issue @ WSL; otherwise <code>xclip</code> fails @ <code>putclip()</code>; creates file &quot;<code>xclip -i -f -silent -selection clipboard</code>&quot; @ <code>PWD</code>; see <code>putclip()</code> function @ <code>~/.bash_functions</code> .</p></li>
+
+<li><p>@ Linux, may also want install <code>xclip</code>.</p></li>
+</ul>
+
+<h3><a href="https://mobaxterm.mobatek.net/">MobaXterm</a>  (GUI)</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Distributed.Storage</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Cloud Deployment :: Distributed Cache/Storage</h1>
+
+<ul>
+<li>Docker volumes are almost as worthless as bind mounts at multi-node swarm cluster; neither survive container lifecycle; new container of a service may spawn at other node (engine) and so may not have the same docker volume.</li>
+<li>REX-Ray volume plugin installs per vendor-specific driver; tested @ AWS (EBS), and supposedly works at DO too, but that's about all.</li>
+<li>Redis, as a single instance, is for ephemeral cache; does not survive container lifecycle. That is, no viable persistent storage under a multi-node swarm. (See Docker volumes issue, above.)</li>
+<li>Redis HA per Sentinel is a (candidate for) swarm-wide solution to cache and storage.
+
+<ul>
+<li>This involves a minimum of master, slave and sentinel. <strong><em>Clients connect only to sentinel</em></strong>, which selects an apropos (functioning) master/slave.</li>
+<li>Requires data initialization from the Source of Truth.</li>
+</ul></li>
+<li>MinIO is an S3-backed server (and adding new storage vendors), but no longer supports Docker Swarm; only the hellscape of Kubernetes.</li>
+</ul>
+
+<h2>Read-only solutions</h2>
+
+<ol>
+<li>Embed in Docker image</li>
+<li>Embed in Golang binary</li>
+</ol>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

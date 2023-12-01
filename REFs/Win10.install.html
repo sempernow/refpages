@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win10.install</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Win10x64 Pro Install/Update Notes | <a href="https://en.wikipedia.org/wiki/Windows_10_version_history">Win10 Version History</a></h1>
+
+<h2>2020-11-27 @ XPC</h2>
+
+<h4><code>[Win10-Pro-x64] [2004.19041.630] [20H1] [KB---------] [2020-11-27]</code></h4>
+
+<ul>
+<li>Win10 Version 2004, <a href="https://en.wikipedia.org/wiki/Windows_10_version_history_%28version_2004%29">&quot;May 2020 Update&quot; (<code>20H1</code>)</a>
+
+<ul>
+<li>Has no <code>KB...</code> identifier association.</li>
+<li>Shortcuts mod ruined; shortcut icon reverted to hideous original.
+
+<ul>
+<li>Repaired by reapplying the mod
+
+<ul>
+<li>@ <code>Shortcut-mod-Win10.v1903-v2004.7z</code></li>
+</ul></li>
+</ul></li>
+<li>Update History is no longer visble @ Windows Update window.</li>
+<li>Stores/saves <code>C:\Windows.old\</code> (<code>30GB</code>)</li>
+</ul></li>
+</ul>
+
+<h2>2020-06-06 @ XPC</h2>
+
+<h4><code>[Win10-Pro-x64] [1909.18363.778] [19H2] [KB4549951] [2020-04-14]</code></h4>
+
+<h2>2020-06-07 :: Win10 @ XPC reinstall</h2>
+
+<ul>
+<li>Reinstalled; reformatted <code>C:</code> and then applied previously captured WIM (<code>Win10.1903.XPC.[SECURE].wim</code> <code>#2</code>) per <code>wimlib apply</code>
+
+<ul>
+<li><p>Required due to accidental destruction of Registry <code>HKCR</code> in its entirety.</p>
+
+<pre><code class="language-shell">wimlib-imagex apply D:\Win10.XPC.wim 2 C:
+</code></pre>
+
+<ul>
+<li><strong><em>Nothing else is required</em></strong>_;
+
+<ul>
+<li>Sans bootfix, booted uneventfully into Windows on first try.</li>
+</ul></li>
+<li>Then, successfully performed Windows Update to <code>19H2</code>.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>2019-11-13 @ XPC</h2>
+
+<h4><code>[Win10-Pro-x64] [1903.18362.476] [19H1] [2019-10-08] [KB4524570]</code></h4>
+
+<ul>
+<li>Product Key @ 19H1: <code>00331-10000-00001-AA544</code></li>
+</ul>
+
+<p>Update to version 1903 (<code>19H1</code>) per Windows Update. To do so, had to reset to zero all the delays. Such were previously set to avoid unwanted/buggy updates. <strong>To change update schedule</strong>: Settings &gt; &quot;Update &amp; Security&quot; &gt; &quot;Advanced options&quot;</p>
+
+<p>As with the ISO method used at HTPC, the update reset several settings; folder views, SendTo endpoints, Shortcuts (name and icon-overlay), &hellip;</p>
+
+<h2>2019-11-11 @ HTPC</h2>
+
+<h4><code>[Win10-Pro-x64] [1903.18362.418] [19H1] [2019-10-08] [KB4517389]</code></h4>
+
+<ul>
+<li>Product Key @ 19H1: <code>00330-80000-00000-AA847</code></li>
+</ul>
+
+<p>Update to version 1903 (<code>19H1</code>) per ISO; <strong><em>needn't use that method</em></strong>; instead, select faster updates by setting to zero all the delays under &quot;Advanced options&quot;, under Settings &gt; &quot;Update &amp; Security&quot; menu. Using the ISO method, several settings were reset to defaults; folder views, SendTo endpoints, Shortcuts (name and icon-overlay), &hellip;</p>
+
+<h2>2018 @ XPC</h2>
+
+<ul>
+<li>Product Key @ RS4: <code>00331-10000-00001-AA205</code><br></li>
+<li>Product Key @ RS3: <code>00331-10000-00001-AA821</code><br></li>
+</ul>
+
+<h2>2018-09-28 &quot;Docker for Windows&quot; installed (<code>Hyper-V</code> enabled)</h2>
+
+<ul>
+<li>MS OS Hyper-V enabled per Docker or PS<br>
+
+<ul>
+<li>PS Enable: <code>Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -Al</code></li>
+<li>PS Validate:  <code>Get-EventLog -LogName SYSTEM -Source Microsoft-Windows-Hyper-V-Hypervisor</code></li>
+<li>Had repeatedly failed to enable, by any method, under the previous OS build (RS3)<br></li>
+</ul></li>
+</ul>
+
+<h2>2018-09-28 Update <code>v1803 build 10.0.17134</code> (RS4) per Windows install-media (USB)</h2>
+
+<ul>
+<li>ISO @ &quot;<code>Win10 Pro x64 [1803.17134.286] RS4 Sep.2018 V.2 Pre-actvd [TeamOS]</code>&quot;<br>
+
+<ul>
+<li>Install onto <code>8GB</code> USB drive per Rufus app.</li>
+</ul></li>
+<li>Update from online OS, per <code>setup.exe</code> in folder of install-media (USB)
+
+<ul>
+<li>Select Custom/Upgrade menu option during OS install (<em>not</em> the clean install option).</li>
+<li><code>\Activator</code> folder containing <code>.rar</code> apps added to user's <code>\Desktop</code> folder, where it remained for several reboots, until Avast anti-virus detected as malware and moved <code>activator.exe</code> to Virus Chest. Not known if it executed, but Product Key has changed since <code>RS3</code>.</li>
+</ul></li>
+</ul>
+
+<h2>2018-06-04 <strong><em>FAILed</em></strong> @ Windows Update <code>v1803 build 10.0.17134</code> (RS 4).</h2>
+
+<h2>2018-06-04 Moved system from OCZ SSD to Crucial SSD</h2>
+
+<ul>
+<li>Cloned all partitions of Win 10 system disk, OCZ SSD (<code>60GB, SATA2</code>), to Crucial SSD (<code>110GB, SATA3</code>), using &quot;Casper 10&quot; app from WinPE (<code>Gandalf-Win10PEx64 RS3 bld 16299 [2018-05-08]</code>) @ SD3 USB (<code>SanDisk Ultra.Fit 32GB USB3.0 SDCZ43-032G-GAM46</code>). The app automatically matched partition types and sizes. Afterward, shutdown and phycially disconnected the OCZ SSD, and then booted into the &quot;new&quot; Crucial SSD volume without incident. This new clone (Crucial) appears to function normally; reparse points (<code>SYMLINK</code>, <code>SYMLINKD</code> and <code>JUNCTION</code>) all appear to be preserved. Then applied a previously captured &quot;Scratch&quot; volume image (<code>S:</code>), using <code>DISM.exe</code>, to the remaining free space (<code>52GB</code>), after creating a &quot;Simple Volume&quot; there, on the Crucial SSD.</li>
+</ul>
+
+<h2>2018-06-01</h2>
+
+<ul>
+<li><p>On boot, before or after user login, OS reports <strong><em>corrupted Defender file</em></strong> (<code>MpClient.dll</code>); &quot;<code>MSASCuiL.exe - Bad image</code>&quot;.</p>
+
+<ul>
+<li><p><strong><em>Fixed by overwriting with last-good from a prior volume capture</em></strong> (WIM). Required first, &quot;Administrators&quot; group take ownership and full access of the file, and grant &quot;Administrators&quot; full access to its folder (<code>C:\Program Files\Windows Defender</code>). Note that &quot;LastGood&quot; compresses, whereas &quot;Corrupted&quot; does not, which implies corrupted is random.  (Renamed here for observation.)</p>
+
+<pre><code>09/29/2017  09:41 AM         1,072,536 MpClient.Corrupted.dll
+06/04/2018  03:31 PM         1,072,748 MpClient.Corrupted.dll.7z
+09/29/2017  09:41 AM         1,072,536 MpClient.LastGood.dll
+06/04/2018  03:31 PM           362,810 MpClient.LastGood.dll.7z
+</code></pre></li>
+</ul></li>
+
+<li><p>Windows Update recurringly reports error trying to update Defender:</p>
+
+<ul>
+<li><code>Update for Windows Defender antimalware platform - KB4052623 (Version 4.16.17656.18052) - Error 0x80070643</code></li>
+</ul></li>
+</ul>
+
+<h2>2018-04</h2>
+
+<ul>
+<li><code>Win10 Pro x64 [1709.16299.251] RS3 [Gen2].iso</code><br></li>
+<li><code>1709.16299.371</code> per Windows Update</li>
+
+<li><p>Settings &nbsp;&gt; System &nbsp;&gt; About</p>
+
+<pre><code>Edition     Windows 10 Pro
+Version     1709  
+OS Build    16299.371 
+</code></pre></li>
+
+<li><p>Hardware drivers (ASRock H270M-Pro4 mainboard); the only one required is that for sleep (power) function; <code>INF(v10.1.1.38)\SetupChipset.exe</code>, which was installed on 2018-05-03. Without it, the scripted sleep command, &quot;<code>RunDll32.exe powrprof.dll,SetSuspendState</code>&quot;, would cause the machine to <strong>shutdown instead of sleep</strong>. All other drivers for this machine installed per Windows Update, and seem to function without issue for months now.</p></li>
+
+<li><p>@ DxDiag &nbsp;&gt; Operating System:<br>
+<code>Windows 10 Pro 64-bit (10.0, Build 16299) (16299.rs3_release.170928-1534)</code></p></li>
+
+<li><p><a href="https://en.wikipedia.org/wiki/Windows_10_version_history">Windows 10 Version/Build History</a></p>
+
+<pre><code>2.1 v1507 10.0.10240 2015 Threshold 1 (RTM)
+2.2 v1511 10.0.10586 2015 Threshold 2 (November Update)
+2.3 v1607 10.0.14393 2016 Redstone 1 (Anniversary Update)
+2.4 v1703 10.0.15063 2017 Redstone 2 (Creators Update)
+2.5 v1709 10.0.16299 2017 Redstone 3 (Fall Creators Update) 
+2.6 v1803 10.0.17134 2018 Redstone 4 
+2.7 v1809
+</code></pre></li>
+</ul>
+
+<h2><a href="https://github.com/Disassembler0/Win10-Initial-Setup-Script">Automate OS Config</a> per <code>PowerShell</code></h2>
+
+<ul>
+<li><p><code>Win10.ps1</code> (<a href="https://github.com/Disassembler0/Win10-Initial-Setup-Script/blob/master/Win10.ps1">Nifty script</a> for development environment!)</p>
+
+<pre><code>s:\&gt; powershell.exe -NoProfile -ExecutionPolicy Bypass `
+s:\&gt; -File Win10.ps1 [-preset tweaks.txt]
+</code></pre></li>
+
+<li><p><code>tweaks.txt</code> (Optional.)</p>
+
+<pre><code># Security tweaks
+EnableFirewall
+EnableDefender
+
+# UI tweaks
+ShowKnownExtensions
+ShowHiddenFiles
+</code></pre></li>
+
+<li><p><code>EnableScriptHost</code> (func @ <code>Win10.ps1</code>) :: Required @ <code>vpn.bat</code></p>
+
+<pre><code class="language-powershell">PS&gt; Set-ItemProperty -Path &quot;HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings&quot; `
+    -Name &quot;Enabled&quot; -Type DWord -Value 1
+</code></pre></li>
+</ul>
+
+<h2>Config</h2>
+
+<ul>
+<li><p><code>config.bat</code></p>
+
+<pre><code>s:\&gt; config.bat CMD_LIB_VARS &quot;ACLs_GROUP ACLs_USER CDROM_V CMD_LIBRARY_PATH CMD_LIB_VARS DOWNLOADS GITREPO GITUSER GOBIN GOPATH GOROOT HOME KEEPAWAKE LANDOMAIN LANMACHINES LANROUTER LANTCROOT MOTHERBOARD PASSGODIR PORTABLE_APPS RAMDISK SCRATCH STATIC_VOL STATIC_DIR STORAGE TAP_DEVICE TEMP TORRENT VERSIONING&quot;
+</code></pre>
+
+<pre><code class="language-bash"># Sort a space-delimited a string 
+$ echo $varsList | tr &quot; &quot; &quot;\n&quot; | sort | tr &quot;\n&quot; &quot; &quot;
+</code></pre></li>
+</ul>
+
+<h2>Manual Install</h2>
+
+<ul>
+<li><code>VSCodeSetup-x64-1.22.2.exe</code></li>
+<li><code>7z1801-x64.exe</code></li>
+<li><code>Git-2.16.2-64-bit.exe</code></li>
+<li><code>Firefox Installer.exe</code></li>
+<li><a href="https://chocolatey.org/install"><code>Chocolatey</code></a><code>.bat</code> (Run as Admin.) <code>(v0.10.10)</code></li>
+</ul>
+
+<h2>Automate Install per <a href="https://chocolatey.org/packages">Chocolatey</a></h2>
+
+<ul>
+<li><p>Use <code>choco.Auto.Pkgs.cmd</code></p>
+
+<pre><code>s:\&gt; choco install python -y           3.6.5
+s:\&gt; choco install nodejs-lts -y      8.11.1
+s:\&gt; choco install notepadplusplus -y  7.5.6
+s:\&gt; choco install irfanview -y         4.51
+s:\&gt; choco install pia -y               78.0
+s:\&gt; choco install openvpn -y          2.4.4
+s:\&gt; choco install golang -y          1.10.1
+s:\&gt; choco install mpc-hc -y          1.7.13
+</code></pre></li>
+</ul>
+
+<blockquote>
+<p>Regarding Vim, do not install it per se, per Chocolatey or otherwise. That from the <a href="https://vim8.org/">Vim website</a> is <strong>incompatible</strong> with Cgywin, and leaves residue on uninstall (See <code>HKCR_[asterisk]_shell_Vim.reg</code> for cleanup/removal). Use Cygwin's setup app to install its <code>vim</code> package. The Git-for-Windows terminal app (<code>Git-2.16.2-64-bit.exe</code>) installs its own <code>vim</code> app/version by default.</p>
+</blockquote>
+
+<h2>WSL</h2>
+
+<h3><a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10">Install</a> Windows Subsystem for Linux (WSL)</h3>
+
+<ol>
+<li><p>PowerShell (Enable WSL)</p>
+
+<pre><code class="language-powershell">PS&gt; # Run PowerShell as Admin:  
+PS&gt; Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux  
+</code></pre></li>
+
+<li><p><a href="https://www.microsoft.com/en-us/store/p/debian-gnu-linux/9msvkqc78pk6">Microsoft Store</a>  (Select/Install distros)</p>
+
+<ul>
+<li>Start Menu &nbsp;&gt; Microsoft Store</li>
+</ul></li>
+</ol>
+
+<h3><a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config">Usage</a></h3>
+
+<ul>
+<li><p>Equivalent ...</p>
+
+<pre><code>wsl.exe
+bash.exe  
+&lt;distro&gt;.exe
+</code></pre>
+
+<pre><code>s:\&gt; wsl.exe 
+s:\&gt; wsl [command]
+s:\&gt; :: OR 
+s:\&gt; bash.exe
+s:\&gt; bash -c [command]
+s:\&gt; :: OR
+s:\&gt; debian.exe /?  :: show available commands (per distro-name) 
+s:\&gt; debian.exe     :: launches distro @ CURRENT SHELL ...  
+
+f06y@XPC:~  
+</code></pre></li>
+
+<li><p>Change default user (per distro), e.g., ...</p>
+
+<pre><code>&gt; debian.exe config --default-user USERNAME
+</code></pre></li>
+
+<li><p>Admin</p>
+
+<pre><code class="language-bash">$ sudo su  # MUST use; 'su' FAILs 
+
+# $HOME dir CHANGE  
+$ sudo vim /etc/passwd  # E.g., from `/home/uZer` to `/mnt/s/HOME`
+# ... edit @ username, then reboot
+
+# if user is NOT login|default user
+$ usermod -m -d /newhome/username username 
+# else unstoppable parent processes.
+
+# Reset Password
+$ passwd username
+$ exit
+</code></pre></li>
+
+<li><p>Package installs @ Debian</p>
+
+<pre><code class="language-bash">$ cat /etc/debian_version       # 9.3; version number 
+$ cat /etc/os-release           # OS Info  
+
+$ sudo su
+# GNU Dev Tools
+$ apt-get update                   # pkgs version-info update      
+$ apt-get install build-essential  # gcc, make, ...
+$ apt-get install dh-autoreconf    # autoreconf 
+# @ Kali
+$ apt-get dist-upgrade            
+$ apt-get install metasploit-framework  # turn off anti-virus
+# Apps
+$ apt-get install libssl-dev -y      # openssl crypto lib
+$ apt-get install openssh-client -y  # ssh client
+$ apt-get install openssh-server -y  # ssh server
+$ apt-get install man-db -y   # man pages
+$ apt-get install vim -y      # vim editor 
+$ apt-get install strace -y   # debugger
+$ apt-get install rsync -y    # rsync
+
+# NOT needed; ntfs volumes mounted, per WSL default, @ /mnt/... 
+$ apt-get install ntfs-3g -y  # Debian|Ubuntu
+$ yum install ntfs-3g     -y  # RHEL 
+
+$ ls -la '/mnt/c/Users/X1'      # fixed-drives automount by default
+</code></pre></li>
+
+<li><p>WSL commands passed into <code>bash -c</code> are forwarded to the WSL process without modification.</p>
+
+<pre><code>s:\&gt; bash -c ls -la            :: depricated   
+s:\&gt; wsl.exe ls -la            :: use this   
+s:\&gt; dir | bash -c &quot;grep foo&quot;  :: pipes work  
+</code></pre></li>
+
+<li><p>Currently, the &quot;Insider Build 17643&quot; has <code>CTRL+C/V</code> for copy/paste between OSs, but copy/paste per mouse works regardless.</p></li>
+</ul>
+
+<h3><a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config">Distro Management</a></h3>
+
+<ul>
+<li><p><code>wslconfig.exe</code><br>
+Manage any|all available (installed) Linux distro(s)</p>
+
+<pre><code>s:\&gt; wslconfig /list /all  
+s:\&gt; wslconfig /unregister &lt;DistributionNames&gt; 
+s:\&gt; wslconfig /setdefault Ubuntu       
+s:\&gt; wslconfig /list 
+</code></pre></li>
+
+<li><p><code>wsl.conf</code> @ <code>%USERPROFILE%</code></p>
+
+<ul>
+<li>Configures certain functionality per distro launch @ <code>/etc/wsl.conf</code> (???)<br></li>
+<li>By default, sans <code>wsl.conf</code>, all fixed drives  (<code>NTFS</code>, etal) <strong>automount</strong> @ <code>/mnt</code>, e.g., <code>/mnt/c</code>, <code>/mnt/d</code>, ...`<br></li>
+</ul></li>
+</ul>
+
+<h3>WSL References</h3>
+
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config">Commands</a><br></li>
+<li><a href="https://docs.microsoft.com/en-us/windows/wsl/user-support">User Accounts &amp; Permissions</a><br></li>
+
+<li><p><a href="https://docs.microsoft.com/en-us/windows/wsl/interop#creators-update-and-anniversary-update">Interoperability</a> [Creators Update]</p>
+
+<h2><a href="https://www.easeus.com/todo-backup-resource/how-to-stop-windows-10-from-automatically-update.html">Disable Automatic Updates</a></h2></li>
+</ul>
+
+<ol>
+<li><p><code>gpedit.msc</code> (Group Policy Editor)<br>
+&nbsp;&gt; Computer Configuration &nbsp;&gt; Administrative Templates<br>
+&nbsp;&gt; Windows Components &nbsp;&gt; Windows Update<br>
+&nbsp;&gt; Configure Automatic Updates &nbsp;&gt; Disabled &nbsp;&gt; Apply, OK</p>
+
+<ul>
+<li>Or &quot;<strong>Enable</strong>&quot; instead, and select <strong>option #3</strong>, which is the default. It auto-downloads the update(s) and notifies user, but does not auto-install. The user may then update per user action: Start Menu &gt; Settings &gt; Update ...</li>
+</ul></li>
+
+<li><p><code>services.msc</code> (Services)<br>
+&nbsp;&gt; Windows Update &nbsp;&gt; Disable</p>
+
+<ul>
+<li>Flaw: restarts automatically, repeatedly, after a while.<br></li>
+</ul></li>
+</ol>
+
+<blockquote>
+<p>Regardless, also change the &quot;Update Channel&quot; at Start Menu &gt; Settings &gt; Update ... &gt; Advanced ... &gt; to &quot;<strong>Semi-Annual Channel</strong>&quot;, from its default &quot;Semi-Annual Channel (Targeted)&quot;. The former is intended for enterprises; the latter for <strong>Guinea Pigs</strong>. That is, the update is pushed to the &quot;Targeted&quot; channel to work out the bugs, but not to the non-targeted until it actually works. Also, at that window, select the maximum delays 365/30 days, at the respective pull-down menus, which quiets the update-reminder spam; recurring pop-ups at the taskbar.</p>
+</blockquote>
+
+<h2>Disable Telemetry</h2>
+
+<ul>
+<li><code>gpedit.msc</code><br>
+&nbsp;&gt; Computer Configuration &nbsp;&gt; Administrative Templates<br>
+&nbsp;&gt; Windows Components &nbsp;&gt; Data Collection and Preview Builds<br>
+&nbsp;&gt; Telemetry</li>
+</ul>
+
+<h2>Disable Cortana</h2>
+
+<ul>
+<li><p><code>gpedit.msc</code><br>
+&nbsp;&gt; Computer Configuration &nbsp;&gt; Administrative Templates<br>
+&nbsp;&gt; Windows Components &nbsp;&gt; Search<br>
+&nbsp;&gt; Allow Cortana &nbsp;&gt; Disabled &nbsp;&gt; Apply, OK</p></li>
+
+<li><p>&quot;Cortana &amp; Search Settings&quot;<br>
+Start &nbsp;&gt; Cortana &nbsp;&gt; Settings &nbsp;&gt; Privacy<br>
+&nbsp;&gt; Speech, inking &amp; typing &nbsp;&gt; Toggle off all</p></li>
+</ul>
+
+<h3>Nope, it's still running.</h3>
+
+<ul>
+<li><p><a href="https://codesport.io/mining-tutorials/disable-searchui-exe-disable-cortana-on-windows-10/">Disable Cortana (SearchUI.exe)</a><br>
+This method moves (renames) its directory.</p>
+
+<pre><code>:: Disable
+C:\&gt; taskkill /f /in SearchUI.exe
+C:\&gt; move %windir%\SystemApps\Microsoft.Windows.Cortana_cw5n1h2txyewy ^
+     %windir%\SystemApps\Microsoft.Windows.Cortana_cw5n1h2txyewy.000
+
+:: Restore 
+C:\&gt; move %windir%\SystemApps\Microsoft.Windows.Cortana_cw5n1h2txyewy.000 ^
+     %windir%\SystemApps\Microsoft.Windows.Cortana_cw5n1h2txyewy
+</code></pre></li>
+</ul>
+
+<h2>OneDrive</h2>
+
+<ul>
+<li><p><a href="https://support.office.com/en-us/article/turn-off-disable-or-uninstall-onedrive-f32a17ce-3336-40fe-9c38-6efb09f944b0?ui=en-US&amp;rs=en-US&amp;ad=US">Disable</a><br>
+OneDrive &nbsp;&gt; ... More<br>
+&nbsp;&gt; Settings &nbsp;&gt; Account &nbsp;&gt; Unlink this PC &nbsp;&gt; Unlink account</p></li>
+
+<li><p>Remove from sight (File Explorer)</p>
+
+<ul>
+<li><p>per <code>gpedit.msc</code><br>
+(<em>FAILs to remove from File Explorer.</em> )<br>
+&nbsp;&gt; Computer Configuration &nbsp;&gt; Administrative Templates<br>
+&nbsp;&gt; Windows Components &nbsp;&gt; OneDrive<br>
+&nbsp;&gt; &quot;Prevent the usage of OneDrive for file storage&quot;<br>
+&nbsp;&gt; Enable  (Reboot.)</p></li>
+
+<li><p>per <code>regedit</code><br>
+<code>HKEY_CLASSES_ROOT\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}</code><br>
+&nbsp;&gt; <code>System.IsPinnedToNameSpaceTree</code> &nbsp;&gt; <code>0</code></p></li>
+</ul></li>
+</ul>
+
+<h2>KMS (Key Managment Service)</h2>
+
+<ul>
+<li><p>List Activated Clients on KMS Server, per <code>PowerShell</code>. This is only for OEM Volume License installs.</p>
+
+<pre><code class="language-powershell">PS&gt; $(foreach ($entry in (Get-EventLog -Logname &quot;Key Management Service&quot;)) `
+    {$entry.ReplacementStrings[3]}) | sort-object -Unique
+</code></pre>
+
+<p>(Running this showed none.)</p></li>
+</ul>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

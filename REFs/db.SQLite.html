@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>db.SQLite</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.sqlite.org/index.html" title="sqlite.org">SQLite <code>v3</code></a> | <a href="https://en.wikipedia.org/wiki/SQLite">@Wikipedia</a></h1>
+
+<h2><a href="https://www.sqlite.org/gencol.html" title="Generated Columns @ sqlite.org">JSON - Store as searchable doc</a> | <a href="https://dgl.cx/2020/06/sqlite-json-support" title="SQLite as a Document Database">Article 2020/06</a></h2>
+
+<pre><code class="language-bash">$ sqlite3
+SQLite version 3.31.1 2020-01-27 19:55:54
+Connected to a transient in-memory database.
+
+sqlite&gt; CREATE TABLE t (
+   body TEXT,
+   d INT GENERATED ALWAYS AS (json_extract(body, '$.d')) VIRTUAL);
+
+sqlite&gt; insert into t values(json('{&quot;d&quot;:&quot;42&quot;}'));
+
+sqlite&gt; select * from t WHERE d = 42;
+{&quot;d&quot;:&quot;42&quot;}|42
+</code></pre>
+
+<h2><a href="https://news.ycombinator.com/item?id=19277809" title="2019 news.ycombinator.com">JSON (<code>k:v</code>) blob</a> @ <a href="https://www.sqlite.org/json1.html" title="sqlite.org"><code>JSON1</code> Extension</a></h2>
+
+<h2><a href="https://www.sqlite.org/mmap.html">Memory-Mapped I/O</a></h2>
+
+<h2><a href="https://www.whoishostingthis.com/compare/sqlite/optimize/" title="whoishostingthis.com">Optimizations (+Android API)</a></h2>
+
+<ul>
+<li>Use Transactions</li>
+<li><strong>Prepare</strong> and <strong>Bind</strong></li>
+<li>Sync to Disk Sparingly</li>
+<li>Store Rollback Journal in-Memory</li>
+<li>Index Sparingly (After Bulk Insert)<br>
+&vellip;</li>
+</ul>
+
+<h2>View</h2>
+
+<p>A special, read-only table; a named SQL statement (and its results ???) stored as a table, especially for repeated (quicker ???) use.</p>
+
+<pre><code>CREATE VIEW aView AS SELECT Name FROM aTable WHERE aField &lt; 1000;
+
+SELECT * FROM aView;
+</code></pre>
+
+<ul>
+<li>Stupid example; <strong><em>use views to combine (join) a bunch of fields from various tables</em></strong>.</li>
+</ul>
+
+<h2><a href="https://www.tutorialspoint.com/sqlite/sqlite_triggers.htm" title="tutorialspoint.com">Trigger</a></h2>
+
+<p>SQLite Trigger is a database <em>callback function</em>; <strong><em>automatically invoked per database event</em></strong>.</p>
+
+<pre><code>CREATE TRIGGER mytrigger UPDATE OF Name ON Friends
+BEGIN
+INSERT INTO Log(OldName, NewName, Date) VALUES (old.Name, new.Name, datetime('now'));
+END;
+</code></pre>
+
+<h3><a href="https://www.sqlitetutorial.net/sqlite-instead-of-triggers/" title="sqlitetutorial.net"><code>INSTEAD OF</code> Trigger</a></h3>
+
+<p>A Trigger on a View, not a Table. Use to (effectively) INSERT into a View, which can't actually be done, since a View is read-only.</p>
+
+<h2>Transaction</h2>
+
+<p>An atomic operation; success or fail, and nothing else.</p>
+
+<pre><code>BEGIN TRANSACTION;
+CREATE TABLE Test(Id INTEGER NOT NULL);
+INSERT INTO Test VALUES(1);
+INSERT INTO Test VALUES(2);
+INSERT INTO Test VALUES(3);
+INSERT INTO Test VALUES(NULL);
+COMMIT;
+</code></pre>
+
+<ul>
+<li>A transaction can end with a <code>COMMIT</code> or a <code>ROLLBACK</code> statement. The <code>ROLLBACK</code> reverts all changes.</li>
+</ul>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="http://zetcode.com/db/sqlite/viewstriggerstransactions/">SQLite Views, Triggers, Transactions</a></li>
+<li><a href="https://tech.marksblogg.com/sqlite3-tutorial-and-guide.html" title="tech.marksblogg.com 2017">A Minimalist Guide to SQLite</a> (Python-centric; first, not very goo, reference.).</li>
+</ul>
+
+<h3>@ Linux (Install)</h3>
+
+<pre><code class="language-bash"># Install @ Ubuntu/Debian
+sudo apt install sqlite3
+# Open/Create database
+sqlite3 $dbname.db
+</code></pre>
+
+<h3><a href="file:///c:/HOME/.sqliterc">@ <code>~/.sqliterc</code></a> (Config)</h3>
+
+<pre><code>.headers on
+.mode column
+.nullvalue ¤
+.prompt &quot;&gt; &quot;
+.timer on
+</code></pre>
+
+<h3>@ <code>sqlite3</code> CLI</h3>
+
+<pre><code class="language-sql">-- Import data of CSV file into &quot;airports&quot; table 
+.mode csv  -- other mode: insert (SQL)
+.separator &quot;,&quot;
+.import airports.csv airports 
+-- Schema (show) 
+.schema airports
+-- Read (Import) a previously dumped database (SQL file)
+.read foo.sql
+-- query per SQL
+SELECT ICAO, 空港 FROM airports;
+</code></pre>
+
+<h3>@ <code>bash</code> string (SQL statement) <strong><em>piped</em></strong> to <code>sqlite3</code> CLI</h3>
+
+<pre><code class="language-bash"># Query table per pipe (Unicode/UTF-8 supported)
+echo &quot;SELECT ICAO, 空港 FROM airports;&quot; | sqlite3 airports.db
+# Dump (Export) bar table from foo.db 
+# to out.{CSV|SQL} file, per current .mode {csv|insert}
+echo &quot;.dump bar&quot; | sqlite3 foo.db &gt; out.sql
+# Read (Import) from foo.sql file into (new) bar.db 
+echo &quot;.read foo.sql&quot; | sqlite3 bar.db
+</code></pre>
+
+<h2><a href="https://www.sqlite.org/inmemorydb.html" title="In-Memory Databases @ sqlite.org">Use as In-Memory Database</a> | <a href="https://www.sqlite.org/pragma.html" title="PRAGMA Statements @ sqlite.org">PRAGMA</a></h2>
+
+<p>An SQLite database is normally stored in a single ordinary disk file; however, some embedded server scenarios benefit when the database is stored in memory.</p>
+
+<p>The most common way to force an SQLite database to exist purely in memory is to open the database using the special filename &quot;<code>:memory:</code>&quot; instead of passing the name of a real disk file. For example:</p>
+
+<pre><code>rc = sqlite3_open(&quot;:memory:&quot;, &amp;db)
+</code></pre>
+
+<h3>In-Memory &amp; <a href="https://www.sqlite.org/sharedcache.html" title="sqlite.org/sharedcache">Shared-Cache</a> @ <a href="https://godoc.org/github.com/mattn/go-sqlite3#SQLiteDriver.Open" title="godoc.org/mattn/go-sqlite3">Golang (<code>go-sqlite3</code>)</a></h3>
+
+<blockquote>
+<p>... intended for use in embedded servers. If shared-cache mode is enabled and a thread establishes <strong>multiple connections to the same database</strong>, the <strong>connections share a single data and schema cache</strong>; significantly reduces the required memory and IO. Cache can be <strong>shared across an entire process</strong>; <code>v3.5.0</code>+ (2007).</p>
+</blockquote>
+
+<pre><code class="language-golang">func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error)  
+</code></pre>
+
+<ul>
+<li>@ <code>dsn</code> per URI<br>
+<code>file:test.db?cache=shared&amp;mode=memory</code><br>
+
+<ul>
+<li>In-Memory and Shared-Cache Mode!<br></li>
+</ul></li>
+</ul>
+
+<p>E.g.,</p>
+
+<pre><code class="language-golang">db, err := sql.Open(&quot;sqlite3&quot;, &quot;file::memory:?mode=memory&amp;cache=shared&quot;)
+</code></pre>
+
+<h2><a href="https://www.sqlite.org/sqlar.html" title="sqlite.org/sqlar">SQLite Archive Files</a></h2>
+
+<h2><a href="https://www.sqlite.org/whentouse.html" title="sqlite.org">Appropriate Uses For SQLite</a></h2>
+
+<p>&nbsp;</p>
+
+<!-- 
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

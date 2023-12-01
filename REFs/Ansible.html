@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ansible</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Ansible <a href="https://docs.ansible.com/ansible/latest/" title="docs.ansible.com">Documentation</a> | <a href="https://docs.ansible.com/ansible/latest/getting_started/index.html">Getting Started</a></h1>
+
+<p>Agentless Push Automation</p>
+
+<p><img src="ansible-topology.png" alt="ansible-topology.png"></p>
+
+<pre><code class="language-bash">ansible-playbook \
+    -i inventory.file \
+    -u ssh_user \
+    playbook.yaml
+
+</code></pre>
+
+<h2>Summary</h2>
+
+<p>Ansible is a highly versatile tool for provisioning and confuguring user-declared sets of target machines. Though referred to as &quot;agentless&quot;, Ansible uses the SSH server running on its target as the agent. It's default behavior, however, is to ignore the user's SSH configurations. Ansible is written in Python, with an ecosystem of modules for a vast range of tasks and target types. Ansible is the property of RedHat, Inc.</p>
+
+<p>Each target environment and task has its own set of (Python) modules and its own set of configuration (YAML) requirements (k-v pairs). Ansible makes no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. Discovering and learning to use and configure the array of Ansible modules required to perform even the typical provision/configure tasks upon a set of Linux VMs consumes a significant amount of manhours. Ansible's popularity suggests it either offers significant benefits beyond bash scripting, or the project is well marketed.</p>
+
+<p>Running ansible in verbose mode (<code>-vvv</code>) prints its (attempted) SSH connection statement:</p>
+
+<pre><code class="language-bash">ssh -C -o ControlMaster=auto -o ControlPersist=60s -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o 'User=&quot;u1&quot;' -o ConnectTimeout=10 -o 'ControlPath=&quot;/c/HOME/.ansible/cp/975de6127e&quot;' 192.168.0.80 '/bin/sh -c '&quot;'&quot;'echo ~u1 &amp;&amp; sleep 0'&quot;'&quot;''
+</code></pre>
+
+<ul>
+<li>That fails on WSL2, for example.</li>
+</ul>
+
+<h2>Install</h2>
+
+<pre><code class="language-bash"># Install Python 3
+sudo dnf -y install python3
+# Set Python 3 as default
+alternatives --set python /usr/bin/python3
+# Install Python pip
+sudo dnf -y install python3-pip
+# Install ansible for current user (@ ~/.local or %APPDATA%Python)
+python3 -m pip install --user ansible 
+# Or 
+python3 -m pip install --include-deps --user ansible
+# Or just the core
+python3 -m pip install ansible-core
+
+# Upgrade
+python3 -m pip install --upgrade --user ansible
+
+# Add Autocomplete
+python -m pip install --user argcomplete 
+
+# Verify
+ansible --version
+</code></pre>
+
+<ul>
+<li><a href="https://pip.pypa.io/en/stable/cli/pip_install/" title="pip.pypa.io"><code>pip install</code></a></li>
+</ul>
+
+<h2><a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html">Configuration Settings</a> | <a href="ansible.cfg"><code>ansible.cfg</code></a></h2>
+
+<p>Search order:</p>
+
+<ul>
+<li><code>ANSIBLE_CONFIG</code></li>
+<li><code>$(pwd)/ansible.cfg</code></li>
+<li><code>~/.ansible.cfg</code></li>
+<li><code>/etc/ansible/ansible.cfg</code></li>
+</ul>
+
+<p>(None are created upon installation.)</p>
+
+<h3>Create a local configuration</h3>
+
+<p>The <code>ansible-config</code> command provides all the configuration settings available,
+their defaults, how to set them and where their current value comes from.</p>
+
+<pre><code class="language-bash"># Defaults
+ansible-config init &gt; ansible.cfg
+# Zero config : everything commented out
+ansible-config init --disabled &gt; ansible.cfg
+# Include those of all &quot;existing&quot; plugins
+ansible-config init -t all &gt; ansible.cfg
+</code></pre>
+
+<ul>
+<li><a href="ansible-config.init.cfg"><code>ansible-config init</code></a></li>
+<li><a href="ansible-config.init-t.all.cfg"><code>ansible-config init -t all</code></a></li>
+</ul>
+
+<h3>Inventory | <a href="inventory.cfg"><code>inventory.cfg</code></a></h3>
+
+<p>The set(s) of target hosts upon which <code>ansible</code> operates.</p>
+
+<p>Set location of <code>inventory.cfg</code> at <code>inventory</code> key of <a href="ansible.cfg"><code>ansible.cfg</code></a>.</p>
+
+<pre><code class="language-ini">[defaults]
+inventory=inventory.cfg
+</code></pre>
+
+<p>Default inventory file: <code>/etc/ansible/hosts</code></p>
+
+<h2>Prep target(s)</h2>
+
+<p>There are several conventions for configuring target machines.
+A simple, secure method is to configure the script user (<code>gitops</code>)
+on the target(s) such that their password login is entirely disabled,
+making remote, key-based ssh login the only method of access,
+and then creating a <code>/etc/sudoers.d/gitops</code> file that enables
+elevated privileges sans password entry.</p>
+
+<ul>
+<li>Install Ansible on admin node (not a cluster node)</li>
+<li>Prepare all target machines by running this script on each one.
+It requires <code>root</code> privileges.
+
+<ul>
+<li><p><a href="create_provisioner_target_node.sh"><code>create_provisioner_target_node.sh</code></a><br>
+Manually at a target machine:</p>
+
+<pre><code class="language-bash">sudo vim /etc/sudoers.d/u1
+</code></pre>
+
+<pre><code class="language-text">u1 ALL=(ALL) NOPASSWD:ALL
+</code></pre>
+
+<p>Alternately:</p>
+
+<pre><code class="language-bash">echo &quot;$USER ALL=(ALL) NOPASSWD:ALL&quot; |sudo tee /etc/sudoers.d/$USER
+</code></pre></li>
+</ul></li>
+</ul>
+
+<p>@ <code>~/.ansible.cfg</code></p>
+
+<pre><code class="language-ini">[defaults]
+action_warnings=False
+inventory=inventory.cfg
+deprecation_warnings=False
+remote_user=gitops
+[privilege_escalation]
+become_user=root
+[persistent_connection]
+[connection]
+[colors]
+[selinux]
+[diff]
+[galaxy]
+[inventory]
+[netconf_connection]
+ssh_config=${HOME}/.ssh/config
+[paramiko_connection]
+[jinja2]
+[tags]
+
+</code></pre>
+
+<h2>Use</h2>
+
+<pre><code class="language-bash"># Ad-hoc command at one machine of default hosts file @ /etc/ansible/hosts
+ansible -i hosts 192.168.1.109 -m ping
+# Ad-hoc command (model: ping) at all target machines of hosts file @ /etc/ansible/hosts
+ansible -i hosts app -m ping
+# Same as above, but target is self
+ansible -m ping localhost 
+# Lists all facts of target (using model: setup)
+ansible -m setup localhost
+
+# Create ./ansible.cfg that includes declared inventory file.
+ansible-config init --disabled |tee ansible.cfg.disabled
+vim ansible.cfg.disabled # Edit; declare &quot;inventory=inventory.cfg&quot;, and save as ansible.cfg
+vim inventory.cfg # add [target] list of hosts
+target='target'
+
+# Ad-hoc command ping at $target machines declared in inventory file declared in ./ansible.cfg
+ansible $target -m ping
+# Ad-hoc : two commands
+ansible $target -a hostname -a id
+# Ad-hoc : Test is Ansible's ssh user (defaults to current user) has sudo sans password
+ansible $target -a 'sudo ls -hl /etc/sudoers.d/'
+# shell module
+ansible $target -m ansible.builtin.shell -a hostname
+# script module
+ansible $target -m ansible.builtin.script -a foo.sh 
+
+# playbook : script w/ args injected
+ansible-playbook foo.yaml -e a=foo -e b=bar 
+
+</code></pre>
+
+<h2>Playbook (YAML)</h2>
+
+<p>@ <code>example.yaml</code></p>
+
+<pre><code class="language-yaml">---
+- name: example playbook
+  hosts: local
+  vars:
+    foo: &quot;bar&quot;
+    fbool: false
+    cities:
+    - Maryland
+    - Virginia
+  tasks:
+  - name: print foo
+    ## model: debug
+    ansible.builtin.debug:
+      msg: &quot;value of foo is: {{ foo }}&quot;
+    ## Run task only on fbool: true
+    when: fbool
+  - name: print cities
+    ## model: debug
+    ansible.builtin.debug:
+      #var: item 
+    loop: &quot;{{ cities }}&quot;
+
+</code></pre>
+
+<p>Because <code>ansible.cfg</code> set the inventory-file path <code>inventory.cfg</code> (@ PWD),
+and playbook (<code>example.yaml</code>) set target (group) name (<code>hosts: local</code>),
+the command to run the playbook is simply:</p>
+
+<pre><code class="language-bash">☩ ansible-playbook example.yaml
+
+PLAY [example playbook] ***...
+
+
+TASK [Gathering Facts] ***...
+ok: [localhost]
+
+TASK [print foo] ***...
+skipping: [localhost]
+
+TASK [print cities] ***...
+ok: [localhost] =&gt; (item=Maryland) =&gt; {
+    &quot;msg&quot;: &quot;Hello world!&quot;
+}
+ok: [localhost] =&gt; (item=Virginia) =&gt; {
+    &quot;msg&quot;: &quot;Hello world!&quot;
+}
+
+PLAY RECAP ***...
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+</code></pre>
+
+<p>@ <code>foo.yaml</code></p>
+
+<pre><code class="language-yaml">---
+- name: Testing
+  hosts: target
+  vars:
+    config_file_path: ~/.ansible/ansible.cfg
+  become: true
+  #become_flags: &quot;-H -S -n&quot;
+  gather_facts: false
+  tasks:
+  - name: Task 1
+    #command: &quot;sh $HOME/devops/ansible/foo.sh {{a}} {{b}}&quot;
+    command: &quot;sh $HOME/devops/ansible/foo.sh&quot;
+
+</code></pre>
+
+<ul>
+<li>Failing @ WSL(2); all attempts at tweaking ansible's bazillion parameters across its many configuration files (<code>ansible.cfg</code>, <code>inventory.cfg</code>, playbook, ...) yields same result: hosts not found; can't resolve.</li>
+<li>Every tool except <code>ansible</code> is able to connect to any and every host.</li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
