@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>REF.Ansible</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Ansible <a href="https://docs.ansible.com/ansible/latest/" title="docs.ansible.com">Documentation</a></h1>
+
+<p>Agentless Push Automation per SSH</p>
+
+<p><a href="ansible_topology.svg">ansible_topology.svg</a></p>
+
+<h2>TL;DR</h2>
+
+<p>This is nothing but a bash wrapper that is ssh centric. Yet it has an entire universe of new syntaxes, and requires special python modules per task.</p>
+
+<p>In effect, our bash provisioning scripts that call the ssh-wrapper function, injecting commands or scripts per positional parameters, does the same thing, will zero added mental load beyond bash.</p>
+
+<p>Perhaps use to run bash scripts per <code>playbook.yaml</code>:</p>
+
+<pre><code class="language-yaml">- name: Script runner
+  hosts: all
+  tasks:
+     - name: Install Docker  
+       script: {{ script_path }}
+</code></pre>
+
+<pre><code class="language-bash">ansible-playbook \
+    -i inventory.file \
+    -u ssh_user \
+    -e script_path=~/scripts/install_docker.sh \
+    playbook.yaml
+
+</code></pre>
+
+<p>Bash is simpler, requires no prep, and is as automated:</p>
+
+<pre><code class="language-bash"> ssh h1 /bin/bash -s &lt; install_docker.sh
+</code></pre>
+
+<p>Either way, target host must be prepared.
+Script user (<code>x1</code>) must have sudo privileges sans password entry:</p>
+
+<pre><code class="language-bash">sudo vim /etc/sudoers.d/x1
+</code></pre>
+
+<pre><code class="language-text">x1 ALL=(ALL) NOPASSWD:ALL
+</code></pre>
+
+<h2>Install (@ Python 3.10)</h2>
+
+<pre><code class="language-bash">pipx install --include-deps ansible
+pipx inject ansible argcomplete
+
+# Alt method:
+python -m pip install ansible
+python -m pip install --user argcomplete 
+</code></pre>
+
+<p>Verify (@ WSL)</p>
+
+<pre><code class="language-bash">ansible --version
+</code></pre>
+
+<pre><code class="language-text">ansible [core 2.15.2]
+  config file = None
+  configured module search path = ['/c/HOME/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /c/HOME/.local/pipx/venvs/ansible/lib/python3.10/site-packages/ansible
+  ansible collection location = /c/HOME/.ansible/collections:/usr/share/ansible/collections
+  executable location = /c/HOME/.local/bin/ansible
+  python version = 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] (/c/HOME/.local/pipx/venvs/ansible/bin/python)
+  jinja version = 3.1.2
+  libyaml = True
+</code></pre>
+
+<h2>Ad-hoc Commands</h2>
+
+<p>Install a package onto a target machine.</p>
+
+<h3>Prep target</h3>
+
+<p>Target must contain file allowing ansible user (<code>x1</code>) sudo privileges.
+Here's how to configure:</p>
+
+<pre><code class="language-bash">ssh h1
+</code></pre>
+
+<pre><code class="language-bash">sudo vim /etc/sudoers.d/x1
+</code></pre>
+
+<pre><code class="language-text">x1 ALL=(ALL) NOPASSWD:ALL
+</code></pre>
+
+<h3>Install package</h3>
+
+<pre><code class="language-bash">ansible all --user x1 --become \
+    --module-name dnf -a’name=docker state=latest’
+</code></pre>
+
+<h2><a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html">Configuration Settings</a> | <a href="ansible.cfg"><code>ansible.cfg</code></a></h2>
+
+<p>NONE EXIST lest you manually create them.</p>
+
+<p>Search order:</p>
+
+<ul>
+<li><code>ANSIBLE_CONFIG</code></li>
+<li><code>$(pwd)/ansible.cfg</code></li>
+<li><code>~/.ansible.cfg</code></li>
+<li><code>/etc/ansible/ansible.cfg</code></li>
+</ul>
+
+<h3>Create a local configuration</h3>
+
+<blockquote>
+<p><code>ansible-config</code> provides all the configuration settings available,
+  their defaults, how to set them and where their current value comes from.</p>
+</blockquote>
+
+<pre><code class="language-bash"># Defaults
+ansible-config init &gt; ansible.cfg
+# Zero config : everything commented out
+ansible-config init --disabled &gt; ansible.cfg
+# Include those of all &quot;existing&quot; plugins
+ansible-config init -t all &gt; ansible.cfg
+</code></pre>
+
+<ul>
+<li><a href="ansible-config.init.cfg"><code>ansible-config init</code></a></li>
+<li><a href="ansible-config.init-t.all.cfg"><code>ansible-config init -t all</code></a></li>
+</ul>
+
+<h3>Inventory</h3>
+
+<p>The set(s) of target hosts upon which <code>ansible</code> operates.</p>
+
+<p>Set location to <code>$(pwd)/hosts</code> @ <code>ansible.cfg</code> : <code>inventory=hosts</code></p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](file:///d:/1%20Data/IT/___.html "@ browser") | [MD](file:///d:/1%20Data/IT/___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

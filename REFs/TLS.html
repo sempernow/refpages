@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>REF.TLS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Transport_Layer_Security" title="Wikipedia">TLS</a> (Formerly SSL)</h1>
+
+<p>TLS/SSL is a trust-based scheme. The server sends a cryptographically-generated certificate, and the client application validates that against the Certificate Authority (CA) certificate (root certificate) from which the server's certificate claims to be created. Nominally, the client application obtains that root CA certificate from the default store at its parent OS. Some applications add their own stores, options, and such to that.</p>
+
+<p><strong>POSIX</strong>-type operating systems have a directory of such certificate files. <strong>Linux</strong> stores them in the <code>/etc/ssl/certs</code> directory. The <code>ca-certificates.crt</code> file contains a concatenated list of such certificates. Other CA root-certificate files (<code>*.crt</code>) may exist in that directory as standalones, e.g., <code>root-ca-swarm.foo.crt</code> .</p>
+
+<p><strong>Windows</strong> has an entirely different scheme of course; <code>Certificates.msc</code></p>
+
+<blockquote>
+<p><strong>On TLS-handshake failure</strong>, the server is likely to send a &quot;handshake failure&quot; alert. Such may occur if the certificate's CA cannot be validated by the client, or if client and server have no mutually supported TLS-ciphers suite. A TLS alert message is a protocol-level message that indicates an issue during the TLS handshake or data exchange. The specific alert code sent by the server can provide more details about the nature of the problem. In the case of a lack of common cipher suites, the server is likely to send a &quot;handshake failure&quot; alert. The TLS handshake failure is not an HTTP-level response; it's part of the TLS protocol. The HTTP layer comes into play only after a secure TLS connection has been established. If the TLS handshake fails, the HTTP layer doesn't have an opportunity to send an HTTP response code because the connection hasn't been established.</p>
+</blockquote>
+
+<h2>Glossary</h2>
+
+<h3>Transport Layer Security (TLS)</h3>
+
+<blockquote>
+<p>Transport Layer Security is the newer security protocol that <strong><em>replaced Secure Sockets Layer (SSL)</em></strong>. Though the SSL protocol is obsolete, and has been so for about a quarter century, the term &quot;SSL&quot; stubbornly remains with us.</p>
+</blockquote>
+
+<h3>Certificate</h3>
+
+<p>Server certificates are presented by a web server whenever a new TLS connection is requested. They contain the name of the host the certificate is issued to (which should match the server you’re attempting to connect to) and are signed by a Certificate Authority (CA) to establish trust.</p>
+
+<h4>Full-Chain Certificate</h4>
+
+<p>A &quot;full chain&quot; certificate refers to a certificate that includes not only the end-entity (server) certificate for a specific domain but also the intermediate and root certificates in the certification chain. This chain of certificates helps establish trust from the end-entity certificate back to a trusted root certificate authority (CA). Many CAs provide this &quot;bundle&quot; or &quot;full chain&quot; option when delivering certificates.</p>
+
+<p>Components of a full-chain certificate:</p>
+
+<ul>
+<li><p><strong>End-entity certificate</strong>: This is the certificate that corresponds to the specific domain for which the certificate is issued. It contains the public key for the server and is signed by an intermediate CA.</p></li>
+
+<li><p><strong>Intermediate certificate(s)</strong>: Intermediate certificates sit between the end-entity certificate and the root certificate in the certificate chain. They are used to enhance security by creating a hierarchy of trust. The intermediate certificate is signed by a root CA and, in turn, signs the end-entity certificate.</p></li>
+
+<li><p><strong>Root certificate</strong>: The root certificate is the top-level certificate in the hierarchy and is self-signed. It is the ultimate authority that establishes trust in the entire chain. Web browsers and other client applications come pre-installed with a set of trusted root certificates.</p></li>
+</ul>
+
+<p>When a client, such as a web browser, connects to a server secured with SSL/TLS, it checks the certificate chain to ensure that the end-entity (server) certificate is valid and signed by a trusted intermediate certificate, which, in turn, is signed by a trusted root certificate. That is, the client must have its own set of trusted-CA certificates, or use that of the system (OS) in which it is running, against which to validate the server's certificate.</p>
+
+<p>Including the full chain when configuring SSL/TLS on a server is important to ensure that clients can validate the server's certificate properly. Without the full chain, clients may not be able to establish the chain of trust, and the connection could be deemed untrusted.</p>
+
+<h3>Certificate Authority (CA)</h3>
+
+<p>Certificate authorities verify details about a domain owner’s request for SSL certificates, then – if everything checks out – issue and sign server certificates. Browsers and operating systems maintain a list of trusted certificate authorities. If a server certificate is signed by one of these trusted CAs, it will also be trusted.</p>
+
+<h3>Domain Validation (DV)</h3>
+
+<p>A domain validated certificate will be issued to somebody who has proven they control the domain name requested for the certificate. This proof often takes the form of serving a unique token from your web server or DNS records, which the CA will check for before issuing the certificate.</p>
+
+<h3>Organization Validation (OV)</h3>
+
+<p>An organization validated certificate means that the certificate authority also verified the company name and address in public databases. This information is put into the certificate, and is typically displayed only when the user clicks the green padlock icon to investigate further.</p>
+
+<h3>Extended Validation (EV)</h3>
+
+<p>Extended validation is <strong><em>more thorough than domain or organization validation</em></strong>. EV certificates are issued after checking not only domain ownership, but also verifying the existence and location of the legal entity requesting the certificate, and that said entity controls the domain being verified.</p>
+
+<p>Unlike DV and OV certificates, EV cannot be issued as a wildcard certificate.</p>
+
+<p>EV certificate also <strong><em>gets special treatment in web browsers</em></strong>. Whereas browsers typically denote a DV certificate with a <strong><em>green-padlock icon</em></strong>, EV certificates also show a larger green bar containing the name of the organization it was issued to. This is intended to reduce phishing attacks, though some studies show that users tend not to notice when this green bar is missing.</p>
+
+<h3>SAN (Subject Alternative Name)</h3>
+
+<p>The new <strong>CN</strong> (Common Name) AKA Domain Name; a field of a certificate that indicates for which domain(s) the certificate is valid. A single certificate may contain many SANs and be valid for many different domain names.</p>
+
+<h3>Wildcard Certificate</h3>
+
+<p>The asterisk character (<code>*</code>) is the wildcard, and can be substituted with any valid hostname. Instead of being issued for a specific Fully Qualified Domain Name (FQDN), such as <code>app.example.com</code>, wildcard certs are valid for a whole range of subdomain names. So a cert issued to <code>*.example.com</code> would cover <code>app.example.com</code> and <code>database.example.com</code>.</p>
+
+<h3>Certificate Revocation List (CRL)</h3>
+
+<p>SSL certificates can include information on how to access a certificate revocation list. Clients will download and check this list to make sure the certificate has not been revoked. CRLs have largely been replaced by OCSP responders.</p>
+
+<h3>Online Certificate Status Protocol (OCSP)</h3>
+
+<p>The OCSP protocol is a replacement for CRLs, with the benefits of being more real-time and requiring less bandwidth. The general operation is similar: clients are to query the OCSP responder to check if a certificate has been revoked.</p>
+
+<h2>Validate a Server's Certificate</h2>
+
+<pre><code class="language-bash">cn='foo.local'            # Common Name AKA Domain Name
+root_ca_crt='root-ca.crt' # Root Certificate-Authority Certificate
+
+openssl s_client -connect $cn:443 -CAfile $root_ca_crt 2&gt;&amp;1 |tee &quot;openssl.s_client.connect.${cn}.cafile.log&quot;
+</code></pre>
+
+<h2><a href="https://docs.docker.com/engine/swarm/configs/" title="docs.docker.com/swarm/configs">Docker/Nginx</a></h2>
+
+<ul>
+<li>Create: <a href="REF.TLS.openssl.sh"><code>REF.TLS.openssl.sh</code></a></li>
+<li>Deploy: <a href="stack-nginx.yml"><code>stack-nginx.yml</code></a></li>
+</ul>
+
+<h2><a href="https://www.digitalocean.com/community/tutorials/a-comparison-of-let-s-encrypt-commercial-and-private-certificate-authorities-and-self-signed-ssl-certificates" title="digitalocean.com 2017">Compare SSL Certificates</a></h2>
+
+<ul>
+<li><a href="https://letsencrypt.org/getting-started/" title="letsencrypt.org">Let's Encrypt</a>
+
+<ul>
+<li>Free, DV only, 90 days, ACME protocol</li>
+</ul></li>
+<li>Commercial/Private CAs
+
+<ul>
+<li>DV, OV, and EV, 1-3 years, $10-$1000
+
+<ul>
+<li>@ EV, browser shows <strong><em>green padlock icon</em></strong></li>
+</ul></li>
+</ul></li>
+<li>Self-Signed
+
+<ul>
+<li>DV, OV, untrusted by browsers</li>
+</ul></li>
+</ul>
+
+<h3>EV Certificates</h3>
+
+<ul>
+<li><a href="https://www.digicert.com/tls-ssl/compare-certificates">digicert.com</a> (powers GeoTrust, Thawte)
+
+<ul>
+<li>$344/yr</li>
+<li>&quot;Supports 2048-bit public key encryption (3072-bit and 4096-bit available)&quot;</li>
+<li>&quot;ECC public-key cryptography (supports hash functions: 256 and 384)&quot;</li>
+</ul></li>
+<li><a href="https://ssl.comodo.com/ssl-ev-certificates-extended-validation"><code>ssl.comodo.com</code></a>
+
+<ul>
+<li>@ $250/yr</li>
+<li>&quot;Strongest SHA2 &amp; ECC Encryption&quot;</li>
+</ul></li>
+<li><a href="https://www.godaddy.com/web-security/ssl-certificate">www.godaddy.com</a>
+
+<ul>
+<li>$125/yr - 1 domain</li>
+<li>$320/yr - Multiple Websites (UCC/SAN)</li>
+<li>&quot;Strong SHA-2 and 2048-bit encryption.&quot;</li>
+</ul></li>
+<li><a href="https://www.ssl.com/certificates/ev/">www.ssl.com</a>
+
+<ul>
+<li>@ $250/yr</li>
+<li>&quot;2048/4096 SHA2 RSA (ECDSA supported)&quot;</li>
+</ul></li>
+</ul>
+
+<h3><a href="https://zerossl.com/pricing/">ZeroSSL Pricing</a></h3>
+
+<p><strong>No EV</strong> (Extended Validation) <strong>certificates</strong>.</p>
+
+<p>Domain Validation (DV) certificates ONLY.</p>
+
+<p>@ Free &hellip;</p>
+
+<pre><code class="language-plaintext">    90-Day Certificates - 3
+    90-Day ACME Certs   - unlimited
+</code></pre>
+
+<p>@ $100/yr &hellip;</p>
+
+<pre><code class="language-plaintext">    90-Day Certificates - unlimited
+    1-Year Certificates - 3
+    Multi-Domain Certs
+    REST API Access
+    90-Day ACME Certs   - unlimited
+</code></pre>
+
+<h3><a href="https://letsencrypt.org/getting-started/" title="letsencrypt.org">Let's Encrypt</a> : ACME protocol : <a href="https://letsencrypt.org/docs/client-options/#clients-go">Client implementations (Golang)</a></h3>
+
+<p>The &quot;Let’s Encrypt&quot; organization is a CA. In order to get a certificate for your website’s domain from them, you have to demonstrate control over the domain. This is accomplished using the <a href="https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment">ACME protocol</a>.</p>
+
+<h2>TLS (OpenSSL) Tools</h2>
+
+<h3><a href="https://github.com/FiloSottile/mkcert"><code>mkcert</code></a> (HTTPS @ <code>localhost</code>)</h3>
+
+<p>A simple tool for making locally-trusted development certificates.
+It requires no configuration.
+Worthless @ Windows 10.</p>
+
+<h3><a href="https://www.openssl.org/"><code>openssl</code></a> | <a href="REF.TLS.openssl.sh"><code>REF.TLS.openssl.sh</code></a></h3>
+
+<p>The multi-purpose OpenSSL tool used to create, view, and test TLS keys, certificates, and such.
+Also useful for TLS at <code>https://localhost</code> (and aliases) for development. <strong>Satisfies all browsers</strong>.</p>
+
+<h4>@ Windows/WSL (Golang/cURL)</h4>
+
+<p>REF: <a href="https://zeropointdevelopment.com/how-to-get-https-working-in-windows-10-localhost-dev-environment/">Add a self-signed CA (<code>root-ca.crt</code>) to Windows 10</a>.</p>
+
+<h5>FAIL:</h5>
+
+<ul>
+<li><code>x509 Certificate Signed by Unknown Authority</code> (Golang)</li>
+<li><code>(60) SSL certificate : unable to get local issuer certificate</code> (cURL)</li>
+</ul>
+
+<h5>FIX:</h5>
+
+<ol>
+<li>Generate both a CA root certificate and the server's certificate using <code>openssl</code>
+
+<ul>
+<li>Use <code>Makefile</code> recipes @ <code>uqrate/v1/assets/keys/tls/openssl/</code></li>
+</ul></li>
+<li>Per OS:
+
+<ul>
+<li>@ Linux
+
+<ul>
+<li><p>Either append the content of the CA's root certificate file (<code>root-ca.crt</code>) to <code>ca-certificates.crt</code> file of the <code>/etc/ssl/certs/</code> directory, or copy the file itself to that directory.</p>
+
+<pre><code class="language-bash">sudo vim /etc/ssl/certs/ca-certificates.crt
+</code></pre>
+
+<ul>
+<li>@ XPC, <code>root-ca-swarm.foo.crt</code> is a standalone file under <code>/etc/ssl/certs</code>.</li>
+<li>@ HTPC, the content of that certificate is appended to <code>ca-certificates.crt</code> file.</li>
+</ul></li>
+</ul></li>
+<li>@ Windows
+
+<ul>
+<li><code>Certificates.msc</code> : Local Machine or Current User
+
+<ul>
+<li>Note that <code>WSL</code> apps don't use Windows certs store <del>@ HTPC configuration, Adding CA (openssl) @ Current User failed to fix either Golang or cURL failure. Then, added to Local Machine, but that failed to fix issue @ cURL (Golang untested). Then appended to WSL's  certs file (above method), and that fixed at both cURL and Golang. BTW, &quot;Golang&quot; means <code>go run ...</code>; was reporting <code>x509 Certificate Signed by Unknown Authority</code>.</del></li>
+<li>Open per <code>Win+R</code> &gt; MMC &gt; File &gt; Add/Remove Snap-in &gt; Certificates &gt; Trusted Root Certification Authorities &gt; All Tasks &gt; Import
+
+<ul>
+<li>Import: <code>root-ca.crt</code></li>
+</ul></li>
+
+<li><p>@ PowerShell; <strong><em>alt method</em></strong>; effectiveness is unknown.</p>
+
+<pre><code class="language-powershell">Import-Certificate -FilePath &quot;root-ca.crt&quot; -CertStoreLocation Cert:\LocalMachine\Root
+</code></pre></li>
+</ul></li>
+<li>@ Firefox, mod required to enable the newly added root certificate
+
+<ul>
+<li><a href="https://support.mozilla.org/en-US/kb/setting-certificate-authorities-firefox">Add CA @ Firefox</a>
+
+<ul>
+<li><code>about:config</code>
+
+<ul>
+<li><code>security.enterprise_roots.enabled</code> : <code>true</code></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ol>
+
+<h3><a href="https://www.cyberciti.biz/faq/how-to-install-letsencrypt-free-ssltls-for-nginx-certificate-on-alpine-linux/" title="cyberciti.biz 2020"><code>acme.sh</code> @ Nginx @ Alpine Linux</a> | <a href="https://www.cyberciti.biz/faq/route-53-lets-encrypt-wildcard-certificate-with-acme-sh/">Using <code>acme.sh</code></a> | <a href="https://github.com/acmesh-official/acme.sh"><code>acme.sh</code></a> <a href="https://github.com/acmesh-official/acme.sh/wiki/Run-acme.sh-in-docker">@ Docker</a></h3>
+
+<p><a href="https://wiki.alpinelinux.org/wiki/Nginx_as_reverse_proxy_with_acme_(letsencrypt)" title="wiki.alpinelinux.org @ 2017">Setup Nginx as reverse proxy with TLS, per <code>acme.sh</code> (@ <code>letsencrypt</code>)</a></p>
+
+<h4>TL;DR</h4>
+
+<p>Get cert per automated DNS-01 challenge</p>
+
+<h4>HowTo</h4>
+
+<pre><code class="language-bash">domain='target.tld'
+len='4096'    # @ RSA
+len='ec-384'  # @ Elliptic Curve
+AWS_ACCESS_KEY_ID=&quot;AKI...&quot;
+AWS_SECRET_ACCESS_KEY=&quot;58X...mdS&quot;
+
+acme.sh --issue --server letsencrypt --dns dns_aws --ocsp-must-staple --keylength $len \
+    -d &quot;$domain&quot; -d &quot;*.$domain&quot;
+</code></pre>
+
+<ul>
+<li>See <code>~/.acme.sh/account.conf</code>
+
+<ul>
+<li>Stores AWS creds that it reads from environment.</li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/OCSP_stapling">OCSP Stapling</a> is <a href="https://blog.hboeck.de/archives/886-The-Problem-with-OCSP-Stapling-and-Must-Staple-and-why-Certificate-Revocation-is-still-broken.html">broken</a> (@ Nginx and Apache)</li>
+
+<li><p><code>HTTP-01</code> challenge type : <a href="https://github.com/acmesh-official/acme.sh/wiki/Stateless-Mode">Stateless Mode : <code>--stateless</code></a>; requires a running, challenge-configured server.</p>
+
+<pre><code class="language-bash"># 1. Get account thumbprint 
+# Servers (per CA): https://github.com/acmesh-official/acme.sh/wiki/Server
+acme.sh --register-account --config-home  /acme.sh/ca \
+    --server https://acme-staging-v02.api.letsencrypt.org/directory
+
+[Tue Jul 27 21:24:11 UTC 2021] Create account key ok.
+...
+[Tue Jul 27 21:24:12 UTC 2021] ACCOUNT_THUMBPRINT='Wcb...xfY'
+
+# 2. Configure (Nginx) web server endpoint: &lt;DOMAIN&gt;/.well-known/acme-challenge/&lt;TOKEN&gt; 
+#    that responds with string: &lt;TOKEN&gt;.&lt;ACCT_THUMBPRINT&gt; 
+server {
+    ...
+    location ~ ^/\.well-known/acme-challenge/([-_a-zA-Z0-9]+)$ {
+        default_type text/plain;
+        return 200 &quot;$1.Wcb...xfY&quot;;
+    }
+    ...
+}
+
+# 3. Get cert by stateless (HTTP-01) challenge:
+acme.sh --issue -d ... --stateless
+</code></pre></li>
+</ul>
+
+<h4><code>acme.sh</code> @ Docker</h4>
+
+<p>List of CAs that <code>acme.sh</code> handles : <a href="https://github.com/acmesh-official/acme.sh/wiki/Server">URL and &quot;Short Name&quot;</a></p>
+
+<p>If the AWS-credentialed bot-user (@ <code>acme.sh</code>) hasn't the proper AWS role/policy
+required to perform the DNS-01 challenge, then &hellip;</p>
+
+<pre><code class="language-plaintext">Response error:&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;ErrorResponse&gt;
+... 
+AccessDenied
+User: arn:aws:iam::971722315751:user/acme is not authorized to perform: route53:ListHostedZones
+&lt;/ErrorResponse&gt;
+[Wed Jul 28 21:27:24 UTC 2021] invalid domain
+[Wed Jul 28 21:27:26 UTC 2021] Error add txt for domain:_acme-challenge.example.com
+[Wed Jul 28 21:27:26 UTC 2021] Please add '--debug' or '--log' to check more details.
+[Wed Jul 28 21:27:26 UTC 2021] See: https://github.com/acmesh-official/acme.sh/wiki/How-to-debug-acme.sh
+</code></pre>
+
+<h2><a href="https://certbot.eff.org/docs" title="certbot.eff.org">Certbot</a> | <a href="https://certbot.eff.org/docs/install.html#running-with-docker">certbot @ Docker</a> | <a href="https://certbot-dns-route53.readthedocs.io/en/stable/"><code>certbot-dns-route53</code></a> | <a href="https://hub.docker.com/u/certbot" title="@ Docker Hub">+DNS Provider plugin</a></h2>
+
+<p>Certbot is the client advised by <code>letsencrypt.org</code>; we used <code>acme.sh</code> instead only because its Docker image was better advertised. Certbot @ docker should perform as well. Both automate the cert request and the DNS-01 challenge per suitable DNS providers (both handle AWS/Route53)</p>
+
+<blockquote>
+<p>The dns_route53 plugin automates the process of completing a <code>dns-01</code> challenge (<code>DNS01</code>) by creating, and subsequently removing, <code>TXT</code> records using the Amazon Web Services Route 53 API.</p>
+</blockquote>
+
+<ul>
+<li>Gets certs from <code>letsencrypt.org</code>
+
+<ul>
+<li><code>privkey.pem</code> : SECRET; Private key for the certificate.</li>
+<li><code>fullchain.pem</code> : All certificates, including server certificate (aka leaf certificate or end-entity certificate). The server certificate is the <em>first one</em> in this file, followed by any intermediates.</li>
+<li><code>cert.pem</code> : server certificate
+
+<ul>
+<li><code>chain.pem</code> (if intermediate certs)</li>
+</ul></li>
+</ul></li>
+<li><a href="https://certbot.eff.org/docs/using.html#where-certs">Location of certificates</a>
+
+<ul>
+<li><code>/etc/letsencrypt/live/$domain</code> : symlinks to current versions</li>
+<li><code>/etc/letsencrypt/archive</code> : previous versions</li>
+<li><code>/etc/letsencrypt/keys</code> : previous versions</li>
+</ul></li>
+<li><code>dns_route53</code> plugin | Docker image : <a href="https://hub.docker.com/r/certbot/dns-route53"><code>certbot/dns-route53</code></a>
+
+<ul>
+<li>Automates the process of completing a <code>dns-01</code> challenge by creating, and subsequently removing, <code>TXT</code> records using the Amazon Web Services Route 53 API.</li>
+</ul></li>
+
+<li><p><a href="https://certbot.eff.org/docs/using.html#pre-and-post-validation-hooks">Hooks</a> (Pre and Post) @ manual mode (<code>--manual</code>)</p>
+
+<pre><code class="language-bash">certbot certonly --manual \
+    --manual-auth-hook /path/to/http/authenticator.sh \
+    --manual-cleanup-hook /path/to/http/cleanup.sh -d secure.example.com
+</code></pre></li>
+</ul>
+
+<h2><a href="https://github.com/go-acme/lego" title="GitHub 4.7K stars"><code>go-acme/lego</code></a> | <a href="https://go-acme.github.io/lego">Docs</a></h2>
+
+<blockquote>
+<p>Let's Encrypt client and ACME library written in Go.</p>
+</blockquote>
+
+<p>Integrations w/ DNS providers; <a href="https://go-acme.github.io/lego/dns/route53/">AWS Route53</a></p>
+
+<h2><a href="https://github.com/caddyserver/certmagic" title="GitHub 3.7K stars">CertMagic (Caddy)</a></h2>
+
+<blockquote>
+<p>mature, robust, and capable ACME client integration for Go</p>
+</blockquote>
+
+<pre><code class="language-golang">// @ HTTP
+http.ListenAndServe(&quot;:80&quot;, mux)
+
+//... replace that with this ...
+
+// @ CertMagic : HTTPS with HTTP-&gt;HTTPS redirects 
+certmagic.HTTPS([]string{&quot;example.com&quot;}, mux)
+</code></pre>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

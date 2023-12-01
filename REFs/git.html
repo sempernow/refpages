@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>REF.git</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://git-scm.com/" title="git-scm.com"><code>git</code></a> | <a href="REF.git.sh"><code>REF.git.sh</code></a> | <a href="https://git-scm.com/docs" title="git-scm.com/docs">Reference</a></h1>
+
+<h2>GitHub connectivity script @ <code>~/.bin/github</code></h2>
+
+<pre><code class="language-bash"># Init SSH session (ssh-agent; long-lived)
+. github ssh
+git config --list # List all
+# Set globally
+git config --global user.name &quot;John Doe&quot;
+git config --global user.email johndoe@example.com
+# Add origin (run once)
+git remote add origin $_USERNAME/$_REPONAME.git 
+</code></pre>
+
+<h2><code>git</code> Functions/Aliases @ <code>~/.bash_functions</code></h2>
+
+<pre><code class="language-bash"># Status 
+gs
+# Logs 
+gl
+# Commit : Default message is is name of newest file 
+gc [MESSAGE]
+# Rebase
+gr
+# Push : git push --force-with-lease (required after rebase)
+gpf
+# Restore all mtimes (git ... destroys them)
+gmtime 
+# Add all source files
+ga 
+# List all branches
+gb
+# Checkout branch; create if not exist; default NAME: %H.%M.%S
+gch [NAME]
+# Delete branch
+gbd NAME
+</code></pre>
+
+<h2>Workflow</h2>
+
+<pre><code class="language-bash"># Login per ssh : See github script @ ~/.bin
+. github ssh
+
+# Version (Tag) a commit
+git tag -a v0.1.2 $commit
+
+# Push the current commit 
+git push origin master
+# Push the version (info)
+git push origin v0.1.2
+
+# Delete a version
+git tag -d v0.1.1                  # Delete local
+git push origin --delete v0.1.1    # Delete remote
+
+# Branch : Checkout else Create
+gch [NAME] # defaults to new; NAME=MM:SS
+
+# Branch : Delete 
+git branch -d NAME             # Local
+git push origin --delete NAME  # Remote
+
+# Repo : Rebase
+_max_squash=$(( $( git rev-list --count HEAD ) - 1 ))
+git rebase -i HEAD~$_max_squash
+</code></pre>
+
+<ul>
+<li>The <code>git rebase ...</code> command automatically opens the meta file with editor declared @ <code>.gitconfig</code></li>
+</ul>
+
+<p>@ <code>vim</code> | <a href="file:///d:/1%20Data/IT/Apps/Shell/POSIX/vim/REF.vim.sh"><code>REF.vim.sh</code></a></p>
+
+<pre><code class="language-plaintext"># To squash commits 2-7 
+:2,7s/pick/s/g
+# Then delete/add/edit commit message
+# Then exit edit mode, then save and exit vim
+ESC
+ZZ
+</code></pre>
+
+<p>Then push to remote; origin (remote) is &quot;ahead&quot; after squashing commits, so force is required.</p>
+
+<pre><code class="language-bash">git push --force-with-lease 
+</code></pre>
+
+<h2>Self</h2>
+
+<h3><code>REF.git</code> (<a href="file:///d:/1%20Data/IT/Apps/Dev.Ops/SCM/Git/REF.git.md">MD</a> | <a href="file:///d:/1%20Data/IT/Apps/Dev.Ops/SCM/Git/REF.git.html">HTML</a>) | <a href="file:///d:/1%20Data/IT/Apps/Shell/POSIX/vim/REF.vim.sh"><code>REF.vim.sh</code></a></h3>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](file:///d:/1%20Data/IT/___.html "@ browser") | [MD](file:///d:/1%20Data/IT/___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

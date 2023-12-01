@@ -10,7 +10,6 @@ getrefs() {
     find ./REFs -type f -exec rm "{}" \+ 
     find ./HOME -type f -exec rm "{}" \+ 
     find ./HOME/.bin -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -iname '*.zip' -exec rm "{}" \+ 
 
     # Dump all REF.* files to tmp folder under $TEMP dir
 	refsync temp
@@ -22,7 +21,7 @@ getrefs() {
 	cp -p $TEMP/$tmp/* REFs/
     
     # Remove some
-    rm REFs/REF.Biz*md REFs/REF.L9s.*md 2>/dev/null
+    rm REFs/REF.{Biz,L9s}*md HOME/.bin/*.{zip,7z,png,jpg} 2>/dev/null
 
     # CKAD
     ckad='/d/1 Data/IT/Container/Kubernetes/CKAD'
@@ -30,10 +29,9 @@ getrefs() {
     rm REFs/CKAD/LOG.* REFs/REF.Kubernetes.CKAD.* 2>/dev/null
 
     # CKA
-    ckad='/d/1 Data/IT/Container/Kubernetes/CKA'
+    cka='/d/1 Data/IT/Container/Kubernetes/CKA'
     [[ -d '/d/1 Data/IT/Container/Kubernetes/CKA' ]] && cp -rp '/d/1 Data/IT/Container/Kubernetes/CKA/'* REFs/CKA/
     rm REFs/CKA/LOG.* REFs/REF.Kubernetes.CKA.* 2>/dev/null
-
 
     # Copy/Update the specified ~/.* scripts to this project's HOME folder
     cp -p ~/{.profile,.bash_profile,.bashrc,.bash_win,.bash_functions,.vimrc,.terraformrc,.gitconfig,.gitignore,.gitignore_global} HOME/
@@ -52,13 +50,12 @@ normalize(){
 }
 
 index() {
-    REQUIREs md2html.exe || exit
-    
     # Purge obsolete MD/HTML, and then refresh HTML
-    rm index.md *.html 2>/dev/null
+    REQUIREs md2html.exe || exit
+    rm _index.md index.md *.html 2>/dev/null
     pushd ./REFs
     rm index.md *.html 2>/dev/null
-    # find . -type f -iname '*.md' -exec md2html.exe "{}" \;
+    find . -type f ! -path './.git/*' -iname '*.md' -exec md2html.exe "{}" \;
 
     # Strip namespace used for the distributed source reference files
     fname 'REF.'
@@ -69,25 +66,35 @@ index() {
     fname 'REF.'
     popd
 
+
     popd
 
     # Build index of links
-    find ./REFs -maxdepth 1 -type f ! -iname '*.html' \
+    find ./REFs -maxdepth 1 -type f ! -path './.git/*' ! -iname '*.md' \
         -printf "## [%f](%p)\n" >>index.md
-    find ./REFs/CKAD -maxdepth 1 -type f -iname 'Kubernetes.CKAD.md' \
+    find ./REFs/CKAD -maxdepth 1 -type f -iname 'Kubernetes.CKAD.html' \
         -printf "## [%f](%p)\n" >>index.md
-    find ./REFs/CKA -maxdepth 1 -type f -iname 'Kubernetes.CKA.md' \
+    find ./REFs/CKA -maxdepth 1 -type f -iname 'Kubernetes.CKA.html' \
         -printf "## [%f](%p)\n" >>index.md
 
-    # Sort links alphabetically and build README.md .
-    cat README.src.md >README.md
-    sort -f index.md >>README.md
-    md2html.exe README.md
-
-    # Cleanup
-    rm index.md 2>/dev/null
-    find . -type f ! -path './.git/*' -iname '*.html' -exec rm "{}" \+
+    # Sort links alphabetically and build the landing page (index.html).
+    sort -f index.md >>_index.md
+    echo '# [`sempernow/refpages`](https://github.com/sempernow/refpages "sempernow/refpages @ GitHub")' >index.md
+    cat _index.md >>index.md
+    
+    # Process md2html 
+    md2html.exe index.md
+    
+    # Delete markdowns
+    find . -type f ! -path './.git/*' -iname '*.md' -and ! -iname 'README.md' -exec rm "{}" \+
+    
     perms
+}
+
+links() {
+    # Replace Win-configured URIs of md2html.exe with their local-project equivalents.
+    #sed -i 's#https://sempernow.github.io/web#/refpages#g' index.html
+    find . -type f ! -path './.git/*' -iname '*.html' -exec sed -i 's#https://sempernow.github.io/web#/refpages#g' "{}" \+
 }
 
 perms() {

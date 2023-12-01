@@ -11,14 +11,17 @@ include Makefile.settings
 # Meta
 
 menu:
-	clear
 	$(INFO) 'Recipes'
 	@echo '	build     : Do all things short of commit.'
 	@echo '	getrefs   : Copy all REF* files to a tmp folder at ${TEMP}/$$( mktemp -d ).'
 	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
 	@echo '	index     : Process MD files into HTML and create index.html'
+	@echo '	links     : Reset md2html-configured links'
 
-build: getrefs index normalize 
+foo:
+	bash make.recipes.sh foo 
+
+build: getrefs index normalize links
 
 getrefs:
 	bash make.recipes.sh getrefs 
@@ -28,3 +31,6 @@ index:
 
 normalize:
 	bash make.recipes.sh normalize
+
+links:
+	bash make.recipes.sh links 
