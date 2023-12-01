@@ -1,21 +1,8 @@
 exit
-# Docker  https://www.docker.com
-# 
-# INSTALL Docker (Docker for Windows (DFW) + Docker for Mac (DFM)) 
-#    See "REF.Docker.Install" (.md|.html)
-#    https://store.docker.com/editions/community/docker-ce-desktop-windows  
-#
-# IF ERR @ … "docker-credential-desktop": not … in PATH,
-# May occur @ `docker login` and/or `docker-compose up`.
-# FIX: Delete `credsStore` key-val pair @ `~/.docker/config.json`.
-# (TARBALL the file when valid, because this is a RECURRING BUG.)
-#
 # REFs
+#   Dockerfile Ref  https://docs.docker.com/reference/dockerfile 
 #   Docker Ref      https://docs.docker.com.zh.xy2401.com/  (China)
-#                   https://docs.docker.com/reference/      (Progressively Degenerating)
-#   Docker Machine  https://docs.docker.com.zh.xy2401.com/v17.12/machine/overview/  
 #   Docker Hub      https://hub.docker.com/explore/  
-#   Dockerfile Ref  https://docs.docker.com/engine/reference/builder/#format
 #   Wikipedia       https://en.wikipedia.org/wiki/Docker_%28software%29 
 # 
 # Use PowerShell or mintty (Git for Windows)
@@ -25,34 +12,45 @@ exit
     # DNS host-name accessible from containers: docker.for.{win|mac}.localhost  
 # Docker EE : Universal Control Plane (Web UI)
 # Dockerfile  https://docs.docker.com/engine/reference/builder/
-# Best Practices 2019  https://blog.docker.com/2019/07/intro-guide-to-dockerfile-best-practices/  
-    FROM alpine:latest      # Source image; Base layer of this image if at 1st stage.
-    # OR named stage for reference at subsequent stage; see `COPY --from …`:
-    FROM aline:latest AS builder
-    ARG FOO                 # Hardcode existing OS/host environment variable(s) into image.
-    ARG BAR="bar"           # … override that of host.
-    ARG BAZ "baz"           # … equivalent syntax.
-    WORKDIR "/app"          # Set the image $PWD; creates dir if not exist.
-    EXPOSE 80 443           # Hardcode container ports; useless; does NOT expose target (host) port(s).
+    # syntax=docker/dockerfile:1
+    #… Required for advanced features of BuildKit; *must* be 1st line.
+    # Best Practices  https://docs.docker.com/build/building/best-practices/
+    ARG FOO=bar             # Only the ARG command is allowed before 1st FROM command.
+    ARG IMG                 # ARG is scoped to build environment
+                            # Inject host env using flag(s): `docker build --build-arg IMG=$APP_BUILDER_IMG` 
+                            # Its k=v are available to FROM of all build stages. 
+                            # For access otherwise (ENV, LABEL, …), must (re)declare ARG per stage.
+    FROM $IMG AS builder    # Source image; Base layer of this image 
+    ARG IMG                 # Must (re)declare at each build stage for ENV, LABEL, … to access it there
+    ENV IMG=${IMG}          # ENV requires both (k=v) and PERSISTS in image/container
+    ARG FOO                 # Scoped to build stage. Re(Set) : docker buildx --build-arg FOO=bar
+    ARG FOO=foo             # Override that during build.
+    ARG BAR foo             # Equivalent DEPRICATED syntax.
+    ENV FOO=22              # This local OVERRIDEs that declared at flag: `docker … -e FOO=z`
+                            # PREDEFINED ARGs : https://docs.docker.com/reference/dockerfile/#predefined-args
+    WORKDIR /app            # Set the image $PWD; creates dir if not exist.
+                            # Rather declare port-map params and set at runtime by environment.
     COPY . .                # Copy (recursively) from host $PWD to image $PWD, which is presently /app.
-    COPY ./foo ./dst        # … creates destination dir if not exist.
+    COPY ./foo ./dst        # Creates destination dir if not exist.
     COPY --from=builder /bldr/src ./some/dst  #… source FS from a prior, named stage.
     RUN mkdir -p /foo/bar   # RUN any shell command(s); chain (&&) where feasible.
     RUN apk update \
         && apk --no-cache add ca-certificates curl jq tzdata \
         && rm -rf /var/cache/apk/* #… chain commands to install packages.
-    ADD https://grab.com/tarball.tgz /dst # Avoid; like COPY, but source can be URL, and extracts to /dst if archive. 
-    # Labels : abide OCI spec for Annotation Keys
-    # https://github.com/opencontainers/image-spec/blob/master/annotations.md#pre-defined-annotation-keys 
-    LABEL image.authors="${AUTHORS}"
+    ADD https://grab.com/tarball.tgz /dst # Prefer COPY lest URL; *extracts* to /dst
+    # LABELs : Use only OCI spec k=v for Annotation Keys
+    # https://specs.opencontainers.org/image-spec/annotations/ 
+    ARG APP_BUILD_IMAGE # Inject host environment for access by LABEL.
+    LABEL org.opencontainers.image.authors="Dev Team <devteam@example.com>"
+    LABEL org.opencontainers.image.build.image="${APP_BUILD_IMAGE}"
     # ENTRYPOINT; the binary or shell script (pid 1) executed upon container launch; 2 forms:
     ENTRYPOINT ["/app/executable", "arg1", "arg2"]  # "exec form", PREFERRED; JSON array syntax.
-    ENTRYPOINT /app/executable arg1 arg2            # "shell form"; avoid.
+    ENTRYPOINT /app/executable arg1 arg2            # "shell form" is DEPRICATED.
     # The ENTRYPOINT instruction is NOT overridable at commandline or YAML (upon container launch).
     # CMD; same as ENTRYPOINT, but merely sets default(s); overridable; 3 forms:
     CMD ["arg3", "arg4"]                       # DEFAULT; appends (additional) args to ENTRYPOINT. 
     CMD ["/app/executable", "arg1", "arg2"]    # "exec form"; PREFERRED; JSON array syntax.  
-    CMD /app/executable arg1 arg2              # "shell form"; avoid.
+    CMD /app/executable arg1 arg2              # "shell form" is DEPRICATED.
     # CMD is OVERRIDDEN by any CLI args at commandline; 
     # `docker run …`, or YAML `command:` declaration.
     # If multiple CMD statements, only the last one is executed.
@@ -66,30 +64,146 @@ docker-machine
 # Restart Docker daemon : if Linux/install @ systemd
 sudo systemctl restart docker
 
-# Docker Registry API 
-    # https://docs.docker.com/registry/spec/api/#detail
+# Docker Registry v2 API 
+    # https://distribution.github.io/distribution/spec/api/
+    # Note regarding "digest" in documentation (across the web) : 
+    #     "the digest" may refer to the MANIFEST DIGEST,
+    #      any digest of any layer thereof,
+    #      OR to a REPO DIGEST, which is <registry>/<repo>@sha256:<manifest-digest>. 
+    #      - That reported by `docker image ls --digests …` is the manifest digest.
+    #      - That required by registry v2 is the manifest digest.
+    #      - Neither are IMAGE ID, which is analog to manifest, but context is local cache.
+
     # Validate the registry abides /v2/
-    curl -I https://index.docker.io/v2/
-        # HTTP/1.1 401 Unauthorized                       <<< REQUIRED of v2
-        # content-type: application/json
-        # docker-distribution-api-version: registry/2.0   <<< REQUIRED of v2
-        # www-authenticate: Bearer realm="https://auth.docker.io/token",service="registry.docker.io"
-        # ... The WWW-Authenticate header value provides token-request params, so ...
-    # GET token : scoped to target image (library/busybox)
-    curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/busybox:pull"
-        # {"token":"...","access_token": "...", ...}
-    # Use token to GET the manifest (JSON),
-    # which is NOT what `docker image inspect` prints to STDOUT.
-    curl --header "Authorization: Bearer $token" \
-        https://index.docker.io/v2/library/busybox/manifests/latest   
-    # Run a Local Registry : Distribution : https://hub.docker.com/_/registry  
-    # https://docs.docker.com/registry/deploying/
-    docker run --rm -d --restart always --name registry -p 5000:5000 registry:2.8.3
-    echo "127.0.0.1 dev.ops" |sudo tee /etc/hosts
-    docker tag $imgNameAndTag dev.ops:5000/$imgNameAndTag
-    docker push dev.ops:5000/$imgNameAndTag
-    docker image ls
-# Docker-out-of-Docker (DooD) : See alpinelinux/docker-cli:latest
+        registry=index.docker.io
+        curl -I https://$registry/v2/ #=>
+            # HTTP/1.1 401 Unauthorized                       <<< REQUIRED of v2
+            # content-type: application/json
+            # docker-distribution-api-version: registry/2.0   <<< REQUIRED of v2
+            # www-authenticate: Bearer realm="https://auth.docker.io/token",service="registry.docker.io"
+            # … The WWW-Authenticate header value provides token-request params, so …
+
+    # GET token : scoped to app
+        # See WWW-Authenticate header for the actual auth endpoint, which may differ per registry"
+        curl "https://$registry/token?service=registry.docker.io&scope=repository:$app:pull"
+            # {"token":"…","access_token": "…", …}
+
+    # GET manifest : Response includes manifest digest in its "Docker-Content-Digest" HEADER.
+        ## E.g., "Docker-Content-Digest: sha256:c230832bd3b0b…"
+        ## @ v2.3+, with GET or HEAD request MUST include these headers 
+        ## else returns a bogus manifest in the docker-content-digest response header:
+        auth="Authorization: Bearer $token"
+        accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
+        repo=''
+        app='busybox'
+        name="$repo/$app"
+        tag='latest'
+        curl -H "$auth" -H "$accept" -isS https://$registry/v2/$name/manifests/$tag 
+
+    # GET catalog of its image repos : JSON response body
+        curl -s http://$registry/v2/_catalog  # {"repositories: ["repo/app:tag",…]"}
+
+    # GET tags/list : all tags of an image APP : JSON response body
+        curl -X GET -u $user:$pass \
+            https://$registry/v2/$name/tags/list \
+            |tee list.$app.tags.json # {"name":"repo/app","tags":["a","b",…]}
+
+    # GET all content of container registry; all images of all repos,
+    # in flat-list format : [REPO/]APP:TAG 
+        curl -s http://$registry/v2/_catalog \
+            |jq -Mr .[][] \
+            |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+            |jq -Mr '.tags[] as $tag | "\(.name):\($tag)"'
+                # busybox:1.31.1-musl
+                # nginx:1.25-alpine3.18
+                # nginx:1.25.4-alpine-otel
+                # redhat/ubi8:8.7
+
+    # GET all content of container registry, both repos and images lists, 
+    # in BOTH formats : JSON and flat-list.
+        curl -s http://$registry/v2/_catalog \
+            |tee catalog.json \
+            |jq -Mr .[][] \
+            |tee catalog.repositories.log \
+            |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+            |jq -Mr . --slurp \
+            |tee all.tags.list.json \
+            |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
+            |tee all.images.log
+
+    # DELETE an image from Registry v2 
+        # 1. HEAD : returns the manifest digest required of any subsequent DELETE request.
+            # Digest is returned in HTTP response header: "Docker-Content-Digest: sha256:abc…123"
+            auth="Authorization: Bearer $token"
+            accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
+            registry=us-west1-docker.pkg.dev
+            repo=gd9h
+            app=prj3.aoa-amd64
+            name="$repo/$app"
+            tag='latest'
+            digest="$(
+                curl -H "$accept" -H "$auth" -siSX HEAD \
+                    https://$registry/v2/$name/manifests/$tag \
+                    |grep -i docker-content-digest \
+                    |awk '{printf "%s\n",$2}' \
+                    |sed 's/\W//g' \
+                    |sed 's/sha256/sha256:/' \
+            )"  
+                # HTTP/1.1 200 OK
+                # …
+                # docker-content-digest: sha256:521…945
+                # …
+                    # Note the /v2 API will FAIL SILENTLY, REGARDLESS of reason 
+                    # (auth fail, no Accept header, …). 
+                    # Yet its HEAD response ALWAYS INCLUDES a digest. 
+                    # The sole distinction between success and failure 
+                    # is that the digest is real on success and bogus on failure.
+                    # Attempting step 2 or other /manifest/ request with bogus digest will fail (HTTP 4xx or 5xx)
+        # 2. DELETE : /v2/<app>/manifests/<reference> : '<reference>' is REGISTRY DIGEST of step 1.
+            # HTTP 202 response on success
+            curl -H "$auth" -H "$accept" -sSX DELETE \
+                https://$registry/v2/$name/manifests/$digest 
+
+    # Run a PRIVATE (local) Registry : CNCF Distribution Registry
+        # https://distribution.github.io/distribution/
+        docker run --rm -d --restart always --name registry \
+            -p 5000:5000 \
+            -v /tmp/local_registry:/var/lib/registry \
+            registry:2.8.3
+        # If want local DNS resolution of registry.local:5000
+        export reg='registry.local'
+        echo "127.0.0.1 $reg" |sudo tee /etc/hosts
+        docker tag abox:v0.1.2 $reg:5000/abox:v0.1.2
+        docker push $reg:5000/abox:v0.1.2
+        docker image ls # … registry.local:5000/abox     v0.1.2 …
+
+    # PUSH image in local cache to registry : Use docker (client)
+        docker tag $app:$tag $registry/$app:tag
+        docker push $registry/$app:tag
+
+    # PUSH all in local docker cache to registry
+        dit (){
+            function d(){
+                docker image ls --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" $@
+            }
+            h="$( d |head -n1)"
+            echo "$h"
+            d "$@" |grep -v REPOSITORY |sort -t' ' -k2
+        }
+        export -f dit
+        dit |grep -v $registry |grep -v IMAGE |awk '{print $2}' \
+            |xargs -IX /bin/bash -c \
+                'docker tag $1 $0/$1 && docker push $0/$1' $registry X
+
+# K8s-API Client : secure kubectl container
+    docker run -it --rm \
+        -v ~/.kube/config:/home/nonroot/.kube/config \
+        cgr.dev/chainguard/kubectl:latest get pods
+# Docker in Docker (DinD) : https://hub.docker.com/_/docker
+    # Use to build images in a (containerized) CI pipeline, such as at Jenkins, GitLab, …
+    docker run -it -v /var/run/docker.sock:/var/run/docker.sock docker
+# Docker-out-of-Docker (DooD) 
+    # Predecessor to DinD : Prefer DinD to DooD
     # Exploit a host's Docker server; it listens on UNIX SOCKET /var/run/docker.sock 
     # Build & run container that has only docker (CLI) installed; mount host's docker.sock
         # Dockerfile : Build $_IMG
@@ -100,22 +214,61 @@ sudo systemctl restart docker
         # Run docker client @ container, yet comms to host's docker server, per bind mount to host's docker.sock:
             docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock $_IMG docker version
             #… if require only reads, then use `ro` option: `-v HOST:CTNR:ro`
-# Docker daemon API access per UNIX SOCKET : Request/Response @ SERVER (daemon) HOST:
+# Docker daemon API access via UNIX SOCKET : Request/Response @ SERVER (daemon) HOST:
     curl -s --unix-socket /var/run/docker.sock http://localhost/version |jq .
     # https://docs.docker.com/engine/api/v1.40/
         # /version  docker ps
         # /images/json
         # /containers/json
         # …
+    # On err
+    sudo chmod 666 /var/run/docker.sock
+    # Docker Engine AKA Docker Server AKA Docker Daemon
+        systemctl status docker.service	
+    # Config listening address to other than default (tcp:0.0.0.0:2375)
+        # This is WSL2 setup, which allows containerized Triy scans to function:
+        # UPDATE : docker-proxy handles this now. See docker.service of systemd 
+        ip -4 -brief addr show dev eth0 #=> eth0    UP    172.25.164.157/20
+        #>>>  PRESERVE TABs of heredoc  <<<
+		cat <<-EOH |sudo tee /etc/docker/daemon.json
+		{
+		  "hosts": [
+		    "tcp://172.25.164.157:2375",
+		    "unix:///var/run/docker.sock"
+		    ]
+		}
+		EOH
+    # @ Journald
+        sudo journalctl -u docker.service --no-pager -n 50		
+    # @ WSL2 : Forward WSL2 port to Windows host using PowerShell:
+        netsh interface portproxy add v4tov4 listenport=2375 listenaddress=0.0.0.0 connectport=2375 connectaddress=127.0.0.1
+    # @ systemd : Override the default unit file by adding a drop-in file
+        # Removing the default flag `-H fd://`, which allows systemd to set the socket,
+        # we must otherwise declare the listening socket, 
+        # as done above (/etc/docker/daemon.json)
+        sudo mkdir -p /etc/systemd/system/docker.service.d
+        #>>>  PRESERVE TABs of heredoc  <<<
+		cat <<-EOH |sudo tee /etc/systemd/system/docker.service.d/override.conf
+		[Service]
+		ExecStart=
+		ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
+		EOH
+        sudo systemctl daemon-reload
+        sudo systemctl restart docker
+        sudo systemctl status docker
+        # @ dev environment, may want to delete all prior journald logs
+            sudo systemctl stop systemd-journald
+            sudo rm -rf /var/log/journal/*/*.journal
+            sudo systemctl start systemd-journald
 # Memory/CPU/… Resource Constraints : Runtime options 
     # https://docs.docker.com/config/containers/resource_constraints/
     # https://ram.tianon.xyz/post/2021/03/16/docker-setup-reredux.html
 
-# Restart Docker Engine 
-service docker restart 
-
 docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (dockerd) 
     # CONFIG / OPTIONS 
+        # https://docs.docker.com/engine/reference/commandline/dockerd/
+        # https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file
+        dockerd --validate --config-file=/tmp/valid-config.json
         /etc/docker/daemon.json
         # AND/OR 
         ~/.docker/daemon.json
@@ -132,25 +285,22 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             Kernel Version:  4.9.184-linuxkit
             Storage Driver:  overlay2
                 Backing Filesystem: extfs
+
     # LOGIN to Docker Hub (public images repository)
         docker login  # Requies auth only ONCE per platform/environment; 
         #… creds stored UNENCRYPTED, base64 encoded @ ~/.docker/config.json
         # OR, login using one liner sans prompt; pipe password to prevent recording it.
-        echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
+         echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
             # On ANY repeated ERRORS at LOGIN (ANY SORT; even HTTP 502, 503, …), 
-            # FIX by:
+            # FIX by: 
                 # 1. Logout : docker logout
-                # 2. Stip keys @ ~/.docker/config.json, leaving only …
-                    {
-                    "auths": {},
-                        "HttpHeaders": {
-                            "User-Agent": "Docker-Client/19.03.11 (linux)"
-                        }
-                    }
+                # 2. Empty ~/.docker/config.json
+					echo -n > ~/.docker/config.json
+					# OR, at least empty teh 'auths' key : "auths": {}
                 # 3. Login again (above method)
-        docker logout # to remove creds from ~/.docker/config.json
+        docker logout # to remove creds (base64-encoded) from ~/.docker/config.json
     # (Travis-CI to Docker Hub logon FAILS if passwords have certain special chars)
-    # LABEL : key only OR k-v pair(s) on obects : image, container, volume, network, swarm node|service
+    # LABEL : key only, OR k-v pair(s), on obects : image, container, volume, network, swarm node|service
         # https://docs.docker.com/engine/reference/commandline/node_update/
         docker $OBJ update --label-add "$k1=$v1"  --label-rm "$k3" --label-add "$l1" $OBJ_NAME
         docker node inspect $NODE_NAME |jq .[].Spec.Labels
@@ -173,7 +323,7 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         --filter "before=clever_lovelace"
         --filter "label=foo"
         --filter "label=foo=bar"
-    # HELP : get help for any Docker command ...
+    # HELP : get help for any Docker command …
         docker $_COMMAND --help |less
     # SYSTEM 
         docker system df       # disk usage 
@@ -181,44 +331,51 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         docker [system|container|volume|image] prune [-f]
         docker system prune --all --force   # @ Swarm node
         docker image prune --force          # @ docker-desktop
+        docker buildx prune                 # Build cache 
     # IMAGEs image https://docs.docker.com/engine/reference/commandline/image/#child-commands  
         # Format to specify a repo (registry) image:
-        [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_IMG_NAME:$_TAG  # Format 
-        $_USERNAME/$_REPONAME:$_TAG     # … typical reference (and lingo)
+        [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO/$_APP:$_TAG  # Format 
+        $_USERNAME/$_REPONAME:$_TAG     # … typical account AKA repo reference  
         # SEARCH / LIST @ Docker Hub 
-            docker search $_TERM        # Search Docker Hub  https://hub.docker.com/explore/  
-            docker search $_REPO_NAME   # List all thereof
+            docker search $_APP    # Search Docker Hub  https://hub.docker.com/explore/  
+            docker search $_REPO   # List all thereof
         # LIST (local)
             docker image ls             # list all images
             docker images               # list al images; alias
             docker images -q            # list all images; ID only
-            docker image ls --digests   # show SHA256
+            docker image ls --digests   # show manifest digest : sha256:hhh…hhh
             # Format  https://docs.docker.com/engine/reference/commandline/images/#format-the-output
             # JSON 
-            docker image ls --digests --format "{{json .}}" |jq -Mr . --slurp 
+            docker image ls --digests --format '{{json .}}' |jq -Mr . --slurp 
             # Table
             docker image ls \
-                --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}"
+                --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}' --digests
+                --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}'
                 # OR
-                --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}"  # default
-            
-        # DELETE
-            docker image rm $_IMG  # delete an image 
-            docker rmi $_IMG       # delete an image per id (tag); effectively an untag command 
+                --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'  # default
+        # DELETE image from local cache
+            docker image rm $id  # delete image by id
+            docker rmi $id       # delete image by id 
+            docker rmi $repo/$name:$tag # delete image by tag (if image has only one tag).
+            #… if image has other tags, then only that tag is deleted; image remains in local cache.
             docker rmi $(docker images -q)  # delete ALL images 
-            # E.g., remove tag (image listing), but not the image if others tagged to it
-            docker rmi 'foo/bar:1.2'  
-            # delete per FILTER
-            docker images | grep "$_FILTER" | gawk '{print $3}' | xargs docker rmi;
-            drmi(){ [[ "$@" ]] && docker images | grep "$@" | gawk '{print $3}' | xargs docker rmi; }  
+            # Delete a FILTERed list of images 
+            docker images | grep "$_FILTER" |gawk '{print $3}' |xargs docker rmi
+            drmi(){ [[ "$@" ]] && docker images |grep "$@" |gawk '{print $3}' |xargs docker rmi; }  
         # LAYERs @ (ls -l …)
-            /var/lib/docker/$_STORAGE_DRIVER/diff  # Overlay2 storage-driver (currently @ Win10/Hyper-V)  
+            /var/lib/docker/$_STORAGE_DRIVER/diff  # Overlay2 (default) storage-driver 
             # Layer FS 
             ls -l /var/lib/docker/$_STORAGE_DRIVER/diff/$_SHA256
             docker history $_IMG
             docker inspect $_IMG
+        # BUILDx https://docs.docker.com/engine/reference/commandline/buildx_build/
+            # Build, tag, and push
+            docker buildx build -t TAG --annotation "foo=bar" --push .
+                # Other flags
+                --sbom=true --provenance=true
         # BUILD (image)  https://docs.docker.com/engine/reference/commandline/build/#options  
             docker build [OPTIONS] PATH | URL | -
+            docker buildx build .       # Use BuildKit
             ## build Docker image from Dockerfile per “context”; the set of files @ PATH or URL. 
             ## URL can be: 1. Git repo, 2. pre-packaged tarball, 3. plain text files.
             ## Inject ARG(s); exported environment variable(s); `=VAL` required only to (re)set
@@ -234,23 +391,29 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             ## BUILD + TAG (all at once)
             docker build -t $_IMG_NAME:$_TAG .              # --tag; name and optionally tag (name:tag) 
             docker build -t $_REPO_NAME/$_IMG_NAME:$_VER  . # Format (convention) 
-            docker build -t [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO_NAME/$_IMG_NAME:$_TAG  $_ABS_PATH
-            #... Format full 
-            # BUILD @ STDIN ("-") per HEREDOC : entirely from commandline (sans Dockerfile)
-                # $ docker build -t foo -f - . <<-EOH
-                # > FROM busybox:1.34.1-musl
-                # > CMD ls -ahl /
-                # > EOH
-                #… commented out else exceeds limits of text editor highligting.
-                docker run --rm foo #… runs the built image; spawns CTNR, runs CMD, terminates & removes CTNR.
+            docker build -t [$_REGISTRY_HOSTNAME[:$_REGISTRY_PORT]]/$_REPO_NAME/$_IMG_NAME:$_TAG  $_ABS_PATH
+            #… Format full 
+            # Alternate syntax
+            docker buildx build - < Dockerfile
+            cat Dockerfile |docker build -
+            # BUILD from stdin ("-") per HEREDOC (sans Dockerfile)
+				docker buildx build -t foo -f - . <<-EOH
+				FROM busybox:1.34.1-musl
+				CMD ls -ahl /
+				EOH
             # MULTI-STAGE BUILDs  https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-build
+                # syntax=docker/dockerfile:1
+                ARG IMG_STAGE_1=${IMG_STAGE_1:-alpine:latest}
                 # Build stage 
+                FROM ${IMG_STAGE_1}
                 FROM golang:alpine AS builder
                 WORKDIR $GOPATH/src/app/
                 COPY app.go .
                 RUN go build -o /work/app
                 # Deploy stage
                 FROM scratch
+                ENV IMG_STAGE_1=${IMG_STAGE_1}
+                LABEL image.from="${IMG_STAGE_1}"
                 COPY --from=builder /work/app /app
                 CMD ["/app"]
         # TAG is actually NAME:TAG; NAME is _REPO_NAME/IMG_NAME
@@ -271,8 +434,8 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             docker push $_REPO_NAME/$_IMG_NAME:$_TAG  # login first if apropos; see LOGIN section
         # PULL from Registry (Repo) : DEFAULTs to Docker Hub
             docker pull [OPTIONS] NAME[:TAG|@DIGEST]
-            # EQUIV to ...
-            docker image pull ...
+            # EQUIV to …
+            docker image pull …
             # Pull from OTHER REGISTRY
             docker pull [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO_NAME/$_IMG_NAME:$_TAG 
             # E.g., 
@@ -281,10 +444,9 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             # PRIVATE LOCAL Registry : Create/Use  https://rominirani.com/docker-tutorial-series-part-6-docker-private-registry-15d1fd899255
                 docker pull registry # A registry is itself a Docker image 
                 # Run the local registry 
-                docker run -d -p 5000:5000 --name localregistry registry # name it 'registry' (is empty)
+                docker run -d --rm --name registry -p 5000:5000 registry:latest
                 # Test: pull from local
-                docker pull localhost:5000/alpine           # reports error …
-                … localhost:5000/alpine:latest not found  # … because local registry is empty 
+                docker pull localhost:5000/alpine
                 # Tag an image 
                 docker tag $_IMG_NAME localhost:5000/$_IMG_NAME:$_TAG
                 # Push to local registry
@@ -347,13 +509,13 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
                 # Make changes from a shell launched into a running container, 
                 # and then examine and commit those changes.
                 docker exec -it $_CTNR /bin/bash
-                # ... do stuff in the container and then exit
-                docker diff $_CTNR  #... examine changes
+                # … do stuff in the container and then exit
+                docker diff $_CTNR  #… examine changes
                 docker commit $_CTNR $_REPO_NAME/$_TAG
         # SAVE the new image in a tarball to make it portable
             # for upload to any image registry.
             docker save -o $_IMG_NAME.tar $_REPO_NAME/$_TAG 
-            #... Where $_REPO_NAME/$_TAG is just the image reference. 
+            #… Where $_REPO_NAME/$_TAG is just the image reference. 
             # E.g., gd9h/busybox.custom:v3.0.3
         # LOAD image tarball into any Docker Registry
             docker load < $tarballed.tar.gz         # Load from STDIN
@@ -386,7 +548,7 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
                 # List PORT MAPPINGs
                 docker port $_CTNR [$cPORT[/$_PROTO]] # Sans ctnr port, lists ALL MAPPINGs
                 #=> 80/tcp -> 0.0.0.0:8080
-                #... app @ CTNR port 80, TCP protocol, accepting host connections from anywhere (0.0.0.0) at port 8080.
+                #… app @ CTNR port 80, TCP protocol, accepting host connections from anywhere (0.0.0.0) at port 8080.
                 --name $_NAME  # name the container; override default (random) name assignment  
                 # NET-ALIAS (Round Robin) 
                 --net-alias $_COMMON_DNS_NAME
@@ -1277,13 +1439,13 @@ docker-compose.yml   # YAML @ Dev + Prod
                                   gid: '103'
                                   mode: 0440
                                   #… if mismatch wrt UID:GID, then make WORLD READABLE (mode 0444)
-                            ...
+                            …
                         foo:
-                            ...
+                            …
                             configs: # SHORT syntax
                                 - foo_v0_2_1
                                 #… mounted @ '/foo_v0_2_1'  
-                            ...
+                            …
             # SECRET : per service : DISTRIBUTED IMMUTABLE k:v : stored @ ALL MANAGER nodes 
                 # STRING <= 500 kb  : Available (mounted/DECRYPTED) at ALL SERVICEs so declared. 
                 # Like config, but encrypted when unmounted; outside of any service(s) using it.
@@ -1592,7 +1754,7 @@ docker-machine  # VMs for Multi-node SWARM; See "REF.Docker.Get-Started{.md|.htm
         # JOIN (add node); this VM is Worker node  
             #  *************************************************************
             #   NO. Rather, configure terminal, and use Docker CLI directly 
-                docker swarm init ...
+                docker swarm init …
             #  *************************************************************
             export masterTkn=$(docker-machine ssh $_LeaderVM "docker swarm join-token worker -q")
             echo $masterTkn  # SWMTKN-1-<PER.SWARM.MGR>-<AS.MGR|AS.WKR>

@@ -20,6 +20,22 @@ docker exec -it $(docker ps -q --filter name=rpx -n 1) sh -c 'nginx -T' > 'nginx
 
 ## [Top 10 Mistakes](https://www.nginx.com/blog/avoiding-top-10-nginx-configuration-mistakes/#keepalive "nginx.com")
 
+## Dockerfile
+
+The entrypoint for a containerized NGINX server should be:
+
+```bash
+nginx -g daemon off
+```
+
+This is required for nginx to run in the foreground, 
+else the container stops immediately after starting! 
+
+```Dockerfile
+CMD ["nginx", "-g", "daemon off;"]
+
+```
+
 ## [Reverse Proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/ "nginx.com")
 
 Expose a service running at `127.0.0.1:3000` (`localhost`)
@@ -158,7 +174,7 @@ http {
 &hellip; and associated params: 
 
 ```ini
-upstream SERVICE_REF {
+upstream SERVICE_{
     server SERVICE_NAME:SERVICE_PORT;
 
     keepalive 2x_REPLICAS;
@@ -167,7 +183,7 @@ upstream SERVICE_REF {
 server {
     ...
     location /THIS/ {
-        proxy_pass http://SERVICE_REF/THAT/;
+        proxy_pass http://SERVICE_THAT/;
 
         proxy_http_version 1.1;
         proxy_set_header Connection "";

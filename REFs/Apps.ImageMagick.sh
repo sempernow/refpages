@@ -21,6 +21,9 @@
 #     Windows: "^"
 # ----------------------------------------------------------------------------
 exit
+# INSTALL
+    choco install imagemagick
+
 # USAGE ImageMagick vs. GraphicsMagick
     # @ IM:  
   `magick UTILITY ...`

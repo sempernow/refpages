@@ -21,7 +21,7 @@ aws s3 mb "s3://${PWD##*/}" --region 'us-east-1'
 # UPLOAD/SYNC (from folder having name of bucket and subdir ./bucket)
 aws s3 sync ./bucket s3://${PWD##*/} --delete
 # STATIC Website ENABLE + CONFIGure  
-# REF: https://docs.aws.amazon.com/cli/latest/reference/s3/website.html
+#  https://docs.aws.amazon.com/cli/latest/reference/s3/website.html
 aws s3 website s3://$_BUCKET/ --index-document 'index.html' --error-document 'error.html'
 # SETUP www. subdomain-name bucket for naked-domain-name bucket 
 aws s3 mb s3://www.$_BUCKET  --region 'us-east-1' 

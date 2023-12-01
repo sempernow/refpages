@@ -18,7 +18,7 @@ rem  character "^", or quot. marks when passed as arguments.
 rem ---------------------------------------------------------
 GOTO :EOF
 
-rem -- REG.exe :: QUERY/ADD keys --
+:: -- REG.exe :: QUERY/ADD keys --
 REG /? 
 :: query add delete copy save restore load unload compare export import flags 
 
@@ -896,7 +896,7 @@ rem -- RDC :: Disconnect session [NOT same as logoff] --
 rem -- NOTE: %SESSIONNAME% Env. Var. only exists @ console cmd window, not via TaskSch --
 TSDISCON 
 
-rem -- EXPORT all drivers of the system
+rem -- pnputil : Export/Save all installed DRIVERs (files) : Brilliant
 MD C:\Exported_Drivers
 pnputil /export-driver * C:\Exported_Drivers
 

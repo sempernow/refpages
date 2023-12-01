@@ -70,7 +70,7 @@ docker system prune -f
 
 >&hellip; _docker stack deploy supports "Variable Substitution" but you need to set the environment variables from the .env file in some way. Several options have been explained above. One of the neatest workarounds is using docker-compose config as pre-processor. So you can create your stack with_ &hellip; 
 
-REFs:
+:
 
 - [Variable Substitution](https://docs.docker.com/compose/compose-file/#variable-substitution)
 - [`env_file`](https://docs.docker.com/compose/compose-file/#env_file)
@@ -81,7 +81,7 @@ REFs:
         # OR 
         docker stack deploy -c <(docker-compose config) $_STACK_NAME 
         ```
-    1. Use `Makefile` (PREFERRED)
+    1. Use `Makefile` (PRRED)
         ```bash
         # OR 
         make ...
@@ -89,7 +89,7 @@ REFs:
 
 ## Multi-node | [`docker-machine`](https://docs.docker.com/machine/reference/) | [Infra/Architecture](https://app.cloudcraft.co/blueprint/db07c7d9-c5fc-43eb-b94d-93750787d25a "app.cloudcraft.co")  
 
-### [`docker-machine create`](https://docs.docker.com/machine/reference/create/) | [`REF.swarm.machine-create.sh`](REF.swarm.machine-create.sh)
+### [`docker-machine create`](https://docs.docker.com/machine/reference/create/) | [`swarm.machine-create.sh`](swarm.machine-create.sh)
 
 - [`--driver amazonec2`](https://docs.docker.com/machine/drivers/aws/) 
 - [`--driver digitalocean`](https://docs.docker.com/machine/drivers/digital-ocean/)
@@ -127,7 +127,7 @@ docker-machine create \
 ```
 - By this scheme, we can use Terraform to generate the infra, and then use `docker-machine` to init/join into swarm, thereby removing the per-driver (per vendor) limitations of `docker-machine create`&hellip;.
 
-## Make Swarm Cluster | [`REF.swarm-make.sh`](REF.swarm-make.sh)
+## Make Swarm Cluster | [`swarm-make.sh`](swarm-make.sh)
 
 ### `docker-machine ssh $vm "docker swarm init"`
 
@@ -168,7 +168,7 @@ eval $(docker-machine env $m1)
 docker node ls 
 ```
 
-## Stack Deploy | [`REF.swarm.stack-deploy.sh`](REF.swarm.stack-deploy.sh)
+## Stack Deploy | [`swarm.stack-deploy.sh`](swarm.stack-deploy.sh)
 
 ### `docker stack deploy` 
 

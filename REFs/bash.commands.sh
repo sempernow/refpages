@@ -24,7 +24,7 @@ exit
 # TERMINAL COMMANDs
     CTRL+C           # terminate currently running process
     CTRL+D           # 'exit'
-    CTRL+Z           # PAUSE job
+    CTRL+Z           # PAUSE job and send it to background
 
     CTRL+L           # clear screen
     CTRL+A           # beginning of line
@@ -46,14 +46,13 @@ exit
  
 # VIRTUAL CONSOLEs
     CTRL+ALT F1|F2|F3|... # Open/switch
-
     # @ CentOS 6 ...
-    console keystrokes   contents 
-    1   CTRL+ALT+f1   graphical display [GUI]
-    2   CTRL+ALT+f2   shell prompt
-    3   CTRL+ALT+f3   install log (messages from installation program)
-    4   CTRL+ALT+f4   system-related messages
-    5   CTRL+ALT+f5   other messages
+    # console keystrokes   contents 
+    # 1   CTRL+ALT+f1   graphical display [GUI]
+    # 2   CTRL+ALT+f2   shell prompt
+    # 3   CTRL+ALT+f3   install log (messages from installation program)
+    # 4   CTRL+ALT+f4   system-related messages
+    # 5   CTRL+ALT+f5   other messages
 
     who # @ bash in tty1|tty4 after log in as root @ tty4
         root     tty4         2017-01-20 13:32
@@ -85,11 +84,10 @@ exit
         sudo -E su  # preserve environment (switching to root user)
 
         # invoke LOGIN-SHELL : clears all Env.Vars
-        su -            # login-shell, root user
         su - foo        # login-shell, user 'foo'
         su -l foo       # login-shell, user 'foo'
         su --login foo  # login-shell, user 'foo'
-
+        su -            # login-shell, root user
         # su... switching back to prior-user; use exit, else shell(s) nest
         exit
 
@@ -167,6 +165,8 @@ exit
     _:               # The most recent previously executed command.
     IFS=$' \t\n'     # Internal File Separator
     BASHOPTS         # list of options that were used when bash was executed. 
+        shopt        # List some bash options
+        shopt -o     # List some other bash options and their settings
     BASH_VERSION
     SHELL=/bin/bash
     SHELLOPTS        # Shell options that can be set with the set option.
@@ -240,15 +240,6 @@ exit
                 somefunc() { CODE ... ; _RETURN=VALUE ; CODE ... } # define
                 somefunc "$@" > /dev/null 2>&1                     # execute
                 printf "%s" "$_RETURN"                             # stdout (if desired)
-
-# BACKGROUND PROCESS
-    /bin/bash $_CMD_or_SCRIPT & 
-    # Sans STDOUT and STDERR
-    /bin/bash -c "$_CMD_or_SCRIPT arg1 arg2" >/dev/null 2>&1 &
-    # Alternative, but quirky; shell-specific behavior:
-    nohup $_CMD_or_SCRIPT arg1 arg2 & # Ignore HANGUP signal(s) (SIGHUP)
-    #... + multiple commands (in bkgnd process), and sans any output to anywhere:
-    nohup /bin/bash -c "sleep 30 && $_CMD_or_SCRIPT arg1 arg2 &" >/dev/null 2>&1
 
 # PERSISTENT (low resource) PROCESS
     # @ Containers : Override default process (PID 1)
@@ -352,9 +343,29 @@ exit
     sudo mkdir /mnt/g
     sudo mount -t drvfs g: /g
 
-    # HD Parameters : get/set SATA/IDE device parameters
-    # https://man7.org/linux/man-pages/man8/hdparm.8.html
-    hdparm -t --direct /dev/nvme0n1 # Read speed (MB/sec)
+    # Monitor I/O    
+        sar # System activity info
+            type -t sar || sudo dnf install -y sysstat &&
+                sudo systemctl enable --now sysstat
+            sudo sar 
+        
+        iostat # CPU and I/O stats for DEVICEs and PARTITIONs
+            iostat -hm # -m for MB else KB 
+
+        iotop # I/O monitor 
+            sudo iotop -k  # KB/s, else B/s
+            sudo iotop -ko # I/O (actually) only
+ 
+        dstat # System resource stats : vmstat + iostat + ifstat
+            dstat -tdD total,sda,sdb,sdc,md1 60
+
+    # IOPS : IOPS / Bandwidth / Throughput 
+        fio # See iops-test.sh : https://cloud.google.com/compute/docs/disks/benchmarking-pd-performance-linux
+
+        hdparm  # HD Parameters : get/set SATA/IDE device parameters
+            # https://man7.org/linux/man-pages/man8/hdparm.8.html
+            device=/dev/nvme0n1
+            sudo hdparm -t --direct $device # Read speed (MB/sec)
 
     # COPY BLOCK DEVICES  https://wiki.archlinux.org/index.php/disk_cloning 
         dd  # The only standard command which can safely read EXACTLY ONE BYTE of input
@@ -479,54 +490,54 @@ exit
 
         tar # The workhorse of Linux archiving (originally "tape archive"):
             # Compress/archive; recurses through dir tree by default.
-            # EXT: tgz, txz, tar, gz, tar.gz, bzip2, lzip, lzop, lzma, xz, ... 
+            # EXT: tgz, txz, tar, gz, tar.gz, bzip2, lzip, lzop, lzma, xz, ...
+            
+            ##################################
+            #>>>  ORDER of flag(s) matter  <<< 
+            ##################################
 
-            tar -caf ARCH_PATH.EXT [OPTIONS] -C PATH SOURCE  # CREATE of SOURCE; PATH is arch root; sans sets root to PWD.
-            tar -xaf ARCH_PATH.EXT [OPTIONS] -C PATH         # EXTRACT to PATH; sans extracts to PWD.
-            tar -taf ARCH_PATH.EXT                           # LIST all content (paths).
-
-            -f PATH # Archive file path
-            -t, --list
-            -x, --extract
+            -f ARCHIVE # Path to target archive (source or result)
             -c, --create
-            -f, --file=ARCHIVE
+            -x, --extract
+            -t, --list
             -v, --verbose
-            -a, --auto-compress # Archive by method/type inferred from EXT
+            -f, --file=ARCHIVE
+            -a, --auto-compress # Infer archive type from EXT
             -j, --bzip2         # .tar.bz2 is .tbz2
             -z, --gz            # .tar.gz  is .tgz
             -J, --xz            # .tar.xz  is .txz
-            -C PATH # change to PATH before processing, so arch root is PATH;
-                # typically set to PARENT of target dir;
-                # is unnecessary if working dir (PWD) is parent of target.
+            -C PARENT # IIF flag is placed FIRST, 
+                      # then change to PARENT path before processing, 
+                      # so arch root is PARENT;
+                      # unnecessary if working dir (PWD) is parent of target.
             --newer-mtime=DATE # Work on files whose data changed after DATE.  
-            # If DATE starts with '/'' or '.', then treated as fname and DATE is its mtime. 
+            # If DATE starts with '/' or '.', then treated as file; DATE is mtime. 
             # Exclude certain folders|files; multiple such excludes okay
-            --exclude=PATTERN  # Excude PATTERN; MULTIPLE use okay; place BEFORE source path
+            --exclude=PATTERN  # IIF flag is before SOURCE, then excude PATTERN; MULTIPLE use okay
+            --exclude='.*'
             --exclude-from <(find foo -size +1M)  # Exclude files in foo larger than 1 MB
             --dereference  # Include reparse points; SYMLINKs/Junction Points/...
+ 
+            # CREATE archive of SOURCE including entire folder structure
+            tar -caf ARCH_PATH.EXT [OPTIONS] SOURCE_PATH # SOURCE is path
+            # EXTRACT archive to PWD
+            tar -xaf ARCH_PATH.EXT [OPTIONS]         
+          
+            # CREATE archive of SOURCE where PARENT of SOURCE is archive root
+            tar -C PARENT -caf ARCH_PATH.EXT [OPTIONS] PARENT_SUB_FOLDER_OR_FILE_NAME
+            # EXTRACT archive to PARENT
+            tar -C PARENT -xaf ARCH_PATH.EXT [OPTIONS]         
+ 
+            # LIST archive content 
+            tar -taf ARCH_PATH.EXT
 
-            # TARBALL any PATH : content of PATH becomes archive root.
-                tar -caf NAME.tgz -C PARENT PATH # PARENT is that of PATH.
+            # Create archive (TARBALL) of $PWD : Tarball extracts to current PWD
+                tar -C "./../${PWD##*/}" -caf "./../${PWD##*/}.tgz" .  
 
-            # TARBALL a SUBDIR : content of ./foo becomes archive root.
-                tar -caf foo.tgz ./foo
-
-            # TARBALL the PWD : content of PWD becomes archive root.
-
-                # Create TARBALL of $PWD; create .tgz @ parent, with content of $PWD at archive root
-                    tar -caf "./../${PWD##*/}.tgz" -C "./../${PWD##*/}" .  
-                # Extract TARBALL
-                tar -xaf ARCHIVE  # extracts to (current) PWD
-
-            # Archive having PARENT FOLDER (is NOT a canonical "tarball").
-
-                # Create tgz, working from parent of PWD, having PWD FOLDERNAME as archive root
-                tar -caf "./../${PWD##*/}.tgz" -C ./../  "${PWD##*/}"  
-                # Extract archive
-                tar -xaf ARCHIVE  # extracts to FOLDERNAME of archived PWD
+            # Create archive of PWD PARENT (is NOT a canonical "tarball").
+                tar -C ./../ -caf "./../${PWD##*/}.tgz" "${PWD##*/}"  
 
             # CREATE : compression algos
-
             tar -cJf ARCH.txz ...  # create tarball; LZMA2 of tar archive
             tar -cjf ARCH.tbz ...  # create tarball; bzip2 of tar archive
             tar -czf ARCH.tgz ...  # create tarball; gzip  of tar archive  
@@ -536,35 +547,39 @@ exit
                 tar.gz  = tgz
                 unzip --help
 
-            # CREATE archive of SOURCE, a path RELATIVE TO PATH; exclude per glob pattern
-            # SOURCE is archive root; if `.`, then extracts to PWD
-            tar -caf ARCH_PATH.EXT --exclude='.*' -C PATH  SOURCE
-                
-        # EXTRACT arch to PATH/...
-        tar -xaf ARCH_PATH.EXT -C PATH 
+        # EXTRACT $tarball to $target_parent/...
+            # Ambiguous/confusing semantics, yet commonly seen:
+            tar -Cxavf $target_parent $tarball 
+            # Better semantics:
+            tar -C $target_parent -xavf $tarball
 
         # PIPEd input per `-` (stdin)
         ... |tar [OPTIONS] -
 
-            # Create foo.tgz of all .* files @ root dir
-            find . -maxdepth 1 -type f -iname '.*' -print0 |tar --null -caf foo.tgz --files-from - 
+            # Extract/Install all archived (tgz) bin/* files to /usr/local/bin/*
+            curl -sSL https://source.com/set_of_binaries.tar.gz \
+                |sudo tar -C /usr/local -xzf - 
+
+            # Create dots.tgz of all dot files @ root dir
+            find . -maxdepth 1 -type f -iname '.*' -print0 \
+                |tar --null -caf dots.tgz --files-from - 
 
     # LIST FOLDERs/FILEs
         ls -al     # all files; long-listing format
         ls -hlRtgG # all files in ALL SUBDIRS, NEWEST FIRST
 
+            -1  # list one file per line; file basename only
             -a  # show hidden files
-            -g  # long-list format, like '-l', but not group-names
-            -G  # no group-names
-            -t  # sort by time, newest first 
-            -R  # recurse thru subdirs
-            -r  # reverse sort
             -h  # human-readable file-sizes
+            -l  # long-listing format; also shows file-type; '-F'
+            -n  # UID,GID
+            -g  # like -l, but sans owner
+            -G  # like -l, but sans group
+            -t  # sort by mtime, newest first 
+            -r  # reverse sort
+            -R  # recurse thru subdirs
             -F  # file type (1st letter @, e.g., '-rwxrwx---+' )
             -i  # inodes
-            -l  # long-listing format; also shows file-type; '-F'
-            -1  # list one file per line 
-            -t  # sort by modification time, newest first
 
             # File types in a long list
                 Symbol  Meaning
@@ -578,10 +593,10 @@ exit
                 b       Block device
 
             # preferred rendering; newest last
-            ls -hlrtgG --color=auto --time-style=+"%Y-%m-%d %H:%M" --group-directories-first
+            #ls -hlrtgG --color=auto --time-style=+"%Y-%m-%d %H:%M" --group-directories-first
+            ls -hlrt --color=auto --time-style=long-iso --group-directories-first
 
-            # Print first and last fields, tab delimited.
-            ## size     fname.ext
+            # size   fname.ext (first and last fields, tab delimited).
             ls -ahlrst --group-directories-first \
                 |awk '{printf ("%s\t%s\n",$1,$NF)}'
 
@@ -589,8 +604,11 @@ exit
             ls -1 |xargs stat --format=" %a  %n" 
 
             # show newest file 
-            ls -t1 "$0" |tail -n 1 
-
+            ls -lrt |tail -n 1 
+        
+            # DUPLICATES : Delete all files of target dir that match (basename) any of reference dir
+            ls -hl $reference_dir |awk '{print $9}' |xargs -I{} rm $target_dir/{}
+        
         lsof  FILE  # File info
         lsof -U     #... of all UNIX Domain Sockets
 
@@ -609,11 +627,6 @@ exit
             tree -L 2               # 2 levels only : $PWD and all 1st-child subdirs
             tree -I 'vendor|media'  # Exclude pattern(s) : /vendor and /media dirs (and files thereunder)
             
-    # Sockets : UNIX Domain | TCP/UDP
-        socat  # https://linux.die.net/man/1/socat 
-            # https://blog.travismclarke.com/post/socat-tutorial/
-            socat UNIX-LISTEN:/usr/local/var/run/test/test.sock -
-
     # PERMISSIONs : chmod(1) man page https://linux.die.net/man/1/chmod
         chmod 755 DIR   drwxr-xr--  
         chmod 744 FILE  -rwxr--r--
@@ -812,6 +825,10 @@ exit
         # Download from cloud 
         rclone copy $_REMOTE:$_SRC $_DST  # DST is container (parent) 
 
+
+    # Reset all FOLDERs' mtime per newest therein : REQUIREs newest()
+        find . -maxdepth 1 -type d ! -iname '.' -exec /bin/bash -c 'touch -r "$(newest "$1")" "$1"' _ {} \;
+
     # Move/Rename one target FILE/FOLDER
         mv FROM TO      # Move/rename file/folder FROM path TO path
         mv PATH DIR/    # Move file/folder to DIR; if folder, then all thereunder (recursively)
@@ -883,39 +900,6 @@ exit
         # append STRING to file(s)
         echo "STRING" |tee -a *.txt > /dev/null  # silently
 
-    xargs # Converts piped STDOUT of command1 to args ($@) of command2
-        command1 |xargs command2 # Use when command2 does NOT ACCEPT PIPEd stdin 
-        # (See "GNU FINDUTILS" section for more detail)
-
-        # Ex: Gzip each dot-file (fname: .*) at root of user's HOME directory.
-        find "$HOME" -maxdepth 1 -type f -name '.*' |xargs gzip 
-        # (See `find` at "GNU FINDUTILS" section below for more detail)
-
-        # REPEAT COMMANDs `$n` times : ignore arg(s); ignore $n
-        seq $n |xargs -Iz COMMAND static_ARG1 static_ARG2 ...
-
-        # LOOP (faster) : pass each index (1, 2, ..., $n) to COMMAND, as arg, once per.
-        seq $n |xargs -I {} sh -c "COMMAND {}" 
-            # Same, but SECURELY (mitigate command injection):
-                # - Allows for access to positional params and multiple useage
-                # - Allows for injecting a variable into subshell by replacing "_" with it.
-                seq $n |xargs -I {} sh -c 'COMMAND "$@"' _ {}  
-                    # Ex: AUTOMATE cloud-infra provisioning sans Ansible:
-                        # Provision all remote machines of the sequence (1, 2, ... $n), 
-                        # all configured with a common ssh identity file (key),
-                        # invoking a local script (do.sh) with local environment.
-                        echo '#!/usr/bin/env bash'      > do.sh
-                        echo "echo \"ARGs: '\$@'\""    >> do.sh
-                        key=~/.ssh/aws_cluster
-                        seq $n |xargs -I {} sh -c ' 
-                            echo "=== @ VM: a$1";ssh -i "$0" uzer@a$1 /bin/bash -s < do.sh $0
-                        ' "$key" {}
-                            # === @ VM: a1 
-                            # ARGs: '1' 
-                            # === @ VM: a2 
-                            # ARGs: '2' 
-                            ...
-
 # GNU FINDUTILS : FIND, LOCATE, XARGS
     # https://www.gnu.org/software/findutils/manual/html_mono/find.html#Introduction
     # ISSUEs @ find ... |xargs   http://www.etalabs.net/sh_tricks.html
@@ -951,8 +935,8 @@ exit
         find . -type l                # find symbolic links (symlinks); regular files (f); dirs (d)
 
         # Set depth of search 
-            find -mindepth 1 -maxdepth 1  # PWD; files & folders ONLY
-            find -mindepth 2 -maxdepth 2  # 1st-child; files and folders ONLY
+            find -mindepth 1 -maxdepth 1  # PWD only; files & folders
+            find -mindepth 2 -maxdepth 2  # 1st-child only; files and folders
 
         # Follow SYMLINKs, else not.
             find -L "$DIR" -iname 'foo*'  
@@ -960,21 +944,12 @@ exit
         # Exclude set of FNAMEs
             find . -type f ! -iname '*\[s\].7z' \( -iname '*.7z' -or -iname '*.zip' \) 
         
-        # Exclude set of specific PATHs : DO NOT MIX `-or` with `!`
-            find . -type f -not -path './.git/*' -not -path './.venv/*'
-            
-            find \( -name 'REF.*' ! -iname '*.lnk' ! -iname '*.xyz' \) ...
-            find \( -name 'REF.*' -or -iname '*.lnk' -or -iname '*.xyz' \) ...
+        # Exclude set of specific FNAMEs and/or PATHs : DO NOT MIX `-or` with `!`
+            find . -name 'REF.*' -or -iname '*.lnk' -or -iname '*.xyz' -not -path '*/.git/*' ... 
+            find . -name 'REF.*' ! -iname '*.lnk' ! -iname '*.xyz' ! -path '*/.git/*' ... # Equivalent
 
             # E.g., find all *.md OR *.txt larger than 100 KB 
             find . -type f  \( -iname '*.html' -or -iname '*.txt' \) -size +100k -printf "%k [%s] %p\n"
-
-        # EXCLUDE a DIR 
-            find  ! -path  '*/.git*'
-            find  -not -path '*/.git/*' 
-
-        # Exclude specific DIRs 
-            find . -type d \( -path dir1 -o -path dir2 -o -path dir3 \) -prune -o 
 
         # RUN COMMANDS against the resulting list
             #  DELIMITERs `;` or `+` : they must be either ESCAPED or QUOTED : `\;` OR `';'`
@@ -1080,7 +1055,7 @@ exit
                 find "$HOME" -maxdepth 1 -type f ! -name '*.???' -printf "%p\n"
                 
                 # print all 1st children of PWD; perms in octal, and fname 
-                find . - mindepth 1 -maxdepth 1 -printf "%f\n" |xargs stat --format=" %a  %n" 
+                find . -mindepth 1 -maxdepth 1 -printf "%f\n" |xargs stat --format=" %a  %n" 
                      775  .
                      770  foo.bar
                      775  scripts
@@ -1128,8 +1103,8 @@ exit
                 find -type f -printf "%T@ %p\n" |sort -n |tail -n 1 |cut -f2- -d' '
             
             # -atime, -mtime, -ctime 
-            find -atime +5 # OLDER; find all accessed more than 5 days ago
-            find -mtime -5 # NEWER; find all modified (content) less than 5 days old
+            find -atime +5 # OLDER; find all accessed more than 5 DAYS ago
+            find -mtime -5 # NEWER; find all modified (content) less than 5 DAYS old
 
             # reset mtime of *.sh to that of its *.7z sibling, at all dirs hereunder 
             find . -iname '*.7z' -exec /bin/bash -c 'touch -r "$@" "$( find "${@%/*}" -iname '*.sh')"' _ {} \;
@@ -1184,75 +1159,66 @@ exit
         # Prepend LINE_OF_TEXT in all files matching PATTERN
             find . -type f -name 'PATTERN' -exec sed -i '1s;^;LINE_OF_TEXT\n;' {} \;
 
-    xargs # xARGS as in "combine arguments"; pronounced EX-args
+    xargs [option...] [command [initial-arguments]]
+        # xARGS as in "combine arguments"; pronounced EX-args
+        # Converts piped STDOUT of command1 to args ($@) of command2
+        #  https://www.gnu.org/software/findutils/manual/html_mono/find.html#Common-Tasks
+        #  xargs builds and executes command lines by gathering  
+        #  arguments it reads from stdin; smartly filling a pipeline 
+        #  per options AND machine capacity.
+        xargs -n MAX-ARGS     # max args (#) per command line
+        xargs -I {}           # 1 arg per, regardless of -n; {} is arg; useable only once lest sh -c '...'
+        xargs -L MAX-LINES    # max lines (#) per command line 
+        xargs -d '\t'         # '\t'; TAB-delimited args
+        xargs -P 10           # run 10 processes max, CONCURRENTLY
+
         # Build and execute command lines from standard input
         # CONVERTS PIPED STDOUT of command1 TO STDIN (args) for command2
             command1 |xargs command2 # Use when command2 does NOT accept piped STDIN 
             # E.g., gzip all dot-file files at root of HOME dir:
             find "$HOME" -maxdepth 1 -type f -name '.*' |xargs gzip 
+            # (See `find` at "GNU FINDUTILS" section below for more detail)
 
-        xargs [option...] [command [initial-arguments]]
-            #  https://www.gnu.org/software/findutils/manual/html_mono/find.html#Common-Tasks
-            #  xargs builds and executes command lines by gathering  
-            #  arguments it reads from stdin; smartly filling a pipeline 
-            #  per options AND machine capacity.
-            xargs -n MAX-ARGS     # max args (#) per command line
-            xargs -I {}           # 1 arg per, regardless of -n; {} is arg; useable only once lest sh -c '...'
-            xargs -L MAX-LINES    # max lines (#) per command line 
-            xargs -d '\t'         # '\t'; TAB-delimited args
-            xargs -P 10           # run 10 processes max, CONCURRENTLY
-       
+        # LOOP (faster) : pass each index (1, 2, ..., $n) to COMMAND, as arg, once per.
+            seq $n |xargs -I {} COMMAND {} # {} is the canonical token; any unique CONTIGUOUS STR okay.
+        # LOOP SECURELY (mitigate command injection) by using SUBSHELL:
+            # - Use single quotes to prevent interpretation.
+            # - Allows for access to positional params (multiple useage); brace expansion
+            # - Allows for injecting variable(s) without affecting args order 
+            #   by replacing "_" (dummy for token $0) with it.
+            seq $n |xargs     /bin/bash -c 'command1 $2;command2 "$@";...' _  
+            seq $n |xargs -IX /bin/bash -c 'COMMAND "$@"' $v X
+            # PASS N args per line
+            seq 3  |xargs -n2 /bin/bash -c 'foo "$@"' _ 
+                # [1] [2]
+                # [3]
+   
         # Require arg(s)
             ...|xargs --no-run-if-empty command
 
-        # Handle WHITESPACE : implies ONE (first) ARG per command line
-            ...|xargs -I {} command {}       # If piped '\n' (newline) DELIMITED
-            ...|xargs -0 -I {} command _ {}  # If piped '\0' (null) DELIMITED
-            
-            # Ex: NULL-DELIMITed so HANDLEs WHITESPACE (file paths)
+        # Handle ...
+
+            # WHITESPACE : implies ONE (first) ARG per command line
+                ...|xargs -I {} command {}       # If piped '\n' (newline) DELIMITED
+                ...|xargs -0 -I {} command _ {}  # If piped '\0' (null) DELIMITED
+                
+            # NULL-DELIMITed : allows WHITESPACE args; process @ SUBSHELL; `-0 -I {} ...`; 
                 find . ... -print0 |xargs -0 command 
-            
-        # Handle STDIN or PIPELINE arg(s) : Test if FD 0 (STDIN) is open ...
-            [[ -t 0 ]] && { 
-                command "$@"            # Args per STDIN
-            } || { 
-                xargs -I {} command {}  # Args per PIPELINE
-            }
-
-        # SUBSHELL : Useful for brace-expansion, access to positional params, etc.
-            ... |xargs /bin/bash -c 'command1;command2;...' _  
-            # - Use single quotes to prevent interpretation.
-            # - The dummy "_" absorbs the subshell script-name param, "$0", which is null here.
-            #   - May replace "_" with whatever, injecting it into the subshell (as "$0").
-
-            # Configure xargs to fit any (user-defined) function(s)
-                # Function foo takes two args (per call)
-                foo(){ echo [$1] [$2]; }; export -f foo
-                # Using `-n N` option, config xargs to pass N params/args per command line.
-                seq 3 |xargs -n 2 /bin/bash -c 'foo "$@"' _ 
-                    # [1] [2]
-                    # [3]
-                seq 3 |xargs -n 1 /bin/bash -c 'foo "$@"' _
-                    # [1] []
-                    # [2] []
-                    # [3] []
-            # @ SINGLE ARG per execution : The `-I` option implies `-n 1` setting.
-                ...|xargs -I {} foo "{}" # {} is the canonical token; any contiguous str okay.
-
-                # To access POSITIONAL params OR MULTIPLE invocations of param(s):
-                ...|xargs -I {} /bin/bash -c 'foo "$3" "$2"' _ {}
-
+    
             # NULL-DELIMITed allows WHITESPACE args; process @ SUBSHELL; `-0 -I {} ...`; 
-                ...|xargs -0 -I {} /bin/bash -c 'command "$@"' _ {}
+                ...|xargs -0 -IX /bin/bash -c 'command "$@"' _ X
                 # LIMITATION: one (first) null-delimited arg per line; KILLS STREAMING
-                    
-                # STREAMING `$_N` args per subshell ...
+            # STREAMING `$_N` args per subshell ...
                 ...|xargs -0 -n $_N /bin/bash -c 'command "$@"' _ 
+    
+            # STDIN or PIPELINE arg(s) by test for FD 0 (STDIN) open:
+                [[ -t 0 ]] && command "$@"            # If FD 0 is open, then args are of STDIN 
+                [[ -t 0 ]] || xargs -I {} command {}  # If FD 0 is not open, then args are by PIPE
 
-            # CONCURRENTly, @ max 10, process \n-delimited paths (list)
-                cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}"'
+            # CONCURRENTly, @ max 10 per line to process \n delimited paths (list)
+                ... |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}"'
                 # concurrently/background fooProcess ...
-                cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}" &'
+                ... |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}" &'
 
             # STREAM PROCESSor (generalized)
                 foo(){ echo "[$1] [$2] [$3]"; }
@@ -1343,6 +1309,9 @@ exit
             # https://utcc.utoronto.ca/~cks/space/blog/unix/GNUGrepForceText  
 
         ... |grep -- '-foo-bar'
+
+        # OR : Filter thru EITHER pattern
+        ... |grep -e This -e That
 
         # ANY PATTERN listed in FILE (one pattern per line)
  		cat <<-EOH > FILE
@@ -1468,90 +1437,226 @@ exit
         # XOR per lines (lines not in both)
         awk 'FNR==NR {a[$0]++; next} !a[$0]' file1 file2
 
-        jq [options...] filter [files...] # https://jqlang.github.io/jq/manual/
+    JsonPath # XPath for JSON : A language library : https://jsonpath.com/
+        # https://kubernetes.io/docs/reference/kubectl/jsonpath/
+        # COMMON PATTERN using its array filter "?()" :
+        # Get value of key-X of an array-el obj having a key-Y set to a *declared value*.
+        # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
+        # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
+        user=kind-kind # See config.users[] at `kubectl config view`
+        kubectl config view --raw -o \
+            jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
+            |base64 -d |openssl x509 -text -noout
+            # OR just one field, e.g., Subject:
+            |base64 -d |openssl x509 -subject -noout
+                #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+
+    jq|yq # Process JSON to YAML
+        # Convert items[] els to "---" delimited YAML docs
+            # Example has 1st-order per-el key "apiVersion"
+            cat $json |jq -Mr [.items[]] |yq eval .[] -P - |sed '1!s/^apiVersion/---\napiVersion/'
+
+    jq # JSON Processor
+        # https://jqlang.github.io/jq/tutorial/
+        # https://jqlang.github.io/jq/manual/
         
-            -r # Raw; unquoted.
-            -c # Compact
-            -C # Colorized; some commands may FAIL @ PIPE due to the (hidden) CTRL chars.
-            -M # Monochrome.
+        -r # Raw out; unquoted.
+        -c # Compact (vs. pretty print)
+        -C # Colorized; subsequent pipe may FAIL due to CTRL chars.
+        -M # Monochrome; fix for aformentioned pipe fail: -Mr 
+        -R # Raw (string) input
 
-            # Filter all selected keys-values at some layer of the hierarchy:
-                docker volume inspect $(docker volume ls -q)|jq -rM .[].CreatedAt 
-                    # List both Name and CreatedAt
-                    ...|jq -Mr '.[] | .Name, .CreatedAt'
+        ## Handle bad (sub)key names.
+            # a:
+            #   key.has.dots: {}
+            ... |jq -Mr '.a["key.has.dots"]'
 
-            # Filter all selected keys-values at various layers of the hierarchy
-                aws ec2 describe-volumes \
-                    |jq '.Volumes | .[].Attachments | .[] | .Device, .VolumeId'
+        ## Filter out all but (sub)keys, of/to valid JSON.
+            # Deletes ALL the STRING array els and key values, recursively.
+            ... |jq -Mr 'walk(
+                    if type == "object" then
+                        with_entries(.value |= if type == "object" or type == "array" then . else "" end)
+                    elif type == "array" then
+                        map(select(type != "string"))
+                    else
+                        .
+                    end
+                )'
 
-                # ... as key:val pairs
-                    ...|jq '{Mtime: .LastModified, Size: .ContentLength, MIME: .ContentType}'
-                # ... natively, sans jq 
-                    --query "{Mtime:LastModified,Size:ContentLength,MIME:ContentType}"
+        # Filter all selected keys-values at some layer of the hierarchy:
+            docker volume inspect $(docker volume ls -q)|jq -Mr .[].CreatedAt 
+                # List both Name and CreatedAt
+                ...|jq '.[] | .Name, .CreatedAt'
 
-            # SYNTAX: ".[]" is ARRAY operation; all nodes of all indices therein; "[0]" is first index
-                ...|jq .[].foo.bar.baz    # get "baz" field VALUEs
-                ...|jq .[].baz            # equivalent
+        # Access key having slash or other problematic characthers
+            echo '{"a/b": 1}' |jq '."a/b"'                   #=> 1
+            echo '{"a/b": 1,"c": {"a/b": 2}}' |jq '.c."a/b"' #=> 2
+            echo '{"a/b": 1,"c": {"a/b": 2}}' |jq '{A|B: ."a/b", C: .c}'
+                # {
+                #      "A|B": 1,
+                #      "C": {
+                #          "a/b": 2
+                #      }
+                # }
 
-                ...|jq -r .keyX           # keyX VALUE; RAW output (unquoted)
-                ...|jq -r .               # ALL key-val pairs, unfiltered; RAW output
+        # SLURP a flat list of JSON OBJECTS into a valid JSON struct (array).
+            cat flat-list-of-json-objects.txt \
+                |jq -Mr . --slurp # -s
 
-                ...|jq  '.P[] | .X, .W'  
-                #... Get all values of keys X and W in the array of objects under key P 
+        # MAP a flat list of STRINGs to JSON array
+            cat flat-list-of-strings.txt \
+                |jq -R -s -c 'split("\n") | map(select(length > 0))'
+            # OR (if string delimiter is newline)
+            cat flat-list-of-strings.txt \
+                |jq -Rn '[inputs]'
 
-                    # Example ...
-                    aws route53 list-hosted-zones |jq  '.HostedZones[] | .Name, .Id'
-                        # =>
-                        "foo.com."
-                        "/hostedzone/Z2H0UGL2BNA1BN"
-                        "bar.org."
-                        "/hostedzone/Z03607453CJ16NGTHYTYE"
+        # MAP/REFACTOR object having array to flat list
+            echo '[ 
+                {"name": "redhat/ubi8", "tags": ["8-8.9-1136", "8.8-1067-source"]},
+                {"name": "bbox", "tags": ["1.32.0-musl"]}
+            ]' |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"'
+                # redhat/ubi8:8-8.9-1136
+                # redhat/ubi8:8.8-1067-source
+                # bbox:1.32.0-musl
 
-            # Filter and process an ARRAY of OBJECTS ...
+        # Iterate over any array SAFELY (allow for possible null or empty)
+            ...|jq '.k1 | .[]?'
+            ...|jq '{"k1": .k2 | .[]? } | {...}'
+            ...|jq '{"k1": (.k2 // []) | map(.k3)}'
+            ...|jq '[.k1.k2[]? | select(. != null and .k3 != null) | {K3: .k3}]' 
 
-                printf '{
-                    "a": [{"foo":"1", "bar":"2"},{"foo":"999", "bar":"77"}]
+        # Filter key names 
 
-                }' |jq .a[].bar
-                    # "2"
-                    # "77"
-                ...|jq -r .a[].bar  # JOIN (raw)
-                    # 2
-                    # 77
-                ...|jq .a[1]        # PER INDEX; second el
-                # {"foo": "999","bar": "77"}
-                ...|jq -c '.a[] | .foo, .bar' 
-                #... All values of keys foo: and bar: in the array under key a:
-                    # "1"
-                    # "2"
-                    # "999"
-                    # "77"
+            # @ Array : Using keys (obj to arr operator)
+            echo '{ "k1": [{"/api/k2a": 11}, {"/api/k2b": 22}, {"/api/kxb": 86}, {"/api/k2c": 33}]}' \
+                |jq '.k1[] | select(keys[] | test("^/api/k2"))'
 
-                # Functions
-                    ...|jq -c '.a[] | select(.foo | contains("999"))'  # Compact (vs Pretty Print)
-                        # {"foo":"999","bar":"77"} 
-                    ...|jq 'map(.price) | add'  # Sum 'price' field
+                # OR, to get filtered key names only : Using keys operator
+                |jq -Mr '.k1[] | keys[] | select(test("^/api/k2"))'
 
-            # Transform list of STRINGs to ARRAY
-                ...|jq -Rn '[inputs]' # If string delimiter is newline
+            # @ Object : Using to_entries (obj to arr of its k-v pairs) |...| from_entries (arr to obj)
+            echo '{ "k1": { "/api/k2a": 11, "/api/k2b": 22, "/api/kxb": 86, "/api/k2c": 33 }}' \
+                |jq '.k1 | to_entries | map(select(.key | test("^/api/k2"))) | from_entries'
+                
+                # OR, to get filtered key names only : Using keys operator
+                |jq -Mr '.k1 | keys[] | select(test("^/api/k2"))'
 
-            # Transform ARRAY to Tab Separated Values : @tsv filter, or @csv, @html, ..
-                printf '[{
-                            "name": "George",
-                            "id": 12,
-                            "email": "george@domain.example"
-                        }, {
-                            "name": "Jack",
-                            "id": 18,
-                            "email": "jack@domain.example"
+            # Filter out subkey(s) under unknown key name(s) : Using walk()
+                |jq '. |walk(if type == "object" then del(.keynam1, keyname2, keyname3) else . end)'
+                # If keynames are dynamic
+                jq --argjson keys '["keyname1", "keyname2", "keyname3"]' 'walk(if type == "object" then {($keys[]): .[]} else . end)'
 
-                }]' |jq -r '["NAME","ID"],["------","--"],(.[] | [.name,.id]) | @tsv'
+            # GET all content of container registry, both repos and images lists, 
+            # in both JSON and flat-list formats.
+                curl -s http://$registry/v2/_catalog \
+                    |tee catalog.json \
+                    |jq -Mr .[][] \
+                    |tee catalog.repositories.log \
+                    |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+                    |jq -Mr . --slurp \
+                    |tee all.tags.list.json \
+                    |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
+                    |tee all.images.log
 
-                    # NAME    ID
-                    # ------  --
-                    # George  12
-                    # Jack    18
+        # List selected keys and values, refactoring into another valid JSON obj:
+            docker network ls -q |xargs docker network inspect $1 \
+                |jq -Mr '.[] | select(.Name != "none") | {Name: .Name, Type: .Driver, Address: .IPAM.Config}' \
+                |jq --slurp .
 
+        # Filter all selected keys-values at various layers of the hierarchy
+            aws ec2 describe-volumes \
+                |jq '.Volumes | .[].Attachments | .[] | .Device, .VolumeId'
+
+            # ... as key:val pairs
+                ...|jq '{Mtime: .LastModified, Size: .ContentLength, MIME: .ContentType}'
+            # ... natively, sans jq 
+                --query "{Mtime:LastModified,Size:ContentLength,MIME:ContentType}"
+
+        # SYNTAX: ".[]" is ARRAY operation; all nodes of all indices therein; "[0]" is first index
+            ...|jq .[].foo.bar.baz    # get "baz" field VALUEs
+            ...|jq .[].baz            # equivalent
+
+            ...|jq -r .keyX           # keyX VALUE; RAW output (unquoted)
+            ...|jq -r .               # ALL key-val pairs, unfiltered; RAW output
+
+            ...|jq  '.P[] | .X, .W'  
+            #... Get all values of keys X and W in the array of objects under key P 
+
+                # Example ...
+                aws route53 list-hosted-zones |jq  '.HostedZones[] | .Name, .Id'
+                    # =>
+                    "foo.com."
+                    "/hostedzone/Z2H0UGL2BNA1BN"
+                    "bar.org."
+                    "/hostedzone/Z03607453CJ16NGTHYTYE"
+
+        # Filter and process an ARRAY of OBJECTS ...
+
+            printf '{
+                "a": [{"foo":"1", "bar":"2"},{"foo":"999", "bar":"77"}]
+
+            }' |jq .a[].bar
+                # "2"
+                # "77"
+            ...|jq -r .a[].bar  # JOIN (raw)
+                # 2
+                # 77
+            ...|jq .a[1]        # PER INDEX; second el
+            # {"foo": "999","bar": "77"}
+            ...|jq -c '.a[] | .foo, .bar' 
+            #... All values of keys foo: and bar: in the array under key a:
+                # "1"
+                # "2"
+                # "999"
+                # "77"
+
+            # Functions
+
+                # Filter ARRAY ELEMENTS by a KEY
+                    ...|jq '.[] |select(.aKey == "aVal")'
+
+                    ...|jq '.a[] | select(.foo | contains("999"))'  
+
+                # Sum 'price' field
+                    # {"foo":"999","bar":"77"} 
+                    ...|jq 'map(.price) | add'  
+
+        # Transform list of STRINGs to ARRAY
+            ...|jq -Rn '[inputs]' # If string delimiter is newline
+
+        # Transform ARRAY to Tab Separated Values : @tsv filter, or @csv, @html, ..
+            printf '[{
+                        "name": "George",
+                        "id": 12,
+                        "email": "george@domain.example"
+                    }, {
+                        "name": "Jack",
+                        "id": 18,
+                        "email": "jack@domain.example"
+
+            }]' |jq -r '["NAME","ID"],["------","--"],(.[] | [.name,.id]) | @tsv'
+
+                # NAME    ID
+                # ------  --
+                # George  12
+                # Jack    18
+
+    yq  # jq for YAML : https://github.com/mikefarah/yq 
+
+        # Convert JSON to YAML
+            yq eval -P -o yaml $a.json |tee $a.yaml
+        # Access a key name having spaces, hyphens and/or such
+            lscpu |yq  '.["Vulnerability Spectre v1"]'
+        # Convert items[] to "---" delimited YAML documents 
+            # If 1st 1st-order key is "apiVersion" 
+            yq '.items | .[]' $yaml |sed '1!s/^apiVersion/---\napiVersion/'
+            # E.g., Capture all ConfigMaps (cm) of a Namespace
+            yq '.items | .[]' <(kubectl get cm -o yaml) |sed '1!s/^apiVersion/---\napiVersion/'
+        # Extract one YAML document (.kind) from a (K8s) manifest having many 
+            kind=DaemonSet;yq 'select(.kind == "'$kind'")' $manifest 
+            # E.g., Compare app versions at a particular resource (kind) 
+                doc (){ yq 'select(.kind == "'$1'")' $2; }
+                diff <(doc $kind $blue) <(doc $kind $green)
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command
@@ -1578,11 +1683,12 @@ exit
         sed 's:// .*::' FILE # STRIP FILE of ALL COMMENTS: "// ...NOTE space else 'http://' too"
         sed '3p'   FILE         # p; print line 3
         sed '2d'   FILE         # d; delete 2nd line
-        sed '2i foo bar' FILE   # i; insert line: 'foo bar' @ line 2; prepends, so l2 pushed to l3   
+        sed '2i foo bar' FILE   # i; insert line: 'foo bar' @ line 2; prepends, so l2 pSushed to l3   
         sed '2,4!d'  FILE       # !d; delete all lines except 2-4
         sed '2,4p' FILE         # p; print lines 2 thru 4
         sed '5,10d;12d'   FILE  # d; delete lines 5-10 and 12
         sed '/PATTERN/d'  FILE  # d; delete lines containing PATTERN
+        sed '\,PATTERN,d'  FILE # Same as above, but delimiting with "," (backslash oddly required for d, but not s)
         sed '/SEARCH/c\REPLACE' # c\; replace lines containing SEARCH str with REPLACE str
         sed 's/foo/bar/'  FILE  # s; subst 'foo' for 'bar'; FIRST/ONCE
         sed 's/foo/bar/I' FILE  # s/I; case Insensititve; FIRST/ONCE
@@ -1592,7 +1698,8 @@ exit
         sed "s/$foo//Ig"  FILE  # s/Ig; delete ALL $foo, case Insensitive; (NOTE double quotes)
         sed '/^[\t]["]/d' FILE  # Remove lines that START WITH TAB followed by a double-quotes char.
         sed 's/PATTERN.*$//' .. # Remove all lines START WITH OR APPENDED WITH PATTERN
-        sed '/^\s*$/d' FILE     # Remove all BLANK/EMPTY LINES
+        sed '/^$/d' FILE        # Remove all BLANK/EMPTY LINES
+        sed '/^\s*$/d' FILE     # Remove all BLANK/EMPTY LINES and those with only whitespace
 
         sed -i 's/.html//g; s/REF.//g' "names.log" # in-place; MULTIPLE EXPRESSIONs (delimited by `;`)
         sed 'n;n;s/./x/'  FILE  # Substtute every 3rd line w/ 'x'
@@ -1606,6 +1713,9 @@ exit
         sed 's/[][]//g'   FILE  # Strip square-brackets
         printf "%s" "$@" |sed 's/[][]//g' # `[foo[.bar]z[oo]too` => `foo.barzootoo`
 
+        # STRIP all COMMENTS (appended-inline too) and EMPTY LINES from a Bash file
+            ... |sed -E '/^[[:space:]]*#/d; s/[[:space:]]+#.*$//' |sed '/^[[:space:]]*$/d'
+
         # REPLACE LINEs having matching PATTERN
             sed '/PATTERN/s/.*/REPLACEMENT/' FILE
                 # E.g., 
@@ -1613,20 +1723,29 @@ exit
 
         # DELETE all EMPTY LINES
             sed '/^[[:space:]]*$/d' FILE 
-        
+
+        # DELETE all LINEs having FIRST CHAR "#"
+            sed '/^[[:space:]]*#/d'
+
+        # Remove non-word (neither letter, digit, nor underscore) characters
+            sed 's/\W//g' FILE
+
+        # Remove ANSI color codes and (some?) control characters
+            sed -r 's/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g' FILE
+            # OR
+            sed -r 's/[[:cntrl:]]\[[0-9]{1,3}m//g' FILE
+
         # Remove control characters 
-            sed -e "s/\x1b\[.\{1,5\}m//g"
-                # E.g., 
-                ip address |sed -e "s/\x1b\[.\{1,5\}m//g" > ip.address.log
+            sed -e "s/\x1b\[.\{1,5\}m//g" FILE
                 
         # Remove SUBSTR (ALL instances)  per DELIMITERs L and R (all content btwn the two)  
             sed -e 's/L.*R//' FILE > RESULT  # I.e., per "wildcard" with delimiters
 
         # OTHER Delimiters okay; here use '#' instead of '/', so paths can be processed
-            sed 's#/foo/bar#/alpha/bravo#g'
+            sed 's#/foo/bar#/alpha/bravo#g' FILE
 
         # HANDLE WHITESPACE; 'Fo BaR' => 'fbar'
-            sed s/foo[[:space:]]bar/fbar/Ig  
+            sed s/foo[[:space:]]bar/fbar/Ig FILE 
         
         # STRIP PREPENDING `./` from PATH(s)
             find . ... |sed 's/\.\///g' # `./foo bar/baz` => `foo bar/baz`
@@ -1659,15 +1778,15 @@ exit
         # Parse PATH Env.Var.  
             echo $PATH |sed 's/:/\n/g'  # parsed into one path per line, repl. `:` with `\n`
 
-        # Windows to POSIX path CONVERSION; s:\foo\bar => /s/foo/bar
-            echo "/$_path" |sed 's/\\/\//g' |sed 's/://' # handle Win path BACKSLASHES
-            # as a function ...
-            win2posix() { printf "%s" "$@" |sed 's/\\/\//g' |sed 's/://' ; }
+        # Windows to POSIX path CONVERSION : C:\FOO\bAr => /c/FOO/bAr
+            echo "/${path,}" |sed 's/\\/\//g' |sed 's/://' 
+            # As a function:
+            win2posix() { printf "/%s" "${@,}" |sed 's#\\#/#g' |sed 's#:##' ; }
 
-        # Windows (escaped) to POSIX; C:\\foo\\bar => /c/foo/bar
-            ... |sed 's#\\\\#/#g' |sed 's#C:#/c#g'
-            export _DRV=c  # ... if variable drive letter ...
-            ... |sed 's#\\\\#/#g' |sed -re "s#([a-z]|[A-Z]):#/${_DRV}#g"
+            # if ESCAPED : C:\\FOO\\bAr => /c/FOO/bAr
+            echo "/${path,}" |sed 's#\\\\#/#g' |sed 's#:##'
+            # As a function:
+            win2posix() { printf "/%s" "${@,}" |sed 's#\\\\#/#g' |sed 's#:##' ; }
 
         # SEARCH/REPLACE : PATTERN MATCH; Process ALL FILEs @ current DIR+subdirs  
 
@@ -1749,10 +1868,13 @@ exit
         # [:upper:]       all upper case letters
         # [:xdigit:]      all hexadecimal digits
         # [=CHAR=]        all characters which are equivalent to CHAR
-        # strip all non-printable characters from $_bad_str
+        
+        # Strip all non-printable characters from $_bad_str
+        echo "$_bad_str" |tr -dc '[[:print:]]'
+        # Equivalent:
         tr -dc '[[:print:]]' <<< "$_bad_str"
 
-        # translate (convert) all NEWLINE to whitespace
+        # Convert (translate) all NEWLINE to whitespace
         tr '\n' ' '  < FILE     
 
         # Delete all NEWLINE and WHITESPACE chars
@@ -1760,21 +1882,21 @@ exit
 
         # xargs : 2 input lines per 1 output line
         cat "$file" |tr ' ' '\n' |xargs -l2
-        # equivalent command w/out using cat command
+        # Equivalent
         tr ' ' '\n' < "$file" |xargs -l2 
 
-        # translate (existing) lowercase file to (created) UPPERCASE file
-        tr "[a-z]" "[A-Z]" < lower > upper 
-        tr '[:lower:]' '[:upper:]' < lower > upper  # equivalent
+        # Convert (translate) lowercase (existing file) to UPPERCASE (create file)
+        tr '[:lower:]' '[:upper:]' < lowerFILE > upperFILE  
 
-        ...|tr ':' '\n'             # replace colons with newline
-        ...|tr A-Z a-z              # uppercase to lowercase
-        ...|tr [:upper:] [:lower:]  # uppercase to lowercase
-        ...|tr ABCDE 12345
-        ...|tr -d L                 # delete all 'L' chars
-        ...|tr -s L                 # squeeze (multiple to one)
+        ...|tr '[A-Z]' '[a-z']          # Alt syntax (uppercase to lowercase)
+        ...|tr ':' '\n'                 # replace colons with newline
+        ...|tr -d L                     # delete all 'L' chars
+        ...|tr -s L                     # squeeze (multiple to one)
 
-    # filter out all but ln 20-30
+    head -$N FILE # Filter out all but FIRST N lines of FILE 
+        -c $bytes  # Bytes instead of lines.
+        -z         # NULL delimited instead of NEWLINE.
+    tail -$N FILE # filter out all but LAST N lines of FILE
         tail +20 < unfiltered |head -n30 > filtered 
 
     groff  # front-end for the groff document formatting system  https://www.gnu.org/software/groff/
@@ -1923,7 +2045,6 @@ exit
 
 # number format
     numfmt --to=iec 4123412312312 # 3.8T
-
 
 # I/O (IO)  http://www.etalabs.net/sh_tricks.html
 
@@ -2150,20 +2271,19 @@ exit
     # copy all junk files to $PWD 
     cp /home/bozo/current_work/junk/* .
 
-    # SYMBOLIC LINKs
-        # Hard link points to TARGET; SAME INODE; canNOT link btwn volumes (device/partition/filesystem)
+    ln # SYMBOLIC LINKs : `man ln` refers to LINK as DIRECTORY, and the existing source path as TARGET.
+        # Do NOT USE relative paths, else may err: "Too many levels of symbolic links"
+        # Hard link points to TARGET; SAME INODE; NOT link between volumes (device/partition/fs)
         ln TARGET LINK     # create HARD link
-        # Soft link points to FILE|DIR; has its own inode; CAN link btwn volumes;
-        ln -s TARGET LINK  # create SOFT link
-            
+        # Soft link points to TARGET (FILE|DIR); creates NEW INODE; Okay to link between volumes.
+        ln -s TARGET LINK  # create SOFT link  
+        ln -fs TARGET LINK # create SOFT link, forcibly (delete pre-existing)
         # LINK TEST; is FILE is a symlink
-        [[  $( stat -c %h FILE ) -gt 1 ]] && echo "FILE is a Symbolic Link"
-
+        [[  $(stat -c %h FILE) -gt 1 ]] && echo "FILE is a Symbolic Link"
         # LINK TEST; file exists AND is a symbolic link; FLAKY BEHAVIOR  
-        [[ -L "$@" ]] && echo "SYMLINKD" # -h; same
-
+        [[ -L "$@" ]] && echo "SYMLINKed" # -h; same
         # EXACT hardlink TEST; two files are SAME iNODE; 'ls -i' shows inode number
-        [[ "$( ls -i FILE1 |awk '{print $1}' )" == "$( ls -i FILE2 |awk '{print $1}' )" ]] 
+        [[ "$(ls -i FILE1 |awk '{print $1}')" == "$(ls -i FILE2 |awk '{print $1}')" ]] 
 
     # test mod/update before/after 
     _mtime="$( stat -c %Y "$@" 2> /dev/null )"
@@ -2246,16 +2366,92 @@ exit
     # add number to each line in file
     cat -n "$file"
 
-    # /dev : http://www.tldp.org/LDP/abs/html/devref1.html#NPREF
+    # Change directories, yet preserve prior(s) in a LIFO (push/pop) stack.
+    pushd /change/to/this/dir   # push current dir to stack, and then cd
+    popd                        # cd to directory popped from stack
 
-    # time from nist.gov
-    cat </dev/tcp/time.nist.gov/13   
+    # Configure script to run at *its* location (PWD)  
+    # regardless of how invoked, i.e., w/out explicit path.
+    # Useful in scripts having relative-path reference(s).
+        #!/usr/bin/env bash
+        pushd ${BASH_SOURCE%/*} 2>/dev/null || pushd . || exit 
+        #... Do script stuff here ...
+        err=$?      # Capture the resulting error code.
+        popd        # Return to folder from which caller came.
+        exit $err   # Return this (informative) error code.
 
-    pushd "$folder_path" # cd & push stack
-    popd             # cd by pop stack
+# SOCKET COMMANDS
+
+    lsof -U # List all open UNIX Domain Sockets 
+    lsof /tmp/demo.sock # Info on this socket only
+
+    socat   # SOcket CAT : Multipurpose relay : "Netcat for sockets" 
+            # See "Examples" @ https://linux.die.net/man/1/socat 
+        socat UNIX-LISTEN:/usr/local/var/run/test/test.sock - 
+
+    # Chat : client/server (peers) : TWO-WAY COMMS channel (STDIN/STDOUT)
+        # @ Server (listener) terminal
+        nc -l $port # Listen on all interface at port $port
+        # @ Client terminal
+        nc -N $ip $port # -N to shutdown the network socket after EOF (CTRL-D)
+        #... thereafter, anything typed at one terminal is sent to the other 
+
+    # Create a UNIX Socket 
+        # -U : Unix Socket file 
+        # -l : act as the server-side; listen for incoming connections.
+        nc -U /tmp/demo.sock -l
+
+    netstat -a  # Active UNIX domain sockets; list all network ports
+
+    netperf     # Benchmark traffic between 2 hosts : Does UNIX sockets too
+
+    ss # Socket Statistics; IP:PORT; like netstat
+        -r     # resolve names
+        -n     # numeric; don't resolve names
+        -p     # incl. processes
+        -at4r  # all-sockets, tcp, IPv4, resolve-names
+
+        # Display all TCP sockets with process SELinux security contexts.
+            ss -t -a -Z
+        # Display all UDP sockets.
+            ss -u -a
+        # Display all established ssh connections.
+            ss -o state established '( dport = :ssh or sport = :ssh )'
+
+    # Bash can read/write (TCP) SOCKET as file descriptor
+        # /dev : http://www.tldp.org/LDP/abs/html/devref1.html#NPREF
+        # These are *not* files; are *not* seen by FS utilities (ls etal).
+        # /dev/tcp/$host/$port
+
+        # Get time from nist.gov
+        cat </dev/tcp/time.nist.gov/13   
+            # 60693 21-12-24 15:13:34 00 0 0 920.8 UTC(NIST) *
+        
+        # Handle app-layer (HTTP) protocol too:
+
+            # 1. Download a root URL
+            host=ifconfig.me;port=80
+            exec 3<>/dev/tcp/$host/$port &&
+                echo -e "GET / HTTP/1.1\r\nhost: $host\r\nConnection: close\r\n\r\n" >&3 &&
+                    cat <&3
+                        # HTTP/1.1 200 OK
+                        # date: Mon, 18 Jan 2021 15:17:52 GMT
+                        # content-type: text/plain
+                        # Content-Length: 13
+                        # access-control-allow-origin: *
+                        # via: 1.1 google
+                        # Connection: close
+
+                        # 93.131.177.49
+
+            # 2. HTTP Connectivity Test : A kind of ping
+            host=ifconfig.me;port=80
+            echo -e "GET / HTTP/1.1\r\nhost: $host\r\nConnection: close\r\n\r\n" \
+                >/dev/tcp/$host/$port && echo ok
+
 
 # eval ; convert a string into a command 
-# http://www.tldp.org/LDP/abs/html/internal.html#LETREF
+    # http://www.tldp.org/LDP/abs/html/internal.html#LETREF
     eval arg1 [arg2] ... # used for code generation from the command-line or within a script. 
 
 # HARDWARE COMMANDS : ls{NAME} & modprobe
@@ -2282,7 +2478,7 @@ exit
 
 # NETWORK COMMANDS
 
-    # See 'REF.Network.utils.sh'
+    # See 'REF.Network.utils.sh' 
 
     host -4 myip.opendns.com resolver1.opendns.com # This machine's public IPv4 address
     ping -c 1 ROUTER_IP # test connectivity to Gateway Router
@@ -2299,17 +2495,26 @@ exit
     ssh user@host.domain
     
     curl [options] URL  # transfer date between client and server
-        # Pull a script to ./a.sh; quitely, follow redirects, rpt only on err
-        curl -fsSL -o a.sh https://foo.com/path/to/a.sh
+        # Pull script quitely; follow redirects; fail on 404
+        curl -fsSLO https://foo.com/path/to/a.sh
+        # Pull script to /path/b.sh
+        curl -fsSL https://foo.com/path/to/a.sh -o /path/b.sh
+
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 
-    # SW FROM SOURCE : DOWNLOAD, COMPILE, INSTALL
-        wget URL_TO_SOURCE.tarball  # download it 
-        tar -xaf SOURCE.tarball     # extract it / read about it
-        configure --help # show info; source dir often include a 'configure' file
-        ./configure  # generates files required to build SW and setup system parameters. 
-        make         # build the libraries and applications. 
-        make install # install the libraries and applications. 
+        # Download directly into install location 
+        wget $url -O $destination
+
+        # Download, extract, install a BINARY to /usr/local/bin/THIS
+        wget -nv $url -O - |sudo tar -C /usr/local/bin -xzvf - 
+
+        # Download, extract, and make (compile and install) from SOURCE tarball
+            wget URL_TO_SOURCE.tarball  # download it 
+            tar -xaf SOURCE.tarball     # extract it / read about it
+            configure --help # show info; source dir often include a 'configure' file
+            ./configure  # generates files required to build SW and setup system parameters. 
+            make         # build the libraries and applications. 
+            make install # install the libraries and applications. 
 
 # ADMIN COMMANDS
 
@@ -2349,53 +2554,85 @@ exit
     jobs           # Show background processes
     fg    %$n      # Bring background process (job) to foreground
     kill  $pid     # Kill a process by its PID
+    kill -9 $pid   # Hard kill 
     kill  %$n      # Kill a background process by its job number (see jobs)
-    pkill $command # Kill a process by its command name 
+    pkill $ps      # Kill a process by its name ($ps) 
+    killall $ps    # Kill all processes named $ps
+    killall -0 $ps # Test if any process named $ps is running : $? is 0 if any; 1 if none.
 
     service $name start  # service : start / stop
 
     mysqldump -u root -p --all-databases > $path # mySQL DB backup 
     mkpasswd $pw $salt # generate password from $pw; salt must be 2 chars
 
-    # DATE/TIME (current)
+    # Clocks : RTC (real-time; hardware) v. System (software) : Two independent clocks
+        ## RTC clock may use either UTC (recommended) or local
+        hwclock # RTC clock utility : See kernel interface : man rtc
+        hwclock --show
+        ## (Re)Initialize clocks : set one to the other (currently; not kept in sync).
+        hwclock --hctosys # Set System clock to current RTC clock time
+        hwclock --systohc # Set RTC clock to current System clock time
+            # When chronyd (the default NTP client) is running, 
+            # it periodically synchronizes the system clock with NTP servers. 
+            # By default, the RTC is updated from the system clock every 11 minutes 
+            # if the system clock is synchronized. (See timedatectl output).
+            # The rtcsync directive in /etc/chrony.conf enables kernel-based 
+            # synchronization of the RTC with the system clock. 
+        chronyc tracking
+        cat /etc/crony.conf
+        ## System clock is:
+        ## - Initialized by RTC clock
+        ## - Managed by kernel
+        ## - Synched to UTC 
+        # TIMEZONE : systemd-timedated.service : of System Clock
+            timedatectl [status] # Show current settings
+            timedatectl list-timezones 
+            timedatectl set-ntp $bool # yes|no : yes to synch with NTP (chronyd|ntpd); no to not.
+            timedatectl set-timezone $tz # America/New_York (is *not* EST5EDT), US/Mountain, America/Los_Angeles,
+            # Europe/Rome, Europe/Budapest, Europe/Moscow, Japan, Indian/Maldives, Asia/Shanghai, Asia/Macau, ...
+            timedatectl set-time HH:MM:SS
+            timedatectl set-local-rtc $bool # no|yes : no (UTC; recommended) OR yes (local)
+                ## ... That command updates both the system time and the hardware clock. 
+                ##     The result is similar to executing both "date --set" and "hwclock --systohc".
+            systemctl restart systemd-timedated.service
+        # DATE/TIME (current)
+            date --iso-8601=s # 2020-01-07T08:28:50-04:00
+            date --rfc-3339=s # 2020-01-07 08:29:00-04:00
+            # Offset +/- is WRT Zulu (GMT) : -04:00 is GMT minus 4 hours (add 4 to get GMT).
+            date --rfc-3339=date    # 2020-01-07
+            date '+%F'              # 2022-01-23
+            date --rfc-email        # Sun, 23 Jan 2022 11:44:16 -0500
+            
+            date -r $file  # mtime of file
+            # ISO8601/RFC3339 "specifications" allow for "date" that ... 
+                ##... may (not) include whitespace(s),
+                ##... may (not) include 'T',
+                ##... may (not) include 'Z',
+                ##... may (not) incl Timezone abbr name (EST, CET, UTC, ...).
+                ## Fix:
+                date -u +"%Y-%m-%dT%H:%M:%SZ"   # 2022-01-05T14:34:01Z 
+                #... is Golang UTC Zulu format : aTime.Format(time.RFC3339)
+                date --iso-8601=s -u            # 2022-01-05T14:34:01+00:00     (UTC Zulu)
+                date --iso-8601=s               # 2022-01-05T09:34:01-05:00     (UTC offset) 
 
-        date --rfc-email      # Sun, 23 Jan 2022 11:44:16 -0500
-        date --rfc-3339=s     # 2022-01-23 11:44:16-05:00 
-        date --rfc-3339=date  # 2022-01-23 
-        date +%F              # 2022-01-23
+                date --rfc-3339=s               # 2022-01-05 09:35:39-05:00
+                date +"%Y-%m-%dT%H:%M:%S%:z"    # 2022-01-05T09:36:25-05:00 
 
-        # File mtime
-        date -r $file '+%Y-%m-%dT%H:%M:%S'  # YYYY-MM-DDTHH:MM:SS
-        date -r $file '+%F %a %H.%M.%S.%N'  # YYYY-MM-DD DAY HH.MM.SS.nnnnnnnnn
+                date --rfc-3339=ns              # 2022-01-05 09:37:00.770083200-05:00
+                date +"%Y-%m-%dT%H:%M:%S.%N%:z" # 2022-01-05T09:37:00.770083200-05:00 
 
-    # ISO8601/RFC3339 "specifications" allow for "date" that ... 
-        ##... may (not) include whitespace(s),
-        ##... may (not) include 'T',
-        ##... may (not) include 'Z',
-        ##... may (not) incl Timezone abbr name (EST, CET, UTC, ...).
-
-        date -u '+%Y-%m-%dT%H:%M:%SZ'   # 2022-01-05T14:34:01Z 
-        #... For this UTC Zulu @ Golang : aTime.Format(time.RFC3339)
-        date --iso-8601=s -u            # 2022-01-05T14:34:01+00:00     (UTC Zulu)
-        date --iso-8601=s               # 2022-01-05T09:34:01-05:00     (UTC offset) 
-
-        # +/- is w.r.t. GMT, so -04:00 means add four to get Zulu time (GMT).
-
-        date --rfc-3339=s               # 2022-01-05 09:35:39-05:00
-        date '+%Y-%m-%dT%H:%M:%S%:z'    # 2022-01-05T09:36:25-05:00 
-
-        date --rfc-3339=ns              # 2022-01-05 09:37:00.770083200-05:00
-        date '+%Y-%m-%dT%H:%M:%S.%N%:z' # 2022-01-05T09:37:00.770083200-05:00 
-
-        date '+%Y-%m-%dT%H:%M:%S.%N %Z' # 2021-12-01T14:09:26.358308700 EST
-        date '+%F_[%H.%M.%S] %a %Z'     # 2020-12-01_[14.09:26] Sun EST
-        $(date +%F)                     # 2020-12-01
-
-    # Epoch : UNIX timestamp 
-        date '+%s'    # Seconds        1643918591
-        date '+%s%N'  # Nanoseconds    1643918591674370200
-                      # Milliseconds   1643918591674
-        date '+%s%N' |awk '{printf "%.13s", $1}' # Milliseconds 
+                date +"%Y-%m-%dT%H:%M:%S.%N %Z" # 2021-12-01T14:09:26.358308700 EST
+                date +"%F_[%H.%M.%S] %a %Z"     # 2020-12-01_[14.09:26] Sun EST
+                date +"%F"                      # 2020-12-01
+                    ## %z     +hhmm
+                    ## %:z    +hh:mm
+                    ## %::z   +hh:mm:ss
+                    ## %Z     alphabetic TZ abbr (e.g., EDT)
+        # Epoch : UNIX timestamp 
+            date +"%s"    # Seconds        1643918591
+            date +"%s%N"  # Nanoseconds    1643918591674370200
+                        # Milliseconds   1643918591674
+            date +"%s%N" |awk '{printf "%.13s", $1}' # Milliseconds 
 
 # SCRIPTING COMMANDS
     :      # do nothing; $? => 0
@@ -2435,26 +2672,44 @@ exit
     ### #!/usr/bin/env bash     # Per-user default binary. (Some systems have no /bin/bash binary.)
     ### #!/usr/bin/bash         # Explicity set the binary.
 
-    /bin/bash                             # launch subshell
-    /bin/bash -c "cmd1 $a b;cmd2 $x"      # run command(s) at subshell then exit
-    /bin/bash -s < script.sh $arg1 $arg2  # run script with args at subshell then exit
-    /bin/bash -x script.sh arg1 arg2      # debug mode
-    /bin/bash -v ...                      # debug; print script lines as they are read
+    # Launch subshell
+    /bin/bash $command $args 
+    /bin/bash $script $args
 
-    # rbash : RESTRICTED SHELL; forbid dir change, redirects, ...; see `man rbash`
-    /bin/rbash 
-    /bin/bash -r  
+    # Equivalent by reading script from stdin 
+    cat $script | /bin/bash -s - $args
+    # Alt, but less clear; has fail modes
+    /bin/bash -s < $script $args
+    # Multiple commands
+    /bin/bash -c "$cmd1 $args1 && $cmd2 $args2"
+        # Other flags
+        -x # debug mode
+        -v # debug; print script lines as they are read
 
-    # SSH ( See REF.Network.SSH.sh )
-    ssh -i ${_PRIVATE_KEY} ${user}@${host_name_OR_public_ip}
-    # Remotely run LOCAL script and args (environment) through a secure shell
-    ssh ... "/bin/bash -s" < /any/local/path/script.sh $arg1 $arg2
-    #... per commands : allows partial preprocessing; escapes required in script
-    ssh ... "/bin/bash -c '$(</a/local/path/script.sh)' _ $arg1 $arg2"
-    #... advantage over HEREDOC scheme is preservation of semantic highlighting @ code editor.
-    # UPLOAD a file SANS "file upload" utility (rsync, scp, ftps):
-    ## Local file is stringified by redirect in a subshell (command substitution), and printed to remote file by redirect.
-    ssh $user@$host "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
+    # as BACKGROUND PROCESS
+    /bin/bash $command $args &
+    # Sans STDOUT and STDERR
+    /bin/bash -c "$command $args" >/dev/null 2>&1 &
+    # Alternative, but quirky; shell-specific behavior:
+    nohup $command $args & # Ignore HANGUP signal(s) (SIGHUP)
+
+    rbash # RESTRICTED SHELL; forbid dir change, redirects, ...; see `man rbash`
+        /bin/rbash 
+        /bin/bash -r  
+
+    # SSH : See REF.Network.SSH.sh 
+    ssh -i $key ${user}@$host
+    # Run LOCAL script REMOTELY through a secure shell
+    cat $script | ssh $conn /bin/bash -s - $localArgs \$remote_arg1
+    # Hacky and prone to fail modes:
+        # Remotely run LOCAL script and args (environment) through a secure shell
+        ssh  $conn "/bin/bash -s" < /any/local/path/script.sh $args
+        #... per commands : allows partial preprocessing; escapes required in script
+        ssh $conn "/bin/bash -c '$(</a/local/path/script.sh)' _ $args"
+        #... advantage over HEREDOC scheme is preservation of semantic highlighting @ code editor.
+        # UPLOAD a file SANS "file upload" utility (rsync, scp, ftps):
+        ## Local file is stringified by redirect in a subshell (command substitution), and printed to remote file by redirect.
+        ssh $conn "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
 
     # dialog utility : See 'man dialog' http://www.freeos.com/guides/lsst/ch04sec7.html
     dialog --common-options --boxType "Text" Height Width --box-specific-option
@@ -2539,7 +2794,7 @@ exit
     $(date "+%F %a %H.%M.%S.%N") # 2018-10-10 Wed 08.28.31.268750400
 
     # uuid utility : apt install uuid
-    uuid -v 4 -m  # UUID v4; random MAC
+    uuid -v4 -m  # UUID v4; random MAC
     b0cf2b3d-842b-455f-86d3-669fd4815383
 
     uuid -d b0cf2b3d-842b-455f-86d3-669fd4815383  # Decode
@@ -2550,19 +2805,24 @@ exit
                 content: B0:CF:2B:3D:84:2B:05:5F:06:D3:66:9F:D4:81:53:83
                         (no semantics: random data only)
 
-    # v5 is non-random, unique, namespaced
-    uuid -v 5 $namespace $name # namespace is fixed-preset or UUID
-    uuid -v 5 ns:DNS 'uqrate.org'
-    uuid -v 5 '441fd472-a7e4-4ca0-8ab0-a83f0e104aac' 'uqrate.org'
+    # v5 is non-random, unique, namespaced : Use to map a name to its namespaced UUID
+    uuid -v5 $namespace $name # namespace is a preset (ns:DNS|URL|OID|X500) or UUID
+    uuid -v5 ns:X500 "CN=Test User,OU=Engineering,DC=example,DC=com" # Valid X.500 DN
+    uuid -v5 ns:OID 1.3.6.1.4.1.8072 # Valid ISO OID : SNMP MIB, LDAP
+        #... The 1.3.6.1.4.1 node of OID tree is for IANA enterprise numbers
+        #... See https://en.wikipedia.org/wiki/Object_identifier
+    uuid -v5 ns:URL https://foo.bar  # Valid URL
+    ns=$(uuid -v4)                   # Any UUID
+    uuid -v5 $ns /a/b/c;uuid -v5 $ns /a/b/x
 
 # RANDOM 
-    mktemp --dry-run XXXXXXXX.abc   # gV4cFS2O.abc, lBsZSFD4.abc, ...
-    $RANDOM  # bash Env. Var.; built-in random number generator
-    $(printf "%05d" $RANDOM)-FNAME  # 04858-FNAME, 26544-FNAME, ...
-    # ... can use @ SERIALIZEr  
+    openssl rand -hex 32 # 64 hex characters
+    mktemp --dry-run ns-XXXXX.abc   # ns-jJoqt.abc, ns-Cqh56.abc, ...
+    $RANDOM  # Bash env. var. is built-in random number generator.
+    printf "ns-%05d-abc" $RANDOM # ns-34858-abc, ns-26544-abc, ...
     # SHA1 | UUID 
-    _sha1=$(date "+%F %a %H.%M.%S.%N" |openssl sha1 |awk '{print $2}')  # MINGW|Linux
-    _sha1=$( dd if=/dev/urandom bs=512 count=1 |& openssl sha1 |awk '{print $2}' )
+    date "+%F %a %H.%M.%S.%N" |openssl sha1 |awk '{print $2}'  # MINGW|Linux
+    dd if=/dev/urandom bs=512 count=1 |& openssl sha1 |awk '{print $2}'
     # ee3199afc2ac07e2011e7b2d7d983d64082af656 (40 chars)
 
     # fill disk with random ASCII
@@ -2612,4 +2872,3 @@ exit
 
     # gzip all html files in current dir and all subdirs 
     find . -type f -name '*.html' -print |parallel gzip
-

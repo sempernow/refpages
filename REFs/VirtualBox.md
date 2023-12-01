@@ -24,7 +24,7 @@ sudo rpm --import https://www.virtualbox.org/download/oracle_vbox.asc
 sudo yum install -y \
     https://download.virtualbox.org/virtualbox/5.2.20/VirtualBox-5.2-5.2.20_125813_el7-1.x86_64.rpm  
 ```
-- Fails if Linux @ VM on Hyper-V  ([MD](REF.Hyper-V.Nested-Virtualization.html "@ browser"))  
+- Fails if Linux @ VM on Hyper-V  ([MD](Hyper-V.Nested-Virtualization.html "@ browser"))  
 
     ```bash
     There were problems setting up VirtualBox.  

@@ -28,7 +28,7 @@ sudo apt-get install vagrant -y
 this is ___irreversable___; uninstall/reinstall "properly" fails; residue from original install, apparently. 
 
 - Cannot run VirtualBox or any other such 3rd party app in any OS running as a VM in Hyper-V.   
-Hyper-V allows __nested virtualization__ ([MD](REF.Hyper-V.Nested-Virtualization.html "@ browser")) only for guests running Hyper-V. 
+Hyper-V allows __nested virtualization__ ([MD](Hyper-V.Nested-Virtualization.html "@ browser")) only for guests running Hyper-V. 
 
     - E.g., Vagrant box @ VirtualBox VM on Ubuntu @ Hyper-V VM 
 
@@ -40,7 +40,7 @@ Hyper-V allows __nested virtualization__ ([MD](REF.Hyper-V.Nested-Virtualization
                                    -------
             Type-1 Hypervisor:     Hyper-V
 
-        - Nope.  ([MD](REF.Hyper-V.Nested-Virtualization.html "If @ browser"))
+        - Nope.  ([MD](Hyper-V.Nested-Virtualization.html "If @ browser"))
 
 
 

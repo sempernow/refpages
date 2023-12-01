@@ -7,27 +7,33 @@ POPD
 
 The following method launches default browser [e.g., Firefox] ...
 
-START /MIN "%ProgramFiles%\Internet Explorer\iexplore.exe" http://www.rushradio1200.com/mediaplayer/
+START /MIN "%ProgramFiles%\Internet Explorer\iexplore.exe" http://www.google.com/
 ----------------
 
-FUBAR Recovery :: Using Windows System File Checker command (SFC)
------------------------------------------------------------------
-* Launch Task Manager [press CTRL-SHIFT-ESC]
-* File > New Task > Run >  sfc /scannow
+Repair/Recovery 
+---------------
+    Online, from the problemed OS
+    
+        GUI
+            * Launch Task Manager [press CTRL-SHIFT-ESC]
+            * File > New Task > Run >  sfc /scannow
 
-Command Line:
+        CLI
+			sfc /scannow
 
-online ...
-----------
-sfc /scannow
+            DISM.exe /Online /Cleanup-image /Restorehealth
+			OPTIONALLY: Mount the latest OS WIM and reference it: /Source:c:\mount\windows
+			Mount the WIM:
+			dism /Mount-Wim /WimFile:<path_to_wim_file> /Index:<index> /MountDir:c:\mount
+			
+			Use mounted Windows-install-media ISO @ k: : Has either /sources/install.wim (or compressed to install.esd)
+            dism /Online /Cleanup-Image /RestoreHealth /Source:esd:K:\sources\install.esd:1 /LimitAccess
 
-offline ... 
------------
-from Windows Repair Disk > Command Line option, or from Win PE USB ...
-sfc /scannow /offbootdir=d:\ /offwindir=d:\windows
+    Offline, from Recovery mode or WinPE
+    
+        sfc /scannow /offbootdir=c:\ /offwindir=c:\windows
 
-... where "d:" is the drive containing the (offline) Windows OS.
---------------------------
+        ... where "c:" is the drive containing the (offline) Windows OS.
 
 
 cleanmgr	- Disk Cleanup  

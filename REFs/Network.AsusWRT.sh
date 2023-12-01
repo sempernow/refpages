@@ -133,9 +133,9 @@ scp $_SOURCE_PATH router:/jffs/scripts/$_TARGET_FNAME # to '/jffs/scripts/' fold
         # turn UPnP off @ 'wan1' anyway
         nvram set wan1_upnp_enable=0 ; nvram commit
 
-    wl  # wireless utility 
+    wl  # WiFi utility @ Router firmware
+        # List of commands : https://wiki.DD-WRT.com/wiki/index.php/Wl_command
         Usage: /usr/sbin/wl [-a|i <adapter>] [-h] [-d|u|x] <command> [arguments]
-            -h        this message and command descriptions
             -h [cmd]  command description for cmd
             -a, -i    adapter name or number
             -d        output format signed integer

@@ -32,16 +32,16 @@ CREATE TABLE foos (
 -- Add a PRIMARY KEY to foos TABLE
 ALTER TABLE foos ADD PRIMARY KEY (foo_id)
 -- Add it as a Foreign Key at some other TABLE 
-FOREIGN KEY (fk_foo_id) REFERENCES foos (foo_id)
+FOREIGN KEY (fk_foo_id) RENCES foos (foo_id)
 
 -- Add FOREIGN KEY per ALTER
 ALTER TABLE this
-    ADD FOREIGN KEY (other_id) REFERENCES others (other_id); 
+    ADD FOREIGN KEY (other_id) RENCES others (other_id); 
 
 -- Create a FOREIGN KEY during TABLE creation
-FOREIGN KEY (other_id) REFERENCES others (other_id)
+FOREIGN KEY (other_id) RENCES others (other_id)
 -- ... better way (name it)
-CONSTRAINT fk_other_this FOREIGN KEY (other_id) REFERENCES others (other_id)
+CONSTRAINT fk_other_this FOREIGN KEY (other_id) RENCES others (other_id)
 
 -- Add a COMMENT to an object
 COMMENT ON objTYPE obj_name IS '...';

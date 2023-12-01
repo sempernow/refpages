@@ -1,4 +1,4 @@
-# [OAuth](https://oauth.net/2/ "OAuth.net")/[SSO](https://en.wikipedia.org/wiki/Single_sign-on/) | JWT ([HTML](REF.JWT.md "REF.JWT.md")) 
+# [OAuth](https://oauth.net/2/ "OAuth.net")/[SSO](https://en.wikipedia.org/wiki/Single_sign-on/) | JWT ([HTML](JWT.md "JWT.md")) 
 
 ### RFC6749 [OAuth 2.0 Authorization Framework](https://tools.ietf.org/html/rfc6749 "RFC6749 2012 @ tools.IETF.org")
 
@@ -28,7 +28,7 @@ Authorization, ___not authentication___.
                 - `response_type` code 
                 - `client_id` per prior registration with this Auth Server.
                     - (Obtained per out-of-band process.)
-                - `state` is a security flag; a'la CSRF ([HTML](REF.CSRF.XSRF.md "REF.CSRF.XSRF.md")) nonce 
+                - `state` is a security flag; a'la CSRF ([HTML](CSRF.XSRF.md "CSRF.XSRF.md")) nonce 
             - Request is directly to Authorization Server, so if user is authenticated, it's a fast, no-stop redirection.
         - __Response__ 
             ```http

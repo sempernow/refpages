@@ -1,13 +1,13 @@
-
-<a name="top"></a>
-
-## [Markdown @ Wikipedia](https://en.wikipedia.org/wiki/Markdown)
-
-
 <!--This means we can use HTML elements in Markdown, such as the comment 
 element, and they won't be affected by a markdown parser. However, if you 
 create an HTML element in your markdown file, you cannot use markdown syntax 
 within that element's contents.-->
+
+```bash 
+# GitHub does syntax highlighting per language declaration.
+```
+`markdown LearnXinYmin.md > LearnXinYmin.html`
+[Github-flavored Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
 
 # This is an <h1>
 ## This is an <h2>
@@ -134,4 +134,3 @@ Col 1 | Col2 | Col3
 :-- | :-: | --:
 Ugh this is so ugly | make it | stop
 
-[Top (bookmark)](#top)

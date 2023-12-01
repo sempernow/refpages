@@ -74,9 +74,15 @@
 
 // INSTALL  https://golang.org/doc/install  |  https://golang.org/dl/   
 	// @ Linux
-		sudo tar -C /usr/local -xzf "go${_VERSION}.${_OS}-${_ARCH}.tar.gz" 
-		yum install git             // RHEL|CentOS|Fedora 
-		apt git                     // Ubuntu|Debian 
+		$ ver=1.22.5
+		$ arch=amd64
+		$ curl -sSL https://go.dev/dl/go${ver}.linux-${arch}.tar.gz |sudo tar -C /usr/local/go$ver -xz
+		// @ ~/.bashrc
+		// # Configure to newest Golang version if any installed @ /usr/local/go[N.N.N]
+		// export GOROOT=$(find /usr/local -maxdepth 1 -type d -path '*/go*' |sort |tail -n 1) \
+		//     && export PATH=$GOROOT/bin:$PATH
+		$ sudo yum install git      // RHEL|CentOS|Fedora 
+		$ sudo apt git              // Ubuntu|Debian 
 		                            // https://git-scm.com/download/linux 
 		// @ Windows 
 		choco install golang 
@@ -102,20 +108,20 @@
 		// ☩ sudo chmod 755 <FILE>  
 
 // ENVIRONMENT VARIABLES  https://golang.org/cmd/go/#hdr-Environment_variables 
-	GOROOT  // Golang tools, compiler, etc.; root of the "Go tree" 
-	GOPATH  // Workspaces (projects); go tools' auto-search path(s); LIST okay 
-	GOBIN   // binaries; path to go tools. 
+	GOROOT  // Golang install directory, e.g., /usr/local/go1.22.2 
+	GOBIN   // Path to go tools and other binaries of Golang proper; $GOROOT/bin
+	GOPATH  // Workspaces (projects) default; ignored by modules (Projects of `go mod init`)
 	// Golang sets DEFAULTs if unset, so needn't set any of these environment vars; 
 	// HOWEVER, the GOBIN path must be in PATH. (Default GOBIN is '/usr/local/go/bin'.)
 	export PATH=$PATH:$GOBIN  // May add additional binaries path(s), e.g., those of project(s); 
 	// I.e., the OS itself must be able to find the binary, whether of a go tool or a project.
 
-	// @ Linux/MinGW/Cygwin      @ Windows/Cygwin 
-	// ====================      =================
-	GOROOT=/usr/local/go         GOROOT=%SystemDrive%\go
-	GOPATH="/c/Users/${USER^^}/go" GOPATH=%USERPROFILE%\go
-	GOBIN=$GOROOT/bin            GOBIN=%GOROOT%\bin       // @ install Golang TOOLS (default)
-	GOBIN=$GOPATH/bin            GOBIN=%GOPATH%\bin       // @ install project binaries
+	// @ Linux/MinGW/Cygwin      	@ Windows/Cygwin 
+	// ====================      	=================
+	GOROOT=/usr/local/go         	GOROOT=%SystemDrive%\go
+	GOPATH="/c/Users/${USER^^}/go" 	GOPATH=%USERPROFILE%\go
+	GOBIN=$GOROOT/bin            	GOBIN=%GOROOT%\bin       // @ install Golang TOOLS (default)
+	GOBIN=$GOPATH/bin            	GOBIN=%GOPATH%\bin       // @ install project binaries
 
 	go env            // Print all Golang Environment variables 
 	go env GOPATH     // Print GOPATH Env. var. 
@@ -280,6 +286,12 @@
 
 	// COMPILE & RUN @ TMP`
 		go run . 
+		go run -a -mod=mod . // Force rebuild; do NOT use existing artifacts
+			// `go help cache` WRONGFULLY claims:
+			// The build cache correctly accounts for changes to Go source files,
+			// compilers, compiler options, and so on: cleaning the cache explicitly
+			// should not be necessary in typical use.
+
 		// IF ONE source FILE (sans dependencies)
 			go run absPATH/pkgName/fileName.go  // creates & runs binary @ TMP
 		// ELSE MUST setup entire Golang env; all env-vars and rigid directory structures
@@ -997,6 +1009,11 @@
 			[]byte("☧")       // [226 152 167], []byte{0xe2, 0x98, 0xa7}, [U+00E2 'â' U+0098 U+00A7 '§'] 
 			"☧"[0]            // 226, 0xe2, "â", U+00E2; most Unicode/UTF-8 characters EXCEED 1 byte 
 			rune('☧')         // 9767, U+2627
+
+			fmt.Printf("%x\n", rune('·')) // b7   : \u00b7
+			fmt.Printf("%x\n", rune('•')) // 2022 : \u2022
+			fmt.Printf("%x\n", rune('▸')) // 25b8 : \u25b8
+
 
 			"A"[0]            // 65, 0x41, U+0041, 'A'; ACII subset of UTF-8 are all 1 byte/char
 			'\u0041'          // 65       int32 (rune) 

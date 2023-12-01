@@ -1,13 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # https://learnxinyminutes.com/docs/vim/
 # http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/
 # Windows install: do NOT use choco; its version is incompatible with Cygwin;
 #   Git-for-Windows installs with vim; 
 #   Cygwin requires installing vim pkg per native Cygin's setup 
 exit
-
-# HACKS 
-  if "E137: Viminfo file is not writable:", then delete it per `rm ~/.viminfo`; it regenerates on vim startup; 'E137' error/msg began/persisted after accidentally CTRL-Z out of vim [use ZQ instead].
 
 # MODES
 
@@ -22,8 +19,8 @@ exit
     vim FILE         # Open FILE in vim
     :w               # Save current file
     :w newNAME       # Save as newNAME
-    :wq, :x, ZZ      # Save file and quit vim
-    :q!, ZQ          # Quit vim without saving file changes  
+    :wq, :x, :ZZ     # Save file and quit vim
+    :q!, :ZQ         # Quit vim without saving file changes  
     :q               # Quit vim if no file changes
 
 # ACTIONs
@@ -32,7 +29,9 @@ exit
 
     y                # Yank (copy) whatever is SELECTED
     yy               # Yank (copy) current LINE
-    p                # Paste the copied text AFTER current cursor position
+    "ayy             # Yank (copy) current LINE into REGISTER "a"        "
+    p                # Paste the copied text AFTER current cursor position 
+    "ap              # Paste REGISTER "a" content AFTER current cursor position "
     P                # Paste the copied text BEFORE current cursor position
     dw               # Delete 1 WORD
     dd               # Delete 1 LINE
@@ -57,6 +56,9 @@ exit
     :2,7s/foo/bar/g  # Change 'foo' to 'bar' on LINES 2-7
     :%s/foo/bar/g    # Change 'foo' to 'bar' on EVERY line in the file
     :%s/;$//         # Remove trailing semicolon, `;`, from all lines
+    :g/PATTERN/d     # Delete all lines matching a pattern
+    :g/^$/d          # Delete all BLANK lines
+    :g/\s*^$/d       # Delete all BLANK lines and those with only whitespace
 
     # Move :: L, D, U, R <==> h, j, k, l
 
@@ -95,7 +97,7 @@ exit
 
 # GRAMMAR
 
-    # 'Verbs'
+    # 'Verbs' / :<CHAR>
 
     d                # Delete
     c                # Change 
@@ -106,7 +108,7 @@ exit
     g~3w             # Toggle case of next 3 words
     g~iw             # Toggle case of current word 
 
-    # 'Nouns' [PREpend number (n) for n-occurences]
+    # 'Nouns' / :<CHAR> / PREpend number (n) for n-occurences
 
     w                # Word
     s                # Sentence
@@ -149,6 +151,26 @@ exit
     .                # Repeat last ACTION
     ;                # Repeat last MOVEMENT
     :w !sudo tee %   # Save the current file as root
+    
+    # Prepend one character, here '#', to a block of sequential lines  
+        8,17s/^/#        # sed RegEx prepended with 'FIRST,LAST' line numbers 
+        ## OR use Visual mode
+        v                # Enter visual mode with cursor at 1st line
+        j                # Scroll cursor down to last target line
+        :s/^/#           # Applies to 1st line
+        ESC              # Applies to all remaining lines. WAIT.
+        
+    # Delete 1st character, here '#', from a block of sequential lines 
+        8,17s/^#//       # sed RegEx prepended with 'FIRST,LAST' line numbers 
+        ## OR use Visual mode:
+        v                # Enter visual mode with cursor at 1st line
+        j                # Scroll cursor down to last target line
+        :s/^#//          # Applies to 1st line
+        ESC              # Applies to all remaining lines. WAIT.
+
+    # On report of "E137: Viminfo file is not writable:"
+        # Fix by deleting ~/.viminfo, which is regenerated per vim startup.
+        # Else track down and handle the swap file AKA backup file created during prior vi error.
 
 # MACROS 
    
@@ -160,8 +182,6 @@ exit
   /etc/vimrc
   ~/.vimrc 
   # For comment, start line with double-quote, '"'
-  # Does NOT allow '# ...' comments
-
 
 :set OPTION     @ Set any option while in the vim editor.
 :help OPTION    @ Get option info while in the vim editor.
@@ -192,20 +212,21 @@ set showmode                    # show the current mode
 set clipboard=unnamed           # set clipboard to unnamed to access the system clipboard under windows
 syntax on                       # turn syntax highlighting on by default
 
-# Functions : MUST start with Capital letter
-# "!" overwrites pre-existing function of same name.
+# Function Declaration : 
+# - Name must start with UPPERCASE letter
+# - "function! Aname()" overwrites any pre-existing Aname() function.
 
-function! UseTabs()
+function! Tabs()
   set tabstop=4     " Size of a hard tabstop (ts).
   set shiftwidth=4  " Size of an indentation (sw).
   set noexpandtab   " Always uses tabs instead of space characters (noet).
   set autoindent    " Copy indent from current line when starting a new line (ai).
 endfunction
 
-function! UseSpaces()
+function! Spaces(n = 4)           " N whitespaces (default: 4)
   set expandtab                   " Always insert spaces on TAB keypress
-  set shiftwidth=4 smarttab       " Insert N spaces per TAB keypress if at start of line
-  set tabstop=6 softtabstop=0     " TAB width is N spaces (Distinguish from shiftwidth)
+  execute 'set shiftwidth=' . a:n . ' smarttab'
+  set tabstop=6 softtabstop=0     " TAB width differs to distinguish from whitespace indent
   set autoindent                  " indent line per preceeding line
 endfunction
 
@@ -217,4 +238,4 @@ function! Yaml()
 endfunction
 
 # Function Usage:
-:call UseTabs()
+:call Spaces()

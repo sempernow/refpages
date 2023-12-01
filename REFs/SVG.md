@@ -1,14 +1,14 @@
 # SVG 
 
-## Typography per SVG [@ `REF.text.svg`](REF.text.svg "REF.text.svg")
+## Typography per SVG [@ `text.svg`](text.svg "text.svg")
 
-## Adobe Illustrator (Ai) @ `REF.Ai` ([MD](REF.Ai.html "@ browser"))   
+## Adobe Illustrator (Ai) @ `Ai` ([MD](Ai.html "@ browser"))   
 
 ## [InkScape](https://inkscape.org/learn/tutorials/ "inkscape.org") (PortableApps)
 
 - `Save as ...` > `Optimized SVG (*.svg)`
 
-## Minify SVG file :: [`svgo`](https://github.com/svg/svgo "@ GitHub")
+## Minify SVG file : [`svgo`](https://github.com/svg/svgo "@ GitHub")
 
 ```bash
 npx svgo SOURCE.svg  # Overwrites source
@@ -31,7 +31,7 @@ Some modern browsers fix such invalid tags on-the-fly; some don't.
 <path ...></path>
 ``` 
 
-## `viewBox` :: Modify Alignment/Position/Size 
+## `viewBox` : Modify Alignment/Position/Size 
 
 >### tl;dr 
 >Normalize to Zero-offest Viewbox (`viewBox="0 0 w h"`), assuring dynamic ___resize without clipping___.  
@@ -238,6 +238,32 @@ Final
         fill: var(--color-anchor-link);
     }
     ```
+
+## Add Dropshadow (properly)
+
+>A common method for adding dropshadow to an SVG graphic
+>is by embedding a graphics file of the desired effect, and applying it as an overlay. 
+>However, the resulting SVG file is huge (100x). 
+
+Instead, **embed CSS in the SVG** to add the effect  
+as just another vector-graphics object:
+
+```svg
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <style>
+        .dropshadow-1 {
+            filter: drop-shadow(7px 7px 6px rgb(0 0 0 / 0.3));
+        }
+        </style>
+    </defs>
+    <g class="dropshadow-1">
+         ...
+    </g>
+</svg>
+
+```
+- See [svg-dropshadow-css.svg](svg-dropshadow-css.svg)
 
 ### &nbsp;
 <!-- 

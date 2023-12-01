@@ -1,4 +1,4 @@
-# [Payment Service Provider](https://en.wikipedia.org/wiki/List_of_online_payment_service_providers "List of online PSPs @ Wikipedia") (PSP) | [`REF.Merchant.Account`](file:///D:/1%20GD/Trending/Biz/admin/Sempernow-LLC/Banks/Merchant.Account Acquiring.Bank/REF.Merchant.Account.html)
+# [Payment Service Provider](https://en.wikipedia.org/wiki/List_of_online_payment_service_providers "List of online PSPs @ Wikipedia") (PSP) | [`Merchant.Account`](file:///D:/1%20GD/Trending/Biz/admin/Sempernow-LLC/Banks/Merchant.Account Acquiring.Bank/Merchant.Account.html)
 
 Add fees of `0.80%` - `1.5%`
 

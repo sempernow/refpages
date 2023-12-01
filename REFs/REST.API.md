@@ -50,7 +50,7 @@ In a non-REST way, __different formats have different addresses__:
 
 The problem is then that __systems using different formats cannot communicate with each other__, because they use different addresses for the same things!  
 
-__In a REST system__, addresses identify things, not formats, so all systems use __the same address for the same thing__. How can they get different formats then? They explicitly ask for it! The technique that enables this is called ___content negotiation___; one URI for many formats, "_negotiated_" per __HTTP Headers__ ([MD](REF.Network.HTTP.Headers.html#content-negotiation "@ browser")). E.g., &hellip; 
+__In a REST system__, addresses identify things, not formats, so all systems use __the same address for the same thing__. How can they get different formats then? They explicitly ask for it! The technique that enables this is called ___content negotiation___; one URI for many formats, "_negotiated_" per __HTTP Headers__ ([MD](Network.HTTP.Headers.html#content-negotiation "@ browser")). E.g., &hellip; 
 
 - `Accept: <MIME_type>/<MIME_subtype>`
 

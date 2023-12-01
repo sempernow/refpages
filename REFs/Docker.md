@@ -8,11 +8,11 @@ Docker for Mac (DFM)
 - Docker Client (Docker Engine) talks to the server   
 - Docker Server (Docker Daemon) talks to Image Cache (local) then Docker Hub (Image Store)   
 
-## Install ([MD](REF.Docker.Install.html "@ browser"))
+## Install ([MD](Docker.Install.html "@ browser"))
 
 ## `PRJ.Docker.Get-Started` ([MD](PRJ.Docker.Get-Started.html "@ browser")) 
 
-## [`REF.Docker.sh`](REF.Docker.sh)
+## [`Docker.sh`](Docker.sh)
 
 ## Background  
 Docker predecessor was [dotCloud](https://www.crunchbase.com/organization/dotcloud "CrunchBase.com"), a Linux container technology startup.  
@@ -125,6 +125,17 @@ Each container (MAC) given its own IP Address on an existing VLAN. Requires prom
 - Network is selectable and configurable:  
     - "`--network none`"  adds container to a container-specific network stack.
     - "`--network host`" adds container to host’s network stack; to use host IP instead of virtual networks'. 
+
+List selected keys of "`docker inspect ...`" across all networks, 
+refactored into another *valid* JSON object: 
+
+```bash
+docker network ls -q |xargs docker network inspect $1 \
+    |jq -Mr '.[] | select(.Name != "none") | {Name: .Name, Driver: .Driver, Address: .IPAM.Config}' \
+    |jq --slurp .
+
+```
+- [`docker.network.ls.inspect_jq.filtered.json](docker.network.ls.inspect_jq.filtered.json)
 
 ### Network Services
 
@@ -625,9 +636,9 @@ The de facto standard for running a __local (private) container registry__. Not 
     - Maintain via [Garbage Collection](https://docs.docker.com/registry/garbage-collection/) (The Docker document there is utterly useless.)
     - Enable Hub caching via "`--registry-mirror`" to conserve bandwidth on large-scale clusters/builds
 
-## Run a Private Docker Registry  
+## Run a Private [Registry Server](https://distribution.github.io/distribution/about/deploying/)
 
-- Run the [registry](https://hub.docker.com/_/registry/ "@ Docker Hub :: Docker Registry :: Official repo") image on __default port 5000__  
+- Run the Distribution [registry](https://hub.docker.com/_/registry/ "@ Docker Hub :: Docker Registry :: Official repo") image on __default port 5000__  
 - Sans HTTPS, it allows only `localhost` (`127.0.0.0/8`) traffic.  
 - For _remote_ self-signed TLS, enable "insecure-registry" engine.  
 
@@ -695,6 +706,66 @@ docker service ps registry
 ```
 
 Pull/Tag (`127.0.0.1:5000`)/Push the `hello-world` image again, then view the Registry catalog @ "`5000`" URL (endpoint); root is empty, but root`/v2/_catalog` shows Registry content per JSON. 
+
+## Advance Configs
+
+```bash
+# @ TLS
+$ docker run -d \
+    --restart=always \
+    --name registry \
+    -v "$(pwd)"/certs:/certs \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    -p 443:443 \
+    registry:2
+
+# @ TLS +Basic Auth
+$ docker run -d \
+    -p 5000:5000 \
+    --restart=always \
+    --name registry \
+    -v "$(pwd)"/auth:/auth \
+    -e "REGISTRY_AUTH=htpasswd" \
+    -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+    -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+    -v "$(pwd)"/certs:/certs \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    registry:2
+
+# @ Swarm Service +TLS
+$ docker node update --label-add registry=true node1
+$ docker secret create domain.crt certs/domain.crt
+$ docker secret create domain.key certs/domain.key
+$ docker service create \
+    --name registry \
+    --secret domain.crt \
+    --secret domain.key \
+    --constraint 'node.labels.registry==true' \
+    --mount type=bind,src=/mnt/registry,dst=/var/lib/registry \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/run/secrets/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/run/secrets/domain.key \
+    --publish published=443,target=443 \
+    --replicas 1 \
+    registry:2
+
+
+```
+
+### Load-Balancer Considerations
+
+- Required Headers
+
+```ini
+Docker-Distribution-API-Version: registry/2.0
+X-Forwarded-Proto 
+X-Forwarded-For
+```
+
+#### Distribution Recipes : [NGINX](https://distribution.github.io/distribution/recipes/nginx/)
 
 
 ### &nbsp;

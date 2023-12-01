@@ -51,7 +51,7 @@ rollup -c
 ```
 
 
-## `REF.Frontend.BuildTools` ([MD](REF.Frontend.BuildTools.html "@ browser"))   
+## `Frontend.BuildTools` ([MD](Frontend.BuildTools.html "@ browser"))   
 
 
 ### &nbsp;

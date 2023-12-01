@@ -37,14 +37,14 @@ of words/chars/time per context.
 
 ## Build Tools
 
-### See REF.Frontend.BuildTools ([MD](REF.Frontend.BuildTools.html "@ browser"))  
+### See Frontend.BuildTools ([MD](Frontend.BuildTools.html "@ browser"))  
 
 ### &nbsp;
 <!-- 
 
 # [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
 
-([MD](REF.Tech.Stacks.html "@ browser"))   
+([MD](Tech.Stacks.html "@ browser"))   
 
 -->
 

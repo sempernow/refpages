@@ -1,6 +1,6 @@
 # WSLtty ([`mintty/wsltty`](https://github.com/mintty/wsltty "@ GitHub"))
 
-## UPDATE : 2023-07-03 : This is now FAILing at all WSL 2 distros
+>UPDATE : WSLtty ***does not support*** WSL v2
 
 ```powershell
 %USERPROFILE%\AppData\Local\wsltty\bin\mintty.exe --WSL="Ubuntu-18.04" --configdir="%USERPROFILE%\AppData\Roaming\wsltty" -

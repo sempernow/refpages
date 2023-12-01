@@ -2,6 +2,12 @@
 
 ## TL;DR
 
+- Transform IaC code into a provider's API requests.
+- Modules per provider (cloud vendor)
+    - Work must be repeated for each provider.
+
+Workflow:
+
 ```bash
 terraform init
 terraform plan [-out 'terraform.plan.out']
@@ -20,6 +26,7 @@ terraform show
 - [Config](https://www.terraform.io/docs/cli/config/config-file.html) @ 
     - `%APPDATA%\terraform.rc` (Win)
     - `~/.terraformrc` (Linux/MINGW64/WSL)
+
 
 ## Usage notes
 

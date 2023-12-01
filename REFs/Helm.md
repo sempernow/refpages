@@ -1,168 +1,56 @@
 # [Helm](https://helm.sh/docs/) | [ArtifactHUB.io](https://artifacthub.io/)
 
-## TL;DR 
-
-Successful installs of Helm/Repos/Charts into `minikube` cluster running on an EDN-Provisioned VM (2 CPU, 4GB memory, 120GB storage) running AlmaLinux 8.
-
-```bash
-ns=dev
-kn $ns 
-k get $all
-```
+>The defacto Kubernetes package manager. Installs a "chart" (Kubernetes workload) onto a cluster as a "release" (name reference to the Kuberenetes ressources it creates). Contains the set of Kubernetes-resource documents (YAML files) that fully define the workload, along with their templates, and a single `values.yaml` file containing all modifiable values for that chart. AtrifactHUB.io is the main repository for Helm charts, though charts may be pulled from anywhere. A chart is typically stored/pulled as a tarball (`*.tgz`).
 
 ## [Install Helm](https://helm.sh/docs/intro/install/)
 
 Install a select version ([Releases](https://github.com/helm/helm/releases))
 
 ```bash
-os='linux'
-arch='amd64'
-release="helm-v3.12.2-${os}-${arch}.tar.gz"
-wget -O $release https://get.helm.sh/$release \
-    && tar -xaf $release \
-    && sudo mv ${os}-${arch}/helm /usr/local/bin/helm
-```
-
-Or install the latest
-
-```bash
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-vim get_helm.sh # Examine it.
-sudo /bin/bash ./get_helm.sh
-```
-
-Verify
-
-```bash
-helm version
-```
-```text
-version.BuildInfo{Version:"v3.12.1", GitCommit:"f32a52...", GitTreeState:"clean", GoVersion:"go1.20.4"
-```
-
-## Commands
-
-```bash
-# Search for a chart @ ArtifactHub.io (hub)
-helm search hub $app |grep $repo
-# Search for chart locally (against all repos of `helm list`)
-helm search repo $app_or_keyword # All versions : --versions, -l
-## Or
-chart=$repo/$app #=> bitnami/nginx
-docker image ls |grep $chart_or_keyword
-## Or, if apropos
-minikube ssh docker image ls |grep $chart_or_keyword
-
-# Add repo of ArtifactHUB.io 
-helm repo add hub $url
-# Update repos list (cache)
-helm repo update
-# List repos added (locally)
-helm repo list
-
-# List all charts of a repo
-helm search repo $repo
-
-# List charts installed (locally) : k8s resources created per chart(s)
-helm list 
-
-# List Helm's environment : cache etal
-helm env
-
-# Install a chart : $release is any name (K8s Service name).
-values='values.yaml'
-helm install $release $chart 
-## OR auto-generate a release name : mysql-169074637
-helm install $chart --generate-name
-## OR, using a modified values manifest. (See method below).
-helm install -f $values $release $chart
-## OR from an extracted (and perhaps modified) package
-### Pull chart
-helm pull $chart --version $ver # Dumps to $pulled
-pulled=$(find . -type f -iname '*.tgz' -printf %f |head -n1 |sed 's#.tgz##');echo $pulled
-tar -xaf $pulled.tgz            # Extracts to $extracted
-extracted=$(find . -maxdepth 1 -type d ! -iname '.' -printf "%f\n" |head -n1);echo $extracted
-mv $extracted $pulled && extracted=$pulled && ls
-
-### install/upgrade chart from extracted chart         
-helm upgrade --install $release $extracted \
-    --version $ver \
-    --namespace $ns \
-    --atomic \
-    --debug \
-    |& tee helm.upgrade.${ns-default}.$release.log
-
-## Options useful on chart install/upgrade
-    --version $ver      # Force specific version
-    --create-namespace  # if not already by `k create ns $ns`
-    --namespace $ns     # Subsequently: `helm -n $ns ...`
-    --atomic            # Teardown everything* on fail; * pv/pvc require MANUAL teardown.
-    --debug             # Always
-    --dry-run           # Always on first try, then remove if okay.
-    |& tee helm-n.${ns:-default}.install.$release.log # captures STDOUT and STDERR
-
-    ## The output is YAML-like. So, one method to mod/debug a chart/install
-    ## is to log the dry run (tee), modify and use k apply -f ...
-    ## 
-    ## Also, may DOWNLOAD PLUGINS BEFOREHAND,  
-    ## and disable downloads on install:
-    ## Set `installPlugins: false` @ values.yaml .
-    ## (Note each repo/chart may handle HTTP_PROXY differently.)
-
-# Upgrade a running release
-helm upgrade -f `values.yaml` $release $chart |& tee helm.upgrade.$release.log
-## @ local chart
-helm upgrade $release $extract_dir/
-
-# Show ... {chart,values} are YAML(ish)
-helm show {chart,readme,crds,values,all} $chart
-
-# Get useful info on an installed chart (release); replays "Notes: ..." 
-helm status $release
-
-# Test and get useful info on an installed chart (release)
-helm test $release
-
-# Teardown : uninstall|un|delete|del
-helm -n ${ns:-default} uninstall $release
-
-# If target release is namespaced 
-helm -n $ns COMMAND [$release]
+# Install Helm : https://helm.sh/docs/intro/install/
+## Releases    : https://github.com/helm/helm/releases
+ok(){
+    os=linux
+    arch=amd64
+    ver=3.15.3
+    curl -sSL https://get.helm.sh/helm-v$ver-$os-$arch.tar.gz |tar -xzf -
+    sudo cp $os-$arch/helm /usr/local/bin/helm && rm -rf $os-$arch
+    helm version |grep $ver && return 0
+    ## Else install the latest release by trusted script:
+    curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+        |/bin/bash 
+    helm version || return 1
+}
+ok #|| exit $?
 
 ```
+
+## Commands | [`helm.sh`](helm.sh)
 
 ### @ Operations
 
 ```bash
 ## Monitor
 label="app.kubernetes.io/instance=$release"
-all='deploy,sts,rs,pod,ep,svc,ingress,cm,secret,pvc,pv'
+all='pod,deploy,rs,sts,ep,svc,cm,secret,pvc,pv'
 kn $ns
 
-k get $all --selector $label \
-    |tee k.get_all.selector.instance.$release.log
+k get $all -l $label \
+    |tee k.get_all-l.instance.$release.log
 
 # YAML
-k get $all --selector $label -o yaml \
-    |tee k.get_all.selector.instance.$release.yaml
+k get $all -l $label -o yaml \
+    |tee k.get_all-l.instance.$release.yaml
 
 ## Teardown
 helm uninstall $release
+
 ## Verify
 k get $all |grep $release
 
 ```
 
-### @ Capture Dependencies for Transfer
-
-```bash
-hdi $extracted
-hvi hdi@${extracted}.log
-dis hvi@hdi@${extracted}.log
-```
-
-## Install a chart
+## Example : Install a chart
 
 ```bash
 # Add repo
@@ -176,7 +64,7 @@ ver='23.3.0' # Prometheus v2.46.0
 
 k create ns $ns
 # Install the chart : first run with `--dry-run`, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --version $ver \
     --namespace ${ns:-default} \
     --atomic \
@@ -185,70 +73,21 @@ helm install $release $chart \
     |& tee helm.install.${ns-default}.$release.log
 
 # Get all (actual) objects of this release
-k -n ${ns:-default} get po,deploy,rs,ep,svc,pv,pvc,ingress \
-    --selector app.kubernetes.io/name=$release \
-    |tee k-n.${ns:-default}.get_all--selector.$release.log
+k -n ${ns:-default} get po,deploy,rs,ep,svc,pv,pvc \
+    -l app.kubernetes.io/name=$release \
+    |tee k-n.${ns:-default}.get_all-l.$release.log
 
-# Get deployment manifest (YAML)
-k -n ${ns:-default} get deploy --selector app.kubernetes.io/name=$release \
-    -o yaml |tee k-n.${ns:-default}.get.deploy.${release}-o.yaml
+# Get deployment object (YAML)
+k -n ${ns:-default} get deploy -l app.kubernetes.io/name=$release \
+    -o yaml |tee k-n.${ns:-default}.get.deploy.${release}.yaml
 ```
-
-
-## Installed Charts Summary | [`ArtifactHUB.io`](https://artifacthub.io/packages/search?category=7&sort=relevance&page=1)
-
-
-|App               |Repo/Chart         |Version |Image|
-|--|--|--|--|
-|Prometheus|`prometheus-community/prometheus`  |`23.3.0`|`prometheus/prometheus:v2.46.0`|
-|Grafana           |`grafana/grafana`  |`6.58.8`|`grafana/grafana:10.0.3`|
-|OpenLDAP          |`helm-openldap/openldap-stack-ha`  |`4.1.1`|`bitnami/openldap:2.6.3`|
-|Jenkins CI Server |`jenkinsci/jenkins`  |`4.3.30`|`jenkins/jenkins:2.401.2-jdk11`|
-|Keycloak SSO      |`bitnami/keycloak`   |`15.1.6`|`bitnami/keycloak:21.1.2`|
-|Nexus Repo Manager|`sonatype/nexus3`    |`57.0.0`|`sonatype/nexus3:3.57.0`|
-|Nexus Repo Manager|`stevehipwell/nexus3`|`4.31.0`|`sonatype/nexus3:3.57.0`|
-|Hadoop HDFS       |`gaffer/hdfs`        |`2.0.0` |`:3.3.3`|
-|MySQL DB          |`bitnami/mysql`      |`9.10.5`|`bitnami/mysql:8.0.33`|
-
-Apps often have more than one image dependency. See chart's web page or lab notes (README/LOG) for others.
-
-#### Repos
-
-```bash
-$ helm repo list
-
-jenkinsci   	https://charts.jenkins.io/                 
-bitnami     	https://charts.bitnami.com/bitnami         
-gaffer      	https://gchq.github.io/gaffer-docker       
-sonatype    	https://sonatype.github.io/helm3-charts/   
-stevehipwell	https://stevehipwell.github.io/helm-charts/
-
-```
-
-#### Charts
-
-```bash
-$ helm list --all-namespaces
-
-NAME   	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART                  	APP VERSION
-grafana	dev      	1       	2023-08-14 10:21:10.202343486 -0400 EDT	deployed	grafana-6.58.8         	10.0.3     
-kc     	sso      	1       	2023-08-09 16:33:48.802254304 -0400 EDT	deployed	keycloak-15.1.8        	21.1.2     
-ldap   	sso      	1       	2023-08-10 14:17:38.927355692 -0400 EDT	deployed	openldap-stack-ha-4.1.1	2.6.3   
-```
-
-## Installed Charts 
-
-#### TL;DR
-
-Charts installed with our `nfs-client` StorageClass backing its PVs and PVCs. 
-Mostly successful, except for GitLab frontend and runner, observervability apps Kiali and Jaeger. Possible isues with Prometheus. Minikube's API Server repeatedly crashed after installing Jaeger chart, with Prometheus showing big at `top`.
 
 
 ### Install [GitLab](https://artifacthub.io/packages/helm/gitlab/gitlab) 
 
 #### [Installing GitLab using Helm](https://docs.gitlab.com/charts/installation/)
 
->*In a production deployment: The stateful components, like PostgreSQL or Gitaly (a Git repository storage dataplane), must run outside the cluster on PaaS or compute instances. This configuration is required to scale and reliably service the variety of workloads found in production GitLab environments. You should use Cloud PaaS for PostgreSQL, Redis, and object storage for all non-Git repository storage.* [REF]()
+>*In a production deployment: The stateful components, like PostgreSQL or Gitaly (a Git repository storage dataplane), must run outside the cluster on PaaS or compute instances. This configuration is required to scale and reliably service the variety of workloads found in production GitLab environments. You should use Cloud PaaS for PostgreSQL, Redis, and object storage for all non-Git repository storage.* [()
 
 #### Dependencies:
 
@@ -295,7 +134,7 @@ ver='7.2.4' # GitLab v16.2.4
 k create ns $ns
 
 # Install the chart : first run with `--dry-run`, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --set global.hosts.domain='gitlab.local' \
     --set global.hosts.externalIP=$(minikube ip) \
     --set certmanager-issuer.email=gary.dostourian@ngc.com \
@@ -389,7 +228,7 @@ ver='1.71.0' # Kiali Operator 1.72.0
 
 
 # Install the chart : first run with `--dry-run`, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --version $ver \
     --namespace ${ns:-default} \
     --atomic \
@@ -441,7 +280,7 @@ ver='0.71.11' # Jaeger v1.45.0
 k create ns $ns
 
 # Install the chart : first run with `--dry-run`, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --version $ver \
     --namespace ${ns:-default} \
     --atomic \
@@ -523,7 +362,7 @@ quay.io/prometheus/alertmanager:v0.25.0
 # Add repo
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 # Install Chart
-helm install my-prometheus prometheus-community/prometheus --version 23.3.0
+helm upgrade --install my-prometheus prometheus-community/prometheus --version 23.3.0
 
 ## Set Environment
 ns='dev'
@@ -641,7 +480,7 @@ label="app.kubernetes.io/instance=$release"
 
 k create ns $ns
 # Install the chart : first run with `--dry-run`, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --version $ver \
     --namespace $ns \
     --atomic \
@@ -714,7 +553,6 @@ tiredofit/self-service-password:5.2.3  407cc6751198   13 months ago   428MB
 # Add repo
 helm repo add helm-openldap https://jp-gouin.github.io/helm-openldap/
 # Install chart
-
 helm install my-openldap-stack-ha helm-openldap/openldap-stack-ha --version 4.1.1
 
 ## Environment
@@ -724,7 +562,7 @@ chart='helm-openldap/openldap-stack-ha'
 ver='4.1.1' # OpenLDAP 2.6.3
 
 # Install : --dry-run, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --version $ver \
     --namespace $ns \
     --atomic \
@@ -764,15 +602,6 @@ k -n ${ns:-default} get $all |grep $release
 - `helm.install.ldap.log`
 
 
-#### Capture dependencies for transfer
-
-```bash
-hdi $extracted
-hvi hdi@${extracted}.log
-dis hvi@hdi@${extracted}.log
-```
-
-
 ### Install [`gaffer/hdfs`](https://artifacthub.io/packages/helm/gaffer/hdfs) Chart | [GitHub](https://github.com/gchq/Gaffer)
 
 #### TL;DR 
@@ -807,7 +636,7 @@ ver='16.1.2' # Keycloak v22.0.1
 k create ns $ns
 
 ## Install the chart : --dry-run, then actually.
-helm install $release $chart \
+helm upgrade --install $release $chart \
     --version $ver \
     --create-namespace \
     --namespace ${ns:-default} \
@@ -821,11 +650,8 @@ helm pull $chart --version $ver # Dumps to $pulled
 tar -xaf $pulled.tgz            # Extracts to $release
 mv $release $pulled
 
-### Upgrade chart            
-#helm install $release $pulled/ [OPTIONS]
-
-helm upgrade -f `values.yaml` $release $chart |& tee helm.upgrade.$release.log
-
+### Install/Upgrade chart            
+helm upgrade --install -f values.yaml $release $chart |& tee helm.upgrade.$release.log
 
 ## Monitor
 label="app.kubernetes.io/instance=$release"
