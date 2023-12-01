@@ -41,7 +41,7 @@ define(['require', 'dependency1', 'dependency2'], function (require) {
 - Hence the ___labyrinth of dependency managers___; Webpack and such.
 
 - ___Convert___ from __CommonJS to ES6__ modules  
-`REF.Rollup.js` ([MD](REF.Rollup.js.html "@ browser"))   
+`Rollup.js` ([MD](Rollup.js.html "@ browser"))   
 
 ### CommonJS Export @ `exporter.js`
 

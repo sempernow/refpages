@@ -233,7 +233,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 - [WorkBox + IndexedDB Lab](https://codelabs.developers.google.com/codelabs/workbox-indexeddb/index.html?index=..%2F..index#0)
 - 
 
-## Other REFs
+## Other 
 
 - [Web App Manifest](https://www.w3.org/TR/appmanifest/ "www.w3.org")
 - [`mkcert` :: HTTPS @ `localhost`](https://github.com/FiloSottile/mkcert#installation "FiloSottile/mkcert @ GitHub")

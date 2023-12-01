@@ -13,18 +13,22 @@ include Makefile.settings
 menu:
 	clear
 	$(INFO) 'Recipes'
-	@echo '	build     : Do all things short of commit.'
+	@echo '	build     : getrefs index normalize'
 	@echo '	getrefs   : Copy all REF* files to a tmp folder at ${TEMP}/$$( mktemp -d ).'
-	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
 	@echo '	index     : Process MD files into HTML and create index.html'
+	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
+	@echo '	gitpush   : git commit ... && git push ...'
 
-build: getrefs index normalize 
+build : getrefs index normalize
 
-getrefs:
-	bash make.recipes.sh getrefs 
+getrefs :
+	bash make.recipes.sh getrefs
 
-index:
+index :
 	bash make.recipes.sh index
 
-normalize:
+normalize :
 	bash make.recipes.sh normalize
+
+gitpush push :
+	bash make.recipes.sh gitpush

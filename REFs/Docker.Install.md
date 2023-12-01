@@ -242,7 +242,7 @@ export COMPOSE_CONVERT_WINDOWS_PATHS="true"
 
 ## [Docker @ WSL](https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly)  
 
-Install/setup such that Docker _client_ @ WSL communicates with Docker-for-Windows _server_, instead of its own. This is analogous to the Kubernetes method for integrating the Docker-for-Windows client with Minikube's docker-server. See `REF.Minikube.Install.md` ([MD](file:///D:/1%20Data/IT/Container/Kubernetes/REF.Minikube.Install.md) | [HTML](file:///D:/1%20Data/IT/Container/Kubernetes/REF.Minikube.Install.html "@ browser")).  
+Install/setup such that Docker _client_ @ WSL communicates with Docker-for-Windows _server_, instead of its own. This is analogous to the Kubernetes method for integrating the Docker-for-Windows client with Minikube's docker-server. See `Minikube.Install.md` ([MD](file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.md) | [HTML](file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.html "@ browser")).  
 
 1. Select @ Docker-for-Windows (GUI) 
     - > Settings > "Expose daemon on `tcp://loc...`"  (check-box)  
@@ -275,8 +275,8 @@ Install/setup such that Docker _client_ @ WSL communicates with Docker-for-Windo
         docker info  # should print its settings
         ```
 
-## `REF.Docker.md` ([MD](REF.Docker.html "@ browser"))  
+## `Docker.md` ([MD](Docker.html "@ browser"))  
 
-## [`REF.Docker.sh` (link)](file:///D:/1%20Data/IT/Container/Docker/REF.Docker.sh) 
+## [`Docker.sh` (link)](file:///D:/1%20Data/IT/Container/Docker/Docker.sh) 
 
 ### &nbsp;

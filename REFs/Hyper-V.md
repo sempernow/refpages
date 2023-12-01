@@ -244,7 +244,7 @@ Remove-VM -Name $VMname -Force  # delete VM
 
 ## `docker-machine`
 
-See Docker `REF.*` files
+See Docker `*` files
 
 `docker-machine create` &hellip; installs TinyCore (`boot2docker.iso`); distro has package manager `tce-load`.
 
@@ -254,27 +254,27 @@ docker@h4:~$ tce-load -w -i tor.tcz
 - Download and install
 - [Index of available TinyCore packages](http://distro.ibiblio.org/tinycorelinux/10.x/x86/tcz/)
 
-## [Docker for Windows](file:///D:/1%20Data/IT/Container/Docker/REF.Docker.sh "REF.Docker.sh")  
+## [Docker for Windows](file:///D:/1%20Data/IT/Container/Docker/Docker.sh "Docker.sh")  
 
-- Docker CLI Tools @ PowerShell or WSL ([MD](file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/REF.WSL.md "REF.WSL.md") | [HTML](file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/REF.WSL.html "If @ browser")):   
+- Docker CLI Tools @ PowerShell or WSL ([MD](file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/WSL.md "WSL.md") | [HTML](file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/WSL.html "If @ browser")):   
 `docker`, `docker-compose`, `docker-machine` 
 - Automatically createsVM (`MobyLinuxVM`) @ Hyper-V   
 
-## Minikube (Kubernetes) [MD](file:///D:/1%20Data/IT/Container/Kubernetes/REF.Kubernetes.Install.md "REF.Kubernetes.Install.md") | [HTML](file:///D:/1%20Data/IT/Container/Kubernetes/REF.Kubernetes.Install.html "If @ browser")
+## Minikube (Kubernetes) [MD](file:///D:/1%20Data/IT/Container/Kubernetes/Kubernetes.Install.md "Kubernetes.Install.md") | [HTML](file:///D:/1%20Data/IT/Container/Kubernetes/Kubernetes.Install.html "If @ browser")
 
 - Kubernetes CLI Tools @ PowerShell: `minikube` + `kubectl`  
 (`minikube` @ `SystemDrive` only)   
 
-## Vagrant [MD](REF.Vagrant.html "@ browser")
+## Vagrant [MD](Vagrant.html "@ browser")
   
 
 ## CentOS 7 
 
-- Vagrant box `centos/7`  [MD](file:///D:/1%20Data/IT/Apps/Dev.Ops/CM/Vagrant/REF.Vagrant.md "REF.Vagrant.md") | [HTML](file:///D:/1%20Data/IT/Apps/Dev.Ops/CM/Vagrant/REF.Vagrant.html "If @ browser")
-- Generic (distro ISO) [MD](file:///D:/1%20Data/IT/OS/Linux/Distros/CentOS/REF.RHEL.Install.md "REF.RHEL.Install.md") | [HTML](file:///D:/1%20Data/IT/OS/Linux/Distros/CentOS/REF.RHEL.Install.html "If @ browser")   
+- Vagrant box `centos/7`  [MD](file:///D:/1%20Data/IT/Apps/Dev.Ops/CM/Vagrant/Vagrant.md "Vagrant.md") | [HTML](file:///D:/1%20Data/IT/Apps/Dev.Ops/CM/Vagrant/Vagrant.html "If @ browser")
+- Generic (distro ISO) [MD](file:///D:/1%20Data/IT/OS/Linux/Distros/CentOS/RHEL.Install.md "RHEL.Install.md") | [HTML](file:///D:/1%20Data/IT/OS/Linux/Distros/CentOS/RHEL.Install.html "If @ browser")   
 
 ## Ubuntu 18.04.1 LTS  
 
-- Generic (distro ISO) [MD](file:///D:/1%20Data/IT/OS/Linux/Distros/Ubuntu/REF.Ubuntu.Install.md "REF.Ubuntu.Install.md") | [HTML](file:///D:/1%20Data/IT/OS/Linux/Distros/Ubuntu/REF.Ubuntu.Install.html "If @ browser")   
+- Generic (distro ISO) [MD](file:///D:/1%20Data/IT/OS/Linux/Distros/Ubuntu/Ubuntu.Install.md "Ubuntu.Install.md") | [HTML](file:///D:/1%20Data/IT/OS/Linux/Distros/Ubuntu/Ubuntu.Install.html "If @ browser")   
 
-## Nested Virtualization ([MD](REF.Hyper-V.Nested-Virtualization.md "REF.Nested-Virtualization.md") | [HTML](REF.Hyper-V.Nested-Virtualization.html "@ browser"))  
+## Nested Virtualization ([MD](Hyper-V.Nested-Virtualization.md "Nested-Virtualization.md") | [HTML](Hyper-V.Nested-Virtualization.html "@ browser"))  

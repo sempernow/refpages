@@ -1,7 +1,7 @@
 
 # [Adobe Illustrator CC 2018 (Ai)](https://helpx.adobe.com/illustrator/user-guide.html "Ai User Guide")
 
-## SVG @ `REF.SVG` ([MD](REF.SVG.html "@ browser"))   
+## SVG @ `SVG` ([MD](SVG.html "@ browser"))   
 
 ## Bitmap to Vector 
 
@@ -30,7 +30,7 @@
         - Select checkbox: Use Artboards (@ 1st menu).
         - Unselect checkbox: Minify (@ 2nd menu).
 
-See `REF.SVG` ([MD](REF.SVG.html "@ browser"))   
+See `SVG` ([MD](SVG.html "@ browser"))   
 
 ## Create PNG of SVG 
 
@@ -38,7 +38,7 @@ See `REF.SVG` ([MD](REF.SVG.html "@ browser"))
     - All
     - Formats > Format: PNG
 
-See `REF.SVG` ([MD](REF.SVG.html "@ browser"))   
+See `SVG` ([MD](SVG.html "@ browser"))   
 
 ### Delete inner object encircled by outer object (shapes)
 

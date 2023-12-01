@@ -8,14 +8,14 @@
     Back @ Main menu > Save Settings (check-box)   
     - Shared Drives are mounted @ `~/shared-drives`
 
-### [SSH](REF.Network.SSH.sh "REF.Network.SSH.sh")  
+### [SSH](Network.SSH.sh "Network.SSH.sh")  
 
 ```bash
 # Install OpenSSH
 apt-get install openssh-server
 # Check status of ssh daemon
 systemctl status ssh.service
-# Configure (See "REF.Network.SSH.sh")
+# Configure (See "Network.SSH.sh")
 vim /etc/ssh/sshd_config
 ```  
 ### Other Useful ...
@@ -48,9 +48,9 @@ sudo add-apt-repository ppa:team-xbmc/ppa
 sudo apt-get install -y kodi
 ```
 
-- Kodi fails @ Armbian  ([MD](REF.Armbian.html "@ browser"))  
+- Kodi fails @ Armbian  ([MD](Armbian.html "@ browser"))  
 
 ### [Vagrant box @ VirtualBox VM on Ubuntu](http://www.codebind.com/linux-tutorials/install-vagrant-ubuntu-18-04-lts-linux/ "CODEBIND.COM")    
 
-- Vagrant install ([MD](REF.Vagrant.Install.html "If @ browser"))
+- Vagrant install ([MD](Vagrant.Install.html "If @ browser"))
 

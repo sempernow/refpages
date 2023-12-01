@@ -103,14 +103,14 @@ wsl.exe -cur_console:am:"":
     start ConEmu64.exe -Single ^
         -run C:\Windows\System32\wsl.exe ^
         -cur_console:am:"" ^
-        -cur_console:C:"%ConEmuDrive%\ICONS\Apps\Linux.%_DISTRO_REF%.ico"
+        -cur_console:C:"%ConEmuDrive%\ICONS\Apps\Linux.%_DISTRO_.ico"
     ```
 
     - See [`LinuxHere.cmd` @ `cmd_library`](file:///C:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd).  
         - Used to integrate `wsl.exe` app-launch into Windows Explorer (context menu).  
     - Sets default distro, then lauches it at a ConEmu terminal. 
         - Single instance; new tab at existing ConEmu window, else new window; `-Single`  
-        - Prefix path, e.g., on drag-n-drop (POSIX-converted); `-cur_console:am:"PREFIX"`   
+        - Prefix path, e.g., on drag-n-drop (POSIX-converted); `-cur_console:am:"PX"`   
         - Set tab icon; `-cur_console:C:"ICON_PATH"`
 
 ## @ Explorer (folder) Context Menu   

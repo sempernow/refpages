@@ -158,7 +158,7 @@ http {
 &hellip; and associated params: 
 
 ```ini
-upstream SERVICE_REF {
+upstream SERVICE_{
     server SERVICE_NAME:SERVICE_PORT;
 
     keepalive 2x_REPLICAS;
@@ -167,7 +167,7 @@ upstream SERVICE_REF {
 server {
     ...
     location /THIS/ {
-        proxy_pass http://SERVICE_REF/THAT/;
+        proxy_pass http://SERVICE_THAT/;
 
         proxy_http_version 1.1;
         proxy_set_header Connection "";

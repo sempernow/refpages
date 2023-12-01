@@ -433,7 +433,7 @@ D:\ on /d type drvfs (rw,noatime,uid=1000,gid=1000,umask=22,fmask=11,metadata,ca
 
 ### Integration 
 
-- [Mintty :: WSL](https://github.com/mintty/wsltty) &mdash; @ `REF.WSLtty` ([MD](REF.WSLtty.html "@ browser"))   
+- [Mintty :: WSL](https://github.com/mintty/wsltty) &mdash; @ `WSLtty` ([MD](WSLtty.html "@ browser"))   
 
 
     ```bash
@@ -501,7 +501,7 @@ D:\ on /d type drvfs (rw,noatime,uid=1000,gid=1000,umask=22,fmask=11,metadata,ca
 
 - [Vagrant @ WSL](https://www.vagrantup.com/docs/other/wsl.html) __fails__.
 
-- [ConEmu](https://conemu.github.io/) install ([MD](file:///D:/1%20Data/IT/Apps/Shell/Win/ConEmu/REF.ConEmu.md "REF.ConEmu.md") | [HTML](file:///D:/1%20Data/IT/Apps/Shell/Win/ConEmu/REF.ConEmu.html "@ browser"))  
+- [ConEmu](https://conemu.github.io/) install ([MD](file:///D:/1%20Data/IT/Apps/Shell/Win/ConEmu/ConEmu.md "ConEmu.md") | [HTML](file:///D:/1%20Data/IT/Apps/Shell/Win/ConEmu/ConEmu.html "@ browser"))  
 A tabbed terminal window; `cmd`, `git-bash`, `wsl`, `PowerShell`, ...
 
 - UPDATE on [VS Code](https://code.visualstudio.com/download) / X-Server  
@@ -514,13 +514,13 @@ A tabbed terminal window; `cmd`, `git-bash`, `wsl`, `PowerShell`, ...
     - __No other install is required.__   
     The  command, `code`, launches VS Code (GUI), at host, without running X-server.  
 
-        - [X Server](https://en.wikipedia.org/wiki/X_Window_System) (`X11`)  apps ([MD](file:///D:/1%20Data/IT/Apps/X-Server/REF.X-Server.apps.md "REF.X-Server.md") | [HTML](file:///D:/1%20Data/IT/Apps/X-Server/REF.X-Server.apps.html "@ browser"))  
+        - [X Server](https://en.wikipedia.org/wiki/X_Window_System) (`X11`)  apps ([MD](file:///D:/1%20Data/IT/Apps/X-Server/X-Server.apps.md "X-Server.md") | [HTML](file:///D:/1%20Data/IT/Apps/X-Server/X-Server.apps.html "@ browser"))  
         Allows GUI apps installed at a session host (WSL distro) to launch as a client GUI app (at Windows).
 
         - [VS Code](https://code.visualstudio.com/download)  
         Run VS code from inside WSL. (While a Windows X-Server is running.)  
             - Download and install latest 64-bit (`.deb`) into WSL, per distro.  
-            Then use method @ `REF.Ubuntu.Install`.
+            Then use method @ `Ubuntu.Install`.
 
 - Node.js ([per Node Version Manager; `nvm`](https://github.com/creationix/nvm "github.com/creationix/nvm"))  
 
@@ -538,7 +538,7 @@ A tabbed terminal window; `cmd`, `git-bash`, `wsl`, `PowerShell`, ...
     }
     ```
 
-- Docker @ WSL ([MD](REF.Docker.Install.html "@ browser"))  
+- Docker @ WSL ([MD](Docker.Install.html "@ browser"))  
 
 - [Kubernetes (`kubectl`) @ WSL](https://medium.com/@ddebastiani/install-kubernetes-on-windows-wsl-c36f6b2571d2 "Install Kubernetes on Windows + WSL,  Medium.com, Jan-2018")   
 Prerequisite: `minikube.exe` (+`kubectl.exe`) installed @ Windows 

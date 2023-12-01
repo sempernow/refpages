@@ -13,7 +13,7 @@
     ```plaintext
     Host: developer.cdn.mozilla.net
     ``` 
-- [`Referer`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer) <a name="referer"></a> &mdash; the address of the page making the request, and so not always present; may be that of the previous web page from which a link to the currently requested page was followed. Sent with requests for page links, `<link ...>`. When making AJAX requests to another domain, this is the url of the active page running the script; allows servers to identify clients for analytics, logging, optimized caching, etc. Notorious for being utilized (manipulated) by malicous attackers, e.g., Cross-Site Request Forgery. See `REF.CSRF.XSRF`  ([MD](REF.CSRF.XSRF.html "@ browser"))   
+- [`Referer`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer) <a name="referer"></a> &mdash; the address of the page making the request, and so not always present; may be that of the previous web page from which a link to the currently requested page was followed. Sent with requests for page links, `<link ...>`. When making AJAX requests to another domain, this is the url of the active page running the script; allows servers to identify clients for analytics, logging, optimized caching, etc. Notorious for being utilized (manipulated) by malicous attackers, e.g., Cross-Site Request Forgery. See `CSRF.XSRF`  ([MD](CSRF.XSRF.html "@ browser"))   
 
     ```plaintext
     Referer: <url>
@@ -28,7 +28,7 @@
     User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0
     ```
 
-## [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#cors) | [Docs/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) | `REF.HTTP.CORS+Fetch` ([MD](REF.HTTP.CORS+Fetch.html "@ browser"))   
+## [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#cors) | [Docs/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) | `HTTP.CORS+Fetch` ([MD](HTTP.CORS+Fetch.html "@ browser"))   
 
 - [`Access-Control-Allow-Origin`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)  &mdash; Sent by the _server of the requested resource_.  See `PRJ.HTTP.CORS` ([MD](PRJ.HTTP.CORS.html "@ browser"))   
 - [`Origin`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin) &mdash; Indicates the server _requesting the resource_; sent with CORS requests and `POST` requests. It is similar to the [`Referer`](#referer) header, but, unlike this header, it doesn't disclose the whole path.
@@ -484,6 +484,19 @@ Content-Type: multipart/form-data; boundary=---...---974...
 ...
 X-Content-Type-Options: nosniff
 ```
+
+```bash
+# If sending binary (non-alphanumeric) data, or significantly sized payload:
+'Content-Type: multipart/form-data'
+# Else send per URL-encoded string"
+'Content-Type: application/x-www-form-urlencoded'
+# Body is one giant query-string equivalent; 
+k1=v1&k2=v2
+```
+- Can send binary by URL-encoding, but is INEFFICIENT; 
+  one byte encodes to (`base64url`) three 7-bit bytes
+
+
 
 ## [`Content-Disposition`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition "MDN") response
 

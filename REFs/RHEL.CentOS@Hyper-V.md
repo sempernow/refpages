@@ -26,7 +26,7 @@
 - Start + Connect   
 Hyper-V launches a VM window, as the install-media loads. 
 
-## Install CentOS per GUI ([MD](REF.RHEL.Install.html "@ browser"))  
+## Install CentOS per GUI ([MD](RHEL.Install.html "@ browser"))  
 
 ### Hyper-V specific settings ...
 - Installation Destination 
@@ -52,7 +52,7 @@ Hyper-V launches a VM window, as the install-media loads.
 
 ### Admin
 
-#### [SSH](REF.Network.SSH.sh "REF.Network.SSH.sh") setup
+#### [SSH](Network.SSH.sh "Network.SSH.sh") setup
 - @ CentOS (VM)   
 
     ```bash

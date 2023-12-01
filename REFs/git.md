@@ -1,4 +1,4 @@
-# [`git`](https://git-scm.com/ "git-scm.com") | [`REF.git.sh`](REF.git.sh) | [Reference](https://git-scm.com/docs "git-scm.com/docs")
+# [`git`](https://git-scm.com/ "git-scm.com") | [`git.sh`](git.sh) | [Reference](https://git-scm.com/docs "git-scm.com/docs")
 
 ## GitHub connectivity script @ `~/.bin/github`
 
@@ -69,7 +69,7 @@ git rebase -i HEAD~$_max_squash
 ```
 - The `git rebase ...` command automatically opens the meta file with editor declared @ `.gitconfig`
 
-@ `vim` | [`REF.vim.sh`](REF.vim.sh)
+@ `vim` | [`vim.sh`](vim.sh)
 
 ```plaintext
 # To squash commits 2-7 
@@ -88,7 +88,7 @@ git push --force-with-lease
 
 ## Self
 
-### `REF.git` ([MD](REF.vim.sh)
+### `git` ([MD](vim.sh)
 
 ### &nbsp;
 <!-- 

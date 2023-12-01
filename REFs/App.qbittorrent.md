@@ -19,7 +19,7 @@ Upon resetting all my network adapters, qBittorrent would fail to download anyth
 
 UPDATE 2019-11-14: ___Do NOT use any adapter except that of VPN___ (`TAP1`). Validate (`External IP: ...`) at the Execution Log (tab). This _should be_ the IP of the current (OpenVPN) VPN connection, _not_ that assigned per ISP. 
 
-### REF: [qBittorrent official forums](https://qbforums.shiki.hu/index.php?topic=7408.0) 
+###  [qBittorrent official forums](https://qbforums.shiki.hu/index.php?topic=7408.0) 
 
 ### &nbsp;
 <!-- 

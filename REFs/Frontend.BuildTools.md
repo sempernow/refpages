@@ -1,6 +1,6 @@
 # Front-End Build Tools 
 
-## REF: `npx` / `npm`
+##  `npx` / `npm`
 
 ```bash
 # npx :: Run a module sans install
@@ -202,11 +202,11 @@ parcelRequire = (function (...) {
 },{}]},{},["... /c/HOME/.nvm/... /node_modules/parcel/src/builtins/hmr-runtime.js","index.js"], null)
 ```
 
-## Rollup | `REF.Rollup.js` ([MD](REF.Rollup.js.html "@ browser"))   
+## Rollup | `Rollup.js` ([MD](Rollup.js.html "@ browser"))   
 
-## Webpack | `REF.Webpack` ([MD](REF.Webpack.html "@ browser")) 
+## Webpack | `Webpack` ([MD](Webpack.html "@ browser")) 
 
-## [Gulp](https://www.npmjs.com/package/gulp "@ npmjs.com")  | [`REF.Gulp.sh`](gulpfile.js)
+## [Gulp](https://www.npmjs.com/package/gulp "@ npmjs.com")  | [`Gulp.sh`](gulpfile.js)
 
 - [Example @ PWA build](https://developers.google.com/web/ilt/pwa/lab-sw-precache-and-sw-toolbox "@ developers.google.com"). 
 
@@ -263,7 +263,7 @@ npm ls                 # List all LOCAL installs
         npm i $_BUILD_TOOLs --save-dev
         ```
 
-### [`REF.npm.sh`](REF.node.sh)
+### [`npm.sh`](node.sh)
 
 - [`npm` CLI commands](https://docs.npmjs.com/cli/npm.html) | [@ `install`](https://docs.npmjs.com/cli/install.html)
 - Online module search @ [npmSearch.com](http://npmsearch.com/)
@@ -416,7 +416,7 @@ split code into small chunks which are load on demand.
 
 ## More `npm` / `node` Commands 
 
-### (See: [`REF.npm.sh`](REF.node.sh))
+### (See: [`npm.sh`](node.sh))
 
 ```bash
 npm search moduleName     # Package Search

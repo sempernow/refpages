@@ -1,4 +1,4 @@
-# [JWT](https://jwt.io "JSON Web Token @ JWT.io") | OAuth/SSO ([HTML](REF.JWT.OAuth.md "REF.JWT.OAuth"))   
+# [JWT](https://jwt.io "JSON Web Token @ JWT.io") | OAuth/SSO ([HTML](JWT.OAuth.md "JWT.OAuth"))   
 
 ### RFC7519 [ JSON Web Token (JWT)](https://tools.ietf.org/html/rfc7519 "RFC7519 @ 2015")
 ### RFC7523 [JWT Profile for OAuth 2.0 Client Authentication and Authorization Grants](https://tools.ietf.org/html/rfc7523#section-1 "RFC7523 @ 2015")

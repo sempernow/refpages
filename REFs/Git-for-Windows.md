@@ -60,7 +60,7 @@ msys2_shell.cmd -%_TYPE% -where %_FOLDER%
 	ssh config @ `/home/$USERNAME/.ssh` 
 	sucessfully tested by tunneling into router 
 
-REF: 
+ 
 	Git for Windows is git-scm 
 	https://github.com/git-for-windows 
 

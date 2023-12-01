@@ -2,11 +2,20 @@ Exit
 # PowerShell is a task-based command-line shell and scripting language built on .NET.
 # https://docs.microsoft.com/en-us/powershell/
 
+# Get drives
+Get-DiskImage
+## OR
+Get-Volume 
+
+# Mount/Unmount ISO file
+Mount-DiskImage -ImagePath C:\TEMP\a.iso
+Dismount-DiskImage -ImagePath C:\TEMP\a.iso
+
 # List DISABLED SERVICES 
-$( Get-Service | Where-Object {$_.StartType -eq "Disabled"} ) > services.Disabled.log
+$( Get-Service | Where-Object {$_.StartType -eq "Disabled"} ) > services.disabled.log
 # FAILS @ SOME FILE PATHs 
 # SOLUTION @ CMD 
-powershell "$( PS-COMMAND )" > C:\[SysLogs]\services.Disabled.log
+powershell "$( PS-COMMAND )" > services.disabled.log
 
 # Print STDOUT to FILE 
 ... | Out-File "$_PATH" -Append

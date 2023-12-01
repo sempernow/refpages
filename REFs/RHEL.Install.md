@@ -1,5 +1,5 @@
 # CentOS 7  Install 
-### on VM @ Hyper-V ([MD](REF.RHEL.CentOS@Hyper-V.html "If @ browser"))
+### on VM @ Hyper-V ([MD](RHEL.CentOS@Hyper-V.html "If @ browser"))
 
 ## per GUI 
 
@@ -58,7 +58,7 @@ The pre-installation __menu/selection__ scheme is a __star pattern__, not sequen
 
 ### Admin
 
-#### [SSH](REF.Network.SSH.sh "REF.Network.SSH.sh") setup  
+#### [SSH](Network.SSH.sh "Network.SSH.sh") setup  
 - @ Server (CentOS)  
     Enable remote access per SSH public-key.
 

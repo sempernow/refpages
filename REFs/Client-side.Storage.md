@@ -12,7 +12,7 @@
     - [Workbox](https://developers.google.com/web/tools/workbox/guides/using-bundlers "developers.google.com") is the latest/leanest way to *auto-generate* a Service Worker (`.js`) and its associated manifest (`.json`), and to handle the `Cache` _document store_, [and `IndexedDB`](https://codelabs.developers.google.com/codelabs/workbox-indexeddb/index.html?index=..%2F..index#4 "WorkBox + IndexedDB @ codelabs.developers.google.com") as application _state store_. 
     - __Synch schemes__   
         - [Background Sync API](https://developers.google.com/web/updates/2015/12/background-sync "developers.google.com 2015") (Chrome only); a `ServiceWorker` API  
-- @ Android &mdash; [SQLcipher](https://www.zetetic.net/sqlcipher/open-source/ "@ Zetetic.net") ([@ GitHub](https://github.com/sqlcipher)); an encrypted database; an extension of [SQLite](https://www.sqlite.org/index.html "www.sqlite.org"). Used by WeChat app [(`EnMicroMsg.db`)](https://guardianproject.info/2013/12/10/sqlcipher-has-300-million-mobile-users-thanks-to-wechat/ "'SQLcipher has 300M Mobile Users ... WeChat' @ GuardianProject.info"). See&nbsp;`REF.Tech.Stacks` ([MD](REF.Tech.Stacks.html#wechat "@ browser")).  
+- @ Android &mdash; [SQLcipher](https://www.zetetic.net/sqlcipher/open-source/ "@ Zetetic.net") ([@ GitHub](https://github.com/sqlcipher)); an encrypted database; an extension of [SQLite](https://www.sqlite.org/index.html "www.sqlite.org"). Used by WeChat app [(`EnMicroMsg.db`)](https://guardianproject.info/2013/12/10/sqlcipher-has-300-million-mobile-users-thanks-to-wechat/ "'SQLcipher has 300M Mobile Users ... WeChat' @ GuardianProject.info"). See&nbsp;`Tech.Stacks` ([MD](Tech.Stacks.html#wechat "@ browser")).  
 
 >Though not Document Stores per se, the Key-Value Stores (below) can be used quite effectively to store documents (per key).
 
@@ -74,7 +74,7 @@ A persistent `k-v` store; wraps all the browser's `k-v` stores, and __stores red
 
 ### HTTP Request Header  
 
-- See `REF.Network.HTTP.Headers` ([MD](REF.Network.HTTP.Headers.html "@ browser"))  
+- See `Network.HTTP.Headers` ([MD](Network.HTTP.Headers.html "@ browser"))  
 - App server should send via `HTTPS` only.   
 - Always [set _security flags_](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Syntax):
 
@@ -135,7 +135,7 @@ window.btoa(raw)
     }
     ```
 
-## HTTP Caching :: `ETag` / `If-Match` headers ([MD](REF.Network.HTTP.Headers.html#etag "@ browser"))  
+## HTTP Caching :: `ETag` / `If-Match` headers ([MD](Network.HTTP.Headers.html#etag "@ browser"))  
 
 
 
@@ -144,7 +144,7 @@ window.btoa(raw)
 
 # [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
 
-([MD](REF.Tech.Stacks.html "@ browser"))   
+([MD](Tech.Stacks.html "@ browser"))   
 
 -->
 

@@ -561,7 +561,7 @@ REVOKE ALL ON DATABASE db1 FROM PUBLIC;
             -- referencing table
             CREATE TABLE orders (
                 ...
-                product_no integer REFERENCES products,  
+                product_no integer RENCES products,  
                 ...
             );
             ```
@@ -572,7 +572,7 @@ REVOKE ALL ON DATABASE db1 FROM PUBLIC;
                 ...
                 b integer,
                 c integer,
-                FOREIGN KEY (b, c) REFERENCES other_table (c1, c2)
+                FOREIGN KEY (b, c) RENCES other_table (c1, c2)
             );
             ```
 #### Summary 
@@ -593,8 +593,8 @@ CREATE TABLE orders (
 
 -- resolve (w/ constraints) with junction table
 CREATE TABLE products_orders (
-    product_id BIGINT REFERENCES products ON DELETE RESTRICT,   -- =>
-    order_id BIGINT REFERENCES orders ON DELETE CASCADE,        -- <=
+    product_id BIGINT RENCES products ON DELETE RESTRICT,   -- =>
+    order_id BIGINT RENCES orders ON DELETE CASCADE,        -- <=
     PRIMARY KEY (product_id, order_id)
 );
 ```
@@ -616,11 +616,11 @@ CREATE TABLE products_orders (
 
 ALTER TABLE products_orders
     ADD CONSTRAINT product_id_fk 
-        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE RESTRICT;
+        FOREIGN KEY (product_id) RENCES products(product_id) ON DELETE RESTRICT;
 
 ALTER TABLE products_orders
     ADD CONSTRAINT order_id_fk  
-        FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE;
+        FOREIGN KEY (order_id) RENCES orders(order_id) ON DELETE CASCADE;
 
 ALTER TABLE products_orders
     ADD CONSTRAINT products_orders_pk PRIMARY KEY (product_id, order_id);
@@ -1165,8 +1165,8 @@ CREATE TABLE orders (
 
 -- resolve (w/ constraints) @ junction table
 CREATE TABLE order_items (
-    product_no integer REFERENCES products ON DELETE RESTRICT,
-    order_id integer REFERENCES orders ON DELETE CASCADE,
+    product_no integer RENCES products ON DELETE RESTRICT,
+    order_id integer RENCES orders ON DELETE CASCADE,
     quantity integer,
     PRIMARY KEY (product_no, order_id)
 );
@@ -1290,7 +1290,7 @@ SELECT 'ghost-view', 'mv-cfg', uuid_nil() -- required @ mv_channels_cfg MV
 WHERE NOT EXISTS (SELECT 1 FROM views WHERE vname = 'ghost-view');
 
 -- Refresh the MV, else remains unchanged (stale).
-REFRESH MATERIALIZED VIEW mv_views_cfg;
+ESH MATERIALIZED VIEW mv_views_cfg;
 ```
 
 ## `CREATE` [`UNLOGGED TABLE ...`](https://www.postgresql.org/docs/12/sql-createtable.html)

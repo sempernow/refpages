@@ -3,44 +3,44 @@
 # @ Makefile recipes
 # -----------------------------------------------------------------------------
 
+_NEWEST=/tmp/REFs.newest.file
+
+gitpush() {
+    REQUIREs gc git gl
+    unset newest 
+    [[ -f "$_NEWEST" ]] && newest=$(cat $_NEWEST)
+    gc "$newest" && git push && gl
+    [[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
+}
+
 getrefs() {
-    mkdir -p {HOME/.bin,REFs}
+    mkdir -p REFs
 
     # Purge folders
     find ./REFs -type f -exec rm "{}" \+ 
-    find ./HOME -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -iname '*.zip' -exec rm "{}" \+ 
 
-    # Dump all REF.* files to tmp folder under $TEMP dir
-	refsync temp
-    
-    # Find the most recent tmp.* dump folder
-    tmp=$(ls $TEMP -ahsrt --group-directories-first |grep tmp. |tail -n 1 |awk '{print $NF}')
+    # Dump all REF.* files to tmp folder under $TEMP dir unless done less than 5min ago
+    tmp(){ find /c/TEMP -type d -ctime -.003 -iname 'tmp.*' |tail -n1; }
+    [[ -d $(tmp) ]] || refsync temp
+    cp -rp $(tmp)/* REFs/
 
-    # Copy content to this project's REFs folder
-	cp -p $TEMP/$tmp/* REFs/
-    
     # Remove some
     rm REFs/REF.Biz*md REFs/REF.L9s.*md 2>/dev/null
 
-    # CKAD
-    ckad='/d/1 Data/IT/Container/Kubernetes/CKAD'
-    [[ -d '/d/1 Data/IT/Container/Kubernetes/CKAD' ]] && cp -rp '/d/1 Data/IT/Container/Kubernetes/CKAD/'* REFs/CKAD/
+    # CKAD : Copy entire source dir
+    dir='/d/1 Data/IT/Container/Kubernetes/CKAD'
+    [[ -d "$dir" ]] && cp -rp "$dir/"* REFs/CKAD/
     rm REFs/CKAD/LOG.* REFs/REF.Kubernetes.CKAD.* 2>/dev/null
-
-    # CKA
-    ckad='/d/1 Data/IT/Container/Kubernetes/CKA'
-    [[ -d '/d/1 Data/IT/Container/Kubernetes/CKA' ]] && cp -rp '/d/1 Data/IT/Container/Kubernetes/CKA/'* REFs/CKA/
+    # CKA : Copy entire source dir
+    dir='/d/1 Data/IT/Container/Kubernetes/CKA'
+    [[ -d "$dir" ]] && cp -rp "$dir/"* REFs/CKA/
     rm REFs/CKA/LOG.* REFs/REF.Kubernetes.CKA.* 2>/dev/null
 
+    # Capture the newest of all REFs/* (in UTC Zulu) before downstream mods (normalize and such) update file mtimes and otherwise ruin the record.
+    printf "$(find REFs -type f -printf '%TY-%Tm-%TdT%TH:%TM %P @ ' -exec env TZ=UTC date -r {} +'%Y-%m-%dT%H:%MZ' \; |sort -r |head -n 1 |cut -d' ' -f2-)" \
+        |tee $_NEWEST 
 
-    # Copy/Update the specified ~/.* scripts to this project's HOME folder
-    cp -p ~/{.profile,.bash_profile,.bashrc,.bash_win,.bash_functions,.vimrc,.terraformrc,.gitconfig,.gitignore,.gitignore_global} HOME/
-
-    # Copy/Update all ...
-    cp -rp ~/.bin/* HOME/.bin/
-
+    return 0
 }
 
 normalize(){
@@ -48,6 +48,7 @@ normalize(){
     pushd ./REFs
     find . -type f ! -path './.git/*' -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/IT.*/##g"
     find . -type f ! -path './.git/*' -iname '*.md' |xargs sed -i "s#file:///d:/1%20Data/.*/##g"
+    find . -type f ! -path './.git/*' -iname '*.md' |xargs sed -i "s/REF.//g"
     popd
 }
 
@@ -80,7 +81,6 @@ index() {
         -printf "## [%f](%p)\n" >>index.md
 
     # Sort links alphabetically and build README.md .
-    cat README.src.md >README.md
     sort -f index.md >>README.md
     md2html.exe README.md
 

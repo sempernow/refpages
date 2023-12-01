@@ -167,6 +167,8 @@ exit
     _:               # The most recent previously executed command.
     IFS=$' \t\n'     # Internal File Separator
     BASHOPTS         # list of options that were used when bash was executed. 
+        shopt        # List some bash options
+        shopt -o     # List some other bash options and their settings
     BASH_VERSION
     SHELL=/bin/bash
     SHELLOPTS        # Shell options that can be set with the set option.
@@ -540,8 +542,9 @@ exit
             # SOURCE is archive root; if `.`, then extracts to PWD
             tar -caf ARCH_PATH.EXT --exclude='.*' -C PATH  SOURCE
                 
-        # EXTRACT arch to PATH/...
-        tar -xaf ARCH_PATH.EXT -C PATH 
+        # EXTRACT $tarball to $target_parent/...
+        tar Cxavf $target_parent $tarball 
+        tar -xzv -C $target_parent --strip-components=1 -f $tarball
 
         # PIPEd input per `-` (stdin)
         ... |tar [OPTIONS] -
@@ -553,18 +556,18 @@ exit
         ls -al     # all files; long-listing format
         ls -hlRtgG # all files in ALL SUBDIRS, NEWEST FIRST
 
+            -1  # list one file per line; file basename only
             -a  # show hidden files
-            -g  # long-list format, like '-l', but not group-names
-            -G  # no group-names
-            -t  # sort by time, newest first 
-            -R  # recurse thru subdirs
-            -r  # reverse sort
             -h  # human-readable file-sizes
+            -l  # long-listing format; also shows file-type; '-F'
+            -n  # UID,GID
+            -g  # like -l, but sans owner
+            -G  # like -l, but sans group
+            -t  # sort by mtime, newest first 
+            -r  # reverse sort
+            -R  # recurse thru subdirs
             -F  # file type (1st letter @, e.g., '-rwxrwx---+' )
             -i  # inodes
-            -l  # long-listing format; also shows file-type; '-F'
-            -1  # list one file per line 
-            -t  # sort by modification time, newest first
 
             # File types in a long list
                 Symbol  Meaning
@@ -578,10 +581,10 @@ exit
                 b       Block device
 
             # preferred rendering; newest last
-            ls -hlrtgG --color=auto --time-style=+"%Y-%m-%d %H:%M" --group-directories-first
+            #ls -hlrtgG --color=auto --time-style=+"%Y-%m-%d %H:%M" --group-directories-first
+            ls -hlrt --color=auto --time-style=long-iso --group-directories-first
 
-            # Print first and last fields, tab delimited.
-            ## size     fname.ext
+            # size   fname.ext (first and last fields, tab delimited).
             ls -ahlrst --group-directories-first \
                 |awk '{printf ("%s\t%s\n",$1,$NF)}'
 
@@ -589,8 +592,11 @@ exit
             ls -1 |xargs stat --format=" %a  %n" 
 
             # show newest file 
-            ls -t1 "$0" |tail -n 1 
-
+            ls -lrt |tail -n 1 
+        
+            # DUPLICATES : Delete all files of target dir that match (basename) any of reference dir
+            ls -hl $reference_dir |awk '{print $9}' |xargs -I{} rm $target_dir/{}
+        
         lsof  FILE  # File info
         lsof -U     #... of all UNIX Domain Sockets
 
@@ -811,6 +817,10 @@ exit
             _DST='bar/cat'     # Remote path
         # Download from cloud 
         rclone copy $_REMOTE:$_SRC $_DST  # DST is container (parent) 
+
+
+    # Reset all FOLDERs' mtime per newest therein : REQUIREs newest()
+        find . -maxdepth 1 -type d ! -iname '.' -exec /bin/bash -c 'touch -r "$(newest "$1")" "$1"' _ {} \;
 
     # Move/Rename one target FILE/FOLDER
         mv FROM TO      # Move/rename file/folder FROM path TO path
@@ -1128,8 +1138,8 @@ exit
                 find -type f -printf "%T@ %p\n" |sort -n |tail -n 1 |cut -f2- -d' '
             
             # -atime, -mtime, -ctime 
-            find -atime +5 # OLDER; find all accessed more than 5 days ago
-            find -mtime -5 # NEWER; find all modified (content) less than 5 days old
+            find -atime +5 # OLDER; find all accessed more than 5 DAYS ago
+            find -mtime -5 # NEWER; find all modified (content) less than 5 DAYS old
 
             # reset mtime of *.sh to that of its *.7z sibling, at all dirs hereunder 
             find . -iname '*.7z' -exec /bin/bash -c 'touch -r "$@" "$( find "${@%/*}" -iname '*.sh')"' _ {} \;
@@ -1344,6 +1354,9 @@ exit
 
         ... |grep -- '-foo-bar'
 
+        # OR : Filter thru EITHER pattern
+        ... |grep -e This -e That
+
         # ANY PATTERN listed in FILE (one pattern per line)
  		cat <<-EOH > FILE
 		500
@@ -1471,7 +1484,7 @@ exit
         jq [options...] filter [files...] # https://jqlang.github.io/jq/manual/
         
             -r # Raw; unquoted.
-            -c # Compact
+            -c # Compact (vs. pretty print)
             -C # Colorized; some commands may FAIL @ PIPE due to the (hidden) CTRL chars.
             -M # Monochrome.
 
@@ -1528,9 +1541,21 @@ exit
                     # "77"
 
                 # Functions
-                    ...|jq -c '.a[] | select(.foo | contains("999"))'  # Compact (vs Pretty Print)
+
+                    # Filter ARRAY ELEMENTS by a KEY
+                        ...|jq '.[] |select(.aKey == "aVal")'
+
+                        ...|jq '.a[] | select(.foo | contains("999"))'  
+
+                    # Sum 'price' field
                         # {"foo":"999","bar":"77"} 
-                    ...|jq 'map(.price) | add'  # Sum 'price' field
+                        ...|jq 'map(.price) | add'  
+
+            # Refactor object w/ array to flat list
+            echo '{"a": 11, "b": [1,2,3]}' |jq -Mr '.b[] as $el | "\(.a):\($el)"'
+                # 11:1
+                # 11:2
+                # 11:3
 
             # Transform list of STRINGs to ARRAY
                 ...|jq -Rn '[inputs]' # If string delimiter is newline
@@ -1592,7 +1617,8 @@ exit
         sed "s/$foo//Ig"  FILE  # s/Ig; delete ALL $foo, case Insensitive; (NOTE double quotes)
         sed '/^[\t]["]/d' FILE  # Remove lines that START WITH TAB followed by a double-quotes char.
         sed 's/PATTERN.*$//' .. # Remove all lines START WITH OR APPENDED WITH PATTERN
-        sed '/^\s*$/d' FILE     # Remove all BLANK/EMPTY LINES
+        sed '/^$/d' FILE        # Remove all BLANK/EMPTY LINES
+        sed '/^\s*$/d' FILE     # Remove all BLANK/EMPTY LINES and those with only whitespace
 
         sed -i 's/.html//g; s/REF.//g' "names.log" # in-place; MULTIPLE EXPRESSIONs (delimited by `;`)
         sed 'n;n;s/./x/'  FILE  # Substtute every 3rd line w/ 'x'
@@ -1613,11 +1639,17 @@ exit
 
         # DELETE all EMPTY LINES
             sed '/^[[:space:]]*$/d' FILE 
-        
+
+        # Remove non-word (neither letter, digit, nor underscore) characters
+            sed 's/\W//g'  FILE
+
+        # Remove ANSI color codes and (some?) control characters
+            sed -r 's/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g' FILE
+            # OR
+            sed -r 's/[[:cntrl:]]\[[0-9]{1,3}m//g' FILE
+
         # Remove control characters 
             sed -e "s/\x1b\[.\{1,5\}m//g"
-                # E.g., 
-                ip address |sed -e "s/\x1b\[.\{1,5\}m//g" > ip.address.log
                 
         # Remove SUBSTR (ALL instances)  per DELIMITERs L and R (all content btwn the two)  
             sed -e 's/L.*R//' FILE > RESULT  # I.e., per "wildcard" with delimiters
@@ -1659,15 +1691,15 @@ exit
         # Parse PATH Env.Var.  
             echo $PATH |sed 's/:/\n/g'  # parsed into one path per line, repl. `:` with `\n`
 
-        # Windows to POSIX path CONVERSION; s:\foo\bar => /s/foo/bar
-            echo "/$_path" |sed 's/\\/\//g' |sed 's/://' # handle Win path BACKSLASHES
-            # as a function ...
-            win2posix() { printf "%s" "$@" |sed 's/\\/\//g' |sed 's/://' ; }
+        # Windows to POSIX path CONVERSION : C:\FOO\bAr => /c/FOO/bAr
+            echo "/${path,}" |sed 's/\\/\//g' |sed 's/://' 
+            # As a function:
+            win2posix() { printf "/%s" "${@,}" |sed 's#\\#/#g' |sed 's#:##' ; }
 
-        # Windows (escaped) to POSIX; C:\\foo\\bar => /c/foo/bar
-            ... |sed 's#\\\\#/#g' |sed 's#C:#/c#g'
-            export _DRV=c  # ... if variable drive letter ...
-            ... |sed 's#\\\\#/#g' |sed -re "s#([a-z]|[A-Z]):#/${_DRV}#g"
+            # if ESCAPED : C:\\FOO\\bAr => /c/FOO/bAr
+            echo "/${path,}" |sed 's#\\\\#/#g' |sed 's#:##'
+            # As a function:
+            win2posix() { printf "/%s" "${@,}" |sed 's#\\\\#/#g' |sed 's#:##' ; }
 
         # SEARCH/REPLACE : PATTERN MATCH; Process ALL FILEs @ current DIR+subdirs  
 
@@ -2151,10 +2183,10 @@ exit
     cp /home/bozo/current_work/junk/* .
 
     # SYMBOLIC LINKs
-        # Hard link points to TARGET; SAME INODE; canNOT link btwn volumes (device/partition/filesystem)
-        ln TARGET LINK     # create HARD link
+        # Hard link points to TARGET; SAME INODE; NOT link btwn volumes (device/partition/filesystem)
+        ln TARGET LINK_NAME     # create HARD link
         # Soft link points to FILE|DIR; has its own inode; CAN link btwn volumes;
-        ln -s TARGET LINK  # create SOFT link
+        ln -s TARGET LINK_NAME  # create SOFT link
             
         # LINK TEST; is FILE is a symlink
         [[  $( stat -c %h FILE ) -gt 1 ]] && echo "FILE is a Symbolic Link"
@@ -2303,13 +2335,21 @@ exit
         curl -fsSL -o a.sh https://foo.com/path/to/a.sh
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 
-    # SW FROM SOURCE : DOWNLOAD, COMPILE, INSTALL
-        wget URL_TO_SOURCE.tarball  # download it 
-        tar -xaf SOURCE.tarball     # extract it / read about it
-        configure --help # show info; source dir often include a 'configure' file
-        ./configure  # generates files required to build SW and setup system parameters. 
-        make         # build the libraries and applications. 
-        make install # install the libraries and applications. 
+        # Download directly into install location 
+        wget $url -O $destination
+
+        # Download, extract, install a BINARY to /usr/local/bin/THIS
+        wget -nv $url -O - |sudo tar -xzvf - -C /usr/local/bin 
+
+        # Download, extract, and make (compile and install) from SOURCE tarball
+            wget URL_TO_SOURCE.tarball  # download it 
+            tar -xaf SOURCE.tarball     # extract it / read about it
+            configure --help # show info; source dir often include a 'configure' file
+            ./configure  # generates files required to build SW and setup system parameters. 
+            make         # build the libraries and applications. 
+            make install # install the libraries and applications. 
+
+
 
 # ADMIN COMMANDS
 

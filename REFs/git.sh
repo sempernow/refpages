@@ -6,6 +6,21 @@ exit
 # git-for-windows [tutorial] 
 # https://github.com/git-for-windows/git/blob/master/Documentation/gittutorial.txt
 
+# By scenario
+## When local is BEHIND/DIVERGED from remote, ...
+git checkout $branch
+git pull    # Fail: "You have divergent branches and need to specify how to reconcile them."
+git status  # Any changes (staged)?
+git reset   # Unstage if so 
+## Option A if want remote to OVERWRITE LOCAL
+git fetch origin
+git reset --hard origin/$branch # Destroys all local changes
+## Option B. If want to PRESERVE LOCAL changes
+git stash
+git fetch origin
+git reset --hard origin/$branch
+git stash apply
+
 # HELP 
     git help VERB    # big help; html if so @ git config
     git VERB --help  # big help
@@ -13,14 +28,11 @@ exit
     man git VERB     # man page for verb AKA porcelain (high-level) command.
 
 # CLONE a repo  
-    git clone ${PROTO}://${REPO_URI}                 # TO ./REPONAME
-    git clone ${PROTO}://${REPO_URI} ${FOLDER}       # TO a specific (new) local FOLDER
-    git clone --branch ${BR} ${PROTO}://${REPO_URI}  # TO a specifid local BRANCH 
-    # SANS .git; sans download of history thereof
-    git clone --depth=1 --branch=master ${REPO_URI}  # shallow; history of commits = 1
-    rm -rf ${PROTO}://${REPO_DIR}/.git  # removes .git
-    # BARE|MIRROR : read-only (sans working dir); bare not functional for push/updates
-    git clone [-bare|-mirror]
+    git clone ${PROTO}://${REPO_URI}.git                # TO ./REPONAME
+    git clone ${PROTO}://${REPO_URI}.git ${FOLDER}.git  # TO a specific (new) local FOLDER
+    git clone --branch ${BR} ${PROTO}://${REPO_URI}.git # TO a specifid local BRANCH 
+    # Shallow : 1 commit only (most recent)
+    git clone --depth=1 --branch=master ${REPO_URI}.git  # shallow; history of commits = 1
 
     # Git PROTOCOLs (SSH|HTTPS)
     git clone ssh://[user@]server/project.git    # ssh 
@@ -44,14 +56,21 @@ exit
 # INIT a PROJECT
     mkdir $_REPONAME 
     cd $_REPONAME
-    vim .gitignore # Create/Edit 
-    
-    git config --list
-    # (Re)Set global/local(default) config param(s)
-    git config [--global] user.name "YOUR NAME"
-    git config --add biz.domain "foo.com"
-    git config user.username $_GIT_HOST_ACCOUNT_USERNAME
+    vim .gitignore      # Create/Edit 
+    git config --list   # Get config
+    # (Re)Set local config k-v
+    git config init.defaultbranch=main
+    # Add local config k-v
     git config user.project ${PWD##*/}
+    git init --initial-branch=main
+    git add -u
+    git commit -C "Init @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    # Add origin : SSH mode 
+    git remote add origin git@gitlab.com:$(git config user.name)/gitlab-workflow.git
+    # SSH login 
+    ssh -T -i ~/.ssh/gitlab_$(git config user.name) git@gitlab.com
+    # Push
+    git push origin master
 
     # Set network params for SSH mode
     proto='git@'
@@ -59,13 +78,9 @@ exit
     path="$(git config user.username)/$(git config user.project)"
     keypath=~/.ssh/${server%.*}_$(git config user.username)
 
-    # Create a local Git repo
-    prj=prj
-    #git init
-    git clone git@gitlab.com:sempernow/${prj}.git
-    pushd $prj
-    git switch --create main
-    git commit -C "Project init @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+# CLONE
+    git clone git@gitlab.com:$account/$project.git
+    cd $project
 
     # Add origin : SSH mode 
     git remote add origin git@${server}:${path}.git
@@ -98,24 +113,28 @@ exit
             # Does NOT display per listing @ `git branch`. Script to do so:
             # https://github.com/bahmutov/git-branches/blob/master/branches.sh 
 
-    # MERGE source into target (if BOTH COMMITs up-to-date)
-        git checkout $target; git merge $source
+# CHECKOUT : AKA dispatch
+    # Switch to local, else update from remote, else create new" : may create detached HEAD 
+    git checkout $name  # If local exist, else clone of branch prior to command execution
+    git switch $name    # Newer equivalent if local exist.
+    # In full, setup remote tracking : Git sets this implicitly
+    git checkout -b $name --track origin/$name
+    git checkout -b $name origin/$name # Implicit : equivalent
 
-# FETCH : download but don't change state of local branches
+# FETCH : always safe : download to working copy, but don't change state of local branches
+# https://stackoverflow.com/questions/292357/what-is-the-difference-between-git-pull-and-git-fetch
 # https://www.atlassian.com/git/tutorials/syncing/git-fetch
     git fetch origin $name
     git fetch origin # all branches
     git fetch --all  # all origins
     git fetch --dry-run 
 
-# CHECKOUT a.k.a. "dispatch" : integrate into local : creates detached HEAD 
-    git checkout $name # either updates from remote or creates anew
-    # In full; setup remote tracking otherwise Git sets implicitly.
-    git checkout -b $name --track $remote/$name
-    # E.g., 
-    git checkout -b foo --track origin/foo
+    # Synch with remote, but NOT SAFE to local (overwrites any changes since last commit).
+    git fetch origin $name
+    git reset --hard origin/$name
 
 # PULL : fetch + merge (or rebase, per config settings).
+    # Preserve local commits; merges remote changes into local working copy
     git pull origin $name 
 
 # COMMIT 
@@ -131,28 +150,43 @@ exit
     # 1. Can revert to old version of file or earlier commit
     # 2. Switch to another branch : 
         git switch BRANCH # Equivalent though subset; only for switching branches
+    
+# DIFF : Compare  
+    git diff origin/$br # Show changes between local and remote of branch $br
+    git diff            # Show changes not yet staged; not yet added to git 'index'
+    git diff --cached   # Show staged changes about to be committed
+    git diff --staged   # Show staged changes about to be committed
+    git diff HEAD       # Show changes since last commit 
+    git diff HEAD^      # Show changes since the commit before the last commit.
 
-# MERGE main into feature : non-destructive, but commits cruft.
+# SEARCH for content against (all) files of the project
+    git grep PATTERN [PATH]  # e.g., ...  
+    git grep 'terminal.*' */*.go  # find all occurrences of 'terminal.*' in all .go files
+    git grep -e 'foo' --and \ (-and bar -and baz \)  # "foo" and "bar" or "baz"
+        # Prepend line numbers @ grep search
+        git config --global grep.lineNumber true  
+
+# MERGE main into feature : non-destructive, but history of feature includes all commits of main.
     git merge $feature $main
     # Is equiv to:
     git checkout $feature
     git merge $main  
- 
-# MERGE feature into main 
-    git checkout $main     # Switch to main branch.
-    git pull origin $main  # Pull latest main from origin.
-    git merge $feature     # Merge (commit) feature branch into main.
-    git push origin $main  # Push updated (merged) main to origin.
+
+# MERGE feature into main : optionally (preferably) squashing all feature commits to one
+    git checkout $main          # Switch to main branch.
+    git pull origin $main       # Pull latest main from origin (optional, but to be sure we're in sync).
+    git merge --squash $feature # Merge latest commit of feature branch into main, leaving feature branch unchanged.
+    git push origin $main       # Push updated (merged) main to origin.
+    #... merge with squash has same affect as rebase with squash.
 
 # REBASE feature onto main (@ HEAD; newest commit) : cleaner project history
-## Use only on your own branches; never on public branches.
+    ## Use only on your own, yet to be pushed, feature branch.
     git checkout $feature
-    git rebase $main
-    #... linear history : git log, git bisect, gitk
+    git rebase -i $main # Interactive rebase allows for squashing (all) feature commits, else all are preserved.
 
 # WORKFLOW to MINIMIZE repo HISTORY (noise) when modifying Master  
 
-    # NEVER PUSH lest change is significant; to push is to PUBLISH. 
+    # NEVER PUSH (unless change is significant) : to push is to PUBLISH. 
     # Save local versions per new branching and/or out-of-band process;
     # work @ branches dev1, dev2, ...; leave master unchanged (until end/merge).
         git checkout -b dev1 # create AND checkout temp development branch
@@ -180,7 +214,7 @@ exit
         # SHORTer WAY ...
         # ... for zero additional history, from a clean branch, 
         # delete then recreate TARGET (locally) 
-        git branch -d $target    # Delete local only if fully merged
+        git branch -d $target    # Delete local if fully merged
         git branch -D $target    # Delete local regardless
         git checkout -b $target  # Create anew
         git push origin $target --force-with-lease  # safely force; 
@@ -189,9 +223,7 @@ exit
         git push origin --delete $target  # Remote
         git push origin $target 
 
-
 # CI/CD WORKFLOW 
-
     # MODIFY @ feature branch, NOT master branch  
         git checkout -b $feature  # i.e., clone master and modify that,  
         git add . ; git commit -m 'feature'  
@@ -207,7 +239,6 @@ exit
             # Repo > "Pull requests"  (tab) > Conversation >   
             # "Merge pull request"  (button)  
         # Is okay to delete feature branch afterwards.  
-
     # push ONLY to PUBLISH  
         # local versioning is per branching; checkout temp/disposable branches,  
         # as needed, and/or use an out-of-band copy/versioning process  
@@ -218,7 +249,7 @@ exit
             :2,7s/pick/s/g  # E.g., to squash commits 2-7;  
             # That is, ALWAYS leave the first (top) as 'pick'; change all others to 's'.  
 
-# RESTORE file mod times (mtime) of all files (after `git ...` destroys them)
+# RESTORE file mod times (mtime) of all files (after git ... destroys them)
     # https://stackoverflow.com/questions/2458042/restore-a-files-modification-time-in-git/22638823#22638823 
     git log --pretty=%at --name-status --reverse \
         |perl -ane '($x,$f)=@F;next if !$x;$t=$x,next if !defined($f)||$s{$f};$s{$f}=utime($t,$t,$f),next if $x=~/[AM]/;' 
@@ -245,26 +276,17 @@ exit
     git mv foo.bar ./foo/baz.b # Moving a file.  
     git mv -f fileA fileB      # Replaces a file.  
 
-# SEARCH @ repo  
-    git grep PATTERN [PATH]  # e.g., ...  
-    git grep 'terminal.*' */*.go  # find all occurrences of 'terminal.*' in all .go files
-    git grep -e 'foo' --and \ (-and bar -and baz \)  # "foo" and "bar" or "baz"
-
-    git config --global grep.lineNumber true  # prepend line numbers @ grep search
-
 # REMOTEs (ORIGIN/UPSTREAM); TRACKED BY LOCAL branch(es)
-    origin  # REMOTE repo associated with the local/current/working/tracking folder
-    "upstream"  # original repo; GitHub default when repo was FORKED 
-    "origin"    # your repo (perhaps fork); GitHub default when repo was CLONED 
-    # thus IDENTICAL if NOT forked; see "ADD UPSTREAM" section for fork corroboration.
-    git remote -v  # verify remote(s)/protocol/mode
-    # READ current remote repo url/mode from git config (@ `./.git`)
-    git config --get remote.origin.url
+    origin    # REMOTE repo associated with the local/current/working/tracking folder
+    upstream  # Original repo if remote is FORK, else origin.
+    # See "ADD UPSTREAM" section for fork corroboration.
+    git remote -v  # Print remote(s) incl protocol (mode)
+    # READ loacl config setting for remote 
+    git config --get remote.origin.url # ${PROTO}://${REPO_URI}.git 
 
 # REMOTE-TRACKING branches
-    git ls-remote       # Show 
-    ${REMOTE}/${BRANCH} # This is the syntax
-    origin/master # The (default) REMOTE-tracking branch for LOCAL master branch 
+    git ls-remote   # Show remote url + commit
+    origin/master   # The (default) REMOTE-tracking branch for LOCAL master branch 
     # SHOW remote-tracking; what's tracking what 
         git remote show origin   
         git branch [-v]  # show local branches [verbose] 
@@ -273,12 +295,12 @@ exit
         # e.g., ...
             remotes/origin/HEAD -> origin/master  # the default clone branch 
             ...
-    # CHANGE remote-tracking branch 
-    git branch $brLOCAL -u origin/$brREMOTE 
-    git branch $brLOCAL --set-upstream-to=origin/$brREMOTE  # Equivalent
-    "Branch brLOCAL set up to track remote branch brREMOTE from origin."
+    # SET/CHANGE remote-tracking branch 
+        git branch $brLOCAL -u origin/$brREMOTE 
+        git branch $brLOCAL --set-upstream-to=origin/$brREMOTE  # Equivalent
+        #=> "Branch brLOCAL set up to track remote branch brREMOTE from origin."
 
-    # CHANGE remote URL per PROTOCOL/MODE  
+    # SET/CHANGE remote URL per PROTOCOL/MODE  
     acct=$(git config user.account || echo FAIL) 
     ## Note at SSH mode, if the Git host is configured @ ~/.ssh/config, 
     ## then replace "git@github.com" with just the NAME declared at that `Host NAME`.
@@ -286,7 +308,7 @@ exit
     git remote set-url origin git@github.com:${acct}/${PWD##*/}.git     # SSH mode
     git remote set-url origin https://github.com/${acct}/${PWD##*/}.git # HTTP mode
     # ADD remote ORIGIN per PROTOCOL/MODE
-    git remote add origin git@github.com:${acct:}/${PWD##*/}.git        # SSH mode 
+    git remote add origin git@github.com:${acct}/${PWD##*/}.git         # SSH mode 
     git remote add origin https://github.com/${acct}/${PWD##*/}.git     # HTTP mode
     # ADD UPSTREAM (to corroborate @ FORK) 
     git remote add upstream https://github.com/$original_acct_slash_repo.git
@@ -305,10 +327,10 @@ exit
     git init                   # create local repo
     git status                 # should be empty
     git add FILE1 FILE2        # add file[s]
-    git rm FILE --cached       # Remove from git, but NOT from filesystem.
-    git status                 # now git is watching these files for changes!
-    git commit -am "a message" # saved a snapshot of repo [ONLY those files 'add'-ed]
-    git status                 # should be clean
+    git rm FILE3               # Remove FILE3 from git AND local filesystem.
+    git rm FILE4 --cached      # Remove FILE4 from git, but NOT from local filesystem.
+    git status                 # Status of working copy of current branch
+    git commit -am "a message" # Commit all changed files at working copy of current branch
     git push                   # Push commit to origin (remote)
 
 # LOG 
@@ -320,22 +342,11 @@ exit
     git log --pretty=oneline
     git log --pretty=format:"%h - %an, %ar : %s" # https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History#pretty_format
 
-    # RefLog : HEAD and branch references  
-    git reflog 
-    
-    git shortlog    # current commits; per USERNAME (#): list [per message]
-    git shortlog -s # current commits; per # USERNAME 
-    
-# COMPARE 
-
-    git diff               # show changes not yet staged; not yet added to git 'index'
-    git diff --cached     # show staged changes about to be committed
-    git diff --staged      # show staged changes about to be committed
-    git diff HEAD         # changes since last commit 
-    git diff HEAD^        # changes since the commit before the latest commit.
+    git reflog      # HEAD and branch references
+    git shortlog    # current commits by current user in chronological order
+    git shortlog -s # Number of commits by current user
 
 # REVISION SELECTION  https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection
-
     # show revision 
         git log --pretty=oneline  # show list of all revisions
         git show hhhhhhh          # by its (partial) hash
@@ -369,10 +380,12 @@ exit
 
 # CONFIG : READ/WRITE
     # Default: list all; locals are last
-    git config --list [--global|--local] 
+    git config --list [--system|--global|--local] 
     # Get/Set config k-v 
     git config [--global] user.name "YOUR NAME"
     git config [--global] user.email "YOUR_EMAIL"
+    # Add new k-v pair
+    git config --add any.foo "bar value"
 
     # SEE : 3 levels of config      
     .git/config     # per repo    : --local
@@ -424,7 +437,6 @@ exit
     git config --global user.name "John Doe"
     git config --global user.email johndoe@example.com
 
-
 # SSH PKI SETUP : https://docs.gitlab.com/ee/user/ssh.html 
     # Generate key pair
     ssh-keygen -t ed25519 -C "$(git config user.email)" -f $keypath
@@ -442,18 +454,13 @@ exit
     # Copy/Paste user's PUBLIC key (*.pub) to remote:
     # Web GUI @ https://gitlab.com/-/profile/keys
 
-    # LOGIN to create SSH tunnel (sans TTY/PTY) 
-    ssh -T[v[v[v[v]]]] -i $keypath git@github.com # -v; verbosity [levels]
-
-        # Optionally : Requires Git 2.10+
+    # LOGIN : Create SSH tunnel for Git traffic (Must disable TTY/PTY allocation; -T) 
+        ssh -Ti $keypath git@github.com # -v[v[v[v]]]; verbosity (levels)
+        ssh -T gitlab # If ~/.ssh/config has "Host: gitlab" having "IdentifyFile ~/.ssh/gitlab_acct_foo"
+        # Optionally setup git config : Requires Git 2.10+
         git config core.sshCommand "ssh -o IdentitiesOnly=yes -i $keypath -F /dev/null"
 
 # META
-    winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
-    # Git Concepts   https://zwischenzugs.com/2018/03/14/five-key-git-concepts-explained-the-hard-way/
-        # Reference: a string that points to a commit.
-        # 4 main types: HEAD, Tag, Branch, Remote Reference
-
     # Git was designed as a filesystem; adopted for use as SVC/SCM.
     # Git manages and manipulates THREE TREES (repo versions) in its normal operation
     # All LOCAL and per branch https://git-scm.com/book/en/v2/Git-Tools-Reset-Demystified
@@ -473,4 +480,9 @@ exit
 
         # Git Internal Environment Variables
         ## https://git-scm.com/book/en/v2/Git-Internals-Environment-Variables
+
+    winpty bash  # @ mintty; sets up a TTY; (Git for Windows)
+    # Git Concepts   https://zwischenzugs.com/2018/03/14/five-key-git-concepts-explained-the-hard-way/
+        # Reference: a string that points to a commit.
+        # 4 main types: HEAD, Tag, Branch, Remote Reference
 
