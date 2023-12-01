@@ -1,4 +1,4 @@
 *.log
 LOG.*
 README.html
-
+!*.sql
