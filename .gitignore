@@ -2,3 +2,4 @@
 *.log
 LOG.md
 !*.sql
+!REFs/*.sql
