@@ -3,3 +3,4 @@
 LOG.md
 !*.sql
 !REFs/*.sql
+!**/.bin/*
