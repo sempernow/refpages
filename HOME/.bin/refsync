@@ -1,0 +1,79 @@
+#!/bin/bash
+# ---------------------------------------------------------------------
+#  Synchronize all REF.* files between local and remote, 
+#  through a common staging folder (per config @ ~/.bashrcX). 
+#  Local files may be scattered under local container, 
+#  so push/pull is asymmetric, and configured per platform.
+#  Purges staging folder on push only. 
+# 
+#  ARGs: [push|pull|temp] 
+# ---------------------------------------------------------------------
+_refsync() {  
+    [[ "$@" ]] || { script_info "$0"; return; }
+    REQUIREs errMSG rsync; (( $? )) && return 86 
+
+    [[ -d "$_REFs_LOCAL" ]] || { errMSG '$_REFs_LOCAL NOT EXIST'; return 86; }
+
+    # gather all REF.* files under _REFs_LOCAL [traverse once], then synch
+    _REFs_list=$( find "$_REFs_LOCAL" \( -name 'REF.*' ! -iname '*.lnk' ! -iname '*~' ! -iname '*.swp' \) -type f -printf "%p\n" )
+
+    # PUSH :: if @ Windows, then REFs are first copied to tmp 
+
+    [[ ! "$1" || "${1,,}" == 'push' || "${1,,}" == 'temp' ]] && {
+
+        # Set local refs path per platform
+        #  @ Win, local REF files are scattered throughout container; 
+        #  @ linux, local REF files are all in one folder
+        [[ "$OSTYPE" == 'linux-gnu' ]] && {
+            _local_per_platform="$_REFs_LOCAL"
+            [[ $WSLENV ]] && {
+                [[ "${1,,}" == 'temp' ]] && {
+                    _local_per_platform="$( mktemp -d )"
+                    printf "$_REFs_list" | xargs -I {} rsync -itu "{}" "$_local_per_platform"
+                    printf "\n\n See @ '%s'\n\n"  $_local_per_platform
+                }
+            }; true
+        } || {
+            _local_per_platform="$( mktemp -d )"
+            # if @ Win, copy local REFs to tmp
+            printf "\n %s\n\n"   "Creating REFs at TMP folder ..."
+            printf "$_REFs_list" | xargs -I {} rsync -itu "{}" "$_local_per_platform" # > /dev/null 2>&1
+        }
+        # end here on 'temp'; all local REFs copied to TMP folder
+        [[ "${1,,}" == 'temp' ]] && return 0
+
+        # restore timestamps
+        #find -type f -iname "REF.*" -exec bash -c 'touch -r "/cygdrive/r/REFs/${@##*/}" "$@"' _ {} \;
+
+        # mirror local to staging
+        printf "\n %s\n\n"   "Push :: REFs @ $_REFs_LOCAL  ==>  STAGING"
+        rsync -irtu --delete "$_local_per_platform/" "$_REFs_STAGING/"
+
+        # cleanup @ Windows case
+        [[ ( "$OSTYPE" != 'linux-gnu' ) && -d "$TMP" && "$_local_per_platform" != "$_REFs_LOCAL" ]] && { 
+            find "$_local_per_platform" -maxdepth 1 -type f -iname 'REF.*' -delete
+            find "$TMP" -iname "${_local_per_platform##*/}" -delete
+        }
+    }
+
+    # PULL :: if @ linux, then per [slower] checksum [-c], else per mtime
+
+    [[ ! "$1" || "${1,,}" == 'pull' ]] && {
+        [[ "$OSTYPE" == 'linux-gnu' ]] && {
+                printf "\n\n %s\n\n" "Pull :: REFs @ $_REFs_LOCAL  <==  STAGING"
+                rsync -itru --modify-window=2 "$_REFs_STAGING/" "$_REFs_LOCAL"
+        } || {
+            [[ -d "$_REFs_STAGING" ]] || {
+                errMSG 'REFs staging folder NOT EXIST'; return 86
+            }
+            printf "\n\n %s\n\n" "Pull :: REFs @ $_REFs_LOCAL  <==  STAGING"
+            printf "$_REFs_list" | xargs -I {} bash -c 'rsync -ituc --modify-window=2 "$_REFs_STAGING/${@##*/}" "$@"' _ {}
+        }
+    }
+    # tarball /REFs
+    # tgz "$_REFs_STAGING"
+
+    return 0
+}
+
+_refsync "$@"

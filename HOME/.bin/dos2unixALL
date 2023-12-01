@@ -1,0 +1,27 @@
+#!/bin/bash
+# ---------------------------------------------------
+#  Convert line-endings of any/all ASCII files, 
+#  in target dir, from dos [CRLF] to UNIX [LF],
+#  using dos2unix utility.
+#   - file modtime unchanged.
+#   - only DOS-formatted ASCII files are affected.
+# 
+#  ARGs: [(FOLDER|FILE)-path] - defaults to $PWD
+# ---------------------------------------------------
+_dos2unixALL() {
+	REQUIREs dos2unix paths isDOS; (( $? )) && exit 86
+	while IFS='' read -r path || [[ -n "$path" ]]
+	do
+		# echo "$path"; continue;
+		[[ $( isASCII "$path" ) ]] || continue
+		[[ $( isDOS "$path" )   ]] && { 
+			echo " CRLF-to-LF @ '${path##*/}'"
+			
+			dos2unix -q -k "$path"
+		}
+	done <<< "$( paths "$@" )"
+}
+
+_dos2unixALL "$@"
+
+exit

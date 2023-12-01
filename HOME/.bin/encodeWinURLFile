@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------
+#  url-encode the URL entry of Windows *.URL file(s)
+# 
+#  ARGs: FILEpath | DIRpath (root-level; no recurse)
+# -------------------------------------------------------
+[[ "$1" ]] || { script_info "$0"; exit 99; }
+[[ $(type -t encodeurl) ]] || { echo 'ERR :: REQUIRED "encodeurl" is missing.'; exit 99; }
+
+_encode() {
+    # Convert to UNIX line-endings if DOS.
+    [[ $( type -t isDOS ) ]] && [[ "$( isDOS "$@" )" ]] && { dos2unix -q "$@"; }
+    # Abort if already processed.
+    [[ "$( printf $( wc -l "$@" ) | awk '{print $1}')" -lt 3 ]] && exit
+    # URL-encode (percent-encode) the url; remove the encoded newline character (%0D).
+    _str="$(encodeurl "$(sed '2!d' "$@" | awk -F "=" '{print $2}')" | sed 's/%0D//g')"
+    # Replace file with a url-encoded, 2-line file.
+    printf "%s\n" '[InternetShortcut]' > "$@"
+    printf "%s%s\n" 'URL=' "$_str" >> "$@"
+
+    echo "    CLEANed: '$@'"
+}
+export -f _encode
+
+[[ -d "$@" ]] && \
+    find "$@" -maxdepth 1 -type f -iname '*.URL' \
+        -exec /bin/bash -c '_encode "${@}"' _ "{}" \; \
+    || _encode "$@"
+
+
+# prior version ...
+
+# _encode() {
+#     [[ $( type -t isDOS ) ]] && [[ "$( isDOS "$@" )" ]] && { dos2unix -q "$@"; }
+#     [[ "$( printf $( wc -l "$@" ) | awk '{print $1}')" -lt 3 ]] && exit
+#     ((count=0))
+#     _tmp_file="$( mktemp )"
+#     for x in $(cat "$@")
+#     do 
+#         [[ "$x" == "" ]]  && break
+#         [[ $count == 2 ]] && break
+#         [[ $count == 1 ]] && {
+#             echo '[InternetShortcut]' > "$_tmp_file"
+#             echo "URL=$( encodeurl.exe $(printf "$x" | sed s/URL=//g) | sed s/%0D//g )" >> "$_tmp_file"
+#         }
+#         ((count+=1))
+#     done
+
+#     [[ "$count" != "0" ]] && { 
+#         cat "$_tmp_file" > "$@"
+#         echo "    CLEANed: '$@'"
+#     }
+#     rm "$_tmp_file"
+# }

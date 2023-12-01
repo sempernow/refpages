@@ -1,0 +1,17 @@
+#!/bin/bash
+if [[ ! -e "$1" && "$1" ]]
+then # if arg NOT nul and NOT path ...
+	[[ "$( type -t /bin/7z )"  ]] && { /bin/7z  "$@" ; exit ; }
+	[[ "$( type -t /bin/7za )" ]] && { /bin/7za "$@" ; exit ; }
+	if [[ "$OSTYPE" == 'linux-gnu' ]] # inform user if no 7zip utility
+	then 
+		REQUIREs /bin/7za  # @ linux
+	else  
+		REQUIREs /bin/7z   # @ Cygwin
+	fi
+else # if piped input or arg is path ...
+	export _ARCHIVE_HANDLER_TYPE='7z'
+	_archive_handler "$@"
+fi
+
+exit 

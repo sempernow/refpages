@@ -1,0 +1,91 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# dt v.2 :: Differential Time-series [DT] 
+# 
+#  This script creates a differentials folder set from a set of full backups, 
+#  i.e., from a set of time-adjacent snapshots. Each differential folder, 
+#  "* [dt]", is created from a time-adjacent pair of source [snapshot] 
+#  folders. These DT folders contain all the discrepant files between 
+#  their older-vs-newer snapshot pair. Discrepant files are segregated, 
+#  within their DT folder, into an "older" or "newer" subfolder. The "older" 
+#  contains all changed files, pre-modified or deleted. The "newer" contains 
+#  all changed files, post-modified or added. The snapshots are paired per 
+#  foldernames, e.g., "NAME YYYY-MM-DD [hh.mm]", not by folder mtime. 
+#  Relative paths, and source mtimes, are preserved. 
+# 
+#  dt v.1 uses while-do loops; dt v.2 uses only pipes [stream processing].
+
+# TAGS: Differential Versioning, Version Control System [VCS], 
+#       Digital Asset Management [DAM]
+#
+# ARGs: {folder-path}
+# -----------------------------------------------------------------------------
+[[ "$@" ]] || { script_info "$0"; exit ; }
+
+dt()
+{
+	# --------------------------------------------------------------------------
+	#  FUNCTION DEFINITIONS 
+	# --------------------------------------------------------------------------
+	process_one_pair() # process a pair of time-adjacent folders
+	{  
+		_OLD="${1}"; export _NEW="${2}"
+		
+		store_dt() # store changed files, to '* [dt]'
+		{ # paths are relative to [dt] container, i.e., to its source root
+			[[ -f "$@" ]] || return # filter out dirs
+			#echo "   '${@##*/}'"
+			mkdir -p "${_NEW} [dt]/${@%/*}" # make parent dirs as needed; 'rsync -aR' fails to
+			rsync -rt "$@" "${_NEW} [dt]/${@%/*}/" 
+		}
+		export -f store_dt # so 'xargs' can accesss
+
+		# validate old/new pair; ignore differential folders created hereby
+		[[ -e "${_NEW}" ]] || return
+		[[ -e "$_OLD" && -e "$_NEW" && ( "${_NEW%\ [dt]}" == "$_NEW" ) && ( "${_OLD%\ [dt]}" == "$_OLD" ) ]] || return
+
+		# inform @ dt folder of this older/newer pair ...
+		printf "\n %s" "@ '${_NEW#./} [dt]'"; colors
+
+		# store OLDer [Deleted or (pre)Modified]
+		rsync -rcnC --out-format="%f" "$_OLD/" "$_NEW" | xargs -I % bash -c 'store_dt "$0"' %
+
+		# store NEWer [Added or (post)Modified]
+		rsync -rcnC --out-format="%f" "$_NEW/" "$_OLD" | xargs -I % bash -c 'store_dt "$0"' %
+		
+		# inform per folder-flag if discrepants exist/stored
+		[[ -d "${_NEW#./} [dt]/${_OLD#./}" ]] && printf "  %s" "$blue +OLDer $normal"
+		[[ -d "${_NEW#./} [dt]/${_NEW#./}" ]] && printf "  %s" "$green +NEWer $normal"
+		printf "\n"
+	}
+	export -f process_one_pair # so stream_pairs() can access
+
+	stream_pairs()
+	{ # process older/newer pairs per process_one_pair()
+		(( $# == 1 )) || { # end on no more old/new path-pairs
+			# process; lopp off an arg [path]; recurse
+			process_one_pair "$@"; shift; $FUNCNAME "$@";
+		}	
+	}
+	export -f stream_pairs # so 'find' can access
+
+	# --------------------------------------------------------------------------
+	#  DO 
+	# --------------------------------------------------------------------------
+	REQUIREs errMSG colors rsync find echo shift export printf pushd mkdir
+	# validate target container $@ 
+	[[ -d "$@" && -w "$@" ]] || { errMSG "BAD PATH @ '$@'"; return 86; }
+	pushd "$@" > /dev/null # process per rel-path
+	[[ "$PWD" == "$@" ]] || { errMSG 'FAILed @ pushd "$@"'; return 86; }
+
+	# process all 1st child folders, per older/newer pair(s)
+	find -mindepth 1 -maxdepth 1 -type d -execdir bash -c 'stream_pairs "$@"' _ {} \+
+
+	popd > /dev/null 
+	
+	return 0
+}
+
+dt "$@"
+
+exit $?

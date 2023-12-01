@@ -1,0 +1,26 @@
+#!/bin/bash
+# ------------------------------------------------------
+#  FFmpeg :: JPG optimize/shrink; `-q:v $q`
+#  
+#  ARGs: PATH(DIR|FILE.jpg) [Q(default:3)]
+# 
+#  - If PATH is DIR, then process ALL JPG @ its root
+# -----------------------------------------------------
+[[ "$@" ]] || { script_info "$0"; exit ; }
+REQUIREs push pop errMSG
+[[ $( type -t ffmpeg ) ]] || { errMSG 'REQUIREs ffmpeg'; exit; }
+[[ -e "$1" ]] || { errMSG 'Path NOT EXIST'; exit; }
+
+export _quality=${2:-3}  # Q
+
+# overwrite files if DIR, else append Q factor to fname
+[[ -d "$1" ]] && {
+	push "$1" 
+	find -name "*.jpg" -exec bash -c 'ffmpeg -i "${1##*/}" -q:v $_quality "${1##*/}" -y' _ {} \;
+} || {
+	push "${1%/*}"
+	_target="${1##*/}"
+	ffmpeg -i "$_target" -q:v $_quality "${_target%.*} [${_quality}].jpg" -y
+}
+
+pop

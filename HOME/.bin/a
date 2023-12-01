@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+#  DESCRIPTION
+#  
+#  ARGs: 
+#
+# -------------------------------------------------------------
+[[ "$1" ]] || { script_info "$0"; exit 99; }
+
+#sed -i 's/credsStore/credStore/g' ~/.docker/config.json
+#echo "pwd: '$PWD'"
+foo(){ echo "before $1";sleep 3;echo "after $1"; }
+export -f foo
+export x=bar
+
+# HANGs
+#/bin/bash -c "echo 'before $x';sleep 3;echo 'after $x';exit" & 
+#/bin/bash -c "foo $x" &  
+
+# OK
+#/bin/bash -c "echo 'before $x';sleep 3;echo 'after $x';exit" >/dev/null 2>&1 & 
+/bin/bash -c "foo $x" >/dev/null 2>&1 &  
+#nohup /bin/bash -c "foo $x" & 

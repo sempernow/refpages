@@ -1,0 +1,9 @@
+#!/bin/bash
+# f06yBEAST 2015-11-12
+# arch/store library ported from cmd_library [Windows7]
+# auto encrypt/decrypt, @ "* [s].7z", per cmuck method
+# PARAMs: NAME{store}|PATH{folder|file|"* [s].7z"}
+# ----------------------------------------------------------
+_MODE='STORE'
+source "$_SCRIPTS_FOLDER/_archstore"
+ 

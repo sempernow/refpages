@@ -1,0 +1,783 @@
+#!/usr/bin/env bash
+# -----------------------------------------------------------------------------
+# Manage AWS EC2 instances : All or per VM list, or FILTER any field of list.
+# For use with related Makefile recipes, scripts, Docker, Terraform, and such.
+#  
+# ARGs: 
+# - ls|list | start | stop | boot|reboot | kill|terminate [FILTER]
+# - id|ip|pip|ip|state         - ID|IPpvt|IPweb|state
+# - docker  [VM]               - Install Docker else show version info
+# - names [FILTER]             - List of VM names [ALL|FILTER all running]
+# - desc|dscr [VM]             - Describe instance(s) (JSON)
+# - vols|volumes               - Describe all volumes of all VMs (JSON)
+# - ebs [DEVICE]|(DEFLT)       - Describe attached EBS [DEVICE] per VM (JSON)
+# - ssh VM [COMMAND]           - SSH (directly|proxy, as needed for dmz|pvt)
+# - socks VM [TTL]|(INFINITY)  - Web proxy for private VM; persist (seconds)
+# - open [TTL]|(INFINITY)      - Open all Docker-required SSH tunnels
+# - close                      - Close all SSH tunnels (opened per 'open')
+# - certs [VM(s)]|(ALL)        - Regenerate Docker Swarm certs if invalid.
+# - dns app|cdn                - Point domain's Route53 records to App|CDN
+# - add [VM(s)]|(ALL)          - Add VM(s) to docker-machine 
+# - rm|remove [VM]|(ALL)       - Remove VM(s) from docker-machine
+# - push|upload [VM [store]]   - Host to VM(s); default ALL; +@store (flag)
+# - pull [VM]|ap1              - VM to Host; src is STORE/.../backup/
+# - watch                      - watch ec2 list (@ WSL shell only)
+# 
+#   all = All VM(s) in 'running' state.
+#
+# CONFIGURE docker-machine PER TERMINAL TYPE by running:  dmfix posix|win
+# -----------------------------------------------------------------------------
+
+# TODO: Cache the first aws ec2 call for full description; use at recursive calls.
+
+[[ "$1" ]] || { script_info "$0";exit 99; }
+export DOMAIN=${DOMAIN:-uqrate.org}
+# User @ all VMs; set per Terraform;
+# else default per driver (per vendor/machine); 
+# 'root' (DO), 'ec2-user' (AWS AMI), 'docker' (tinycore)
+export user='ubuntu'
+# SSH key for all VMs (public and private)
+export key=~/.ssh/swarm-aws.pem
+[[ -r $key ]] || { echo "FAIL @ key";exit 1; }
+# common SSH options
+export opts_common="-o ConnectTimeout=5 -o StrictHostKeyChecking=no"
+# Scripts
+socks_proxy_script=${_PRJ_HOME}/.bin/ec2.socks_proxy.ubuntu.sh
+# Common query for `aws ecs ...` calls
+query="Reservations[*].Instances[*].{Type:InstanceType,Name:Tags[?Key=='Name']|[0].Value,IPpvt:PrivateIpAddress,IPweb:PublicIpAddress,ID:InstanceId,AZ:Placement.AvailabilityZone,State:State.Name}"
+# Validate an IP address (vs, e.g.,  'None')
+isIP(){ [[ "$1" != "${1/./}" ]] && echo 1; }
+# List names of instances ...
+listAll(){ ec2s |grep -v 'terminat' |awk '{print $5}' |tr '\n' ' '; }
+listRunning(){ # running instances [ALL|FILTERed] 
+	state='running'
+	case "${1:-ALL}" in 
+		"ALL" ) # All
+			instances=$(aws ec2 describe-instances \
+				--filters "Name=instance-state-name,Values=$state" \
+				--query "$query" --output text |awk '{print $5}' \
+			)
+		;;
+		*) # FILTER ($1)
+			instances=$(aws ec2 describe-instances \
+				--filters "Name=instance-state-name,Values=$state" \
+				--query "$query" --output text |grep -- $1 |awk '{print $5}' \
+			)
+		;;
+	esac 
+	printf "%s " $instances
+}
+export -f isIP listAll listRunning
+
+# METHODS
+
+ec2(){ 
+	case $1 in
+		"desc"|"dscr") # aws ec2 describe-instances (JSON) : ALL or FILTERed ($2) 
+			[[ $2 ]] && filters="--filters=Name=tag:Name,Values='${2}'" || unset filters
+
+			aws ec2 describe-instances $filters --query "Reservations[*].Instances[*].{Type:InstanceType,Name:Tags[?Key=='Name']|[0].Value,IPpvt:PrivateIpAddress,IPweb:PublicIpAddress,ID:InstanceId,State:State.Name,KeyName:KeyName,AZ:Placement.AvailabilityZone,Arch:Architecture,AMI:ImageId,VPC:VpcId,SubNet:SubnetId,SG:NetworkInterfaces[0].Groups[*],Storage:BlockDeviceMappings}" |jq .
+		;;
+		"ls"|"list") # aws ec2 describe-instances (table) : ALL or FILTERed ($2)
+			echo "=== LIST @ '${2:-ALL}'" 
+			case "${2:-ALL}" in 
+				"ALL" ) # List ALL instances
+					aws ec2 describe-instances --query "$query" --output table  #| sed 1,2d
+				;;
+				*) # Filter instances per $2 (sub)string against any field (AZ, ID, ...)
+					aws ec2 describe-instances --query "$query" --output table |grep -- $2
+				;;
+			esac 
+		;;
+		"names") # List instance names : ALL or FILTERed ($2) running
+			[[ $2 ]] && listRunning $2  
+			[[ $2 ]] || listAll
+		;;
+		"id") # VM ($2) ID
+			[[ $2 ]] || { echo "=== REQUIREs name (\$2)";exit 0; }
+			aws ec2 describe-instances \
+				--query "$query" \
+				--output text |grep -v 'terminat' |grep -- $2 |awk '{print $2}'
+		;;
+		"pip") # Private IP of VM ($2)
+			[[ $2 ]] || { echo "=== REQUIREs name (\$2)";exit 0; }
+			aws ec2 describe-instances --query "$query" \
+				--output text |grep -v 'terminat' |grep -- $2 |awk '{print $3}'
+		;;
+		"ip") # Public IP of VM ($2)
+			[[ $2 ]] || { echo "=== REQUIREs name (\$2)";exit 0; }
+			state='running'
+			aws ec2 describe-instances \
+				--filters "Name=instance-state-name,Values=${state}" \
+				--query "$query" \
+				--output text |grep -v 'None' |grep -v 'terminat' |grep -- $2 |awk '{print $4}'
+		;;
+		"state") # State of VM ($2) : running|stopped|terminated |pending|...
+			[[ $2 ]] || { echo "=== REQUIREs name (\$2)";exit 0; }
+			aws ec2 describe-instances \
+				--query "$query" \
+				--output text |grep -v 'terminat' |grep -- $2 |awk '{print $6}'
+		;;
+		"vols"|"volumes") # aws ec2 describe-volumes (JSON) : all attached to VMs
+			aws ec2 describe-volumes |jq .
+			#aws ec2 describe-volumes --query 'Volumes[*].Attachments[?State=='attached'].VolumeId'
+		;;
+		"ebs") # Block Storage (EBS) devices ($2) attached : JSON output
+			[[ $2 ]] && dev=$2 || dev='/dev/sdf' # See TF_VAR_stores_device
+			# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/device_naming.html
+			for vm in $(ec2 names); do
+				echo "=== @ $vm"
+				aws ec2 describe-instances \
+					--filters "Name=tag:Name,Values=$vm" \
+					--query "Reservations[*].Instances[*].{Name:Tags[?Key=='Name']|[0].Value,ID:InstanceId,State:State.Name,Storage:BlockDeviceMappings}" |jq ".[] | .[] | .Storage | .[] | select(.DeviceName | contains(\"$dev\"))"
+			done
+		;;
+		"watch") # ec2 ls
+			[[ $OSTYPE == 'linux-gnu' ]] && watch ec2 list || echo "Only @ Linux"
+		;;
+		"start"|"stop"|"boot"|"reboot"|"kill"|"terminate") # VM : ALL or per FILTER ($2)
+			[[ $1 == 'start' ]]     && { state='stopped';action='start'; }
+			[[ $1 == 'stop' ]]      && { state='running';action='stop'; }
+			[[ $1 == 'boot' ]]      && { state='running';action='reboot'; }
+			[[ $1 == 'reboot' ]]    && { state='running';action='reboot'; }
+			[[ $1 == 'kill' ]]      && { state='stopped';action='terminate'; }
+			[[ $1 == 'terminate' ]] && { state='stopped';action='terminate'; }
+
+			echo "=== ACTION: $action @ '${2:-ALL}'"
+			[[ $action == 'terminate' ]] && echo "... affects 'stopped' instances only."
+			[[ $action == 'stop' ]] && {
+				[[ $2 ]] && list_running="$2" || list_running="$(listRunning)"
+			}
+			case "${2:-ALL}" in 
+				"ALL" ) # All instances of $state
+					aws ec2 describe-instances \
+						--filters "Name=instance-state-name,Values=${state}" \
+						--query "$query" --output text |awk '{print $2}' |sed 's/\n//g' \
+						|xargs -n 1 --no-run-if-empty aws ec2 ${action}-instances --instance-ids 
+				;;
+				*) # Instances of $state filtered per $2 (sub)string against any field (AZ, ID, ...)
+					aws ec2 describe-instances \
+						--filters "Name=instance-state-name,Values=${state}" \
+						--query "$query" --output text |grep -- $2 |awk '{print $2}' |sed 's/\n//g' \
+						|xargs --no-run-if-empty aws ec2 ${action}-instances --instance-ids 
+
+					# If per list of VM names
+					# shift 1
+					# printf "%s\n" $@ |xargs -n 1 -I{} sh -c "aws ec2 describe-instances \
+					# 	--filters \"Name=instance-state-name,Values=stopped\" \
+					# 	--query \"$query\" --output text |grep -- {} |awk '{print $2}' |sed 's/\n//g' \
+					# 	|xargs --no-run-if-empty aws ec2 ${action}-instances --instance-ids 
+					# " _ {}
+				;;
+			esac 
+			# [[ $(type -t watch) ]] && ec2 watch
+
+			# Reset config.json (IPAddress key) at public VMs, conditionally
+			[[ $action == 'stop' ]] && { # TODO: generalize : all VMs (names) @ DMZ
+				for vm in $list_running; do
+					# Test if VM has public IP Address; skip it if not.
+					#ip="$(cat ~/.docker/machine/machines/$vm/config.json |grep IPAddress |awk '{print %2}')"
+					#ip="$(ec2 ip $vm)"
+
+					# # Test if IP is EIP
+					# _EIPs="$(aws ec2 describe-addresses --query "Addresses[*].{ID:InstanceId,IP:PublicIp}" --output text)"
+					# [[ $(echo "$_EIPs" |grep "$ip") ]] && continue
+
+					# Reset IPAddress key @ config.json
+					echo '';echo "=== @ $vm : config.json : IPAddress reset to 0.0.0.0"
+					sed -i "/IPAddress/c\        \"IPAddress\": \"0.0.0.0\"," ~/.docker/machine/machines/$vm/config.json
+				done
+			}
+		;;
+		"docker") # Install Docker server @ VM ($2) else show version
+            export script=./../../infra/tf/make.vm.docker_install.sh
+            [[ $2 && -r "$script" ]] && ec2 ssh $2 '/bin/bash -s ' < $script
+            # Show Docker version JSON @ VM ($2) : https://docs.docker.com/engine/api/v1.40/
+			# ip=$(ec2 ip $2)
+			# echo "=== @ $2 ($ip) : Docker server version"
+			# [[ $ip ]] && ssh $opts_common ${user}@${ip} -i $key '
+			# 	curl -s --unix-socket /var/run/docker.sock http://localhost/version
+			# ' |jq .
+		;;
+		"ssh") # SSH : session|script($3) @ VM ($2)
+            # Security Grp MUST ALLOW client IP Addr : Inbound Rule : Source (CIDR): e.g., 73.111.111.111/32
+			[[ $2 ]] || { echo '  … USE: ec2 ssh NAME';exit 99; }
+			echo "=== SSH @ '$2'"
+			# Try @ public IP
+			ip=$(ec2 ip $2)
+			[[ $(isIP $ip) ]] && {
+				shift 2
+				echo "@ $ip"
+				ssh $opts_common ${user}@${ip} -i $key "$@"
+				flag_ssh_done=1
+			} || { echo "No public IP address."; }
+			
+			[[ $flag_ssh_done ]] || {
+				# Try @ private IP
+				ip=$(ec2 pip $2)
+				[[ $(isIP $ip) && $(ec2 state $2) == 'running' ]] && {
+					shift 2
+					# Get public IP of any public VM for use as jump box
+					ip_jump=$(ec2s |grep -v None |grep running |awk 'NR == 1 {print $4}')
+					# Connect by proxy 
+					echo "@ $ip thru $ip_jump (jump box)"
+					ssh $opts_common -o ProxyCommand="ssh $opts_common -W %h:%p ${user}@$ip_jump -i $key" \
+						${user}@$ip -i $key "$@"
+					flag_ssh_done=1
+				} || { echo "No private IP address, or not running."; }
+			}
+			unset flag_ssh_done
+		;;
+		"socks") # SSH : open a persistent ($3 seconds) tunnel for private node ($2) 
+				 # web access thru a public node (jump box) serving as its SOCKS5 proxy.
+				 # REQUIREs: SSH key uploaded to pvt box; see socks_proxy_script.
+			# ARGs: VM [TTL(seconds, else inifinity]
+			export ttl=${3:--1}
+			[[ $2 ]] || { echo "=== REQUIREs name of VM (\$2)";exit 0; }
+			pvt_ip_of_any_public_node=$(ec2s |grep -v None |grep running |awk 'NR == 1 {print $3}')
+			[[ $pvt_ip_of_any_public_node ]] || { echo "FAIL @ Private IP of proxy node";exit 0; }
+			ec2 ssh $2 /bin/bash -s < $socks_proxy_script $pvt_ip_of_any_public_node $ttl
+		;;
+		"open"|"up") # SSH : Establish unique local-port mappings (port forwardings) 
+					 # for all Docker-required comms between (local) client 
+					 # and each (remote) private node (VM) that is running,
+					 # and update relevant keys of affected nodes at docker-machine config.json.
+			# TODO: All nodes, public and private, so needn't recert any.
+			# ARGs: [TTL(seconds, else inifinity]
+			tunnel(){ # Create SSH tunnel between a unique local port 
+					  # and its mate at the target (remote private box).
+				# ARGs: portLocal portRemote ipTarget ipJumpBox
+				pL=$1   # LOCAL port
+				pR=$2   # REMOTE port
+				ipT=$3  # Private IP address of remote (Target)
+				ipJ=$4  # Public IP address of intermediary (Jump box a.k.a. bastion host) 
+				# Connect
+				ssh $opts_common -fNL ${pL}:${ipT}:${pR} -i $key ${user}@${ipJ}
+				# -q -n -vvvE /tmp/${pL}.${ipT}.log
+			}
+			isUp(){ # Print local port (forwarded) if tunnel up
+				# ARGs: pLOCAL pREMOTE IPtgt
+				[[ $(ps aux |grep -- "-fNL" |grep -- "${pL}:${ipT}:${pR}" |grep -v grep) ]] \
+					&& echo $1
+			}
+			configUpdate(){ # Update KEY at VM's config file (docker-machine), unless already,
+							# reckoning the local port (VAL) mapped to its target port at VM.
+				# ARGs: VM KEY VAL
+				[[ -f ~/.docker/machine/machines/$1/config.json ]] && {
+					[[ $(grep "\"$2\": $3" ~/.docker/machine/machines/$1/config.json) ]] || {
+						echo "Update config.json : \"$2\": $3"
+						sed -i "/$2/c\        \"$2\": $3," ~/.docker/machine/machines/$1/config.json
+					}
+				} || {
+					echo "config.json NOT EXIST : $2: $3"
+				}
+			}
+			killTunnels(){ # Close all port-forwarded tunnels ($2; filtered ps aux) after TTL ($1)
+				sleep $1 && {
+					echo "$(echo "$2" |awk '{print $2}')" |xargs -n 1 kill -s TERM 
+				}
+			}
+			export -f tunnel isUp configUpdate killTunnels
+			export ttl=${2:--1}
+
+			# Get list of all private nodes running (names)
+			running_pvt_instances=$(aws ec2 describe-instances \
+				--filters "Name=instance-state-name,Values=running" \
+				--query "$query" --output text |grep None |awk '{print $5}' \
+			)
+			list_pvt="$(printf "%s " $running_pvt_instances)"
+
+			# Get private IP address of a viable intermediary (jump box); 
+			# the 1st-found-running node in public subnet of the VPC.
+			ipJ=$(ec2s |grep -v None |grep running |awk 'NR == 1 {print $4}') 
+
+			for vm in $list_pvt; do 
+				echo "=== @ $vm"
+				
+				[[ -f ~/.docker/machine/machines/$1/config.json ]] && {
+					# Reset mode
+					chmod 700 ~/.docker/machine/machines/$1
+					chmod 600 ~/.docker/machine/machines/$1/*
+				}
+				# Start its SOCKS5-proxy server
+				ec2 socks $vm $ttl  #... handles its own kill on TTL
+
+				# Private IP address of this target node
+				ipT=$(ec2 pip $vm)
+
+				# For each Docker-required port, forward a (unique) local port 
+				# to its mate at the target node, thru the jump box;
+				# establishing one tunnel per port, per node (when done and done).
+				#for pR in 22 2376 3376; do 
+				for pR in 22 2376; do 
+
+					n=$(echo $vm |sed 's/[^0-9]*//g')
+
+					[[ $pR == '22'   ]] && { [[ $n ]] && pL=220$n  || pL=2200; }
+					[[ $pR == '2376' ]] && { [[ $n ]] && pL=2376$n || pL=23760; }
+					#[[ $pR == '3376' ]] && { [[ $n ]] && pL=3376$n || pL=33760; }
+					#[[ $pR == '3376' ]] && { [[ $n ]] && pL=3376 || pL=3376; }
+					#... docker-machine performs sans port 3376 mapping.
+					#    Earlier finding of required per-machine port mapping may be wrong.
+					#    May be that SOCKS proxy was the missing functionality there.
+
+					[[ $(isUp $pL $pR $ipT) ]] && { 
+						echo -e "ALREADY UP @ $vm : $pR\t <==> $pL\t(local)"
+						continue
+					} 
+					tunnel $pL $pR $ipT $ipJ
+
+					[[ $(isUp $pL $pR $ipT) ]] && {
+						
+						echo -e "New Tunnel @ $vm : $pR\t <==> $pL\t(local)"
+
+						# config.json : Update the affected key
+						[[ $pR == '22' ]] && {
+							configUpdate $vm "SSHPort" $pL
+							configUpdate $vm "IPAddress" "\"0.0.0.0\""
+							#... IPAddress applies to all, but update once.
+						}
+						[[ $pR == '2376' ]] && {
+							configUpdate $vm "EnginePort" $pL
+						}
+					}
+				done
+			done
+
+			[[ "$ttl" == '-1' ]] && {
+				are="are OPEN (infinite TTL)."
+			} || {
+				(( $ttl / 3600 )) && {
+					t="$(( $ttl / 3600 )) hr $(( $(( $ttl / 60 )) % 60 )) min" 
+				} || {
+					t="$(( $ttl / 60 )) min $(( $ttl % 60 )) sec"
+				}
+				are="CLOSE in ${t}."
+				# Launch a silent background process that closes all port-forwarded (pR) tunnels after TTL
+				/bin/bash -c "killTunnels '$ttl' '$(ps aux |grep 'ssh -o' |grep -- "-fNL" |grep -v grep)'" >/dev/null 2>&1 &
+			}
+			printf "\n%s\n\n%s\n" "SUCCESS : Tunnels $are" "$(ps aux |grep 'ssh -o' |grep -- "-fNL" |grep -v grep |awk '{print $11, $16, $17, $18, $19, $20}')"
+			
+			exit 0
+		;;
+		"close"|"down") # SSH : close relevant tunnels(s) : all local (-fNL) and running remote (-D)
+			# ARGs: (none)
+
+			# @ remote : SOCKS5-proxy tunnel @ all running private node(s)
+			printf "%s\n" $(ec2s |grep None |grep running |awk '{print $5}') |xargs -I{} ec2 ssh {} "
+				ps aux |grep 'ssh -o' |grep -- '-D' |grep -v grep |awk '{print \$2}' \
+					|xargs kill -9 2> /dev/null 
+			"
+			# @ local : all port-forwarding ssh tunnels (background processes)
+			ps aux |grep 'ssh ' |grep -- "-fNL" |grep -v grep \
+				|awk '{print $2}' |xargs kill -9 2> /dev/null  #... may require: `sudo kill`
+
+		;;
+		"cert"|"certs"|"recert") # docker-machine : Recert public node(s) : $2 or all running
+				# A certificate binds to an IP; those of public nodes are ephemeral lest Elastic IP, 
+				# and so must be regenerated accordingly. 
+				# Private nodes connect per forwarded Pvt_IP:PORT (static per machine).
+			# ARGs: [VM1 VM2 ...]|(all running)
+			[[ "$2" ]] && list="$2" || list="$(listRunning)"
+
+			#echo "=== Pretest private nodes"
+
+			for vm in $list; do 
+				
+				continue
+
+				ip=$(ec2 ip $vm)
+				[[ $(isIP $ip) ]] && continue
+				echo "=== $vm"
+				pip=$(ec2 pip $vm)
+				ok="$(ps aux |grep 'ssh -o' |grep -- "-fNL" |grep $pip |awk -F '-' '{printf "%s ", $4}')"
+				
+				#[[ $(echo $ok |grep ':22' |grep ':2376' |grep '3376') ]] || {
+				[[ $(echo $ok |grep ':22' |grep ':2376') ]] || {
+					echo "Open the Docker-required tunnels : ec2 open"
+					exit 0
+				}
+				[[ $(cat ~/.docker/machine/machines/$vm/config.json |grep '"EnginePort": 2376,') ]] && {
+					echo "EnginePort NOT CONFIGURED : Open a tunnel for port 2376"
+					exit 0
+				}
+				[[ $(cat ~/.docker/machine/machines/$vm/config.json |grep '"IPAddress": "0.0.0.0",') ]] || {
+					echo "IPAddress NOT CONFIGURED : Open a tunnel for port 22"
+					exit 0
+				}
+			done
+
+			echo "=== Regenerate certificates"
+
+			for vm in $list; do 
+				echo "=== $vm"
+				[[ -r ~/.docker/machine/machines/$vm ]] || { 
+					echo "FAIL : NOT EXIST @ docker-machine"
+					continue
+				}
+				# Must reset mode to allow for write. (Set to 400 by docker-machine create.)
+				chmod 600 ~/.docker/machine/machines/$vm/*
+				ip=$(ec2 ip $vm)
+				[[ $(isIP $ip) ]] && {
+					# Recurringly @ public node (if IP is NOT an EIP or config.json not yet set to it).
+					echo "UPDATE config.json : \"IPAddress\": \"$ip\""
+					sed -i "/IPAddress/c\        \"IPAddress\": \"$ip\","  \
+					~/.docker/machine/machines/$vm/config.json
+					# Test if IP is an EIP
+					_EIPs="$(aws ec2 describe-addresses --query "Addresses[*].{ID:InstanceId,IP:PublicIp}" --output text)"
+					[[ $(echo "$_EIPs" |grep $ip) ]] && {
+						# Test if EIP (IP) is that of IPAddress key @ config.json
+						ok=$(cat ~/.docker/machine/machines/$vm/config.json |grep IPAddress |awk '{print $2}' |grep "$ip")
+						[[ $ok ]] && {
+							echo "VALID still (IP is an EIP)"
+							continue #... skip VM if IP ok.
+						}
+					}
+					echo "Regenerate certificates ..."
+					# rm ~/.docker/machine/machines/${vm}/{ca,cert,key,server,server-key}.pem -f
+					docker-machine regenerate-certs $vm --force
+				} || {
+					# Once @ private node (REQUIREs tunnels up) lest explicit ($2).
+					[[ -f ~/.docker/machine/machines/$vm/cert.pem && ! $2 ]] && {
+						echo "VALID still (static IP address)."
+						continue
+					}
+					echo "Regenerate certificates ..."
+					# rm ~/.docker/machine/machines/${vm}/{ca,cert,key,server,server-key}.pem -f
+					docker-machine regenerate-certs $vm --force
+				}
+
+			done
+		;;
+		"add"|"create") # docker-machine : create : Add VM(s) per 'generic' driver 
+			# - REF: https://docs.docker.com/machine/drivers/generic/ 
+			# - @ MINGW64 or Powershell only : mind pathing at ~/.docker/machine/…/config.json
+			# - REQUIREs apropos Security Group(s) xis with VM. (See /tf/.../sg/ module.)
+			# ARGs: [VM1 VM2 ... (else all running)]
+			[[ $OSTYPE == 'linux-gnu' ]] && { 
+				echo '  docker-machine create … NOT @ WSL terminal. (Use MINGW64 or Powershell.)'
+				exit 99 
+			}
+			state='running'
+			[[ "$2" ]] && list="$2" || list="$(listRunning)"
+			[[ "${list%% }" ]] || { echo "=== NO $state MACHINEs found."; exit; }
+			# User query
+			echo;read -p "ADD '${list% }' VM(s) to docker-machine? [Y/n] " q;q=${q:-Y};echo 
+			[[ ${q^^} == 'Y' ]]  || { echo '=== DID NOTHING.';exit 0; }
+			#... open ports required by docker-machine
+			#save=$list;ec2 open;list=$save
+
+			for vm in $list; do 
+				ip=$(ec2 ip $vm) #... attempt.
+
+				[[ $(isIP $ip) ]] && {
+					# @ Public node
+					echo "=== $vm : PUBLIC node" 
+					pLs='22';pLe='2376'
+				} || { 
+					# @ Private node 
+					echo "=== $vm : PRIVATE node"
+					ip='0.0.0.0'
+					n=$(echo $vm |sed 's/[^0-9]*//g')
+					[[ $n ]] && pLs="220$n"  || pLs='2200'
+					[[ $n ]] && pLe="2376$n" || pLe='2376'
+			   }
+				[[ $(isIP $ip) ]] || { echo "FAIL @ IP : none found"; continue; }
+
+				docker-machine create \
+					--driver 'generic' \
+					--generic-ip-address=$ip \
+					--generic-ssh-user=$user \
+					--generic-ssh-key $key \
+					--generic-ssh-port $pLs \
+					$vm  
+					
+					#--generic-engine-port $pLe \
+					#... setting this properly here causes certs to fail.
+					#… https://docs.docker.com/machine/drivers/generic/ 
+				
+				chmod 700 ~/.docker/machine/machines/$vm
+				chmod 600 ~/.docker/machine/machines/$vm/*
+			done
+
+			printf "\n%s\n\n" '=== DONE : List machines:'
+			docker-machine ls;true
+		;;
+		"rm"|"remove") # docker-machine : remove VMs; delete folder(s) @ ~/.docker/machine/...
+			[[ $2 ]] && instances=$2 || instances=$(aws ec2 describe-instances \
+				--filters "Name=instance-state-name,Values=stopped" \
+				--query "$query" --output text |awk '{print $5}' \
+			)
+			list=$(printf "%s " $instances) 
+			[[ "${list%% }" ]] || { echo "=== NO MACHINEs found."; exit; }
+
+			# User query
+			read -p "Remove VMs '${list% }' from docker-machine? [Y/n] " q;q=${q:-Y};echo 
+			[[ ${q^^} == 'Y' ]] && {
+				for vm in $list; do 
+					echo "=== $vm"
+					rm -rf ~/.docker/machine/machines/$vm 
+				done
+				printf "\n%s\n\n" '=== DONE. List machines …'
+				docker-machine ls
+			} || { echo '=== DID NOTHING.'; }
+		;;
+		"push"|"upload") # Upload /assets [ and /store ]
+			# - @ WSL|CYGWIN only : mind pathing at ~/.docker/machine/…/config.json
+			# - REQUIREs persistent ssh tunnel if to private VM(s)
+			# ARGs: [VM|FILTER(else all running)]
+
+			[[ $OSTYPE == 'msys' ]] && { 
+				echo '  … NOT @ MINGW terminal. Use Linux/WSL/Cygwin.'
+				exit 99
+			}
+			export path_src=${_PRJ_ROOT}/assets
+			[[ -r $path_src ]] || echo "FAIL @ source path: $path_src"
+
+			export list=$(listRunning $2) #... optionally-filtered list of running VMs
+
+			[[ "${list%% }" ]] || { 
+				#[[ $2 ]] && list=$(docker-machine ls |grep 'Running' |awk '{print $1}' |grep "$2" |tr '\n' ' ')
+				#[[ $2 ]] || list=$(docker-machine ls |grep 'Running' |awk '{print $1}' |tr '\n' ' ')
+				[[ $2 ]] && list=$(ec2 names $2)
+				[[ $2 ]] || list=$(ec2 names running)
+			}
+
+			[[ "${list%% }" ]] || { 
+				echo "=== NO running VMs."
+				exit 0
+			}
+			# User query
+			echo;read -p "Upload to '${list% }' ? [Y/n] " q;q=${q:-Y};echo 
+			[[ ${q^^} == 'Y' ]]  || { 
+				echo '=== DID NOTHING.'
+				exit 0 
+			}
+
+			for vm in $list; do 
+				echo "=== $vm"
+				# Test and select target directory regardless of owner.
+				# persistent store param must match that at /tf/make.vm.block_store_init.sh
+				export store='/mnt/store'
+				export assets='/mnt/assets'
+				
+				export fs=2 # old (1) or new (2) : directory structures {source, target}
+
+				echo "=== Upload (rsync) : '${path_src}' to '${assets}'"
+
+				# @ Public VM
+				ip=$(ec2 ip $vm)
+				[[ $(isIP $ip) ]] && {
+
+					case $fs in
+						1)
+							rsync -avz --delete -e "ssh $opts_common -i $key" \
+								"${path_src}/src/" "${user}@${ip}:${assets}/src/"
+
+							rsync -avz --delete -e "ssh $opts_common -i $key" \
+								"${path_src}/sql/" "${user}@${ip}:${assets}/sql/"
+
+							rsync -avz --delete -e "ssh $opts_common -i $key" \
+								"${path_src}/html/" "${user}@${ip}:${assets}/html/"
+						;;
+
+						2) 
+							rsync -avz --delete -e "ssh $opts_common -i $key" \
+								"${path_src}/sql/" "${user}@${ip}:${assets}/sql/"
+
+							rsync -avz --delete -e "ssh $opts_common -i $key" \
+								"${path_src}/views/" "${user}@${ip}:${assets}/views/"
+
+							rsync -avz --delete -e "ssh $opts_common -i $key" \
+								"${path_src}/www/" "${user}@${ip}:${assets}/www/"
+						;;
+					esac 
+
+					# UPDATE : Manage all else by Docker {env_file, environment, config, secret}
+
+					# rsync -avz --delete -e "ssh $opts_common -i $key" \
+					# 	"${path_src}/conf/" "${user}@${ip}:${assets}/conf/"
+					# rsync -avz --delete -e "ssh $opts_common -i $key" \
+					# 	"${path_src}/.env/" "${user}@${ip}:${assets}/.env/"
+					# rsync -avz --delete -e "ssh $opts_common -i $key" \
+					# 	"${path_src}/keys/" "${user}@${ip}:${assets}/keys/"
+				}
+
+				# If store flag ($3) or not a public node, then upload as to private node (src AND sql)
+				[[ ! $3 && $(isIP $ip) ]] && exit 0
+				# @ Private VM : thru jump box
+				ip=$(ec2 pip $vm)
+				[[ $(isIP $ip) && $(ec2 state $vm) == 'running' ]] && {
+				
+					# Get public IP of any public VM for use as jump box
+					ip_jump=$(ec2s |grep -v None |grep running |awk 'NR == 1 {print $4}')
+
+					case $fs in
+						1)
+							# /src DEPRICATED : all managed by Docker {env_file, environment, config, secret}
+							rsync -avz --delete -e "ssh $opts_common -i $key -o 'ProxyCommand ssh $opts_common -i $key -A -W %h:%p ${user}@$ip_jump'" "${path_src}/src/" "${user}@${ip}:${assets}/src/"
+							
+							rsync -avz --delete -e "ssh $opts_common -i $key -o 'ProxyCommand ssh $opts_common -i $key -A -W %h:%p ${user}@$ip_jump'" "${path_src}/sql/" "${user}@${ip}:${assets}/sql/"
+						;;
+						2)
+							rsync -avz --delete -e "ssh $opts_common -i $key -o 'ProxyCommand ssh $opts_common -i $key -A -W %h:%p ${user}@$ip_jump'" "${path_src}/sql/" "${user}@${ip}:${assets}/sql/"
+						;;
+					esac 
+
+					# Copy /sql from assets to store, and set its owner at destination
+					export uid=$(ec2 ssh $vm sudo ls -n /mnt/store |tail -n 1 |awk '{print $3}')
+					echo "=== Copy/Reset(${uid}:${uid}) : ${assets}/sql/ to ${store}/pgha/sql/"
+					[[ "$uid" ]] || { echo "... FAIL @ UID of /mnt/store"; exit 0; }
+					ec2 ssh $vm "/bin/bash -c '
+						sudo mkdir -p ${store}/pgha/sql \
+							&& sudo rm -rf ${store}/pgha/sql/* \
+							&& sudo cp -pr ${assets}/sql/* ${store}/pgha/sql \
+							&& sudo chown $uid:$uid -R ${store}/pgha/sql/ \
+							&& echo ... done.
+					'"
+					#... store content purged prior to copy (cp) else orphaned files remain.
+				}
+				# # Restore ownership
+				# [[ ($uid != $uid0) || ($gid != $gid0) ]] && {
+				#     echo "=== Restore (UID:GID) : $uid:$gid => $uid0:$gid0"
+				#     ec2 ssh $vm "/bin/bash -c '
+				#         sudo chown -R ${uid0:-1000}:${gid0:-1000} $assets
+				#     '"
+				# }
+				# echo "=== Reset perms (g=u)" 
+				# ec2 ssh $vm "/bin/bash -c 'sudo chmod -R g=u $assets'"
+				#... causes 100% overwrite per rsync, regardless
+			done 
+		;;
+		"pull") # Exfiltrate PostgreSQL /backup @ VM ($2|ap1) to our local machine
+			vm=${2:-ap1}
+			src='/mnt/store/pgha/etc/backup'
+			#src='/mnt/store/pgha/sql/copy/2022-12-09T23Z'
+			dst="${_PRJ_ROOT}/assets/dump"
+			ip=$(ec2 pip $vm)
+			[[ $ip ]] && { 
+				ip_jump=$(ec2s |grep -v None |grep running |awk 'NR == 1 {print $4}')
+				[[ $ip_jump ]] && {
+					echo "=== @ $vm : Pull from ${user}@${ip} thru ${user}@$ip_jump"
+					echo "    src: ${src}/"
+					echo "    dst: ${dst}/"
+					# Must widen perms : basebackup leaves it unreadable 
+					ec2 ssh $vm "/bin/bash -c '
+						sudo chmod 755 -R ${src}/ && echo ... done.
+						'
+					"
+					# Pull remote basebackup to local dir
+					rsync -rtvz -e "ssh $opts_common -i $key -o 'ProxyCommand ssh $opts_common -i $key -A -W %h:%p ${user}@$ip_jump'" "${user}@${ip}:${src}/" "${dst}/" 
+					
+					# Fix perms 
+					find $dst -type d -exec chmod 0755 {} \+
+					find $dst -type f -exec chmod 0660 {} \+
+				}
+				#=> rsync -rtvz -e "ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i /c/HOME/.ssh/swarm-aws.pem -o 'ProxyCommand ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -i /c/HOME/.ssh/swarm-aws.pem -A -W %h:%p ubuntu@34.206.99.48'" ubuntu@10.0.1.190:/mnt/store/pgha/etc/backup/ /s/DEV/go/uqrate/v4/assets/sql/dump/
+			}
+		;;
+		"dns")
+			route53(){ # ARGs: app|cdn
+				# Upsert domain's DNS records : Point DNS 'A' records to app|cdn
+				# Run locally; this is the preferred, secure way to do it. 
+				[[ $1 ]] || { 
+					# @ sans ARGs, show DNS records as currently set at Route53
+					_DOMAIN=${DOMAIN}
+					_ZONE_ID="$(aws route53 list-hosted-zones \
+						| jq -r ".HostedZones[] | select(.Name | contains(\"$_DOMAIN\")) | .Id")"
+					_ZONE_ID="${_ZONE_ID#/hostedzone/}"
+
+					aws route53 list-resource-record-sets \
+						--hosted-zone-id $_ZONE_ID | jq .
+
+					echo '';echo "ARGs: app|cdn (\$1)";exit 0; 
+				}
+
+				[[ $1 == 'app' ]] && {
+					# Get public IP(s) of all running VMs
+					# from the list of EC2 public IP addresses {"Value":"<IP>"}, ...
+					export creds='--profile bot-dns'
+					_IPs=$(aws ec2 describe-instances \
+						--filters "Name=instance-state-name,Values=running" \
+						--query 'Reservations[].Instances[].[PublicIpAddress]' --output text \
+						|grep -v None |sed 's/\n//g')
+ 
+					[[ $_IPs ]] || { echo "NO IPs : No running instances?"; exit 0; }
+					_IPs=$(echo "$_IPs" |xargs printf "{\"Value\":\"%s\"},")
+				}
+				# Set the target Route53 records' parameters 
+				# Get Zone ID of the domain
+				#_DOMAIN='uqrate.org'
+				_DOMAIN=${DOMAIN}
+				_ZONE_ID="$(aws route53 list-hosted-zones \
+					|jq -Mr ".HostedZones[] | select(.Name | contains(\"$_DOMAIN\")) | .Id")"
+
+				[[ $_ZONE_ID ]] || { echo "NO Zone ID @ domain '$_DOMAIN'"; exit 0; }
+				_ZONE_ID="$(printf $_ZONE_ID |sed 's#/hostedzone/##')"
+
+				# App : CDN -> App
+				[[ $1 == 'app' ]] && _FILE_PATH="${0%/*}/route53-app.json"
+				# CDN : App -> CDN
+				[[ $1 == 'cdn' ]] &&_FILE_PATH="${0%/*}/route53-cdn.json"
+				# CloudFront HostedZoneId: Z2FDTNDATAQYW2 : Everywhere and Always !!!
+
+				[[ $1 == 'app' ]] && {
+					# Create batch-change file to upsert domain-resource records @ both www. and naked
+					cat <<-EOH > $_FILE_PATH
+					{
+					    "Comment": "UPSERT per CLI",
+					    "Changes": [{
+					        "Action": "UPSERT",
+					        "ResourceRecordSet": {
+					            "Name": "${_DOMAIN}",
+					            "Type": "A",
+					            "TTL": 500,
+					            "ResourceRecords": [${_IPs%,}]
+					        }
+					    }, {
+					        "Action": "UPSERT",
+					        "ResourceRecordSet": {
+					            "Name": "www.${_DOMAIN}",
+					            "Type": "A",
+					            "TTL": 500,
+					            "ResourceRecords": [${_IPs%,}]
+					        }
+					    }]
+					}
+					EOH
+				}
+				true && cat "$_FILE_PATH"
+				[[ -r "$_FILE_PATH" ]] || { echo "NO file @ \$_FILE_PATH"; exit 0; }
+				
+				# Upsert the domain's "A" record sets
+				# https://awscli.amazonaws.com/v2/documentation/api/latest/reference/route53/change-resource-record-sets.html#examples  
+				aws route53 change-resource-record-sets \
+					--hosted-zone-id $_ZONE_ID \
+					--change-batch \
+					"file://${_FILE_PATH}"
+			}
+			shift
+			route53 "$@"
+		;;
+		"help"|*) 
+			script_info "$0"
+		;;
+	esac
+}
+
+ec2 "$@"
+
+# exit 0
+
+# ☩ ec2 ls
+# === LIST @ 'ALL'
+# -----------------------------------------------------------------------------------------------
+# |                                      DescribeInstances                                      |
+# +------------+----------------------+---------------+--------+-------+-----------+------------+
+# |     AZ     |         ID           |     IPpvt     | IPweb  | Name  |   State   |   Type     |
+# +------------+----------------------+---------------+--------+-------+-----------+------------+
+# |  us-east-1a|  i-09b047137dccbdc58 |  10.0.1.190   |  None  |  ap1  |  stopped  |  t3.small  |
+# |  us-east-1a|  i-075e0dccd0054d902 |  10.0.101.130 |  None  |  ad1  |  stopped  |  t3.micro  |
+# |  us-east-1b|  i-072c28c336b18bd22 |  10.0.2.240   |  None  |  ap2  |  stopped  |  t3.small  |
+# |  us-east-1b|  i-0a66b03b217805253 |  10.0.102.184 |  None  |  ad2  |  stopped  |  t3.micro  |
+# +------------+----------------------+---------------+--------+-------+-----------+------------+

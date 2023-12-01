@@ -1,0 +1,98 @@
+#!/bin/bash
+# f06yBEAST 2015-11-09
+# hmuck [REFh] library ported from cmd_library [Windows7]
+# [source for persistent config]
+
+md5caps()  # clean & allcaps hash
+{
+	declare _hex=$( md5 -q "$@" ) 
+	[[ "$_hex" ]] && echo "${_hex^^}" || errMSG "${0##*/}[$FUNCNAME]"
+}
+
+confighmuck()	
+{	
+	[[ "$_REF_FOLDERh" ]] && return 0
+	
+	REQUIREs errMSG md5 putclip
+
+	# get/set keys
+	_REF_FOLDERh="$_MUCK_REF_FOLDER/REFh"
+	_REF1="$_REF_FOLDERh/REF1"
+	_REF2="$_REF_FOLDERh/REF2"
+	_REF3="$_REF_FOLDERh/REF3"
+	 
+	declare err
+	# set hash kernels ; set flag on any err
+	[[ -r $_REF1 ]] && _h1=$( md5caps "$_REF1" ) || { errMSG "$FUNCNAME[_h1]" ; err=$? ; }
+	[[ -r $_REF2 ]] && _h2=$( md5caps "$_REF2" ) || { errMSG "$FUNCNAME[_h2]" ; err=$? ; }
+	[[ -r $_REF3 ]] && _r3=$( <"$_REF3" )        || { errMSG "$FUNCNAME[_r3]" ; err=$? ; }
+	
+	# exit on fail [any REFn not a readable file], else return 0
+	(( $err )) && exit 86 || return 0  
+}
+
+confighmuck
+
+hmuck()  
+{(  # HMUCK(msg) = chr{1-31}[ H( H(ref1) + H( H(ref2)+ref3+msg) ) ) ]
+	#            + chr{1-31}[ H( H(ref1) + H( H(ref2)+msg) )      ) ] 
+
+	[[ "${1,,}" == '-q' ]] && { _HASH_QUIET=1 ; shift ; } || unset _HASH_QUIET
+
+	h30()  
+	{
+		_result=$( md5caps "$@" )
+		echo ${_result:1:30}
+	}
+	
+	_h23m=$( md5caps "$_h2$_r3$@" )
+	
+	_h2m=$( md5caps "$_h2$@" )
+
+	# -- 1st 30 --
+	_ha=$( h30 $_h1$_h23m )
+
+	# -- 2nd 30 --
+	_hb=$( h30 $_h1$_h2m )
+	
+	_result=$_ha$_hb
+	
+	# echo _h23m :: $_h23m; echo _h2m :: $_h2m; 
+	
+	# validate/inform on nul input
+	[[ ! "$@" ]] && _validate 8C31AF86683499B09A7B83BA16CA87A4E97D3E827C171C87452E01600D11
+
+	echo $_result
+		
+	[[ "$_HASH_QUIET" ]] || putclip $_result
+)}    
+
+hmuck32()  
+{( 	# H(msg) = H( ref3 + H( H(ref1)+msg) )
+	
+	[[ "${1,,}" == '-q' ]] && { _HASH_QUIET=1 ; shift ; } || unset _HASH_QUIET
+		
+	_h1m=$( md5caps "$_h1$@" )
+		
+	_result=$( md5caps $_r3$_h1m )
+	
+	# echo _h1m :: $_h1m;
+	
+	# validate/inform on nul input 
+	[[ ! "$@" ]] && _validate CD87C31E34DAAF9947FA260EBF0F9689
+	
+	echo $_result
+	[[ "$_HASH_QUIET" ]] || putclip $_result
+)}    
+
+_validate() 
+{   # test result against expected [known] result, and inform
+	colors
+	if [ "$@" == "$_result" ] 
+	then
+		echo " $green VALIDATES @ nul input $normal"
+	else
+		errMSG "FAILed validation"
+		echo "${aqua}$@${normal} [expected]"
+	fi
+}

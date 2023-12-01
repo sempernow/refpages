@@ -1,0 +1,5 @@
+#!/bin/bash
+# print all files of mtime @ '1980' [signature of failed synch.bat]
+find -type f -printf "%TY\t%p\n" | fgrep '1980'
+
+echo; echo " ... @ '$PWD'"

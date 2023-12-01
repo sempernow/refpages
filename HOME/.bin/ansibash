@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+_ansibash(){
+
+    usage(){
+        #>>>  MUST PRESERVE TABs of HEREDOC  <<<
+		cat <<-EOH
+
+			  A Bash/GNU sort of Ansible
+
+			  USAGE:  ${0##*/} -x "command1 && command2 arg1" # Default sans "-*". 
+			          ${0##*/} -c 'command1 arg1;command2 argX "\$remote_foo"'
+			          ${0##*/} -s "/path/of/local/script.sh arg1 '\$local_foo' arg3"
+			          ${0##*/} -u /path/of/local/source [/path/of/remote/parent (else ./source)]
+			          ${0##*/} -d /path/of/remote/source [/path/of/local/parent (else ./source)]
+		EOH
+    }
+    want(){
+        #>>>  MUST PRESERVE TABs of HEREDOC  <<<
+		cat <<-EOH
+
+			  REQUIREs: ANSIBASH_TARGET_LIST : Environment variable listing the ssh-configured machines.
+
+			            export ANSIBASH_TARGET_LIST='host1 host2 host3'
+		EOH
+    }
+    have(){
+        #>>>  MUST PRESERVE TABs of HEREDOC  <<<
+		cat <<-EOH
+
+			  ANSIBASH_TARGET_LIST='$ANSIBASH_TARGET_LIST'
+		EOH
+    }
+
+    [[ $ANSIBASH_TARGET_LIST ]] || { usage;want;exit; }
+    [[ $@ ]] || { usage;have;exit; }
+    [[ "${1:0:1}" != '-' ]] && mode='-x' || { mode=$1;shift; }
+    [[ $4 ]] && more='…'
+    [[ "$mode" == '-u' ]] && { 
+        [[ $2 ]] && target=$2 || target=${1##*/}
+    }
+
+    for vm in $ANSIBASH_TARGET_LIST
+    do
+        echo "=== @ $vm : $1 $2 $3 $more"
+        [[ $mode == '-x' ]] && ssh $vm "$@"                     # Ad-hoc command(s) execute at remote default shell
+        [[ $mode == '-c' ]] && ssh $vm '/bin/bash -c' "$@"      # Ad-hoc command(s) execute at remote /bin/bash
+        [[ $mode == '-s' ]] && ssh $vm '/bin/bash -s' < "$@"    # Local script executes at remote /bin/bash
+        [[ $mode == '-u' ]] && scp -pr "$1" "$vm:$target"       # Upload (push) via OpenSSH secure file copy
+        [[ $mode == '-d' ]] && scp -pr "$vm:$1" "${2:-.}/${vm}_${1##*/}" # Download (pull) via OpenSSH secure file copy
+    done 
+}
+
+_ansibash "$@"

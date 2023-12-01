@@ -1,0 +1,7 @@
+#!/bin/bash
+source "$_SCRIPTS_FOLDER/_config_cmuck"        # call config script
+
+muck5 "$@" # '5muck' funcname throws err ... "bash: `5muck': not a valid identifier"
+
+# -- EXIT --
+exit

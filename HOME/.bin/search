@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+#  Search all files hereunder for a PATTERN.
+#  
+#  ARGs: PATTERN [ANY(to print paths only)]
+# -------------------------------------------------------------
+[[ "$1" ]] || { script_info "$0"; exit 99; }
+[[ $2 ]] && _l='-l'
+find . -type f -print0 | xargs -0 grep $_l "$1"

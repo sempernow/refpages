@@ -1,0 +1,44 @@
+#!/bin/bash
+
+_prjs() { 
+    # PARAMs: [FILTER_STR]
+    # Find/list/select local 'PRJ.*' files per ALL|FILTER_STR
+    # Searches @ _REFs_LOCAL and _PRJs_LOCAL paths
+    REQUIREs openedit errMSG; (( $? )) && return 86 
+    [[ -d "$_REFs_LOCAL" ]] || { errMSG '"$_REFs_LOCAL" (path) NOT EXIST'; return 86; }
+    [[ -d "$_PRJs_LOCAL" ]] || { errMSG '"$_PRJs_LOCAL" (path) NOT EXIST'; return 86; }
+    _list=
+    _list+=$( find "$_REFs_LOCAL" \( -iname "PRJ.*$1*" ! -iname '*.html' ! -iname '*.lnk' ! -iname '*~' \) -type f -printf "%f\n"  )
+    _list+=$( find "$_PRJs_LOCAL" \( -iname "PRJ.*$1*" ! -iname '*.html' ! -iname '*.lnk' ! -iname '*~' \) -type f -printf "\n%f"  )
+    _list=$( printf "$_list" | sed 's/PRJ.//' | sed '/prj./d' | sort -u )
+    _EXIT='[EXIT]'; echo
+
+    # end if none
+    [[ "$_list" ]] || { echo "  NONE with '$1'"; return 0; } 
+
+    # user-select menu of all found
+    select fname in $_list $_EXIT
+    do 
+        [[ "$fname" != "$_EXIT" && "$fname" ]] && printf "\n  %s\n\n" "EDIT: 'PRJ.$fname'"
+        break
+    done
+
+    # open/edit selected file, or end, per user-select
+    [[ "$fname" != "$_EXIT" && "$fname" ]] || return 0
+
+    _got=''; _selected="$( find "$_REFs_LOCAL" -name "PRJ.$fname" -type f )"
+
+    [[ "$_selected" ]] && { 
+        [[ -f "$_selected" ]] && _got=1 || _got="MORE than ONE file :: '${_selected}'"
+    } 
+    [[ ! "$_got" ]] && {
+        _selected="$( find "$_PRJs_LOCAL" -name "PRJ.$fname" -type f )" 
+        [[ "$_selected" ]] && { 
+            [[ -f "$_selected" ]] && _got=1 || _got="MORE than ONE file :: '${_selected}'"
+        }
+    }
+    [[ "$_got" == 1 ]] && openedit "$_selected" || { 
+        [[ "$_got" ]] && { errMSG "$_got"; true; } || errMSG "NOT a file :: '$_selected'"
+    }
+}
+_prjs "$@"

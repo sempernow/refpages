@@ -1,0 +1,47 @@
+#!/bin/bash
+# ---------------------------------------------------------------------------
+# Wrapper for 'find' utility [binary]
+#  Full-depth search for target [$@], under dir/parent if exist, 
+#  else under PWD. Prints abs-path of target if found [first found], 
+#  else prints nothing.
+#
+# PARAMs: {basename[wildcards]} | {[partial-]path[wildcards]} 
+#
+# USAGE:
+#  findfile foo             search @ "foo"         name @ $PWD  & subdirs
+#  findfile $HOME/foo*.bar  search @ "foo*.bar"    name @ $HOME & subdirs
+#  findfile */foo/*bar*     search @ "*/foo/*bar*" path @ $PWD  & subdirs
+#  findfile $HOME/*foo/bar* search @ *foo/bar*     path @ $HOME & subdirs
+#
+# (search varies somewhat per exist-test @ partial-path input)
+# ---------------------------------------------------------------------------
+findfile() 
+{(  
+	[[ "$@" ]] || { script_info "$@"; return 0; } # on null
+	
+	# set search root to input folder-path, if exist [try @ 2 ancestor levels], else to PWD
+	_path="$@" ; _root="${_path%/*}" # handle unquoted path w/ spaces
+	[[ -d "$_root" ]] || { [[ -d "${_root%/*}" ]] && _root="${_root%/*}" ; }
+	[[ -d "$_root" ]] || _root="$PWD" # default to PWD
+	_base="${_path##*/}" # basename [partial/wildcards]
+
+	# set target & search type [case-insens] per $@ ; search for name or path, @ root
+	_path_sans_root=${_path#"$_root"} ; _path_sans_root=${_path_sans_root#/}
+	[[ ( "${_path_sans_root}" == "$_base" ) ]] && {
+		# target is basename [partial/wildcards]
+		_search='iname' ; _target="$_base" ;
+	} || {
+		# target is input path [partial/wildcards] sans EXISTing root
+		_search='ipath' ; _target="${_path_sans_root}"
+	}
+	# DEBUG
+	#echo '---------------' ; echo "${_path_sans_root} == '${_base}'" ; echo "_path	'$_path'" ; echo "_root	'$_root'" ; echo "_base	'$_base'" ; echo "_target	'$_target'" ; echo "_search	'$_search'" ; echo '---------------'
+
+	# set result to abs-path of target, if found [within root], else empty
+	_RESULT="$( find "$_root" -$_search "${_target}" -printf "$_root/%P\n" | tail -1 )"
+
+	# if target found, print abs-path, else nothing [ "$?" is 1|0 <=> found|not ]
+	[[ "$_RESULT" ]] && { printf "%s" "$_RESULT" ; return 1 ; } || return 0	
+)}
+
+findfile "$@"

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+folders_random_rename() # >>> DESTRUCTIVE SCRIPT <<<
+{(  # rename, to random 'a-zA-Z0-9' [11 chars], all folders under root [$@]
+    # PARAMs: {root-path} 
+	REQUIREs randomalpha ; (( $? )) && exit 86
+	[[ "$_SAFETY_KEY" ]] || exit 99  # forbid execution without [scripted/exported] safety-key
+	
+	# instruct & end on disallowed input
+	[[ -d "$@" && ! ( "${1///}" == '' || "${1//.}" == '' ) ]] || { printf "\n %s\n" 'PARAMs: {root-folder-path}' ; exit 99 ; }
+	
+	declare root="$@" ; declare list="$root" ; declare lvl=-1 
+	
+	# traverse dir tree per level
+	while [[ "$list" ]] # end [nul] when depth exceeds actual depth
+	do  # glob list @ current level; start @ root
+	
+		# get list of abs-paths of every folder @ current depth ; silence ls-error-msg
+		list="$( { ls -1d "${root}/"${depth} ; } 2> /dev/null )"
+		# inform of current depth
+		(( lvl += 1 )) ; (( $lvl )) && printf "\n  %s %.2d\n\n" "Depth:" "$lvl"
+		
+		# rename every folder @ current depth
+		while read path
+		do
+			path="${path%/}"
+			[[ "$path" == "$root" || ! -d "$path" ]] || {
+				fname="$( randomalpha 11 )" # make new name
+				printf "    %s %s %-55.55s\n" "'$fname'" '<=' "'${path##*/}'" # inform
+
+				mv "${path}" "${path%/*}/${fname}" # rename
+			}
+		done <<< "$list"	
+
+		# increase depth [append another glob/level] 
+		depth="${depth}*/" # => "*/*/ ... */"
+
+	done	
+)}
+# -- RUN --
+
+folders_random_rename "$@"

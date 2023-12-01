@@ -1,0 +1,21 @@
+#!/bin/bash
+
+DNSbench()
+{   # ------------------------------------------------------------
+	# Prints DNSbench.exe report [.CSV] <== 'DNSbench.exe /auto'
+	#
+	# PARAMs: <csv-file-path>
+	# ------------------------------------------------------------
+	REQUIREs errMSG
+	[[ -f "$@" ]] || { errMSG "'... /${@##*/}' file NOT EXIST"; return 99; }
+
+	# read all params ...
+	while IFS=',' read -r Server Resolver Status Blocked CachedMin CachedAvg CachedMax CachedStd CachedSent CachedRcvd UncachedMin UncachedAvg UncachedMax UncachedStd UncachedSent UncachedRcvd DotcomMin DotcomAvg DotcomMax DotcomStd DotcomSent DotcomRcvd RevDNS Owner Start Length
+	do # print selected params ...
+		printf " %s	%s  %s  %.40s \n\n" "${Server// }" "$CachedAvg" "$UncachedAvg" "'${Owner//\"}'"
+	done < "$@"
+
+	return 0
+}
+
+DNSbench "$@"

@@ -1,0 +1,214 @@
+#!/bin/bash
+# -----------------------------------------------------------------------
+#  Maintenance script for AsusWRT-Merlin router.            f06yBEAST 
+#  Handles hosts file and malware blocker install/update.
+#  
+#  REQUIREs:
+#  _SMB_at_Windows - SMB staging folder as seen @ client  machine. 
+#  _SMB_at_AsusWRT - SMB staging folder as seen @ router (SSH session)
+#  "/jffs/scripts/router.sh" - script @ router 
+#  
+#  Hosts file installs per AsusWRT-Merlin's "hosts.add" method.
+#   https://github.com/RMerl/asuswrt-merlin/wiki/Custom-config-files 
+# 
+#  USAGE:  $ router [OPTION] 
+# 
+#  OPTION:
+#   vpn [on|off] - VPN connect [on|off], else show state ('0' is off) 
+#   fetch   - download/build curated hosts file @ client $TMP.
+#   show    - print head+tail of hosts file @ client $TMP
+#   send    - send hosts file from client $TMP to SMB staging folder. 
+#   update  - upload hosts file per SSH session, then REBOOT.
+#   verify  - print head+tail of INSTALLED hosts file @ SSH session.
+#   archive - archive (txz) hosts file @ SMB '/[archive]' dir
+#   block   - update malware blocking scripts.
+#   manual  - print instructions for such tasks sans self/script.
+# -----------------------------------------------------------------------
+# config 
+REQUIREs hosts-get mktemp isDOS dos2unix errMSG today ; (( $? )) && exit 86
+
+_HOSTS_FILE="$TMP/hosts"
+_SMB_at_Windows='//SMB/Data'
+_SMB_at_AsusWRT='/tmp/mnt/WinPE/Data'
+_domain="${LANDOMAIN:-domainNAME}"
+
+# Print instructions for AsusWRT/Merlin 'hosts.add' method
+instruct() { # How to UPDATE/VALIDATE @ AsusWRT shell; ARGs: <none>
+	cat <<- EOF 
+
+		 @ AsusWRT :: ALL maintenance tasks per 'router.sh'
+
+		    ssh router               # Or whatever, per ~/.ssh/config
+		    /jffs/scripts/router.sh  # Prints its menu.
+
+		 == OR ==
+
+		 @ AsusWRT :: UPDATE per 'hosts.add'  [AFTER Create/Send 'hosts' file]
+
+		    cp "${_SMB_at_AsusWRT}/hosts" '/jffs/configs/hosts.add'
+		    chmod 400 /jffs/configs/*
+		    reboot
+
+		 @ AsusWRT :: VALIDATE auto-add/append  [AFTER router reboot]
+
+		    cat "/tmp/etc/hosts" | ( head -n 20 ; echo; tail -n 3 )
+	EOF
+}
+
+hostsHeader() {
+	# prepend LAN hosts
+	cat <<- EOF > "$_HOSTS_FILE"
+		# ===  START scripted LAN entries
+		192.168.1.1 router.$_domain
+		192.168.1.101 XPC.${_domain^^}
+		192.168.1.102 HTPC.${_domain^^}
+		# ===  START curated redirects @ $(date "+%Y-%m-%dT%H:%M:%S")
+	EOF
+}
+hostsManual() {
+	# append manually-collected list
+	cat "${0%/*}/hosts-manual.log" >> "$_HOSTS_FILE"
+}
+hostsFooter() {
+	# append loopbacks
+	cat <<- EOF >> "$_HOSTS_FILE"
+		# ===  START loopbacks
+		::1 ip6-localhost
+		::1 ip6-loopback
+		ff00::0 ip6-localnet
+		ff00::0 ip6-mcastprefix
+		ff02::1 ip6-allnodes
+		ff02::2 ip6-allrouters
+		ff02::3 ip6-allhosts
+	EOF
+}
+
+# Make 'hosts' file
+hostsMake() {
+	hostsHeader 
+
+	# download + append curated hosts file[s]
+	_hosts="$( mktemp )"
+
+	# @ hpHosts :: "ad_servers"
+	# hosts-get https://hosts-file.net/ad_servers.txt >> "$_hosts"
+	# @ SteveBlack :: "Unified hosts = (adware + malware)"
+	#hosts-get https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts >> "$_hosts"
+	hosts-get all >> "$_hosts"
+	[[ "$?" == '86' ]] && { errMSG 'FAIL @ hosts-get REQUIREs'; exit; }
+
+	# Append manually-collected list
+    cat "${0%/*}/hosts-manual.log" >> "$_hosts"
+    echo "" >> "$_hosts"
+
+    # Sort + uniq + prepend header + append footer + DOS-to-Unix
+	sort -u "$_hosts" >> "$_HOSTS_FILE"
+    hostsFooter
+	[[ $( isDOS "$_HOSTS_FILE" ) ]] && dos2unix -q -k "$_HOSTS_FILE"
+	[[ -e "$_hosts" ]] && rm "$_hosts"
+
+	# validate
+	[[ -f "$_HOSTS_FILE" ]] || { errMSG 'FAILed to CREATE hosts file' ; exit 86 ; }
+	# change to POSIX line-endings if they're Windows/DOS
+	[[ $( isDOS "$_HOSTS_FILE" ) ]] && dos2unix -q -k "$_HOSTS_FILE"
+}
+
+# Show 'hosts' file head/tail
+show() { # ARGs: <hosts-file-path> 
+	clear ; printf "\n@ %s\n\n" "${@}"
+	_lines=$( wc "${@}" | awk '{print $1}' )
+	head -n12 "$@"; echo '...'
+	tail -n$(( 9 * ${_lines}/10 )) "$@" | head -n3; echo '...'
+	tail -n$(( 7 * ${_lines}/10 )) "$@" | head -n3; echo '...'
+	tail -n$(( 5 * ${_lines}/10 )) "$@" | head -n3; echo '...'
+	tail -n$(( 3 * ${_lines}/10 )) "$@" | head -n3; echo '...'
+	tail -n$(( 1 * ${_lines}/10 )) "$@" | head -n3; echo '...'
+	tail -n 10 "$@"; echo '==='
+	printf "%+6s %s\n" "$_lines" "lines"
+	printf "%+6s %s\n" "$(( $( stat -c %s "$@" ) / 1024 ))" "KB"
+}
+
+# === DO ===
+
+[[ -f "$1" ]] && { 
+	# if arg ($1), then use it as source for hosts file process
+	hostsHeader
+	cat "$1" >> "$_HOSTS_FILE"
+	exit
+} || {
+	case $1 in
+		"wan") # WAN @ syslog.log + Public Internet Address (IP from ISP)
+			ssh router "cat /tmp/syslog.log" | grep 'WAN'
+			printf "\n<== %s\n\n" 'ssh router "cat /tmp/syslog.log" | grep WAN'
+			ssh router "ip -r route show dev eth0" |grep src |awk '{print "Internet IP Address: "$7}'
+		;;
+		"vpn") # VPN connect/disconnet (on|off) per $2
+			ssh router "/jffs/scripts/router.sh 4 $2"
+		;;
+		"fetch") # download curated hosts; process into one hosts file @ TMP
+			[[ -f "$_HOSTS_FILE" ]] && rm "$_HOSTS_FILE"
+			hostsMake
+		;;
+		"show" ) # show @ TMP
+			[[ -f "$_HOSTS_FILE" ]] || { errMSG 'NO hosts file @ TMP' ; exit 86 ; }
+			show "$_HOSTS_FILE" # @ TMP
+		;;
+		"send" ) # copy hosts from TMP to SMB 
+			clear; printf "\n  %s\n" '... waking SMB ...';
+			cp -up "${_HOSTS_FILE}" "${_SMB_at_Windows}/hosts"
+			[[ -f "${_SMB_at_Windows}/hosts" ]] || { errMSG 'FAILed to SEND hosts file' ; exit 86 ; }
+			show "${_SMB_at_Windows}/hosts" # @ SMB
+		;;		
+		"update") # SSH :: update hosts @ router, from SMB, then reboot router
+			[[ -f "${_SMB_at_Windows}/hosts" ]] || { errMSG 'NO hosts file @ SMB' ; exit 86 ; }
+			ssh router '/jffs/scripts/router.sh 1 x;printf "%s\n" "$USER @ $PWD"'
+		;;
+		"verify") # SSH :: show hosts file @ router; archive hosts @ SMB  
+			ssh router 'ls;/jffs/scripts/router.sh 2;printf "%s\n" "$USER @ $PWD"'
+		;;
+		"archive") # hosts file @ SMB arch/moved: '/[archive]/hosts.YYYY.MM.DD.txz'  
+			[[ -f "${_SMB_at_Windows}/hosts" ]] && {
+				printf "\n%s\n" "Archiving hosts file @ SMB ..."
+				_hostsFile="hosts.$(today)"
+				mv "${_SMB_at_Windows}/hosts" "${_SMB_at_Windows}/${_hostsFile}"
+				txz "${_SMB_at_Windows}/${_hostsFile}"
+				[[ -f "${_SMB_at_Windows}/${_hostsFile}.txz" ]] && {
+					rm "${_SMB_at_Windows}/${_hostsFile}"
+					mv "${_SMB_at_Windows}/${_hostsFile}.txz" "${_SMB_at_Windows}/[archive]/${_hostsFile}.txz"
+				}
+			}
+		;;
+		"block") # SSH :: update malware blocker @ router 
+			ssh router '/jffs/scripts/router.sh 3 x;printf "%s\n" "$USER @ $PWD"'
+		;;
+		"manual") # instructions for manual update 
+			instruct; exit 0 
+		;;
+		*) 
+			printf "\n %s\n" 'ARGs: vpn [on|off]|wan|fetch|show|send|update|verify|archive|block|manual|FILE'
+		;;
+	esac
+}
+
+exit 
+
+
+# ===== DO @ AsusWRT [router] shell ===
+
+	# login via SSH [key-based] 
+	ssh hostName                 # or whatever, per `~/.ssh/config`  
+	ssh -l userName 192.168.1.1  # another example
+	ssh userName@host.$_domain   # another example
+
+	# ===== Load 'hosts.add' ===
+
+	# copy to prepared/scripted load point @ AsusWRT/Merlin
+	_SMB_at_AsusWRT='/tmp/mnt/WinPE/Data'
+	cp "${_SMB_at_AsusWRT}/hosts" '/jffs/configs/hosts.add'
+	chmod 400 /jffs/configs/* # make read-only
+	reboot 
+
+	# ===== View 'hosts' ===
+
+	cat /tmp/etc/hosts | ( head -n 20 ; echo ; tail -n 3 )
+

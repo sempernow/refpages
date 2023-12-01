@@ -1,0 +1,6 @@
+#!/bin/bash
+# This script prints a string only if the f06ybeast bash configuration succeeded.
+[[ "$( type -t REQUIREs )" ]] && {
+    REQUIREs colors; colors
+    printf " $green %s $normal\n" "SUCCESS"
+}

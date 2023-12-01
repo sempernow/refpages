@@ -1,0 +1,117 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# dt v.3 :: Differential Time-series [DT] 
+# 
+#  This script creates a differentials folder set from a set of full backups, 
+#  i.e., from a set of time-adjacent snapshots. Each differential folder, 
+#  "* [dt]", is created from a time-adjacent pair of source [snapshot] 
+#  folders. These DT folders contain all the discrepant files between 
+#  their older-vs-newer snapshot pair. Discrepant files are segregated, 
+#  within their DT folder, into an "older" or "newer" subfolder. The "older" 
+#  contains all changed files, pre-modified or deleted. The "newer" contains 
+#  all changed files, post-modified or added. The snapshots are paired per 
+#  foldernames, e.g., "NAME YYYY-MM-DD [hh.mm]", not by folder mtime. 
+#  Relative paths, and source mtimes, are preserved. 
+# 
+#  dt v.1 uses while-do loops
+#  dt v.2 uses only pipes; rsync [copy] called per file
+#  dt v.3 uses only pipes; rsync [copy] called once per folder pair
+
+# TAGS: Differential Versioning, Version Control System [VCS], 
+#       Digital Asset Management [DAM]
+#
+# ARGs: {folder-path}
+# -----------------------------------------------------------------------------
+[[ "$@" ]] || { script_info "$0"; exit ; }
+
+dt()
+{
+	# --------------------------------------------------------------------------
+	#  FUNCTION DEFINITIONS 
+	# --------------------------------------------------------------------------
+	process_one_pair() # process a pair of time-adjacent folders
+	{  
+		export _OLD="${1}" _NEW="${2}"
+		_CHANGES_file='changes.log'
+		_ERR_OLDer_file='err_older.log'
+		_ERR_NEWer_file='err_newer.log'
+		
+		# validate old/new pair
+		[[ -e "$_OLD" && -e "$_NEW" ]] || return
+		
+		# inform @ dt folder of this older/newer pair ...
+		printf "\n %s" "@ '${_NEW#./} [dt]'"; colors; unset _flag
+
+		# get OLDer [Deleted or (pre)Modified]
+		rsync -rcnC --out-format="%f" "$_OLD/" "$_NEW" > "$_CHANGES_file" 
+
+		# if any OLDer, store @ [dt]/OLDer subfolder,
+		[[ -s "$_CHANGES_file" ]] && {
+			rsync -a --files-from="$_CHANGES_file" . "${_NEW#./} [dt]/" > "$_ERR_OLDer_file" 2>&1
+				_flag='+OLDer '
+		} 
+		
+		# get NEWer [Added or (post)Modified]
+		rsync -rcnC --out-format="%f" "$_NEW/" "$_OLD" > "$_CHANGES_file" 
+		
+		# if any NEWer, store @ [dt]/NEWer subfolder,
+		[[ -s "$_CHANGES_file" ]] && {
+			rsync -a --files-from="$_CHANGES_file" . "${_NEW#./} [dt]/" > "$_ERR_NEWer_file" 2>&1
+			_flag="$_flag"'+NEWer'
+		} 
+
+		# inform per folder-flag if discrepants exist/stored
+		[[ -d "${_NEW#./} [dt]/${_OLD#./}" ]] && printf "  %s" "$blue +OLDer $normal"
+		[[ -d "${_NEW#./} [dt]/${_NEW#./}" ]] && printf "  %s" "$green +NEWer $normal"
+		[[ ! "$_flag" ]] && printf "  %s" "$gray UNCHANGED $normal"
+		printf "\n"
+		# inform and abort if rsync error
+		[[ -s "$_ERR_OLDer_file" ]] && { errMSG 'rsync @ OLDer'; cat "$_ERR_OLDer_file"; return 86; }
+		[[ -s "$_ERR_NEWer_file" ]] && { errMSG 'rsync @ NEWer'; cat "$_ERR_NEWer_file"; return 86; }
+		
+		return 0
+	}
+	export -f process_one_pair # so stream_pairs() can access
+
+	stream_pairs()
+	{ # process older/newer pairs per process_one_pair()
+
+		(( $# == 1 )) || { # end on no more old/new path-pairs
+			# echo $@  # TEST
+			# process; lopp off an arg [path]; recurse [abort if process err]
+			process_one_pair "$@"; (( $? )) && return 86; shift; $FUNCNAME "$@";
+		}	
+	}
+	export -f stream_pairs # so 'find' can access
+
+	# --------------------------------------------------------------------------
+	#  DO 
+	# --------------------------------------------------------------------------
+	REQUIREs errMSG colors rsync find echo shift export printf pushd mkdir
+	# validate target container $@ 
+	[[ -d "$@" && -w "$@" ]] || { errMSG "BAD PATH @ '$@'"; return 86; }
+	pushd "$@" > /dev/null # process per rel-path
+	[[ "$PWD" == "$@" ]] || { errMSG 'FAILed @ pushd "$@"'; return 86; }
+
+	# process all 1st child folders, per older/newer pair(s); ignore differential folders created hereby
+	
+	# FAILs to properly sort ...
+	# find -mindepth 1 -maxdepth 1 ! -iname '* \[dt]' -type d -execdir bash -c 'stream_pairs "$@"' _ {} \+
+	# sort per null separator ...
+	# find -mindepth 1 -maxdepth 1 ! -iname '* \[dt]' -type d -print0 | sort -n -z
+	# test subshell param handling; tricky!!! must catch first param too; that's $0, NOT $1, so missed by $@ !!!
+	# find -mindepth 1 -maxdepth 1 ! -iname '* \[dt]' -type d -print0 | sort -n -z | xargs -0 bash -c 'printf "%s\n%s\n" "$0" "$@"'
+	find -mindepth 1 -maxdepth 1 ! -iname '* \[dt]' -type d -print0 | sort -n -z | xargs -0 bash -c 'stream_pairs "$0" "$@"'
+	
+	# cleanup: delete err-logs if empty; delete [last] changes-log
+	find . -maxdepth 1 -size 0 -iname 'err_*.log' -type f -execdir rm {} \+ 
+	find . -maxdepth 1 -iname 'changes.log' -type f -execdir rm {} \+ 
+			
+	popd > /dev/null 
+	
+	return 0
+}
+
+dt "$@"
+
+exit $?

@@ -1,0 +1,24 @@
+#!/bin/bash
+print_basename_parent() 
+{(  # Prints "  '{BASENAME}' @ '{PATH-SANS-ROOT}'" @ 70 chars [truncate/ellipsis as needed]
+	# PARAMs: {path} [{hide-this-root}]
+	[[ "$1" ]] || return 99
+	
+	_basename="${1##*/}"
+	_parent="${1%/*}" ; _parent="${_parent/$2/}" # folder path sans root
+
+	# format 70-char string :: "  '{BASENAME}' @ '{PATH-SANS-ROOT}'"
+	_lngth=58 ; _elips=" $( printf '.%.0s' {1..70} )"
+	(( mb = $_lngth - ${#_parent} )) ; (( $mb > 30 )) || mb=30 
+	(( ${#_basename} < $mb )) && mb=${#_basename} ; (( mp = $_lngth - $mb ))
+	[[ "${_basename:0:$mb}" == "$_basename" ]] || { (( mb = $mb - 3 )) ; _basename="${_basename:0:$mb}..." ; }
+	[[ "${_parent:0:$mp}"   == "$_parent"   ]] || { _parent="${_parent:0:$mp}..." ; }
+	_basename="'${_basename}'" ; [[ "$_parent" ]] && _parent="@ '${_parent}'$_elips" || _parent="$_elips"
+	(( mb = $mb + 5 )) ; (( mp = $mp + 7 ))
+	
+	printf "  %.${mb}s %.${mp}s" "$_basename" "$_parent"
+)}
+
+# -- RUN --
+
+print_basename_parent "$@"

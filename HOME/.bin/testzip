@@ -1,0 +1,38 @@
+#!/bin/bash
+# ------------------------------------------------------------------
+#  Tests *.zip files only; all in and under $@ [full depth]
+#  - retrofitted into test7z, but this one is fast; per pipeline
+#  - reports WARNINGs:yellow; ERRs:red 
+# 
+#  ARGs: <folder-path>
+# ------------------------------------------------------------------
+[[ -d "$@" ]] || { script_info "$0" ; exit 99 ; }
+REQUIREs colors
+echo 
+foo(){
+	colors ; _tmp_file="$( mktemp )"
+	7z t -y "$1" > "$_tmp_file" 2>&1
+	_err=$?
+	# echo fname on WARNING or ERR
+	#[[ "$( cat "$_tmp_file" | grep WARNING )" || $_err -gt 0 ]] && echo " $1"
+	color='green'
+	[[ "$( cat "$_tmp_file" | grep 'WARNING' )" ]] && { color='yellow'; (( _count_fail += 1 )); } 
+	(( $_err > 0 )) && { color='red'; (( _count_fail += 1 )); }
+	[[ "$color" == 'green' ]] && (( _count_success += 1 ))
+	(( _count_process += 1 ))
+	[[ "$color" != 'green' ]] && printf " ${!color}%s${normal}\t%s\n" '  ' "$1"
+	
+	rm -f "$_tmp_file"
+}
+streamArgs() { 
+	_foo_MINARGS=1; _N=1 
+	(( $# < $_foo_MINARGS )) && return
+	( foo "$1" ); shift $_N; $FUNCNAME "$@" 
+}
+export -f streamArgs # must export so subshell @ `find` can access
+export -f foo        # must export so subshell @ `find` can access
+	
+find "$@" -type f -iname '*.zip' \
+ -exec bash -c 'streamArgs "$@"' sh {} \+
+
+exit

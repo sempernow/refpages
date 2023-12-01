@@ -1,0 +1,33 @@
+#!/bin/bash
+# ************************************************************
+
+# STREAM PROCESS; recurse to stream through args; proces any # args per foo 
+		foo() { 
+			printf "%s\n" "$1"
+			# touch -r "$( newest "$1" )" "$1"
+		}
+		
+		streamArgs() { 
+			_foo_MINARGS=1
+			(( $# < $_foo_MINARGS )) && return
+			# spawn background process; lopp an arg; recurse
+			(foo "$@" &); shift; $FUNCNAME "$@" 
+			# if $@ = 1 2 3 ... n, and foo takes 2 args
+			# then it processes per foo 1 2, foo 2 3, ..., foo (n-1) (n)
+		}
+		
+		#find 
+		echo '========='
+		export -f streamArgs
+		export -f foo # must export so find can access
+		#time find . -type d -execdir bash -c 'streamArgs "$@"' _ {} \+ # note bizarre syntax; `_` is `$0`
+		time find . -type d -exec bash -c 'touch -r "$( newest "$@" )" "$@" &' _ {} \; # note bizarre syntax; `_` is `$0`
+
+		#time find . -type d -execdir bash -c 'printf "\t[%s]\n" "  ${@#./}";touch -r "$( newest "$@" )" "$@" &' _ {} \+
+		#time find . -type d -execdir bash -c 'printf "\t[%s]\n" "  ${@#./}";touch -r "$( newest "$@" )" "$@" &' _ {} \;
+		#time find . -type d -execdir bash -c 'printf "\t[%s]\n" "  ${@#./}";touch -r "$( newest "$@" )" "$@" &' _ {} \+
+		#time find . -type d -execdir bash -c 'touch -r "$( newest "$@" )" "$@" &' _ {} \;
+		#time find . -type d -exec bash -c 'touch -r "$( newest "$@" )" "$@" &' _ {} \;
+
+
+exit 

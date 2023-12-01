@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Clean *.URL file(s) 
+
+# PARAMs: [FILE|FOLDER; PWD default)]
+
+_cleanurl(){ # PARAMs: FILE
+    # Remove all known lines except for 'URL=...'
+    awk '!/IDList|HotKey|IconFile|IconIndex/' "$@" > "${@}.fixed"
+    rename "${@}.fixed" "$@"  # overwrite source file
+}
+
+# Handle FILE|FOLDER arg (default to all @ PWD)
+[[ -f "$@" ]] && { _cleanurl "$@"; } || {
+    [[ -e "${@:-.}" ]] && {
+        export -f _cleanurl  # export for subshell access
+        find "${@:-.}" -type f -iname '*.URL' -execdir /bin/bash -c '_cleanurl "$@"' _ {} \; 
+    }
+}

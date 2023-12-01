@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+#  Tarball PWD (sans certain directories)
+# -------------------------------------------------------------
+_ext='tgz'; _sans=; _excl=
+
+# Search for, and flag, certain folder names for exclusion
+_has() { find . -type d -name "$@"; }
+for d in '.git' 'node_modules' '.vagrant'
+do 
+    [[ $( _has $d ) ]] && {
+        _excl+="--exclude=$d "
+        _sans+="-[sans.${d/./}]"
+    }
+done
+_excl+=--exclude='package-lock.json '
+_excl+=--exclude='\[z\] '
+_excl+=--exclude='AWS.\[IT\] '
+_excl+=--exclude='AWS.\[Projects\] '
+_excl+=--exclude='REFs '
+_excl+=--exclude='terraform.tfstate '
+_excl+=--exclude='terraform.tfstate.backup '
+_excl+=--exclude='registry.terraform.io '
+_excl+=--exclude='.store '
+_excl+=--exclude='.venv '
+_excl+=--exclude='pg_wal.tar.gz '
+#_excl+=--exclude='sql/dump '
+#... mind REQUIREment for trailing space
+
+# Update timestamps 
+timestamp . > /dev/null 
+
+# Create tarball
+tar -caf "./../${PWD##*/}.${_ext}" \
+    $_excl --exclude-from <(find . -size +1100k) --dereference \
+    -C "./../${PWD##*/}" \
+    . 
+
+# Set mtime of archive to newest in source 
+touch -r "$PWD" "./../${PWD##*/}.${_ext}"  
+sleep 1
+# Rename per mtime
+_tarball="${PWD##*/}.$(date -r "./../${PWD##*/}.${_ext}" \
+    "+%F-[%H.%M]")${_sans}.${_ext}"
+mv "./../${PWD##*/}.${_ext}"  "./../${_tarball}"
+
+# Report
+[[ -f "./../${_tarball}" ]] && {
+    echo "  '${_tarball}'" 
+    echo "   @ '${PWD%/*}'" 
+} || echo "Tarball FAILed"

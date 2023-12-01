@@ -1,0 +1,44 @@
+#!/bin/bash
+# This script is called by a cross platform bash config script, which handles
+# Linux, Cygwin, MINGW[32/64], Git for Windows [mintty], and MSYS[2] environments.  
+
+cygpath() # Mimic cygpath [Cygwin] utility if native not exist, else call native and return.
+{(        # Handles POSIX <=> Windows path-syntax conversions; both directions.
+          # '/a/foo' <==> 'a:\foo' ; '/cygpath/a/foo' <==> 'a:\foo' ; handles both cases.
+		  # PARAMs: '-au'|'-aw' {path}
+	[[ "$( type -t /usr/bin/cygpath )" ]] && { /usr/bin/cygpath "$@" ; return 0 ; }
+	
+	_syntax="${1,,}" ; shift ; _path="$*" 
+
+	[[ ( "$_path" == ${_path/':'} ) && ( "$_path" == ${_path/'/'} ) ]] && { echo "$_path"; return 0 ; }
+
+	case "${_syntax:2:1}" in 
+	
+		'w') # POSIX => Windows
+			#_CYGDRIVE='/cygdrive'
+			[[ "${_path#${_CYGDRIVE}/}" != "${_path}" ]] && _path=${_path/"${_CYGDRIVE}/"/} || _path=${_path:1}
+			_path="${_path//'/'/'\'}"  # '/' => '\'
+			_path="${_path//\'/}"      # strip single-quote[s]
+			# set drive letter
+			[[ "${_path:1:1}" == '\' ]] && { _ltr="${_path:0:1}"; _path="${_path:2}"; } || _ltr='c'
+			# prepend '<drv-ltr>:\' to path 
+			_path="${_ltr}"':\'"${_path}"
+			
+			echo "$_path"
+		;;
+		
+		'u') # Windows => POSIX
+			#[[ "$OSTYPE" == 'cygwin' ]]  && _CYGDRIVE='/cygdrive' || unset _CYGDRIVE
+			_path="${_path//'\'/'/'}" # replace ALL back- w/ forward- slash
+			[[ "${_path:1:1}" == ':' ]] && _path="${_CYGDRIVE}/${_path/://}" 
+			printf "%s\n" "$_path" | sed 's#//#/#g'
+		;;
+		
+		*) # return unconverted path on bad param
+			echo "$_path" ; return 99
+			#errMSG "FAIL @ $FUNCNAME['${_syntax}']"
+		;;
+	esac
+)}
+
+cygpath "$@"

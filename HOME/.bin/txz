@@ -1,0 +1,4 @@
+#!/bin/bash
+export _ARCHIVE_HANDLER_TYPE="${0##*/}"
+_archive_handler "$@"
+exit 

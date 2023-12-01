@@ -1,0 +1,24 @@
+#!/bin/bash
+exit 
+
+# STREAM PROCESSor [generalized]
+# foo is the process; constrains the number of args per process.
+# N controls stream-window shift.
+foo(){
+    echo "[$1] + [$2] + [$3]"
+}
+streamArgs() { 
+    # set args per window [process] and window shift 
+    _foo_MINARGS=3; _N=3 
+    (( $# < $_foo_MINARGS )) && return
+    # spawn bkgnd `foo` process; lop N args; recurse
+    ( foo "$@" & ); shift $_N; $FUNCNAME "$@" 
+    # if $@ = 1 2 3 ... n, and `foo()` takes 2 args, 
+    #  then, if _N=1, stream is processed per 
+    #  `foo 1 2`, `foo 2 3`, ..., `foo (n-1) (n)`.
+}
+export -f streamArgs # must export so subshell @ `find` can access
+export -f foo        # must export so subshell @ `find` can access
+#find . -maxdepth 1 -execdir bash -c 'streamArgs "$@"' _ {} \+ # note bizarre syntax; `_` is `$0`
+#seq 13 | xargs bash -c 'streamArgs $@' #_ {} \+ # note bizarre syntax; `_` is `$0`
+seq 13 | xargs  bash -c 'streamArgs "$0" "$@"'

@@ -1,0 +1,7 @@
+#!/bin/bash
+source "$_SCRIPTS_FOLDER/_config_hmuck"        # call config script
+
+${0##*/} "$@"
+
+# -- EXIT --
+exit

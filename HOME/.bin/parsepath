@@ -1,0 +1,4 @@
+#!/bin/bash
+# parsepath.bat
+clear ; echo ; echo '$PATH ...'; echo
+echo $PATH | tr ':' '\n' # tr :: 'translate' utility

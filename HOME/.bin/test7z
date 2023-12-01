@@ -1,0 +1,97 @@
+#!/bin/bash
+test7z()
+{        
+# ----------------------------------------------------------
+#  Test all archives [7z, zip, tgz, iso, wim, ...] in "$@"
+# 
+#    ignores all in _archstore namespace; *' [s].7z'
+# 
+#  PARAMs: [-p{7z-password}] {arch-or-folder-path}
+# ----------------------------------------------------------
+	REQUIREs 7z colors now mktemp _print_basename_parent script_info
+	(( _count_process = 0 )) ; (( _count_success = 0 )) ; (( _count_fail = 0 ))
+
+	report() 
+	{   # report on nothing processed
+		[[ (( $_count_process == 0 )) && ! "$@" ]] && { errMSG "NOTHING processed #[${_count_fail}/${_count_process}]"; return 99; }
+		# report on success or fail
+		(( $_count_fail != 0 )) && {
+			printf "\n %s\n" "$red CORRUPT $normal #[${_count_fail}/${_count_process}]"
+		} || {
+			printf "\n %s\n" "$green SUCCESS $normal #[${_count_success}/${_count_process}]"
+		}
+		return $_count_fail
+	}	
+	
+	testArchive() # 7z :: Test archive integrity
+	{    # PARAMs: {archive-path}
+	      # PRESETs: [ $root, $key ]
+		  
+		# ignore all files in _archstore script namespace 
+		[[ "${@##*/}" == *' [s].7z' ]] && return 0;
+		
+		# print :: archive fname & [rel]path info
+		_print_basename_parent "$@" "$root"
+		
+		# do :: test archive integrity [silently]; WARNING or ERR
+		7z t -p"$key" -y "${@}" > "$_test" 2>&1 ; _err=$?
+		
+		# print :: append color-block per success/fail of integrity test
+		color='green'
+		[[ "$( cat "$_test" | grep 'WARNING' )" ]] && { color='yellow'; (( _count_fail += 1 )); } 
+		(( $_err > 0 )) && { color='red'; (( _count_fail += 1 )); }
+		[[ "$color" == 'green' ]] && (( _count_success += 1 ))
+		(( _count_process += 1 ))
+		printf " ${!color}%s${normal}\n" "  "
+		# err-log :: write path on fail 
+		[[ "$color" != 'green' ]] && echo "$@" >> "$_err_log" 2> /dev/null
+	}
+
+	# init
+	[[ "$@" ]] || { script_info "$0" ; return 99 ; }
+	colors ; declare root ; declare key
+	_types="7z bz2 bzip2 cbr deb gz gzip iso lzma tar tbz tgz wim xz zip"
+	_tmp_dir="$( mktemp -p "$TMPDIR" -d "${0##*/}.$( now ).XXXXXXXXXXXXX" )" # mk temp-dir @ $TMP
+	_log="$_tmp_dir/${0##*/}.log" ; _err_log="$_tmp_dir/${0##*/}_ERR.log" ; _test="$_tmp_dir/${0##*/}_test.log"
+	
+	# get/set password on '-p...' [one for all *.7z] 
+	[[ "${1:0:1}" == '-' ]] && { key="${1:2}" ; shift ; }
+	
+	# log [list] archive[s] path ; set root
+	[[ -f "$@" ]] && { # if one archive, ...
+		echo "$@" >> "$_log"
+		root="${@%/*}" ; root="${root%/*}" # grandparent
+	} || { # else, all archives @ dir and all subfolder[s]; default to current dir
+		declare dir="$@" ; dir="${dir:-$PWD}" ; root="$dir" # allows (un)quoted dir path-with-whitespace		
+		printf "\n  %s\n\n" "  Building target list @ '${root}/...'"
+		for ftype in $_types
+		do  # log the path of all ftype archive[s] in dir [incl subdirs]
+			find "$dir" -type f -iname "*.$ftype" -printf "${dir}/%P\n" >> "$_log" 2> /dev/null # silent if none
+		done
+	}
+	# print :: header
+	clear ; printf "\n  %s\n\n" "  TEST Archive[s] @ '${root}/...'"
+	# do :: test archive[s] integrity per path[s] in log
+	while IFS='' read -r path || [[ -n "$path" ]] 
+	do
+		[[ -f "$path" ]] && testArchive "$path" # test this archive
+	done < "$_log"
+	
+	report 
+	
+	# delete tmp-dir if err-log not exist, else show err-log & query/delete
+	if [[ -e "$_err_log" ]]
+	then 
+		printf "\n  %s\n\n" "err-log ..." ; cat "$_err_log"
+		printf "\n\n  %s  " "DEL err-log [Y] ?"
+		read _query ; [[ "$_query" ]] || _query='Y'
+		_query="${_query^^}"
+	else 
+		_query='Y'
+	fi 
+	[[ "${_query:0:1}" == 'Y' ]] && { [[ -d "$_tmp_dir" ]] && rm -r "$_tmp_dir" ; }
+}
+
+# -- RUN --
+
+test7z "$@"

@@ -1,0 +1,160 @@
+#!/bin/bash
+# f06yBEAST 2015-11-10
+# cmuck [REFc] library ported from cmd_library [Windows7]
+# [source for persistent config]
+
+configcmuck()
+{	
+	[[ "$_REF_FOLDERc" ]] && return 0
+	
+	REQUIREs errMSG putclip sha1 sha512 
+	
+	# get/set keys
+	_REF_FOLDERc="$_MUCK_REF_FOLDER/REFc"
+	_REF1="$_REF_FOLDERc/REF1"
+	_REF2="$_REF_FOLDERc/REF2"
+
+	 declare err
+	[[ -r $_REF1 ]] && _h51=$( sha512 -q "$_REF1" ) || { errMSG "$FUNCNAME[REF1][_h51]" ; err=$? ; }
+	[[ -r $_REF2 ]] && _h52=$( sha512 -q "$_REF2" ) || { errMSG "$FUNCNAME[REF2][_h52]" ; err=$? ; }	
+	[[ -r $_REF2 ]] && _h12=$( sha1 -q "$_REF2" )   || { errMSG "$FUNCNAME[REF2][_h12]" ; err=$? ; }
+	
+	# exit on fail [any REFn not a readable file], else return 0
+	(( $err )) && exit 86 || return 0  
+}
+
+configcmuck
+
+muck5()  
+{(  # HMUCK(msg) = H( map9[ H(ref1) + H(H(ref2) + map10[msg]) ] )
+	
+	[[ "${1,,}" == '-q' ]] && { _HASH_QUIET=1 ; shift ; } || unset _HASH_QUIET
+	
+	_result="$@"
+	
+	# 3x algo
+	for (( i = 0 ; i <= 2;  i++  ))
+	do
+		_result=$( map10 "$_result" )
+		_result=$( sha512 -q "${_h52}${_result}" )
+		_result=$( map09 "${_h51}${_result}" )
+		_result=$( sha512 -q "$_result" )	
+	done
+
+	# validate/inform on nul input
+	[[ ! "$@" ]] && _validate 7e689a1a55cedb7123911370d25d61d70a741fccee6601476791e16d5ea916a7d280b7baa5fbadf050d13d703cca7d308623b073851e2dc0c3c5b710adb0e909
+
+	echo $_result
+	[[ "$_HASH_QUIET" ]] || putclip $_result
+)} 
+
+muck1()  
+{( 	# H(msg) = H( map8[ H(ref2) ] + map7[msg] ) 
+	
+	[[ "${1,,}" == '-q' ]] && { _HASH_QUIET=1 ; shift ; } || unset _HASH_QUIET
+	
+	_result="$@"
+	
+	# 3x algo
+	for (( i = 0 ; i <= 2;  i++  ))
+	do
+		_map7m=$( map07 "$_result" )
+		_map8h12=$( map08 "${_h12}" )
+		_result=$( sha1 -q "${_map8h12}${_map7m}" )
+	done
+
+	# validate/inform on nul input
+	[[ ! "$@" ]] && _validate f9d6f07ff72ea6c83096e66c7ad5b1d7bf3d298a
+
+	echo $_result
+	[[ "$_HASH_QUIET" ]] || putclip $_result
+)}    
+
+_validate() 
+{   # test result against expected [known] result, and inform
+	colors
+	if [ "$@" == "$_result" ] 
+	then
+		echo " $green VALIDATES @ nul input $normal"
+	else
+		errMSG "FAILed validation"
+		echo "${aqua}$@${normal} [expected]"
+	fi
+}
+
+map07()
+{	# Linotype1
+	_result="$@"
+	_result=${_result// /}
+	_result=${_result//E/x}
+	_result=${_result//e/x}
+	_result=${_result//T/9}
+	_result=${_result//t/9}
+	_result=${_result//A/Q}
+	_result=${_result//a/Q}
+	_result=${_result//O/3}
+	_result=${_result//o/3}
+	_result=${_result//I/1}
+	_result=${_result//i/1}
+	_result=${_result//N/u}
+	_result=${_result//n/u}
+	echo $_result
+}
+map08() 
+{	# altHEX
+	_result="$@"
+	_result=${_result// /}
+	_result=${_result//0/J}
+	_result=${_result//F/K}
+	_result=${_result//f/K}
+	_result=${_result//J/f}
+	_result=${_result//j/f}
+	_result=${_result//K/0}
+	_result=${_result//k/0}
+	_result=${_result//2/J}
+	_result=${_result//5/K}
+	_result=${_result//J/5}
+	_result=${_result//j/5}
+	_result=${_result//K/2}
+	_result=${_result//k/2}
+	echo $_result
+}
+map09()
+{	# altHEX
+	_result="$@"
+	_result=${_result// /}
+	_result=${_result//1/J}
+	_result=${_result//D/K}
+	_result=${_result//d/K}
+	_result=${_result//J/d}
+	_result=${_result//j/d}
+	_result=${_result//K/1}
+	_result=${_result//k/1}
+	_result=${_result//2/J}
+	_result=${_result//9/K}
+	_result=${_result//J/9}
+	_result=${_result//j/9}
+	_result=${_result//K/2}
+	_result=${_result//k/2}
+	echo $_result
+}
+map10() 
+{	# Linotype2
+	_result="$@"
+	_result=${_result// /}
+	_result=${_result//E/9}
+	_result=${_result//e/9}
+	_result=${_result//T/v}
+	_result=${_result//t/v}
+	_result=${_result//A/7}
+	_result=${_result//a/7}
+	_result=${_result//O/Q}
+	_result=${_result//o/Q}
+	_result=${_result//I/3}
+	_result=${_result//i/3}
+	_result=${_result//N/Z}
+	_result=${_result//n/Z}
+	_result=${_result//S/w}
+	_result=${_result//s/w}
+	echo $_result
+}

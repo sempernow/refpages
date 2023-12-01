@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#[[ -r /media/share ]] || sudo mount -t drvfs '//RT-AC66U/etc' /media/share
+# Run : `sudo /bin/bash THIS_FILE`
+mount -t drvfs '//RT-AC66U/etc' /media/share
+[[ -r /media/share ]] && ls /media/share

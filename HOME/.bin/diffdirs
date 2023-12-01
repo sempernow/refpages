@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+#  diff -ENwburq dir1 dir2
+#
+#   List all FILEs that DIFFER between two directories.
+#   - Includes file(s) missing in either.
+#     
+#  ARGs: dirPATH1 dirPATH2
+# -------------------------------------------------------------
+[[ "$2" ]] || { script_info "$0"; exit 99; }
+
+diff -ENwburq "$1" "$2"

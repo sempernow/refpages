@@ -1,0 +1,12 @@
+#!/bin/bash
+# f06yBEAST 2015-11-14
+# storage library ported from cmd_library [Windows7]
+# auto encrypt/decrypt/hashname per hmuck method
+# PARAMs: NAME{storage}
+# ----------------------------------------------------------
+_MODE='STORAGE'
+source "$_SCRIPTS_FOLDER/_archstore"
+
+
+
+

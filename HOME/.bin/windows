@@ -1,0 +1,5 @@
+#!/bin/bash
+# preselect grub menu entry 'Windows 7' on next boot [only]
+REQUIREs grub2-reboot systemctl; (( $? )) && exit
+sudo grub2-reboot 'Windows 7' && sudo systemctl reboot
+exit

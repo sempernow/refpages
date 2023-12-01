@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+#  cURL cheat.sh :: cheats per tool cheat.sh/TOOL
+# 
+#  ARGs: [ TOOL[/OPTION] ] 
+# -------------------------------------------------------------
+[[ "$( type -t curl )" ]] || { script_info "$0"; exit 99; }
+
+[[ ! "$1" ]] && curl -s cheat.sh || { 
+    curl -s cheat.sh/${1}
+}
+exit 
+
+# Firefox
+-A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0'
+# Chrome
+-A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'

@@ -1,0 +1,52 @@
+#!/bin/bash
+# -------------------------------------------------------------
+# timestamp :: reset @ FOLDERS 
+# 
+#  1. PWD, per source archive namesake (at [DIR] root).
+#  2. ALL|root, per newest file therein. 
+# 
+#  ARGs:  EXT [DIR] | [DIR] [1(root-only)]
+# -------------------------------------------------------------
+[[ "${1}" ]] && echo || { script_info "$0"; echo; }
+
+_timestamp()
+{
+	REQUIREs errMSG; _PWD_only='-maxdepth 1'
+	# determine case from args
+	[[ -d "$1" ]] && _case='newest' || _case='arch'
+	[[ "$1" == '1' || "$2" == '1' ]] && _case='newest'
+	[[ ! "$1" ]] && _case='newest'
+	
+	# case 1: per namesake archive
+	[[ "$_case" == 'arch' ]] && {
+		# handle param(s); validate|quit
+		[[ "$1" ]] || { errMSG "'EXT' arg REQUIREd"; return 99; }
+		[[ -d "$2" || ! "$2" ]] || { errMSG "'$2' is NOT a dir"; return 99; }
+		printf " %s\n %s\n\n" "RESET mtime of all 1st-child folders PER its NAMESAKE '*.$1'" "@ '${2:-$PWD}'"
+		export _EXT="$1"
+		# set timestamp[s] of folder[s] 
+		find "${2:-$PWD}" $_PWD_only -type f -iname '*.'"$_EXT" \
+		  -exec bash -c 'touch -r "${@}" "${@/.$_EXT/}" &' _ {} \;
+	}
+
+	# case 2: per newest file therein
+	[[ "$_case" == 'newest' ]] && { 
+		# handle param(s); validate|quit
+		
+		[[ "$1" == '1' || "$2" == '1' ]] && { _dset='ROOT '; } || { unset _PWD_only; _dset='ALL '; }
+		[[ -d "$1" ]] && _target="$1" || _target="$PWD"
+		printf " %s\n %s\n\n" "RESET mtime of ${_dset}folders PER NEWEST therein" "@ '${_target}'"
+		[[ ! "$1" ]] && { printf " %s\n\n" 'press ENTER|CTRL+C'; read; }
+		REQUIREs newest # finds newest file within a folder (Win OS exclusions)
+		# set timestamp(s) of folder(s), sans '.git'
+		find "${_target}" $_PWD_only -maxdepth 9 -type d \! \( -type d \( -path '*/.git' -o -path '*/node_modules' \) -prune \) \
+		 -exec bash -c 'touch -r "$( newest "$@" )" "$@" &' _ {} \;
+	}
+	return 0
+}
+
+_timestamp "$@"
+
+exit 
+
+find . -type d \! \( -type d \( -path './.git/*' -o -path './node_modules/*' \) -prune \)

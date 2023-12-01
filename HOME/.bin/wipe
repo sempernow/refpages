@@ -1,0 +1,71 @@
+#!/bin/bash
+wipe() # >>> DESTRUCTIVE SCRIPT <<<
+{(  # Destroy all folders & files [content & names] under input path [full depth]
+    # PARAMs: {target-path}
+	REQUIREs _folders_random_rename _print_basename_parent randomalpha colors paths
+
+	wipefile() 
+	{   # append & overwrite target w/ 4|8|12|16 KB (random-select) of random ASCII chars,       
+		# and rename w/ 32 random 'a-zA-Z0-9' chars plus prepended count-string of '#####_LOL_'
+		# PARAMs: {file-path}
+		(( count += 1 ))
+		# destroy content
+		_bytes="$(( ( ( RANDOM % 4 ) + 1 ) * $block_size ))" # 1x to 4x block-size [bytes]
+		cat /dev/urandom | head -c $_bytes >> "$*" # append bytes
+		_bytes="$(( ( ( RANDOM % 4 ) + 1 ) * $block_size ))"
+		cat /dev/urandom | head -c $_bytes >  "$*" # overwrite bytes
+		# rename
+		mv "$*" "${*%/*}/$( printf "%.5d" "$count" )_LOL_$( randomalpha 32 )"
+	}
+	countdown()
+	{(  # warn/countdown to destruction ; break/proceed on <ENTER> [user-input]
+	    # PARAMs: {countdown-from-time(secs)} {target-path}
+		[[ "${1//[0-9]}" = '' ]] && t=$1 || t=45 # $1 is integer [validates|default]
+		for (( i=$t; i >= 0; i-- ))
+		do 
+			[[ -d "$2" ]] && s='DESTROY ALL therein' || s='DESTROY THIS file' ; clear
+			printf "\n  %s\n\n  %s %.2d %s\n" "@ '${2##*/}'" "${red}>>> $s ..." "$i" "<<<${normal}"
+			read -t 1 ; (( $? )) || return 0
+		done
+	)}
+	# init 
+	declare block_size=4096 ; declare count ; colors ; clear
+
+	# instruct/warn & end on disallowed input 
+	[[ -e "$*" && ! ( "${1///}" == '' || "${1//.}" == '' ) ]] && countdown 30 "$*" || { printf "\n %s\n\n         %s\n" 'PARAMs: {target-file-or-folder-path}' "${red}>>> ALL therein DESTROYED <<<${normal}" ;  exit 99 ; }
+
+	# if input is a file [path], ...
+	[[ -f "$*" ]] && wipefile "$*"
+
+	# if input is a folder [path], ...
+	[[ -d "$*" ]] && { # process all files & folders in & under root [$*]
+
+		printf "\n %s\n\n" "DESTROY :: files @ '$*/...'"
+		
+		while read path # wipe per paths() [abs-path-list of all FILEs @ $*]
+		do
+			wipefile "$path" &
+			_print_basename_parent "$path" "$*" ; printf '\n'
+			
+		done <<< "$( paths "$*" )"
+		
+		printf "\n %s\n\n" "RENAME :: folders @ '$*/...'"
+	
+		export _SAFETY_KEY=1
+		_folders_random_rename "$*"  # rename all [sub]folders in $* to random alpha-num str
+		
+		printf "\n %s\n\n" "WIPED all @ '$*/...'"
+		
+		# delete residue after inform/pause/timeout 
+		read -n1 -r -t 90 -p "  Press any key to DELETE residue ..." key
+		# del subfolders 
+		paths "$*" | while read f; do { [[ "$*" != "${f%/*}" ]] && rm -rf "${f%/*}"; }; done
+		# del root files 
+		paths "$*" | while read f; do rm -rf "$f" ; done		
+		
+		printf "\n %s\n\n" "DONE :: ${0##*/} @ '$*/...'"
+	}
+)}
+# -- RUN --
+
+wipe "$*" # quoted or unquoted path okay

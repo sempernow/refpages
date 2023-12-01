@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# -----------------------------------------------------------------------
+#  Pathing + permissions @ docker-machine 
+#  config.json : convert : posix <==> win
+#
+#  ARGs: posix | win
+# -----------------------------------------------------------------------
+
+target='config.json'
+
+[[ "$1" ]] || { script_info "$0"; exit 99; }
+
+[[ "$1" == 'posix' ]] && {
+	find ~/.docker/machine/machines -type f -name $target \
+		-exec sed -i 's#\\\\#/#g' {} \+ 
+
+	find ~/.docker/machine/machines -type f -name $target \
+		-exec sed -i 's/C:/\/c/g' {} \+ 
+}
+
+[[ "$1" == 'win' ]] && {
+	find ~/.docker/machine/machines -type f -name $target \
+		-exec sed -i 's/\/c\//C:\//g' {} \+  
+
+	find ~/.docker/machine/machines -type f -name $target \
+		-exec sed -i 's#/#\\\\#g' {} \+ 
+
+	find ~/.docker/machine/machines -type f -name $target \
+		-exec sed -i 's#tcp:\\\\\\\\#tcp://#g' {} \+ 
+
+	find ~/.docker/machine/machines -type f -name $target \
+		-exec sed -i 's#https:\\\\\\\\#https://#g' {} \+ 
+}
+
+# chmod ...
+find ~/.docker/machine/machines -type d -exec chmod 700 {} \+
+find ~/.docker/machine/machines -type f -exec chmod 600 {} \+
+find ~/.docker/machine/machines -type f -iname '*.pem*' -exec chmod 400 {} \+
+ 
+exit
+
+sed -i 's/credsStore/credStore/g' ~/.docker/config.json

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------------
+# Change paths, line by line, in every file matching search string
+# 
+# PARAMs: SEARCH_STR REPLACE_STR
+# -------------------------------------------------------------------
+
+[[ ! "$2" ]] && { script_info "$0"; exit; }
+# Can't handle white spaces
+find . -type f -exec grep -l "$1" "{}" \+ | xargs sed -i "s#${1}#${2}#g"

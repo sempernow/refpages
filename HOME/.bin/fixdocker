@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------------
+#  fixdocker : fix DfW's recurringly misnamed credStore
+#  
+#  ARGs: <none>
+# -------------------------------------------------------------
+#[[ "$1" ]] || { script_info "$0"; exit 99; }
+
+sed -i 's/credsStore/credStore/g' ~/.docker/config.json

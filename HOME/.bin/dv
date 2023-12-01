@@ -1,0 +1,66 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# dv :: Differential Versioning [DV] 
+# 
+#  DV storage schemes radically reduce versioning storage requirements. 
+#  Instead of storing successive snapshots of the entire source, only 
+#  the most recent is stored, while discrepant files are stored per 
+#  snapshot under a timestamped folder. The script runs as an infinite
+#  loop. New files are NOT 'discrepant' until modified. 
+# 
+#  RUN AS BACKGROUND PROCESS.
+# 
+# TAGS: Differential Versioning, Version Control System [VCS], 
+#       Digital Asset Management [DAM]
+#
+# ARGs: {source-path}
+# -----------------------------------------------------------------------------
+[[ "$@" ]] || { script_info "$0"; exit ; }
+
+dv()
+{
+	# --------------------------------------------------------------------------
+	#  FUNCTION DEFINITIONS 
+	# --------------------------------------------------------------------------
+	loop()
+	{
+		while true
+		do
+			# contains discrepant files, in prior state; "[YYY-MM-DD] [HH.MM]"
+			[[ -d "$_DV" ]] && _OLD_DV="$_DV"
+			_DV="$_DV_CONTAINER/$( todaynow x )"; _DV="${_DV/_/ }" ; _DV="${_DV:0:(-4)}]"
+			[[ -d "$_DV" ]] || mkdir "$_DV"
+			[[ -d "$_OLD_DV" ]] || _OLD_DV="$_DV"
+			
+			# save discrepant files to DV, if any, then update clone from source
+			rsync --force --ignore-errors --delete-excluded --delete --backup --backup-dir="$_DV" -a "${_SOURCE}/" "${_CLONE}/" > /dev/null 2>&1
+			
+			# if DV is empty, delete it; update mtime of clone to that of newest DV
+			[[ "$(ls -A "$_DV_OLD" 2>/dev/null)" ]] && touch -r "$_OLD_DV" "${_CLONE}"
+			[[ "$(ls -A "$_DV" 2>/dev/null)" ]] && touch -r "$_DV" "${_CLONE}" || rmdir "$_DV"
+			
+			sleep 60
+		done # NEVER <<< infinite loop
+	}
+	# --------------------------------------------------------------------------
+	#  DO 
+	# --------------------------------------------------------------------------
+	REQUIREs todaynow errMSG rsync mkdir rmdir sleep printf
+	[[ -d "$_VERSIONING"  ]] || { errMSG '$_VERSIONING Env. Var. UNSET'; return 86; }
+	[[ -d "$@" && -w "$@" ]] || { errMSG "BAD PATH @ '$@'"; return 86; }
+	_SOURCE="$@"
+	_source_name="${@##*/}"
+	_DV_CONTAINER="${_VERSIONING}/$_source_name [$( today x )]"
+	# "SOURCE_NAME [YY-MM-DD]"
+
+	# contains the one full and continually updated copy of the source
+	_CLONE="${_DV_CONTAINER}/$_source_name"
+	[[ -d "$_CLONE" ]] || mkdir -p "$_CLONE"
+	[[ -d "$_CLONE" ]] || { errMSG 'FAILed @ mkdir $_CLONE'; return 86; }
+
+	loop # infinite; run script as background process 
+}
+
+dv "$@"
+
+exit $?

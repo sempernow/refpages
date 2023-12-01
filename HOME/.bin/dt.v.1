@@ -1,0 +1,53 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# dt v.1 superceded by v.2 
+# v.1 uses nested while-do loops; v.2 uses stream processing
+# -----------------------------------------------------------------------------
+dt() 
+{ 
+	REQUIREs rsync errMSG; declare _NEW
+	[[ -d "$@" && -w "$@" ]] || { errMSG "BAD PATH @ '$@'"; exit 86; }
+	pushd "$@" > /dev/null # process per rel-path
+	[[ "$PWD" == "$@" ]] || { errMSG "FAILed @ pushd"; exit 86; }
+	
+	# process all 1st child folders in "$@", per old/new pair
+	while read line 
+	do
+		_OLD="$_NEW"; _NEW="$line"
+		[[ -e "${_NEW}" ]] || { errMSG "FAIL @ '${_NEW}' [NOT EXIST]"; exit 86; }
+		# validate old/new pair; ignore differential folders created hereby
+		[[ -e "$_OLD" && -e "$_NEW" && ( "${_NEW%\ [dt]}" == "$_NEW" ) && ( "${_OLD%\ [dt]}" == "$_OLD" ) ]] && {
+		# get all old/new changed files [paths] for this pair
+			# OLDer; Deleted or Modified
+			_dt1=$( rsync -rcnC --out-format="%f" "$_OLD/" "$_NEW" ) 
+			# NEWer; Added or Modified
+			_dt2=$( rsync -rcnC --out-format="%f" "$_NEW/" "$_OLD" ) 
+
+			# make target dir, '* [dt]', to store this pair's changed files
+			mkdir "$_NEW [dt]"
+			
+			# save OLDer set, then NEWer set, each to its subdir in '* [dt]'
+			for dt in '_dt1' '_dt2'
+			do # inform [stdout] per old/new source dir
+				[[ "$dt" == '_dt1' ]] && _label='OLDer' || _label='NEWer'
+				printf "\n %s\n\n" "$_label @ '$_NEW'"
+				
+				# copy changed files to their rel-path in '* [dt]', per old/new 
+				while read file
+				do 
+				[[ -f "${file}" ]] && { # filter out dirs
+					echo "   '${file##*/}'"
+					mkdir -p "${_NEW} [dt]/${file%/*}" # make parent dirs as needed
+					rsync -rt "${file}" "${_NEW} [dt]/${file%/*}/" 
+				}
+				done <<< "${!dt}"
+			done
+		}
+	done <<< "$( find "$@" -mindepth 1 -maxdepth 1 -type d -printf "%P\n" | sort )" 
+	
+	popd > /dev/null
+}
+ 
+dt "$@"
+
+exit 0

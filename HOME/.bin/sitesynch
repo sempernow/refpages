@@ -1,0 +1,85 @@
+#!/bin/bash
+# f06yBEAST 2015-11-11
+# sitesynch library ported from cmd_library [Windows7] 
+sitesynch()
+{(
+	exit_clean() 
+	{ # clear clipboard, rpt err [$@], exit script
+		declare err=0
+		putclip; _data="$?"; clear; echo
+		[[ "$@" ]] && { errMSG "$@" ; echo; sleep 2; clear; err=86; }
+		
+		exit $err
+	}
+	filter_1()
+	{ # filter METHOD 1 :: loose [ match per line; allows reverse search, etc. ]
+		if [ "$_have" ]
+		then # parse/print want-filtered have-data, line-by-line
+			while read -a have
+			do  # print filtered tokens 1 & 2 ; save 3rd @ last
+				printf "$greenw %s  %s \n" "${have[0]}" "${have[1]}"
+				putclip "${have[2]}"
+			done <<< "$_have" # Here-String syntax
+		else # nothing survived the filter
+			echo '  [nul] '
+		fi
+		_have=$?
+	}
+	filter_2()
+	{ # filter METHOD 2 :: tight [ match per field ; precludes reverse search, etc. ]
+		unset _flagput
+		if [ "$_have" ]
+		then # process want-filtered have-data, line-by-line
+			while read -a have
+			do  # parse/filter :: have[i] per want[i]
+				if [[ "$( echo "${have[0]}" | grep -i "${want[0]}" )" && "$( echo "${have[1]}" | grep -i "${want[1]}" )" ]] 
+				then # print filtered tokens 1 & 2 ; save 3rd @ last
+					printf "$green %s  %s \n" "${have[0]}" "${have[1]}"
+					putclip "${have[2]}"
+					_flagput=1
+				fi
+			done <<< "$_have" # Here-String syntax
+		fi
+		[[ "$_flagput" ]] || echo '  [nul] ' # nothing survived the parse/filter
+		_have=$?
+	}
+	
+	# config; exit on fail
+	REQUIREs 7z colors errMSG putclip _config_cmuck; (( $? )) && exit_clean
+	source "$_SCRIPTS_FOLDER/_config_cmuck"; (( $? )) && exit_clean 'config-cmuck'
+	colors; clear; echo
+
+	# config per user input; exit on key fail
+	echo -n "$aqux"
+	[[ "$@"   ]] && key="$@" || read key
+	echo "$normal"; clear; echo
+	[[ "$key" ]] || exit_clean 
+	echo '  SYNCHing ...  '; echo
+	_name=$( muck1 "${FUNCNAME}${key}" )
+	_key=$( muck5 "${FUNCNAME}${key}" ); key=$?
+	[[ -e "$_REF_FOLDERc/${_name}" ]] || exit_clean 'key'
+
+	# get/set data [multi-line var]; exit on 7z fail
+	_data=$( 7z x -so -p"${_key}" "$_REF_FOLDERc/${_name}" 2> /dev/null ) 
+	_name=$?; _key=$?
+	echo "$normal"; clear
+	[[ "$_data" ]] || exit_clean '7z'
+
+	while [ 'valid user input' ]
+	do # get user input; process if valid, else exit
+		echo "$aqua"; read -a want
+		putclip; echo "$normal"; clear; echo
+		# validate user input [can tighten here]; exit if not valid
+		[[ "${want[0]:2}" ]] || exit_clean
+		
+		# set want-filtered have-data [multi-line var]
+		_have=$( echo "$_data" | grep -i "${want[0]}" | grep -i "${want[1]}" )
+		
+		filter_1 # filter/show/put@clipboard
+
+	done; exit_clean
+ )}
+ 
+ # -- RUN --
+
+ sitesynch "$@"
