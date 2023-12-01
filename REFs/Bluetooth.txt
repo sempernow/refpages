@@ -1,0 +1,49 @@
+# Win 10 
+    
+    - Bluetooth USB device installs per Win10 (v19H1) AUTOMATICALLY.
+        Do NOT install any of the HW software (manually).
+    
+    - Headset (Paired) becomes Default Input Device, 
+        but NOT the Default Playback Device.
+        KEEP THIS (Windows Default) Setting.
+        
+        - Comms @ browser (Google Voice) 
+            - @ Sounds icon @ Taskbar > CLICK 
+                > Select your Bluetooth Headset for "Playback Device" 
+                (Manually change this setting per use.)
+
+# Win 7/10
+
+PAIRing
+-------- 
+	For limited-input devices [headset, mouse, etc.], 
+	PIN is typically "0000" or "1234", 
+	or [typically] just press-hold a connect-button,
+	or is automatic.
+
+
+File Transfer
+-------------
+	Join "Personal Area Network", from Bluetooth taskbar menu  
+		- BT-Device Folder[s] mapped to Windows Folder 
+		  @ Computer\<BT-Device-Name> [Win-Explorer]
+		  
+		- BT-Device downloads files to Documents\Bluetooth Exchange Folder
+
+ISSUES:
+-------
+	* Drivers install per Device Manager [directed to appropriate extracted-drivers folder] works for BT dongles.
+
+	* Drivers install per Broadcom's WIDCOMM [SetupBtwDownloadSE.exe] method; installs the most recent drivers; lengthy download/install/reboot process, but can save downloaded package [%TEMP%\BluetoothBTW], and run its Setup.exe, e.g., @ .\BTW_6.5.1.5800 folder, for installs thereafter. 
+
+	* File transfers from Moto-G [XT1045] to XPC go to various dirs, e.g., %USERPROFILE%\Pictures, regardless of Bluetooth settings.
+
+	* Bluetooth Adapter causes intermittent NET VIEW fail. 
+
+		- Can disable @ Network Adapter window, or Device Manager, cures this. 
+		"Turn Adapter Off" @ system tray DOES NOT cure this; does NOT disable device.
+
+		- cmd "NET VIEW /ALL" appeared to clear NET VIEW problem; may be coincidence. 
+
+	* TurtleBeach Headset issue - unwanted shut-off while playing media via audio-out/TOSLINK. Prevent this by Bluetooth on/enabled/connected/paired.
+

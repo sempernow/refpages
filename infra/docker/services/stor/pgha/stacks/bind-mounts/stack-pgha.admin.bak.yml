@@ -1,0 +1,116 @@
+# https://docs.docker.com/compose/compose-file
+version: '3.8'
+
+x-logopts:  # https://docs.docker.com/compose/compose-file/compose-file-v3/#extension-fields 
+    &default-logopts  # https://docs.docker.com/compose/compose-file/compose-file-v3/#logging 
+    options:
+        max-size: "12m"
+        max-file: "5"
+    driver: json-file
+
+volumes:  
+    pg1_data:
+        external: true
+    pg2_data:
+        external: true
+    pg1_arch:
+        external: true
+    pg2_arch:
+        external: true
+    pgha_etc:
+        external: true
+
+networks:
+    pvt1:
+        driver: overlay
+        external: true
+
+secrets:
+    pg_pw_postgres:
+        external: true
+    pg_pw_replicator:
+        external: true
+    pg_pw_app_owner:
+        external: true
+    pg_pw_app_user:
+        external: true
+
+configs:
+    postgresql_src_conf:
+        file: ${PATH_ABS_PGHA_CONFIG}/postgresql.src.conf
+
+x-svc: &default-svc
+        image: ${PGHA_IMAGE}
+        user: "postgres"
+        networks:
+            pvt1:
+        ports:
+            - 5432
+        configs:
+            - postgresql_src_conf
+        secrets:
+            - source: pg_pw_postgres
+              target: pg_pw_postgres
+              uid: "70"
+              gid: "70"
+              mode: 0400
+            - source: pg_pw_replicator
+              target: pg_pw_replicator
+              uid: "70"
+              gid: "70"
+              mode: 0400
+            - source: pg_pw_app_owner
+              target: pg_pw_app_owner
+              uid: "70"
+              gid: "70"
+              mode: 0400
+            - source: pg_pw_app_user
+              target: pg_pw_app_user
+              uid: "70"
+              gid: "70"
+              mode: 0400
+        env_file:
+            - ${PATH_ABS_HOST_ASSETS}/.env/pgha.env
+        environment:
+            - APP_DB_PASSWORD_FILE=/run/secrets/pg_pw_app_user
+        command: ["postgres", "-c", "config_file=/postgresql_src_conf"]
+        logging: *default-logopts
+
+services:
+
+    ############################################
+    ###  @ First run : db init 
+    ###  or other admin (loads Docker secrets)
+    ############################################
+
+    pg1: 
+        <<: *default-svc
+        hostname: "${PGHA_HOST1}"
+        volumes: # https://docs.docker.com/compose/compose-file/compose-file-v3/#volumes
+            - pg1_data:${PATH_ABS_CTNR_PGDATA}
+            - pg1_arch:${PATH_ABS_CTNR_PGARCHIVE}
+            - pgha_etc:${PATH_ABS_CTNR_PG_ETC}
+            #- ${PATH_ABS_VM_ASSETS}/sql:${PATH_ABS_CTNR_PGHOME}/sql
+            # - ${PATH_CONFIG}:${PG_CONFIG}
+            # No mounts @ $PGDATA on first run.
+        deploy: # https://docs.docker.com/compose/compose-file/compose-file-v3/#deploy 
+            replicas: 1
+            placement:
+                constraints: 
+                    - node.labels.pg1 == true
+
+    pg2: 
+        <<: *default-svc
+        hostname: "${PGHA_HOST2}"
+        volumes:
+            - pg2_data:${PATH_ABS_CTNR_PGDATA}
+            - pg2_arch:${PATH_ABS_CTNR_PGARCHIVE}
+            - pgha_etc:${PATH_ABS_CTNR_PG_ETC}
+            #- ${PATH_ABS_VM_ASSETS}/sql:${PATH_ABS_CTNR_PGHOME}/sql
+            # - ${PATH_CONFIG}:${PG_CONFIG}
+            # No mounts @ $PGDATA on first run.
+        deploy: # https://docs.docker.com/compose/compose-file/compose-file-v3/#deploy 
+            replicas: 1
+            placement:
+                constraints: 
+                    - node.labels.pg2 == true

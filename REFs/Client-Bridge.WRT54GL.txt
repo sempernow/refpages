@@ -1,0 +1,215 @@
+
+# Gateway router is assigning IP to CB client [.213] [CentOS], but LAN [and Gateway Router] sees CB router [.2] and its client [.213] [CentOS] as same MAC, 
+# so can't make static @ Gateway router. ...
+
+arp -a [@ XPC]
+
+	Interface: 192.168.1.101 --- 0xb
+	  Internet Address      Physical Address      Type
+	  192.168.1.1           e0-3f-49-9a-8b-b8     dynamic
+	  192.168.1.2           00-21-29-ae-77-b8     dynamic
+	  192.168.1.213         00-21-29-ae-77-b8     dynamic
+	  192.168.1.255         ff-ff-ff-ff-ff-ff     static
+
+SSH @ Cygwin ... 
+
+	ssh -l Br1 192.168.1.2
+
+		Unable to negotiate with 192.168.1.2 port 22: no matching key exchange method found. Their offer: diffie-hellman-group1-sha1
+
+	# Legacy/Solution @ https://www.openssh.com/legacy.html
+	
+	ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 Br1@192.168.1.2
+	ssh -oKexAlgorithms=+diffie-hellman-group1-sha1 Br1@CB.LANDOMAIN 
+	
+		# ... same results for either ...
+	
+		The authenticity of host 'cb.LANDOMAIN (192.168.1.2)' can't be established.
+		RSA key fingerprint is SHA256:9nBTc20uoo4FpEzA88pATY2kNryMmlrVId5AgRQnWDY.
+		Are you sure you want to continue connecting (yes/no)? yes
+		Warning: Permanently added 'cb.LANDOMAIN' (RSA) to the list of known hosts.
+		DD-WRT v24 mini (c) 2008 NewMedia-NET GmbH
+		Release: 07/27/08 (SVN revision: 10011)
+		Load key "/home/USERNAME/.ssh/id_rsa": Is a directory
+		Br1@cb.LANDOMAIN's password:
+		Permission denied, please try again.
+		Br1@cb.LANDOMAIN's password:
+
+	# also try ...
+	
+	ssh -oHostKeyAlgorithms=+ssh-dss user@legacyhost
+
+	Depending on the server configuration, it's possible for other connection parameters to fail to negotiate. You might find the Ciphers and/or MACs configuration options useful for enabling these. It's also possible to query which algorithms ssh supports:
+
+	ssh -Q cipher       # List supported ciphers
+	ssh -Q mac          # List supported MACs
+	ssh -Q key          # List supported public key types
+	ssh -Q kex          # List supported key exchange algorithms
+
+	Finally, it's also possible to query the configuration that ssh is actually using when attempting to connect to a specific host, by using the -G option:
+
+	ssh -G user@somehost.example.com
+
+
+		
+SpeedTest   2017-01-03	12 Mbps Down / 5.8 Mbps Up 
+
+WRT54GL in Client-Bridge Mode
+
+Mixed  [11.b/g] 12 Mbps Down / 5.8 Mbps Up
+G-Only [11.g]   12 Mbps Down / 5.8 Mbps Up
+
+
+WiFi Bridge Mode
+----------------
+
+	Router used as wireless bridge to the Gateway router's LAN; physically extends LAN to another area, wirelessly. Most effective for wired clients at [remote] bridge, else the double-WiFi-hop to base-station halves the effective speed.  https://en.wikipedia.org/wiki/Bridging_(networking)
+
+	dd-wrt Wiki :: Client Bridge  
+
+		http://www.dd-wrt.com/wiki/index.php/Client_Bridged
+
+	@ Primary/Gateway router ...
+	
+	- Get WiFi info of Gateway [main] Router
+		- SSID
+		- Security info 
+			- mode (WEP/WPA2/WPA2-PSK)
+			- key
+		- Operating frequency info (2.4 and 5 GHz)
+			
+	@ Client Bridge [CB] router ...
+	
+		Primary and CB routers must be on same subnet 
+
+ 			if Primary router IP is ...  192.168.A.X 
+			then CB router needs IP of   192.168.A.Z
+
+			So, each set @ router [self]
+			
+				Gateway @       192.168.1.1
+				Client-Bridge @ 192.168.1.2  [OUTSIDE Gateway's DHCP-served range]
+
+	- ADVANCED > Advanced Setup > Wireless Settings
+
+
+		- Enable Bridge Mode
+		
+			- Get IP Address Dynamically 
+			- Get DNS Server Address Dynamically
+			- Select same security mode as at Gateway Router
+
+			... note here the 'Dynamically' refers to hosts/clients of this client-bridge router.
+			
+		- Set Wireless Security to 'WPA2 Personal'
+		
+		- Set same wireless info/settings used by the Gateway [main] router.
+
+
+Gateway  [Asus RT-AC66U] 
+	SMB 
+	191.168.1.1 [SMB.LANDOMAIN] [router.asus.com]
+	See [user.pass.key] 
+
+Client-Bridge 	[WRT54GL-dd-wrt] 
+	CB
+	192.168.1.2  [CB.LANDOMAIN]
+	See [user.pass.key] 
+
+	Router Name
+	CB
+	Router Model
+	Linksys WRT54GL v1.1
+	Firmware Version
+	DD-WRT v24-sp1 (07/27/08) mini - build 10011
+	LAN MAC Address
+	00:21:29:AE:77:B7  
+
+Wireless
+	2.4GHz
+	
+	SSID 
+	7LOL
+
+	Security 
+	WPA2-Personal
+	AES
+	See [user.pass.key] 
+	
+	
+	Wireless Status [2.4GHz]
+
+		MAC Address
+		00:21:29:AE:77:B8 
+
+		Radio
+		Radio is On 
+
+		Mode
+		Client Bridge   
+
+		Network
+		Mixed   
+
+		SSID
+		7LOL 
+
+		Channel
+		6 
+
+		TX Power
+		70 mW 
+
+		Rate
+		24 Mbps 
+
+		Encryption - Interface wl0
+		Enabled, WPA2 Personal
+
+		PPTP Status
+		Disconnected  
+
+	Advanced Routing
+		Operating Mode: 'Router'
+
+	DD-WRT Firmware:
+
+		Current: 
+		v24-sp1 (07/27/08) mini - build 10011 
+		Same (?) as ...
+		v24 SP1 [Stable] Build 10020
+		dd-wrt.v24_mini_ge
+
+	dd-wrt Wiki :: Linksys WRT54GL
+
+		http://www.dd-wrt.com/wiki/index.php/Linksys_WRT54GL
+
+			ftp://ftp.dd-wrt.com/stable/dd-wrt.v24%20SP1/Consumer/Linksys/WRT54GL_1.1/
+
+				dd-wrt.v24_micro_generic.bin  [2008]
+
+			ftp://ftp.dd-wrt.com/others/eko/V24_TNG/svn12548/
+
+				dd-wrt.v24-12548_NEWD_mini.bin [2009]
+
+	dd-wrt default ...
+
+		user: root
+		p/w: admin
+
+		
+# router IP :: see 'default' ...
+
+ip route 
+
+[Uzer@localhost ~]$ ip route
+192.168.1.0/24 dev eth0  proto kernel  scope link  src 192.168.1.183  metric 1 
+default via 192.168.1.1 dev eth0  proto static 
+
+
+ifconfig
+
+# release/renew ip ...
+
+sudo dhclient -v -r eth0
+sudo dhclient -v eth0

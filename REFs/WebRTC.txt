@@ -1,0 +1,87 @@
+WebRTC  
+    Wikipedia       https://en.wikipedia.org/wiki/WebRTC  
+
+    "A new front in the long war for an open and unencumbered web" -  Brendan Eich, Javascript inventor 
+
+    Google open-sourced project; provides web browsers, IoT devices, mobile apps w/ real-time comms (RTC) via APIs. It allows audio and video communication to work inside web pages by allowing direct PEER-TO-PEER comms, SANS PLUGINS. Supported by Google, Microsoft, Mozilla, and Opera, WebRTC is being standardized through W3C and IETF
+
+    Its mission is to "enable rich, high-quality RTC applications to be developed for the browser, mobile platforms, and IoT devices, and allow them all to communicate via a COMMON SET OF PROTOCOLS".
+    
+    The reference implementation is released as free software under the terms of a BSD license. 
+    
+    OpenWebRTC provides another free implementation based on the multimedia framework GStreamer. 
+
+    DESIGN
+
+        Major components of WebRTC include several JavaScript APIs:
+
+            getUserMedia 
+                acquires the audio and video media (e.g., by accessing a device's camera and microphone); 
+                
+            RTCPeerConnection
+                Audio and video communication between peers; performs signal processing, codec handling, peer-to-peer communication, security, and bandwidth management; an API to set up a connection to stream video between WebRTC clients, known as peers.  
+                Setting up a call between WebRTC peers involves three tasks:
+                    - Create a RTCPeerConnection for each end of the call and, at each end,  
+                      add the local stream from getUserMedia().  
+                    - Get and share network information: ICE candidates, which are potential connection endpoints.  
+                    - Get and share local and remote descriptions: metadata about local media in SDP format.  
+                RTCPeerConnection(servers); servers arg specifies STUN and TURN servers.
+                    STUN servers: to get the IP address of client computer;
+                    TURN servers: to function as relay servers in case peer-to-peer communication fails. 
+                WebRTC is designed to work peer-to-peer, by the most direct route possible. However, WebRTC is built to cope with real-world networking: client applications need to traverse NAT gateways and firewalls, and peer to peer networking needs fallbacks in case direct connection fails. 
+
+            RTCDataChannel 
+                Bidirectional data transfer per SCTP; arbitrary data between end-points (peers); 
+                uses WebSockets API; has very low latency
+
+                SCTP (Stream Control Transmission Protocol)  https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol 
+                    provides some of the features of both UDP and TCP: it is message-oriented like UDP and ensures reliable, IN-SEQUENCE transport of messages with congestion control like TCP. It differs from those protocols by providing multi-homing and redundant paths to increase resilience and reliability.
+
+                    In the absence of native SCTP support, can tunnel SCTP over UDP, as well as map TCP API calls to SCTP calls so existing apps can use SCTP without modification; the reference implementation was released as part of FreeBSD version 7.
+
+        The WebRTC API also includes a statistics function:
+
+            getStats 
+                allows the web app to retrieve a set of statistics about WebRTC sessions; being described in a separate W3C document.
+
+        RFC 7874 requires implementations to provide PCMA/PCMU (RFC 3551), 
+        Telephone Event as DTMF (RFC 4733), 
+        and Opus (RFC 6716) audio codecs as minimum capabilities. 
+        The PeerConnection, data channel and media capture browser APIs are detailed in the W3C.
+        W3C is developing ORTC (Object Real-Time Communications) for WebRTC; commonly referred to as WebRTC 1.1.
+
+    SIGNALLING SERVERs https://www.html5rocks.com/en/tutorials/webrtc/infrastructure/  
+        - STUN servers: to get the IP address of client computer;
+        - TURN servers: to function as relay servers in case peer-to-peer communication fails. 
+
+        Signalling is the process of coordinating communication; 
+        handshake between peers; WebRTC clients need to exchange information:
+            - Session control messages used to open or close communication.
+            - Error messages.
+            - Media metadata such as codecs and codec settings, bandwidth and media types.
+            - Key data, used to establish secure connections.
+            - Network data, such as a host's IP address and port as seen by the outside world.
+
+        WebRTC API does NOT implement that signalling; has NO STANDARDISED SIGNALLING PROTOCOL;
+        Various signalling schemes used; SIP or XMPP, and any appropriate duplex (two-way) communication channel;
+        - XHR and the Channel API
+        - Node.js + Sockets.IO, ...
+        - SignalHub library; server signals peers; helps peers find each other (SPD-ids)
+
+    WebRTC Gateway FUNCTION   https://en.wikipedia.org/wiki/WebRTC_Gateway 
+
+        user downloads a WebRTC Javascript app from WebRTC Gateway server. When receiving a call, the WebRTC gateway needs to decide whether the callee is reachable over WebRTC. If not, then the call will have to be translated into SIP, for example. To translate a call into SIP, the gateway will have to map different layers:
+
+            Signalling: 
+                There is NO STANDARDISED SIGNALLING PROTOCOL for WebRTC applications. However, SIP over Websockets (RFC 7118) is often used partially due to the applicability of SIP to most of the envisaged communication scenarios as well as the availability of open source software such as JsSIP. In such a case, the gateway would only need to repackage the SIP packets from the Websocket layer into UDP, TCP or TLS.
+        
+            Media transport: 
+                WebRTC specs indicate that for security reasons WebRTC apps must use SRTP for transporting media content. While some VoIP applications support SRTP as well, this is optional and hence not always the case. If the callee does not support SRTP then the WebRTC gateway will have to map between SRTP and RTP.
+        
+            Media content: 
+                WebRTC specs indicate that WebRTC apps must use for audio communication either G.711 or OPUS as the Audio codec. Apps using SIP for establishing audio session are free to choose any type of codec. If the callee does not support OPUS or G.711 then the WebRTC gateway will have to transcode between the WebRTC and SIP sides of the communication.
+        
+            Media address negotiation: 
+                In order to be able to traverse all kinds of NAT, the WebRTC specs indicate that WebRTC apps must use STUN and ICE in order to detect the addresses under which two end points can exchange media packets. While these technologies are also implemented by some SIP user agents, this is not mandatory. If the callee does not support ICE or in case media transport layer needs mapping or media transcoding is required then the WebRTC gateway will have to act as an ICE end point and route the media packets between the caller and callee.
+
+        Available Solutions  https://en.wikipedia.org/wiki/WebRTC_Gateway#Available_solutions  

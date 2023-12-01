@@ -1,0 +1,279 @@
+
+Broken sudo @ CentOS machine ...
+
+  PROBLEM: 
+
+    $ sudo COMMAND  # does not execute; err msg ...
+
+    "USERNAME is not in the sudoers file.  This incident will be reported."
+
+  SOLUTION: 
+  
+    Boot into Recovery Environment and add USERNAME to "wheel" group  
+
+        @ GRUB menu > select second option; 'recovery' or something like that.
+        @ GUI menu > mouse-clicked on 'other user' or something like that
+        @ Login as root
+
+            # Add user to wheel group
+            $ usermod -aG wheel USERNAME  
+
+        Test by switching to that user:
+
+            $ su - USERNAME
+            # List root dir:
+            $ sudo ls -la /root
+            ... prompts for password ... 
+
+            Works !!!
+
+            # Try as regular user (USERNAME) ...
+            $ ls -la /root 
+            ... permission denied.
+
+=========
+
+How To Create a Sudo User on CentOS [Quickstart] 
+  https://www.digitalocean.com/community/tutorials/how-to-create-a-sudo-user-on-centos-quickstart
+
+  Introduction
+
+  The sudo command provides a mechanism for granting administrator privileges, ordinarily only available to the root user, to normal users. This guide will show you the easiest way to create a new user with sudo access on CentOS, without having to modify your server's sudoers file. If you want to configure sudo for an existing user, simply skip to step 3.
+
+  Steps to Create a New Sudo User
+
+    Log in to your server as the root user.
+
+      ssh root@server_ip_address
+
+    Use the adduser command to add a new user to your system.
+
+    Be sure to replace username with the user that you want to create.
+
+      adduser username
+
+      Use the passwd command to update the new user's password.
+
+        passwd username
+
+      Set and confirm the new user's password at the prompt. A strong password is highly recommended!
+
+      Set password prompts:
+      Changing password for user username.
+      New password:
+      Retype new password:
+      passwd: all authentication tokens updated successfully.
+
+    Use the usermod command to add the user to the wheel group.
+
+      usermod -aG wheel username
+
+    By default, on CentOS, members of the wheel group have sudo privileges.
+
+    Test sudo access on new user account
+
+      Use the su command to switch to the new user account.
+
+        su - username
+
+      As the new user, verify that you can use sudo by prepending "sudo" to the command that you want to run with superuser privileges.
+
+        sudo command_to_run
+
+      For example, you can list the contents of the /root directory, which is normally only accessible to the root user.
+
+        sudo ls -la /root
+
+      The first time you use sudo in a session, you will be prompted for the password of the user account. Enter the password to proceed.
+
+      Output:
+      [sudo] password for username:
+
+      If your user is in the proper group and you entered the password correctly, the command that you issued with sudo should run with root privileges.
+    
+    
+
+Broken sudo
+-----------
+
+PROBLEM: 
+
+  sudo <command> # does not execute; err msg ...
+
+  "<USERNAME> is not in the sudoers file.  This incident will be reported."
+
+SOLUTION:
+
+  @ boot, press the Shift key for a few seconds to get the Grub boot menu. 
+
+  @ Grub boot menu ...
+
+    "Advanced options ..."
+
+      “recovery mode”    
+      
+      ... which mounts filesystem as read-only, so 
+      changes can't be saved, in that state.
+
+  @ Recovery menu ...
+
+    “root     Drop to root shell prompt”
+
+  @ shell ... change state ... mount fs as read-write
+
+    mount -o rw,remount /  
+
+    
+  CASE 1 :: if user not in sudo or admin group
+      
+    adduser <USERNAME> sudo
+
+    adduser <USERNAME> admin
+      
+  CASE 2 ::  /etc/sudoers file altered to prevent users in sudo or admin group from elevating their privileges to that of a super user
+
+    cp /etc/sudoers /etc/sudoers.orginal 
+    
+    visudo 
+    
+    #
+    # This file MUST be edited with the 'visudo' command as root.
+    #
+    # Please consider adding local content in /etc/sudoers.d/ instead of
+    # directly modifying this file.
+    #
+    # See the man page for details on how to write a sudoers file.
+    #
+    Defaults        env_reset
+    Defaults        mail_badpass
+    Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbi$
+    # Host alias specification
+    # User alias specification
+    # Cmnd alias specification
+    # User privilege specification
+    root    ALL=(ALL:ALL) ALL
+    # Members of the admin group may gain root privileges
+    %admin ALL=(ALL) ALL
+    # Allow members of group sudo to execute any command
+    %sudo   ALL=(ALL:ALL) ALL
+    # See sudoers(5) for more information on "#include" directives:
+    #includedir /etc/sudoers.d    
+  
+  CASE 3 :: Setting Correct Permission on sudoers File
+  
+    chmod  0440  /etc/sudoers
+  
+  
+  Then ...
+  
+  exit
+  
+  @ Recovery menu ... select from menu ...
+  
+  "resume   Resume normal boot"
+
+
+======
+
+Else try ...
+
+  Connect as 'user' then do 'su -' and the root password to become root. 
+  
+  usermod -aG wheel
+  or 
+  useradd -G wheel <USERNAME>
+
+======
+Else try ...
+  https://confluence.uits.uconn.edu/display/NETZZ/Sudo+and+the+Wheel+Group+-+adding+users+to+avoid+using+ROOT+directly
+
+  Follow this procedure to create a normal user account and give it sudo access
+
+  # Run the visudo to edit the /etc/sudoers file. This file defines the policies applied by the sudo command.
+  
+    visudo 
+
+    ## Allows people in group wheel to run all commands
+    %wheel        ALL=(ALL)       ALL  # make sure this line is uncommented   
+
+  # Add the user you created to the wheel group using the usermod command.
+
+    usermod -aG wheel <USERNAME>
+
+  # Test that the updated configuration allows the user you created to run commands using sudo.
+    
+    # Use the su to switch to the new user account that you created.
+    
+      su <USERNAME> -
+    
+    # Use the groups to verify that the user is in the wheel group.
+
+      groups
+      <USERNAME> wheel
+    
+    # Use the sudo command to run the whoami command. As this is the first time you have run a command using sudo from this user account the banner message will be displayed. You will be also be prompted to enter the password for the user account.
+    
+      sudo whoami
+      
+      # above command outputs ... 
+      
+        We trust you have received the usual lecture from the local System Administrator. It usually boils down to these three things:
+
+          #1) Respect the privacy of others.
+          #2) Think before you type.
+          #3) With great power comes great responsibility.
+
+        [sudo] password for <USERNAME>:
+        root
+    
+      # The last line of the output is the user name returned by the whoami command. If sudo is configured correctly this value will be root.
+    
+
+========
+Else try ...
+
+  http://www.defcon1.org/html/wheel-user.html    [FreeBSD]
+
+  Adding a user to your Root Wheel
+
+  First you need to exit the current user so..
+  >exit 
+  Then from the Login prompt log into root.
+  Login > root
+  Password?
+
+  Now that you are root move to the directory /etc/ Here you are going to be editing the group. So..
+  >cd /etc/ 
+  >vi group Group contains which users can do what. For example:
+
+  If you did not have your user in the wheel, you wouldn't be able to su to root. So adding users to particular apps or deamons is important. So to add a user, add like such.
+
+  wheel:*:0:root,joe 
+  
+========  
+@ ISSUE ...
+
+  No permission to run as sudo ...
+
+  fails to run 'sudo install.sh', 
+  which is script to install Edimax Wireless NIC
+  
+  @ bash ...
+
+    [Uzer@localhost EW-7822UAC_Linux_Driver_4.3.20]$ sudo ./install.sh
+
+    We trust you have received the usual lecture from the local System
+    Administrator. It usually boils down to these three things:
+
+      #1) Respect the privacy of others.
+      #2) Think before you type.
+      #3) With great power comes great responsibility.
+
+    [sudo] password for Uzer: 
+    Uzer is not in the sudoers file.  This incident will be reported.
+    [Uzer@localhost EW-7822UAC_Linux_Driver_4.3.20]$ sudo ./install.sh
+    [sudo] password for Uzer: 
+    Uzer is not in the sudoers file.  This incident will be reported.
+    [Uzer@localhost EW-7822UAC_Linux_Driver_4.3.20]$ users
+    Uzer Uzer
+

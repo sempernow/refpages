@@ -1,0 +1,110 @@
+#  FreeBSD Handbook
+# 
+#  https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/index.html
+# ---------------------------------------------------------------------------
+
+# 2. Installing FreeBSD  https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/bsdinstall.html
+
+	FreeBSD 9.0-RELEASE :: text-based installation program 
+	
+		bsdinstall
+
+# 3.2. Virtual Consoles and Terminals  https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/consoles.html 
+
+	Unless FreeBSD has been configured to automatically start a graphical environment during startup, the system will boot into a command line login prompt
+
+		FreeBSD/amd64 (pc3.example.org) (ttyv0)
+
+		login:
+		
+	... SYSTEM CONSOLE can be used to interact with the system, but system messages are configured by default to display on the system console. So, a user typically log into a VIRTUAL CONSOLE.
+
+	Default FreeBSD; configured to provide several virtual consoles; each has its own login prompt and shell; easy to switch between virtual consoles; essentially provides CLI equivalent of multiple GUI windows.
+
+		Alt+F1 (ttyv0) thru Alt+F8 (ttyv7) reserved by FreeBSD for switching between virtual consoles. 
+
+
+	When switching btwn consoles, FreeBSD manages screen output; illusion of having multiple virtual screens and keyboards; programs launched in one console do not stop running when user switches to another console.
+
+	REF: man kbdcontrol(1), vidcontrol(1), atkbd(4), syscons(4), and vt(4) 
+
+	/etc/ttys :: config virtual consoles 
+
+		# name    getty                         type  status comments
+		#
+		ttyv0   "/usr/libexec/getty Pc"         xterm   on  secure
+		# Virtual terminals
+		ttyv1   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv2   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv3   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv4   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv5   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv6   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv7   "/usr/libexec/getty Pc"         xterm   on  secure
+		ttyv8   "/usr/X11R6/bin/xdm -nodaemon"  xterm   off secure	
+
+	# 3.2.2. Single User Mode :: secure/insecure	
+		
+		
+# 3.6. Disk Organization https://www.freebsd.org/doc/en_US.ISO8859-1/books/handbook/disk-organization.html
+
+	ONE root filesystem; other file systems mounted under the root file system. No matter how many disks are on the FreeBSD system, every directory appears to be part of the same disk.
+		
+	Benefits of Multiple File Systems [all mounted/unmounted onto root]
+
+		Different file systems can have different mount options. 
+			- root file system can be mounted read-only, making it impossible for users to inadvertently delete or edit a critical file. 
+			- Separating /home; mounted 'nosuid'; improving security.
+
+		FreeBSD automatically optimizes the layout of files on a file system, depending on how the file system is being used. So a file system that contains many small files that are written frequently will have a different optimization to one that contains fewer, larger files. By having one big file system this optimization breaks down.
+
+		FreeBSD's file systems are robust if power is lost. However, a power loss at a critical point could still damage the structure of the file system. By splitting data over multiple file systems it is more likely that the system will still come up, making it easier to restore from backup as necessary.		
+		
+	When mounting file system B on to the directory A1 of the root filesystem [A], '/', the root directory of B replaces A1. Any files that are in the B1 or B2 directories can be reached with the path /A1/B1 or /A1/B2 as necessary. 
+		
+		Any files that were in /A1 have been TEMPORARILY HIDDEN. 
+		
+		They WILL REAPPEAR if B is UNMOUNTED from A.
+		
+		File systems can be mounted on top of one another.
+		
+	growfs(8) command, FreeBSD feature which makes it possible to increase the size of file system on the fly.
+		
+	Partitions; 8 per slice; a-h
+		
+		Some partitions have certain conventions associated with them.
+		
+			Partition	Convention
+			a	Normally contains the root file system.
+			b	Normally contains swap space.
+			c	Normally the same size as the enclosing slice; file system would not normally be created on this partition.
+			d	Partition d used to have a special meaning associated with it, although that is now gone and d may work as any normal partition.
+
+	FreeBSD 'slice' = Windows 'partition'
+	
+		Slices 
+		
+			Physical Slices         1-4 
+			Logical/Extended Slices 5, 6, ... 
+
+	Disk Device Names
+
+		SATA and IDE HDD		ad or ada
+		
+		SCSI hard drives 		da
+		USB storage devices		da
+	
+	Ex: ada0s1a
+	
+		The first partition (a) on the first slice (s1) on the first SATA disk (ada0)
+	
+	Slices, “dangerously dedicated” physical drives, and other drives contain partitions, which are represented as letters from a to h. This letter is appended to the device name, so “da0a” is the a partition on the first da drive, which is “dangerously dedicated”. “ada1s3e” is the fifth partition in the third slice of the second SATA disk drive.
+
+		“dangerously dedicated”
+		https://docs.freebsd.org/doc/2.2.6-RELEASE/usr/share/doc/FAQ/FAQ103.html
+	
+	Finally, each disk on the system is identified. A disk name starts with a code that indicates the type of disk, and then a number, indicating which disk it is. Unlike slices, disk numbering starts at 0. Common codes are listed in Table 3.3, “Disk Device Names”.
+
+	When referring to a partition, include the disk name, s, the slice number, and then the partition letter. Examples are shown in Example 3.12, “Sample Disk, Slice, and Partition Names”.		
+	
+	

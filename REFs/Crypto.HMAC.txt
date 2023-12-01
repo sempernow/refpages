@@ -1,0 +1,32 @@
+
+HMAC(K,m) = H[ (Key XOR opad) + H((Key XOR ipad) + m) ]
+opad = [0x5c * blocksize]
+ipad = [0x36 * blocksize]
+
+where + is concat
+
+If K > block size, then K = hash(K)
+opad - outer padding - 0x5c5c5c…5c5c, one-block-long
+ipad - inner padding - 0x363636…3636, one-block-long
+
+
+MD5 & SHA-1 operate on 512-bit blocks [ 512/8=64 ].
+
+HMAC output is size of underlying hash function;
+128 (MD5) and 160 (SHA-1) bits ==> 16 & 20 bytes respectively.
+
+1 ASCII ch = 1 byte
+----------------------------------
+function hmac (key, message)
+    if (length(key) > blocksize) then
+        key = hash(key) // keys longer than blocksize are shortened
+    end if
+    if (length(key) < blocksize) then
+        key = key ? [0x00 * (blocksize - length(key))] // keys shorter than blocksize are zero-padded ('?' is concatenation) 
+    end if
+    
+    o_key_pad = [0x5c * blocksize] ? key // Where blocksize is that of the underlying hash function
+    i_key_pad = [0x36 * blocksize] ? key // Where ? is exclusive or (XOR)
+    
+    return hash(o_key_pad ? hash(i_key_pad ? message)) // Where '?' is concatenation
+end function

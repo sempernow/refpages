@@ -1,0 +1,56 @@
+
+start browser minimized & goto url ...
+-----------------------------
+PUSHD "%ProgramFiles%\Internet Explorer"
+START /MIN iexplore.exe http://www.google.com/
+POPD
+
+The following method launches default browser [e.g., Firefox] ...
+
+START /MIN "%ProgramFiles%\Internet Explorer\iexplore.exe" http://www.rushradio1200.com/mediaplayer/
+----------------
+
+FUBAR Recovery :: Using Windows System File Checker command (SFC)
+-----------------------------------------------------------------
+* Launch Task Manager [press CTRL-SHIFT-ESC]
+* File > New Task > Run >  sfc /scannow
+
+Command Line:
+
+online ...
+----------
+sfc /scannow
+
+offline ... 
+-----------
+from Windows Repair Disk > Command Line option, or from Win PE USB ...
+sfc /scannow /offbootdir=d:\ /offwindir=d:\windows
+
+... where "d:" is the drive containing the (offline) Windows OS.
+--------------------------
+
+
+cleanmgr	- Disk Cleanup  
+*************************************
+Setup how you want it done:
+cleanmgr /sageset:11
+
+THEN, run disk cleaner 
+cleanmgr /sagerun:11
+
+Defrag
+------
+defrag.exe -? 
+%windir%\system32\defrag.exe c: 
+
+Run batch file
+---------------
+%windir%\system32\cmd.exe /C call %_batch_files_path%
+
+Start In:
+%SYSTEMDRIVE%
+
+Local Group Policy Editor
+-------------------------
+Run ...
+gpedit.msc

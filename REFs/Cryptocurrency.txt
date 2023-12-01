@@ -1,0 +1,1 @@
+Cryptocurrency, the coin, is merely the public key of an asymmetric-key pair stored in the cryptocurrency's (network's) append-only log (ledger). The network, code and such may overlayer an (another) addressing system to the ledger. The private key is used by the payer to sign the transaction. So, the private key is in effect the bearer token that defines ownership. 

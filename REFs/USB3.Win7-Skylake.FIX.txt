@@ -1,0 +1,82 @@
+xHCI USB [driver-install] [Intel.com]
+=====================================
+
+ISSUE: 
+
+	* Windows 7 Install DVD/ISO does NOT contain USB 3.0 [xHCI] drivers; 
+	  Intel Skylake/Kaby-Lake [100/200 Series] chipsets do NOT support USB 2.0 [EHCI]. 
+
+FIX:
+
+	Slipstream the Intel USB 3.0 eXtensible Host Controller [xHCI – USB3.0] drivers into the Windows 7 Install media.
+
+		Step 1 - Make a bootable USB of Windows Install ISO using Microsoft's 'Windows USB/DVD Download Tool'
+		
+			This utility extracts the Windows Installation ISO to the target USB drive, then adds the required boot file[s]. Perhaps nothing more than bootsect.exe method [see 'boot_utilities.txt']. Tested successfully on active-partitioned USB thumbdrive.
+			
+		Step 2 - Patch USB drivers into 'boot.wim' using Intel's 'Win7 USB 3.0 Creator Utility' OR ASRock's 'Win 7 USB Patcher'
+		
+			The Intel utility mounts, patches (slipstreams) Intel USB 3.0 driver[s], then unmounts EACH image in BOTH 'install.wim' AND 'boot.wim' @ '<USB-drive>:\sources'.
+			
+			The ASRock utility [untested] is nice in that it contains batch scripts showing how to add/patch/slipstream drivers using Microsoft's DISM.exe [wim editor] tool. 
+		
+
+		* Also, Step 1 can be used to simply make any install USB bootable.
+
+		* The Windows utility installs; the Intel utility runs as is, from wherever its extracted to.
+
+
+# Method 1
+==========
+
+	Slipstream :: Inject Drivers into Win7 Install Media [offline]
+		Apparently, USB3 drivers slipstreamed into Win7 install media works only because MS install process detects and loads Skylake/Kaby-Lake chipset drivers too. That is, driver load/slipstream FAILs if done AFTER install, into Win7 OS, whether done offline [slipstream per DISM], or loaded online per Device Manager [DM]; slipstream process itself "succeeds"; DM process fails explicitly.
+		
+		- Per Utility
+		
+			See Intel or ASRock utilities
+		
+		- Manually per DISM @ Win10PE on offline Win7 Install Media
+		
+			Mount 
+
+				DISM /Mount-Wim /WimFile:U:\sources\boot.wim /Name:"Microsoft Windows Setup (x64)" /MountDir:c:\mount
+
+				DISM /Mount-Wim /WimFile:U:\sources\boot.wim /Name:"Microsoft Windows Setup (x64)" /MountDir:c:\mount
+
+			Add the USB 3.0 driver
+
+				DISM /Image:C:\mount /Add-Driver /Driver:C:\USB3\x64 /Recurse
+
+			Unmount
+
+				DISM /unmount-Wim /mountdir:c:\mount /commit
+		
+# Method 2 
+==========
+
+	Slipstream :: Inject Drivers into Retro Win7 [DISM-applied image] 
+	
+		FAILed; needed Chipset drivers
+
+		@ ASRock H270M-Pro4 w/ OLD Win7 image [DX48BT2 MB] applied to OCZ SSD [60GB]
+
+		  @ Win10PE [Gandalf] ... slipstream drivers into offline, iinstalled Win7 OS. 
+		  
+			DISM /Image:C:\ /Add-Driver /Driver:D:\USB3\x64 /Recurse
+			Installed 2013 & 2016 drivers [Intel-usb3]
+
+		DISM success, BUT UEFI/Win7 fails to function USB3 ports.
+
+# Method 3 
+	Used on RETRO Win7 [online]; applied to SSD per DISM
+
+	UEFI/BIOS setting
+
+	1. UEFI Setup > USB Config > Emulate PS2
+	Can NOT update drivers @ DM [online OS]; fails; no chipset drivers.
+	Apparently, slipstream @ Win7 install media works by detecting 
+	and loading Skylake chipset drivers too, on OS install.
+	2. Inside Win7, Install Intel Chipset [INF] drivers, then USB3 drivers
+
+	Success!

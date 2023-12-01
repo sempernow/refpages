@@ -1,0 +1,202 @@
+/* ===  main.css  === */
+
+:root {
+    /* ===  theme  === */
+    --color-bkgnd-body: #eee;
+    --color-text: black;
+    --color-bkgnd-code: #ffe;
+    --color-pre: #eee;
+    --color-bkgnd-pre: #555;
+    --color-anchor-link: dodgerblue;
+    --color-anchor-focus: #333;
+    --color-anchor-visited: #eee;
+    --color-border: #eee;
+    --color-blockquote: #333;
+    --color-bkgnd-blockquote: #ccb;
+    --body-width: 57ch;
+    /* --pad: 3em 2em 1em 2em; */
+}
+
+body {
+    background: var(--color-bkgnd-body);
+}
+body,form,table {
+    /* ===  system font stack  === */
+    font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+    margin: .2em;
+}
+
+blockquote,
+dt,
+li,
+p {
+    width: var(--body-width);
+    /* width: 31em; */
+    padding-left:0.3em;
+}
+
+blockquote pre, 
+dt pre,
+li pre {
+    width: 85vw;
+}
+blockquote {
+    margin-left: .3rem;
+    color: var(--color-blockquote);
+    border-left: 20px solid var(--color-bkgnd-blockquote);
+}
+pre {
+    /* word wrap */
+    white-space: pre-wrap;
+    /* CSS @ 2.1+ */
+    white-space: -moz-pre-wrap;
+    /* Mozilla @ 1999+ */
+    white-space: -pre-wrap;
+    /* Opera 4-6 */
+    white-space: -o-pre-wrap;
+    /* Opera 7 */
+    word-wrap: break-word;
+    /* IE 5.5+ */
+    padding: 0.5rem;
+    margin-left:0.3rem;
+    /*
+    border-bottom:3px solid var(--color-border);
+    border-left:3px solid var(--color-border);
+    */
+}
+
+pre { 
+    font-size: .8rem;
+    color: var(--color-pre);
+    background: var(--color-bkgnd-pre);
+}
+code {
+    background: var(--color-bkgnd-code);
+}
+pre > code {
+    background: transparent;
+}
+/*
+
+pre {background:transparent;margin:0;margin-left:0.5ch;padding:0;border:none;}
+*/
+
+/* width not working here */
+/*
+pre {width: var(--body-width);}
+pre > code:hover {width:auto;}
+pre:hover,
+pre:focus {width: 90vw; transition: width .5s;}
+*/
+
+/* ===  anchors  === */
+
+a:link {
+    cursor: default;
+    text-decoration: none;
+    color: var(--color-anchor-link);
+    /* if transparent, then no change @ :visited */
+    background-color: var(--color-bkgnd-body);
+}
+
+a:visited,
+a:visited * {
+    color: var(--color-anchor-link);
+    background-color: var(--color-anchor-visited);
+}
+
+h1 a:visited,
+h2 a:visited,
+h3 a:visited,
+h1 a:visited *,
+h2 a:visited *,
+h3 a:visited * {
+    background-color: transparent;
+}
+a:hover,
+a:hover * {
+    color: var(--color-bkgnd-body);
+    background-color: var(--color-anchor-link);
+}
+
+a:focus:active,
+a:focus:active * {
+    color: var(--color-bkgnd-body);
+    background-color: var(--color-anchor-focus);
+}
+
+h4 a:visited, 
+h4 a:visited * {
+    color: var(--color-anchor-link);
+    background-color: var(--color-anchor-visited);
+}
+
+h4 a:hover, 
+h4 a:hover * {
+    color: var(--color-anchor-link);
+    background-color: var(--color-bkgnd-body);
+    border-bottom: 3px solid var(--color-anchor-link);
+}
+
+h4 a:focus:active,
+h4 a:focus:active * {
+    color: var(--color-bkgnd-body);
+    background-color: var(--color-anchor-link);
+    border-bottom: 3px solid var(--color-anchor-link);
+}
+
+/* ===  flex-container  === */
+
+.flex-container {
+    display: flex;
+}
+.flex-container>div {
+    margin: 1vw;
+    padding: 2vw;
+}
+.flex-spaced {
+    display:flex;
+    justify-content: space-between;
+}
+
+ul.none, 
+ol.none {
+    list-style-type:none; 
+}
+
+.border-box > * {
+    box-sizing:border-box;
+}
+
+.right {
+    float:right;
+}
+.left {
+    float:left;
+}
+.clear {clear:both;}
+
+.block {display:block;}
+.none {display:none;}
+
+.overlay {
+    position: fixed;
+    display: none;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.border-red {border:1px dotted red;}

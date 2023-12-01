@@ -1,0 +1,279 @@
+DNS  (See "REF.Network.defs" file)
+===
+    RECORD TYPEs
+    
+        SOA (Start of Authority)    
+            - authority-domain          Server that supplied the data for the zone    
+            - domain-of-zone-admin      Zone Administrator (Responsible Person; RP)  
+            - zone-serial-number        Current version of the data file    
+            - Number of seconds:  
+                refresh-time            Seconds to wait before checking for updates  
+                retry-time              Failed zone transfer    
+                expire-time             Refresh before expire    
+                negative caching TTL    TTL on resource records   
+
+                FORMAT: 
+                    [authority-domain] [domain-of-zone-admin]
+                    [zone-serial-number] [refresh-time] [retry-time]
+                    [expire-time] [negative caching TTL] 
+                E.g., 
+                    ns-381.awsdns-47.com. awsdns-hostmaster.amazon.com. 
+                    1 7200 900 
+                    1209600 86400
+
+        NS (Name Server)  
+            This record lists the DELEGATED SET of 4 AUTHORITATIVE NAME SERVERS, which answers DNS queries from data configured by an original source, vs from another name server's cache of data. 
+            
+            Every DNS zone must be ASSIGNED a set of Authoritative Name Servers. 
+            Every PARENT DOMAIN zone must include an NS record.
+            E.g., 
+                ns-1255.awsdns-28.org
+                ns-455.awsdns-56.com
+                ns-971.awsdns-57.net
+                ns-1618.awsdns-10.co.uk 
+            
+            SUBDOMAINS 
+                can have their own Hosted Zone, containing their own NS record, listing their own Delegated Set of four (4) Authoritative Name Servers. 
+            
+                Such requires DELEGATING RESPONSIBILITY (from the parent) to their Authoritative Name Servers by adding an NS record at the Parent Domain, which lists the subdomain's Delegation Set. So, the Parent Domain (Zone Apex) would have TWO (2) NS records; one for itself (foo.com) and one for the subdomain (bar.foo.com).
+                
+                Alternately, subdomains can be established per A-record and CNAME-record in the Parent Domain (Zone Apex). Some Hosted Zone providers offer additional, proprietary setups. E.g., AWS Route 53 conjures "Alias" record, which acts like a CNAME, but satisfies the DNS requirement of every domain name having an A-type record.
+
+        A (Address; IP)
+            Translates domain NAME to NUMBER (IPv4 Address); 
+            DNS requires the Main/Naked Domain Name (foo.com) to have an A-type Record 
+            Vital, but not of much help in virtual environments where IP addresses are transient.
+            AWS conjured their own record type to handle this; Alias Records (below).
+
+        CNAME (Canonical Name)
+            Used to resolve one subdomain name to another name; point several to one; 
+            DNS does not allow CNAME type record for Main/Naked Domain Name (Zone Apex); 
+            AWS does NOT allow CNAME type record to resolve (map to) internal AWS resources, 
+            such as ELBs, which have NO Public IP Addresses.
+            
+            @ AWS, create CNAME duing ACM (TLS Certificate) process; click on the domain name.
+
+        Alias ("A")
+            An AWS-Route53–specific DNS extension; 
+            a hybrid of A-type and CNAME type records; 
+            a mapping of domain NAME to (AWS) resource NAME; 
+            avoids the problem of transient (unreliable) IP addresses 
+            in virtual/containerized environments. 
+            Yet reliably satisfying DNS requirements for an A-type record.
+            Parent and child (sub)domain(s) are both allowed Alias type records.  
+
+            LIMITATION: The target (name) must be ELB|S3|CloudFront 
+            E.g., foo.com => elb1234.elb.amazonaws.com
+            
+            Can create one for CloudFront distribution, but it won't work without TLS cerificate.
+
+    TTL 
+        Time to Live; number of seconds the DNS record is cached (on either the Resolving Server or client machine);  
+        the lower the TTL, the faster DNS record changes propogate through the internet;   
+        most TTLs are set for 2 days (172800 seconds); 
+        
+        Prior to migrating a domain, temporarily lower TTL of all DNS records to 300 seconds,  
+        then wait 2 days before doing the migration.    
+
+Route 53
+======== 
+    DNS and Domain Name Registration service (DNS is on Port 53); charges for DNS record requests IF using CNAMEs, but NOT if using Alias Records (Zone Apex Records); 50 domain names allowed by default; AWS is now a Domain Registrar  
+    https://docs.aws.amazon.com/route53/index.html#lang/en_us  
+
+    - Hosted Zones contain Domain Names    
+    - Record Sets contain Domain names with (at least) 1 NS record and 1 SOA reord    
+    - Cannot create Alias Record for EIP (Elastic IP); must be A Record.
+    - Alias type records TARGET only ELB|S3|CloudFront ENDPOINTs;
+      all other record types require the target's IP ADDRESS. 
+    - Routing Policies
+        Simple - default; one resource (EC2) performing one function on a domain, e.g., foo.com
+        Weighted 
+        Latency 
+        Failover 
+        Geolocation 
+
+    alt: DNSimple, GoDaddy, Gandi    
+
+    # HOSTED ZONEs
+
+        @ Route 53 > Hosted Zones >    
+            > "Create Hosted Zone"  (two records created by default)    
+                    NS    
+                    SOA    
+                > Domain Name: > (enter the domain name)    
+                > Type: select "Public Hosted Zone" 
+                "Create" [button]    
+                    "Name Servers" list is returned; those server names need to be copied to whatever Domain Name Registrar handles the target domain name.    
+            > "Go to Record Sets"    
+                DNS RECORD Types    https://en.wikipedia.org/wiki/List_of_DNS_record_types    
+                - NS       Nameserver Record    
+                - SOA      Start of Authority    
+                - A        Address Mapping Record; Resolves Domain Name to IP Address    
+                - CNAME    Canonical Name; Resolve one name to another    
+                - PTR      Pointer Record; reverse DNS lookup    
+                - MX       Mail Exchange; Maps domain name to list of message transfer agents    
+                - ... more ... 
+
+    # White-Label Name Servers a.k.a. Vanity Name Servers, Private Name Servers   
+        https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/white-label-name-servers.html  
+        Configure 1 REUSABLE SET of 4 white-label name servers (a DELEGATION SET) for multiple domains.  
+        E.g., foo.com, foo.org, and foo.net would all use same NS record values (same 4 Name Servers).  
+        And with names such as ns1.foo.com, instead of the usual ns-2048.awsdns-64.com and such.
+    
+    # Add SUBDOMAIN(s) :: TWO (2) OPTIONS (@ AWS Route 53)
+
+        1. Add the subdomain (bar.foo.com) as an "A" or "Alias" record   
+           at the Hosted Zone of the parent domain (foo.com).
+           
+            @ Hosted Zones > (select, e.g., foo.com)  
+                > Create Record Set  
+                    > Name: [SUB] DOMAIN_NAME 
+                    > Type: 'A - IPv4 address'  
+                    > Alias: 
+
+                        @ Yes (Making it an AWS-proprietary record type.)
+                        Alias Target: (ELB|S3|CloudFront; no other type of endpoint allowed)
+
+                        @ No  (Making it a regular "A" record type)
+                        TTL: 300 (default)
+                        Value: (IPv4 Address of TARGET)  
+
+                    > Routing Policy: Simple|Weighted|Latency|Failover|Geolocation   
+                    
+            NOTE: 
+                "@ No", making it an A-type record, is a bad option; 
+                AWS resources have transient (unreliable) IP addresses,  
+                as do all virtual/containerized environments generally.  
+                Yet DNS requires an A-type record. Hence AWS' "Alias" solution. 
+                
+                LIMITATION of "Alias" record: 
+                    The target (name) must be one of: ELB|S3|CloudFront
+                  
+        2. per DELEGATING  
+            Create a new Hosted Zone (sub.foo.com), just as if it were the (naked) domain name.  
+            Known as: "Delegating responsibility for a subdomain to (Name Servers at) a Hosted Zone"   
+            or "Delegating a subdomain to other Name Servers."  
+
+                @ Hosted Zone of the main domain name (foo.com),
+                Create NS record for the subdomain (sub.foo.com); 
+                its "Value" entries are the subdomain's Name Servers  
+                (found at its NS record, at its Hosted Zone).  
+
+            Delegating to a Hosted Zone allows more DNS-related options:   
+            https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-routing-traffic-for-subdomains.html   
+            
+        # TEST (Resolve) 
+            - Get NameServers
+                @ Windows:  nslookup SUB.DOMAIN_NAME  
+                @ Linux:    dig SUB.DOMAIN_NAME 
+            - Connectivity 
+                ping SUB.DOMAIN_NAME  
+
+    # 3rd Party Domain Registrars  (DNS Management)
+        Most allow configuring a subdomain to DELEGATE RESPONSIBILITY  
+        to external (Route 53) NameServers; simply create hosted subdomain @ Route 53,   
+        and copy its nameservers over to 3rd party.  
+
+        Else, do it all @ Route 53. 
+
+    # EIP :: Associate with domain name 
+        @ EC2 > Elastic IPs > Allocate new address (returns EIP Address) 
+            EIP Address (select one) > Actions 
+            > Associate address 
+            Resource type: Instance|Network interface (check-boxes)  
+                @ Instance: (enter instance-id; i-HHHH...)
+                    > AWS Command Line Interface command 
+                        - generated; copy/use to perform same thing per AWS CLI  
+                @ Network Interface: (enter subnet of EC2; eni-01f24dcf8e7e55c63)
+        @ Route53 > Domain name (select) > Create Record (button)  # To associate EIP with Domain Name 
+            Alias: No  (only for S3 or ELB)
+            Value: (enter EIP Address)
+
+    # Link Domain Name to EC2 Instances (thru ELB)  
+        - Simple|Weighted|Latency|Failover|Geolocation ROUTING POLICIES
+
+        # Create a Record Set 
+            > "Create Record Set"    
+                > Name: [www] ... .DOMAINNAME 
+                > Type: A - IPv4 address    
+                > Alias: yes   (MUST if sans 'www'; naked domain name)
+                > Alias Target: (ELB endpoint, i.e., ELB DNS-Name)    
+                > Routing Policy: Simple|Weighted|Latency|Failover|Geolocation   
+                    if Weighted|Latency|Failover, then create record for each ELB ...
+                        Weighted: 0-255  # can use IF more than 1 ELB, e.g., 
+                            Weight: 70 (if the other ELB set @ 30; yieilds 70%/30% weighted balance)
+                            Set ID: (coin a descriptive name for this ELB)
+                        Latency: 
+                            Region: (of EC2)
+                        Failover: for Active/Passive sets of ELB+EC2s
+                           (See below)
+
+        # Delete a Record Set 
+            > Hosted zones > (select record set; check-box) 
+                > Delete Record Set
+
+    # FAILOVER [from PRIMARY; Active] to different [SECONDARY; Passive] region 
+        https://aws.amazon.com/premiumsupport/knowledge-center/route-53-dns-health-checks/
+        
+        First create health checks for both ELB and website domain-names 
+
+        ELB Health check
+            @ Route 53 > Health checks > Create Health Check 
+                "Configure health check"
+                    Name: US-East-1-HealthCheck
+                "Monitor an endpoint"
+                    Domain name: ELB_DOMAIN_NAME    (@ EC2 > Load Balancers > ...) 
+                "Advanced configuration"
+                    Request interval: Fast (check-box)
+                    Failure threshold: 1
+                > Next (button)
+                > Create health check (button)
+        Website (domain-name) Health check
+            @ Route 53 > Health checks > Create Health Check 
+            https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/health-checks-creating.html
+                "Configure health check"
+                    Name: WebDomainName-HealthCheck
+                    Path: (optionally, e.g., index.html)
+                "Monitor an endpoint"
+                    Domain name: WEB_DOMAIN_NAME    (@ EC2 > Load Balancers > ...) 
+                "Advanced configuration"
+                    Request interval: Fast (check-box)
+                    Failure threshold: 1
+                > Next (button)  
+                > Create alarm: yes (check-box)  
+                    Send notification to: New SNS topic (check-box)
+                    Topic name: WebDown
+                    Recipient email address: (yours)
+                > Create health check (button)
+
+        > "Create Record Set"  (for primary)
+            > Name: [www2] .DOMAINNAME    
+            > Alias: yes  
+            > Value: IP_ADDRESS_OF_PRIMARY    
+            > Routing Policy: Failover    
+            > Failover Record Type: Primary    
+            > Set ID: www2-primary    
+            > Associate with Health Check > yes [select previously setup name]    
+                ERR if domain-name matches health check domain-name, 
+                so associate with ELB domain-name
+                
+        > "Create Record Set"  (for secondary)
+            > Name: [www2] .DOMAINNAME  (Must be same as primary)   
+            > Value: IP_ADDRESS_OF_FAILOVER    
+            > Failover Record Type: Secondary        
+            > Set ID: www2-secondary    
+            > Associate with Health Check > no (will fail if same as primary)    
+                optionally create another Health Chekc,    
+                and repeat process to create a 2nd failover site.    
+
+        Records should now show the two sites; two "A" records, 
+        both with same domain-name, but each with its respective (unique) IP Address.    
+
+    # HTTP Response Header IF RESOURCES ARE NOT AVAILABLE, per Route53: 
+
+        HTTP/1.1 503 Service Unavailable: Back-end server is at capacity
+        Content-Length: 0
+        Connection: keep-alive
+
+        (Response Body is empty; nothing is displayed)  
+        
