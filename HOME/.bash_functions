@@ -55,23 +55,25 @@ isoz(){
 # FS
 
 path() { 
-    # Show parsed $PATH Env.Var.
+    # Parse and print $PATH 
     clear ; echo ; echo '  $PATH [parsed]'; echo
     declare IFS=: ; printf '  %s\n' $PATH
 }
-push() { 
-    # ARGs: DIR-(REL)PATH || DRIVE-LETTER
-    [[ "$@" ]] || { echo " NO push (no param)"; return 99; } 
-    [[ -d "$*" ]] && { pushd "$*" > /dev/null 2>&1 ; return; } || {
-        (( ${#1} == 1 )) && { push "$1"; return; }
-    } 
-    echo "=== DIR '$*' NOT EXIST"
+[[ $(type -t pushd) ]] && {
+    push() { 
+        # ARGs: DIR-(REL)PATH || DRIVE-LETTER
+        [[ "$@" ]] || { echo " NO push (no param)"; return 99; } 
+        [[ -d "$*" ]] && { pushd "$*" > /dev/null 2>&1 ; return; } || {
+            (( ${#1} == 1 )) && { push "$1"; return; }
+        } 
+        echo "=== DIR '$*' NOT EXIST"
+    }
+    pop() { popd > /dev/null 2>&1 ; }
+    up(){ push "$(cd ..;pwd)" ; }
+    root(){ push / ; }
+    home(){ push "$HOME"; }
+    temp(){ push "$TMPDIR"; }
 }
-pop() { popd > /dev/null 2>&1 ; }
-up(){ push "$(cd ..;pwd)" ; }
-root(){ push / ; }
-home(){ push "$HOME"; }
-temp(){ push "$TMPDIR"; }
 mode(){ 
     # ARGs: [DIR(Default:$PWD)]
     # OCTAL HUMAN FNAME

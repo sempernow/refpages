@@ -66,22 +66,50 @@ docker-machine
 # Restart Docker daemon : if Linux/install @ systemd
 sudo systemctl restart docker
 
-# Docker Registry API 
-    # https://docs.docker.com/registry/spec/api/#detail
+# Docker Registry v2 API 
+    # https://distribution.github.io/distribution/spec/api/
     # Validate the registry abides /v2/
-    curl -I https://index.docker.io/v2/
+    registry=index.docker.io
+    curl -I https://$registry/v2/
         # HTTP/1.1 401 Unauthorized                       <<< REQUIRED of v2
         # content-type: application/json
         # docker-distribution-api-version: registry/2.0   <<< REQUIRED of v2
         # www-authenticate: Bearer realm="https://auth.docker.io/token",service="registry.docker.io"
         # ... The WWW-Authenticate header value provides token-request params, so ...
     # GET token : scoped to target image (library/busybox)
-    curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/busybox:pull"
+    curl "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$repo:pull"
         # {"token":"...","access_token": "...", ...}
-    # Use token to GET the manifest (JSON),
-    # which is NOT what `docker image inspect` prints to STDOUT.
-    curl --header "Authorization: Bearer $token" \
-        https://index.docker.io/v2/library/busybox/manifests/latest   
+
+    # GET manifest : The DIGEST is NOT in the JSON, but in the HEADER
+        ## @ v2.3+, with GET or HEAD request MUST include else bogus reponse:
+        auth="Authorization: Bearer $token"
+        accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
+        repo='busybox'
+        tag='latest'
+        curl -H "$auth" -H "$accept" -isS https://$registry/v2/$repo/manifests/$tag  
+
+    # Get all tags of an image name (repo)
+        curl -X GET -u $user:$pass \
+            https://$registry/v2/$repo/tags/list \
+            |tee list.$repo.tags.json
+
+    # Get (HEAD) digest : MUST include $accept header else digest is BOGUS and using it will fail.
+    digest="$(
+        curl -H "$accept" -H "$auth" -siSX HEAD https://$registry/v2/$repo/manifests/$tag \
+            |grep docker-content-digest \
+            |awk '{printf "%s\n",$2}' \
+            |sed 's/\W//g' \
+            |sed 's/sha256/sha256:/' \
+    )"
+    # HTTP/1.1 200 OK
+    ...
+    # docker-content-digest: sha256:521be44a3a6c757b91f828471c354a5560022f2894f7d75d70f8e36e9fb76945
+    ...
+
+    # DELETE /v2/<name>/manifests/<reference>
+        curl -H "$auth" -H "$accept" -sSX DELETE https://$registry/v2/$repo/manifests/$digest 
+        # HTTP/1.1 202 
+
     # Run a Local Registry : Distribution : https://hub.docker.com/_/registry  
     # https://docs.docker.com/registry/deploying/
     docker run --rm -d --restart always --name registry -p 5000:5000 registry:2.8.3
@@ -100,22 +128,26 @@ sudo systemctl restart docker
         # Run docker client @ container, yet comms to host's docker server, per bind mount to host's docker.sock:
             docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock $_IMG docker version
             #… if require only reads, then use `ro` option: `-v HOST:CTNR:ro`
-# Docker daemon API access per UNIX SOCKET : Request/Response @ SERVER (daemon) HOST:
+# Docker daemon API access via UNIX SOCKET : Request/Response @ SERVER (daemon) HOST:
     curl -s --unix-socket /var/run/docker.sock http://localhost/version |jq .
     # https://docs.docker.com/engine/api/v1.40/
         # /version  docker ps
         # /images/json
         # /containers/json
         # …
+    # On err
+    sudo chmod 666 /var/run/docker.sock
+# Docker in Docker (dind)
+    docker run -it -v /var/run/docker.sock:/var/run/docker.sock docker
 # Memory/CPU/… Resource Constraints : Runtime options 
     # https://docs.docker.com/config/containers/resource_constraints/
     # https://ram.tianon.xyz/post/2021/03/16/docker-setup-reredux.html
 
-# Restart Docker Engine 
-service docker restart 
-
 docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (dockerd) 
     # CONFIG / OPTIONS 
+        # https://docs.docker.com/engine/reference/commandline/dockerd/
+        # https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file
+        dockerd --validate --config-file=/tmp/valid-config.json
         /etc/docker/daemon.json
         # AND/OR 
         ~/.docker/daemon.json
@@ -136,7 +168,7 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         docker login  # Requies auth only ONCE per platform/environment; 
         #… creds stored UNENCRYPTED, base64 encoded @ ~/.docker/config.json
         # OR, login using one liner sans prompt; pipe password to prevent recording it.
-        echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
+         echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
             # On ANY repeated ERRORS at LOGIN (ANY SORT; even HTTP 502, 503, …), 
             # FIX by:
                 # 1. Logout : docker logout

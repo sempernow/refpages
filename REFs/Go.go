@@ -280,6 +280,12 @@
 
 	// COMPILE & RUN @ TMP`
 		go run . 
+		go run -a -mod=mod . // Force rebuild; do NOT use existing artifacts
+			// `go help cache` WRONGFULLY claims:
+			// The build cache correctly accounts for changes to Go source files,
+			// compilers, compiler options, and so on: cleaning the cache explicitly
+			// should not be necessary in typical use.
+
 		// IF ONE source FILE (sans dependencies)
 			go run absPATH/pkgName/fileName.go  // creates & runs binary @ TMP
 		// ELSE MUST setup entire Golang env; all env-vars and rigid directory structures

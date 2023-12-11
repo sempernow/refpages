@@ -2,23 +2,27 @@
 #------------------------------------------------------------------------------
 # TLS : openssl : Generate Self-signed Site Certificate
 #
-# REF : https://docs.docker.com/engine/swarm/configs
+# REF : https://docs.docker.com/engine/swarm/configs/
 # -----------------------------------------------------------------------------
 # Params
-c=${TLS_C:-US};st=${TLS_ST:-VA};l=${TLS_L:-Arlington};o=${TLS_O:-Sempernow LLC}
-
-cn=${TLS_CN:-swarm.foo}
+len=2048
+cn=${TLS_CN:-site.local} 
 #ip=${TLS_IP:-192.168.1.26}
 
-root_key='root-ca.key'         # SECRET
+## For setting params per -subj "$subj" : NOT configured for WILDCARD cert
+c=${TLS_C:-US};st=${TLS_ST:-NY};l=${TLS_L:-Gotham};o=${TLS_O:-Foobar Inc};ou=${TLS_OU:-DevOps}
+subj="/C=$c/ST=$st/L=$l/O=$o/OU=$ou/CN=$cn"
+
+# Root CA is self
+root_key='root-ca.key'
 root_crt='root-ca.crt'
 root_csr='root-ca.csr'
 root_cnf='root-ca.cnf'
 
-site_key='site.key'            # Web-server param : SECRET
-site_crt='site.crt'            # Web-server param
-site_csr='site.csr'
-site_cnf='site.cnf'
+site_key='site.key'            # Web-server param : SECRET key
+site_crt='site.crt'            # Web-server param : PUBLIC certificate
+site_csr='site.csr'            # Cert Signing Request : Used to generate signed cert (site.crt)
+site_cnf='site.cnf'            # Configuration (Text) : Used to generate CSR (site.csr)
 
 fullchain='site.fullchain.crt' # Web server param
 #... is $site_crt lest "intermediaries" appended
@@ -32,9 +36,9 @@ openssl genrsa -out "$root_key" 4096
 
 # Generate CSR (Cert Signing Request) 
 openssl req \
-	-new -key "$root_key" \
-	-out "$root_csr" -sha256 \
-	-subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
+    -new -key "$root_key" \
+    -out "$root_csr" -sha256 \
+    -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
 
 # Configure root CA
 cat <<EOR > $root_cnf
@@ -44,20 +48,19 @@ keyUsage = critical, nonRepudiation, cRLSign, keyCertSign
 subjectKeyIdentifier=hash
 EOR
 
-# Sign the certificate
+# Sign the root-CA certificate
 openssl x509 -req -days 3650 -in "$root_csr" \
-	-signkey "$root_key" -sha256 -out "$root_crt" \
-	-extfile "$root_cnf" -extensions \
-	root_ca
+    -signkey "$root_key" -sha256 -out "$root_crt" \
+    -extfile "$root_cnf" -extensions root_ca
 
 # Generate site key
 openssl genrsa -out "$site_key" 4096
 
 # Generate site CSR
 openssl req \
-	-new -key "$site_key" \
-	-out "$site_csr" -sha256 \
-	-subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
+    -new -key "$site_key" \
+    -out "$site_csr" -sha256 \
+    -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
 
 # Configure site CA  https://www.labeightyfour.com/2019/07/27/generate-keys-in-openssl-using-configuration-file/
 cat <<EOR > $site_cnf
@@ -109,9 +112,9 @@ openssl x509 -in ./$site_crt -text -noout
 # Generate Diffie-Hellman params (computationally intensive) for Nginx 
 openssl ecparam -name $algo -out ecparam.pem
 
-##########################################################################
-# Concat full chain (for OCSP Stapling) 
-cat $site_crt $root_crt > $fullchain
+######################################
+# Concat for full-chain certificate 
+cat $site_crt $root_crt |tee $fullchain
 
 exit 0
 
@@ -128,7 +131,7 @@ docker config create $fullchain ./$fullchain
 
 # Test
 openssl s_client -connect $cn:443 -CAfile ./$root_crt \
-	> 'openssl.s_client.connect.cafile.log' 2>&1
+    |& tee openssl.s_client.connect.cafile.log
 
 # Convert certificate to pem format 
 openssl x509 -outform PEM -in $_crt -out $_crt_as_pem

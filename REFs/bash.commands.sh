@@ -540,8 +540,9 @@ exit
             # SOURCE is archive root; if `.`, then extracts to PWD
             tar -caf ARCH_PATH.EXT --exclude='.*' -C PATH  SOURCE
                 
-        # EXTRACT arch to PATH/...
-        tar -xaf ARCH_PATH.EXT -C PATH 
+        # EXTRACT $tarball to $target_parent/...
+        tar Cxavf $target_parent $tarball 
+        tar -xzv -C $target_parent --strip-components=1 -f $tarball
 
         # PIPEd input per `-` (stdin)
         ... |tar [OPTIONS] -
@@ -1614,6 +1615,9 @@ exit
         # DELETE all EMPTY LINES
             sed '/^[[:space:]]*$/d' FILE 
         
+        # Remove control characters EXCEPT newline
+            ... |sed 's/\W\\/'
+
         # Remove control characters 
             sed -e "s/\x1b\[.\{1,5\}m//g"
                 # E.g., 
@@ -2303,13 +2307,16 @@ exit
         curl -fsSL -o a.sh https://foo.com/path/to/a.sh
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 
-    # SW FROM SOURCE : DOWNLOAD, COMPILE, INSTALL
-        wget URL_TO_SOURCE.tarball  # download it 
-        tar -xaf SOURCE.tarball     # extract it / read about it
-        configure --help # show info; source dir often include a 'configure' file
-        ./configure  # generates files required to build SW and setup system parameters. 
-        make         # build the libraries and applications. 
-        make install # install the libraries and applications. 
+        # Download directly into install location 
+        wget $url -O $destination
+
+        # SW from source : DOWNLOAD, COMPILE, INSTALL
+            wget URL_TO_SOURCE.tarball  # download it 
+            tar -xaf SOURCE.tarball     # extract it / read about it
+            configure --help # show info; source dir often include a 'configure' file
+            ./configure  # generates files required to build SW and setup system parameters. 
+            make         # build the libraries and applications. 
+            make install # install the libraries and applications. 
 
 # ADMIN COMMANDS
 
