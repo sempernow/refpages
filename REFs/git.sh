@@ -98,8 +98,9 @@ exit
             # Does NOT display per listing @ `git branch`. Script to do so:
             # https://github.com/bahmutov/git-branches/blob/master/branches.sh 
 
-    # MERGE source into target (if BOTH COMMITs up-to-date)
-        git checkout $target; git merge $source
+    # MERGE source into target if BOTH COMMITs are up-to-date
+        git checkout $target
+        git merge $source
 
 # FETCH : download but don't change state of local branches
 # https://www.atlassian.com/git/tutorials/syncing/git-fetch
@@ -108,7 +109,7 @@ exit
     git fetch --all  # all origins
     git fetch --dry-run 
 
-# CHECKOUT a.k.a. "dispatch" : integrate into local : creates detached HEAD 
+# CHECKOUT AKA "dispatch" : integrate into local : creates detached HEAD 
     git checkout $name # either updates from remote or creates anew
     # In full; setup remote tracking otherwise Git sets implicitly.
     git checkout -b $name --track origin/$name

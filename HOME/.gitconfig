@@ -6,7 +6,7 @@
 	excludesfile = ~/.gitignore_global
 [user]
 	name    = dev
-	email   = dev@sempernow.com
+	email   = sempernow.com@gmail.com
 	account = sempernow
 [filter "lfs"]
 	clean    = git-lfs clean -- %f
@@ -19,3 +19,5 @@
 	g = grep --break --heading --line-number
 [grep]
 	lineNumber = true
+[init]
+	defaultBranch = master

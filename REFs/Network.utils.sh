@@ -288,11 +288,14 @@ exit
             -t N, --tries=N         # retry link(s) `N` times
             -O FILE                 # redirect ALL response bodies to `FILE` (concat); 
             -O -                    # ... to STDOUT
+            -nv                     # not verbose (no progress % report)
 
         # Validate endpoint/resource and print only the response-code line (lines on redirect)
             wget -Sq --spider $url 2>&1 |grep HTTP
         # Download and execute a shell script (COMMON, INSECURE, and DANGEROUS)
             wget -O - $_bash_script_url |sh
+        # Download binary directly into its install location
+            wget -O $destination $url
         # Download server response body to FILE @ $PWD; report meta @ STDERR
             wget $url 
             # IF compressed ...
