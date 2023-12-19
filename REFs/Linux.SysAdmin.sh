@@ -187,6 +187,18 @@ exit
         -rsv    # kernel release, name, version 
         -nmpio  # node (hostname), machine , processor, hardware, os
 
+    # Kernel Modules
+        lsmod                   # List all loaded kernel modules
+        sudo modprobe $module   # Load a kernel module now (ephemeral)
+        # Load a set (containerd.conf) of kernel modules on boot : 
+        ## @ /etc/modules-load.d/
+        kernel_modules='
+            overlay
+            br_netfilter
+        '
+        printf "%s\n" $kernel_modules |sudo tee /etc/modules-load.d/containerd.conf
+        # Load them all now
+        printf "%s\n" $kernel_modules |xargs -IX sudo modprobe X
 
 # STORAGE 
     lsblk -o SIZE,LABEL,NAME,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID 
@@ -253,7 +265,7 @@ exit
     groupadd --gid 1001 foo
     adduser --uid 1001 --gid 1001 --gecos "" --disabled-password --no-create-home foo
 
-    # Add user foo to sudo group
+    # Add user foo to docker group
     usermod -aG docker foo
     newgrp docker # Take effect now.
 
@@ -261,7 +273,7 @@ exit
     chown -R 1000:777 /mnt1
 
     # Get username from uid
-    username_from_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
+    uname_of_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
 
     # user, pass :: ADD user, SET PW
         adduser $USERNAME             # create new user

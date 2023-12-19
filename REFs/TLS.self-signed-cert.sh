@@ -13,35 +13,33 @@ cn=${TLS_CN:-site.local}
 c=${TLS_C:-US};st=${TLS_ST:-NY};l=${TLS_L:-Gotham};o=${TLS_O:-Foobar Inc};ou=${TLS_OU:-DevOps}
 subj="/C=$c/ST=$st/L=$l/O=$o/OU=$ou/CN=$cn"
 
-# Root CA is self
-root_key='root-ca.key'
-root_crt='root-ca.crt'
-root_csr='root-ca.csr'
-root_cnf='root-ca.cnf'
+# DH Parameters file : Used by server to speed up the (encrypt/decrypt) calculations.
+dhparam='dhparam'   # RSA 
+ecparam='ecparam'   # ECDSA
 
-site_key='site.key'            # Web-server param : SECRET key
-site_crt='site.crt'            # Web-server param : PUBLIC certificate
-site_csr='site.csr'            # Cert Signing Request : Used to generate signed cert (site.crt)
-site_cnf='site.cnf'            # Configuration (Text) : Used to generate CSR (site.csr)
+# Root CA of Self-signed Certificate is self
+ca='root-ca'
+# This is THE web-server "certificate"
+## Concat of site cert and CA cert(s) all the way to root-CA cert
+## Speeds up TLS handshake by providing the full chain (hierarchy) of CAs, 
+## so client needn't search and gather this from its Trusted-CAs store (/etc/ssl/certs/).
+fullchain=${cn}-fullchain
 
-fullchain='site.fullchain.crt' # Web server param
-#... is $site_crt lest "intermediaries" appended
-dhparam='dhparam.rsa.pem'
+# *.key     # Web-server param      : SECRET key
+# *.crt     # Web-server param      : PUBLIC certificate
+# *.csr     # Cert Signing Request  : Used to generate signed cert (site.crt)
+# *.cnf     # Configuration (Text)  : Used to generate CSR (site.csr)
 
-# site_csr and site_cnf files are not needed by Nginx service;
-# needed to generate a new site certificate.
-
-# Generate root key
-openssl genrsa -out "$root_key" 4096
-
+# Generate CA root key : Use -noenc else -nodes (depricated)
+openssl req -new -newkey rsa:$len -noenc -out $ca.csr -keyout $ca.key
 # Generate CSR (Cert Signing Request) 
 openssl req \
-    -new -key "$root_key" \
-    -out "$root_csr" -sha256 \
+    -new -key "$ca.key" \
+    -out "$ca.csr" -sha256 \
     -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
 
 # Configure root CA
-cat <<EOR > $root_cnf
+cat <<EOR > $ca.cnf
 [root_ca]
 basicConstraints = critical,CA:TRUE,pathlen:1
 keyUsage = critical, nonRepudiation, cRLSign, keyCertSign
@@ -49,95 +47,108 @@ subjectKeyIdentifier=hash
 EOR
 
 # Sign the root-CA certificate
-openssl x509 -req -days 3650 -in "$root_csr" \
-    -signkey "$root_key" -sha256 -out "$root_crt" \
-    -extfile "$root_cnf" -extensions root_ca
+openssl x509 -req -days 3650 -in "$ca.csr" \
+    -signkey "$ca.key" -sha256 -out "$ca.crt" \
+    -extfile "$ca.cnf" -extensions root_ca 
 
 # Generate site key
-openssl genrsa -out "$site_key" 4096
+openssl req -new -newkey rsa:$len -noenc -out $cn.csr -keyout $cn.key
 
 # Generate site CSR
-openssl req \
-    -new -key "$site_key" \
-    -out "$site_csr" -sha256 \
-    -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
 
-# Configure site CA  https://www.labeightyfour.com/2019/07/27/generate-keys-in-openssl-using-configuration-file/
-cat <<EOR > $site_cnf
-[server]
-authorityKeyIdentifier=keyid,issuer
-basicConstraints = critical,CA:FALSE
-extendedKeyUsage = serverAuth
-keyUsage = critical, digitalSignature, keyEncipherment
-subjectAltName = DNS:$cn
-subjectKeyIdentifier = hash
+## Configure site CA  https://www.labeightyfour.com/2019/07/27/generate-keys-in-openssl-using-configuration-file/
+cat <<EOH >$cn.cnf
 [req]
-distinguished_name = app_devops
-EOR
+prompt = no
+distinguished_name = req_dn
+req_extensions = req_ext
+[req_dn]
+CN = $cn
+C  = ${TLS_C:-US}
+ST = ${TLS_ST:-NY}
+L  = ${TLS_L:-Gotham}
+O  = ${TLS_O:-Foobar Inc}
+OU = ${TLS_OU:-DevOps}
+[req_ext]
+subjectAltName = @alt_names
+keyUsage = digitalSignature
+extendedKeyUsage = serverAuth
+[alt_names]
+DNS.1 = $cn
+DNS.2 = *.$cn
+EOH
+
+## Generate site cert and key
+openssl req -newkey rsa:$len -days 3650 -noenc -sha256 \
+    -extensions req_ext -config $cn.cnf \
+    -keyout "$cn.key" -out "$cn.crt"
+
+## One-liner TLS @ local host : https://letsencrypt.org/docs/certificates-for-localhost/ 
+openssl req -x509 -out "$cn.crt" -keyout "$cn.key" -newkey rsa:$len -nodes -sha256 \
+    -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn" -extensions req_ext \
+    -config <(printf "[req_dn]\nCN=$cn\n[req]\ndistinguished_name = req_dn\n[req_ext]\nsubjectAltName=DNS:$cn\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
 
 ###################################################################################
 # @ RSA 
 
-# Sign the site certificate
-openssl req -x509 -days 750 -in "$site_csr" -sha256 \
-    -CA "$root_crt" -CAkey "$root_key" -CAcreateserial \
-    -out "$site_crt" -extfile "$site_cnf" -extensions server
+# Sign site certificate using root CA
+openssl req -x509 -days 3650 -in "$cn.csr" -sha256 \
+    -CA "$ca.crt" -CAkey "$ca.key" -CAcreateserial \
+    -out "$cn.crt" -extfile "$cn.cnf" -extensions server
 
-# Generate Diffie-Hellman params (computationally intensive) for Nginx 
-openssl dhparam -out $dhparams 4096
-
-#... else: 4096 bytes takes MINUTEs; less than is vulnerable to logjam attack;
+# Generate Diffie-Hellman params
+openssl dhparam -out $dhparam.pem $len
 
 ###################################################################################
-# @ ECC 
+# @ ECDSA 
 algo='secp384r1'
 algo='prime256v1'
-key='site.key'
 # Private key : generate
-openssl ecparam -name $algo -genkey -noout -out $site_key
+openssl ecparam -name $algo -genkey -noout -out $cn.key
 # -noout : do not outpout params
 # -param_enc explicit : embed full parameters of the curve in the key
 
 # Site Certificate : sign/generate
-openssl req -new -x509 -key ./$site_key -sha256 -nodes -out $site_crt -days 730 -extfile "$site_cnf" -extensions server
+openssl req -new -x509 -key $cn.key -sha256 -nodes -out $cn.crt -days 3650 -extfile $cn.cnf -extensions req_ext
 #... sha256 encrypts cert; -nodes for no password
 
 # # Concat key and cert 
 # cat ./$site_key ./$site_crt > $site_crt
 
 # Examine both
-openssl ecparam -in ./$site_key -text -noout
-openssl x509 -in ./$site_crt -text -noout
+openssl ecparam -in $cn.key -text -noout
+openssl x509 -in $cn.crt -text -noout
 
-# Generate Diffie-Hellman params (computationally intensive) for Nginx 
-openssl ecparam -name $algo -out ecparam.pem
+# Generate Diffie-Hellman params 
+openssl ecparam -name $algo -out $ecparam.pem
 
 ######################################
 # Concat for full-chain certificate 
-cat $site_crt $root_crt |tee $fullchain
+cat $cn.crt $ca.crt |tee $fullchain.crt
 
-exit 0
+#####################################
+# Test a cert/key pair (sans install)
+p=5555
+## @ Server terminal
+openssl s_server -accept $p -cert $cn.crt -key $cn.key -CAfile $ca.crt
+## @ Client terminal
+openssl s_client -showcerts -connect $cn:$p -CAfile $ca.crt
+### - May omit "-CAfile $ca.crt" if using Trusted CAs of /etc/ssl/certs/
+### - For self-signed certs, use site as CA (cert) : "-CAfile $cn.crt"
+### - If DNS-resolution error : "...:Name or service not known"
+###   Add local DNS resolve   : echo "127.0.0.1 $cn" >>/etc/hosts
+
+# Convert certificate to pem format 
+openssl x509 -outform PEM -in $cn.crt -out $cn.pem
+
 
 # Create docker secrets / configs
-docker secret create $site_key ./$site_key
-docker secret create $site_crt ./$site_crt
-docker config create $dhparam ./$dhparam
-docker config create $fullchain ./$fullchain
+docker secret create $cn.key $cn.key
+docker secret create $cn.crt $cn.crt
+docker config create $dhparam.pem $dhparam.pem
+docker config create $fullchain.crt $fullchain.crt
 
 # docker secret create ${SITE_KEY} ${PATH_ACME_OUT}/${DOMAIN}_ecc/${DOMAIN}.key
 # docker secret create ${SITE_CRT} ${PATH_ACME_OUT}/${DOMAIN}_ecc/${DOMAIN}.cer
-# docker secret create ${FULLCHAIN} ${PATH_ACME_OUT}/${DOMAIN}_ecc/fullchain.cer
-# docker config create ${DHPARAM} ./${DHPARAM}
-
-# Test
-openssl s_client -connect $cn:443 -CAfile ./$root_crt \
-    |& tee openssl.s_client.connect.cafile.log
-
-# Convert certificate to pem format 
-openssl x509 -outform PEM -in $_crt -out $_crt_as_pem
-
-# TLS @ localhost : https://letsencrypt.org/docs/certificates-for-localhost/ 
-c=${TLS_C:-US};st=${TLS_ST:-VA};l=${TLS_L:-Arlington};o=${TLS_O:-Sempernow LLC}
-cn=${TLS_CN:-swarm.now}
-printf "[dn]\nCN=$cn\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:$cn\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth" > 'config'
-openssl req -x509 -out "$cn.crt" -keyout "$cn.key" -newkey rsa:2048 -nodes -sha256 -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn" -extensions EXT -config 'config'
+# docker secret create ${FULLCHAIN} ${PATH_ACME_OUT}/${DOMAIN}_ecc/$fullchain.cer
+# docker config create ${DHPARAM} ${DHPARAM}

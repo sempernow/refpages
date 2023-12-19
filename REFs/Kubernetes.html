@@ -24,6 +24,82 @@
 
 <h2><a href="https://kubernetes.io/docs/home/?path=users&amp;persona=app-developer&amp;level=foundational">Overview</a> | <a href="https://kubernetes.io/docs/reference/tools/" title="kubernetes.io/docs/...">Tools</a> | <a href="https://github.com/kubernetes" title="Kubernetes repo">GitHub</a> | <a href="https://kubernetes.io/">Kubernetes.io</a> | <a href="https://en.wikipedia.org/wiki/Kubernetes">Wikipedia</a></h2>
 
+<h2>Topics of Interest</h2>
+
+<h3><a href="https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/">Static Pods</a></h3>
+
+<p><strong>Q:</strong> Why does <code>kubeadm init --pod-network-cidr=&quot;10.100.0.0/12&quot;</code> assign each Static Pod (of the K8s-core Pods) an IP address in the node-network (host) CIDR versus that of the explicitly-declared Pod Network?</p>
+
+<p><strong>A:</strong> Static Pods are a special type of pods in Kubernetes that are <strong>managed directly by the <code>kubelet</code> on a specific node</strong>. Unlike regular pods, which are part of a deployment or replica set, static pods are defined as YAML files on the node itself. <strong>They do not reside in the etcd datastore</strong> like other pods.</p>
+
+<p>The reason static pods are assigned IP addresses on the node network (host network) rather than the explicitly-declared pod network CIDR is due to their unique nature:</p>
+
+<ul>
+<li><p>Local Management:<br>
+Static pods are managed locally by the <code>kubelet</code> running on the node.
+<strong>They do not go through the Kubernetes control plane</strong> (API server, controller manager, scheduler).
+As a result, they are not subject to the same network overlay and pod networking rules as regular pods.
+The <code>kubelet</code> on each node is responsible for managing Static Pods. It directly interacts with the container runtime (such as Docker or containerd) to start and stop containers for these pods. Since the <code>kubelet</code> is responsible for managing these pods on the node level, it assigns IP addresses to them based on the node's network.</p></li>
+
+<li><p>Early Bootstrapping:<br>
+Static pods are created during the early bootstrapping phase of the <code>kubelet</code>.
+At this point, the full Kubernetes control plane (including the network overlay) may not be fully operational.
+Assigning an IP address from the node network ensures that static pods can communicate with each other and with other local services (such as the <code>kubelet</code> itself) immediately after boot.</p></li>
+
+<li><p>Minimal Dependencies:<br>
+Static pods have minimal dependencies.
+They rely only on the <code>kubelet</code> and the local Docker runtime (or other container runtime).
+By using the node network, they avoid any potential issues related to network plugins or overlay networks.</p>
+
+<ul>
+<li>No involvement of <code>kube-proxy</code>: Regular Pods created through the API server go through <code>kube-proxy</code>, which sets up the necessary network rules to enable communication between Pods across the cluster. Static Pods, being managed by the <code>kubelet</code>, don't go through <code>kube-proxy</code>, and their networking is more direct.</li>
+</ul></li>
+
+<li><p>No Network Abstraction:<br>
+Unlike regular pods, which are part of a logical network abstraction,
+static pods are tightly coupled to the node.
+Their IP addresses are directly associated with the node’s network interfaces.
+This simplicity allows them to function reliably
+even in scenarios where the full Kubernetes networking stack is not yet available.</p></li>
+</ul>
+
+<p>In summary, static pods serve as a bridge between the host system and the Kubernetes world. Their direct association with the node’s network ensures their availability and functionality during the early stages of cluster bootstrapping. However, it’s essential to understand that static pods are an exception, and regular pods follow the rules defined by the pod network overlay (such as Calico, Flannel, or others) once the cluster is fully operational .</p>
+
+<p><strong>Q:</strong> Why declare <code>10.244.0.0/12</code> as Kubernetes default Pod Network CIDR when it is exactly the same as <code>10.240.0.0/12</code>, the latter of which reveals the first IP address of that declared range?</p>
+
+<p><strong>A:</strong> The choice of <code>10.244.0.0/12</code> as the default Pod Network CIDR in Kubernetes is indeed interesting. Let’s explore why this seemingly redundant range was selected:</p>
+
+<ul>
+<li><p>Historical Context:<br>
+The <code>10.244.0.0/12</code> range was chosen early in Kubernetes development.
+At that time, the decision might not have been as deliberate as it appears now.
+It’s possible that the choice was made without considering the similarity to <code>10.240.0.0/12</code>.</p></li>
+
+<li><p>Avoiding Commonly Used Ranges:<br>
+Kubernetes needed a private IP address range for pod networking.
+The <code>10.0.0.0/8</code> address space is commonly used for private networks.
+To avoid conflicts with existing networks, Kubernetes opted for a less common range.</p></li>
+
+<li><p>Granularity and Address Space:<br>
+The <code>/12</code> subnet provides a large address space (<code>4096</code> addresses).
+Kubernetes clusters can scale significantly, and having ample IP addresses is essential.
+The granularity allows for efficient allocation of pod IPs.</p></li>
+
+<li><p>Consistency and Predictability:<br>
+Kubernetes aims for consistency across clusters.
+By using a specific range like <code>10.244.0.0/12</code>,
+administrators can predict the IP addresses assigned to pods.
+This consistency simplifies network management and troubleshooting.</p></li>
+
+<li><p>Avoiding Ambiguity:<br>
+The choice of <code>10.244.0.0/12</code> avoids ambiguity.
+If <code>10.240.0.0/12</code> were used, the first IP address (10.240.0.1)
+might be mistaken for a special purpose (such as a gateway or DNS server).
+By starting at <code>10.244.0.1</code>, Kubernetes ensures that the entire range is available for pod IPs.</p></li>
+</ul>
+
+<p>In summary, while the similarity between <code>10.244.0.0/12</code> and <code>10.240.0.0/12</code> might raise eyebrows, the decision likely prioritized consistency, predictability, and avoiding common address spaces. Kubernetes architects aimed for a balance between practicality and uniqueness when defining the default Pod Network CIDR.</p>
+
 <h1><a href="https://kubernetes.io/docs/concepts/services-networking/service/">Service</a></h1>
 
 <p>Exposes a Deployment to a port under a protocol, sans IP Address(es). E.g., Create <code>my-service</code> to target TCP port 9376 on any Pod having the label <code>app.kubernetes.ip/name: MyApp</code> :</p>
