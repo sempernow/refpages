@@ -3,6 +3,17 @@
 #  Kubernetes tools : kubectl
 # -----------------------------------------------------------------------------
 
+# jsonpath : https://kubernetes.io/docs/reference/kubectl/jsonpath/
+kubectl get node -o jsonpath={.items[*].spec.podCIDRs}
+# ["10.240.0.0/24"] ["10.240.1.0/24"] ["10.240.2.0/24"] ["10.240.3.0/24"]
+kubectl get node -o jsonpath='{range .items[*]}{.spec.podCIDRs}{"\n"}{end}'
+## template : equivalent
+kubectl get node -o template='{{range .items}}{{.spec.podCIDRs}}{{"\n"}}{{end}}'
+# ["10.240.0.0/24"]
+# ["10.240.1.0/24"]
+# ["10.240.2.0/24"]
+# ["10.240.3.0/24"]
+
 # Managed Kubernetes Environment @ Google Cloud Platform 
 ## Kubernetes Engine > Cluster > Create > GKE Standard
 
@@ -149,7 +160,7 @@ kubectl delete pod $appName
 ## OR
 ## Generate YAML per `kubectl run ...`
 # Generate YAML (only at single-container pod)
-kubectl run $appName --image=$appImage --dry-run=client -o yaml > $appYAML
+kubectl run $appName --image=$appImage --dry-run=client -o yaml |tee $appYAML
 ##... add custom run command : `-- ...` MUST BE LAST ARG(s)
 kubectl run $appName --image=$appImage \
     --dry-run=client -o yaml -- sleep 3600 > $appYAML

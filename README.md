@@ -167,6 +167,7 @@
 ## [JWT.OAuth.md](./REFs/JWT.OAuth.md)
 ## [K8s-HA-LBs.txt](./REFs/K8s-HA-LBs.txt)
 ## [kops.md](./REFs/kops.md)
+## [kubeadm.sh](./REFs/kubeadm.sh)
 ## [kubectl-cheatsheet.md](./REFs/kubectl-cheatsheet.md)
 ## [kubectl.sh](./REFs/kubectl.sh)
 ## [Kubernetes.CKA.md](./REFs/CKA/Kubernetes.CKA.md)
