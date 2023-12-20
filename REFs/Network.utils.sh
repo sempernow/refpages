@@ -20,15 +20,15 @@ exit
 
         # e.g., eth0 => enp1s0 :: en=Ethernet, p1=PCI-bus1, s0=slot-0
 
-    # -----[ Private IP Address Ranges ]--------------------  
+    # -----[ Private IP Address Ranges : RFC-1918 ]--------- 
     # CIDR block      Class    Start         End  
     # --------------  -----    -----------   ---------------  
     # 0.0.0.0/8        A       0.0.0.0       0.0.0.255         This Network  
-    # 10.0.0.0/8       A       10.0.0.0      10.255.255.255    Private Use  
     # 127.0.0.0/8      A       127.0.0.0     127.255.255.255   Loopback  
+    # 10.0.0.0/8       A       10.0.0.0      10.255.255.255    Private Use  
+    # 172.16.0.0/12    B       172.16.0.0    172.31.255.255    Private Use
+    # 192.168.0.0/16   C       192.168.0.0   192.168.255.255   Private Use
     # 169.254.0.0/16   C       169.254.0.0   169.254.255.255   Link Local  
-    # 172.16.0.0/12    B       172.16.0.0    172.31.255.255  
-    # 192.168.0.0/16   C       192.168.0.0   192.168.255.255  
     # 224.0.0.0/4      D       224.0.0.0     239.255.255.255   Multicast  
 
 # MIME types @ HTTP POST Header:
@@ -432,7 +432,7 @@ exit
                          #   WARNING: nmap use considered HOSTILE by ISPs etal
                          #   @ Win: `chocolatey install nmap`
         nmap HOST                       # Regular scan 
-        nmap -sn HOST                   # Ping scan
+        nmap -sn CIDR                   # Ping scan : Discover nodes on subnet, e.g., 192.168.0.0/24
         nmap -T4 -F HOST                # Quick scan
         nmap -sn --traceroute HOST      # Quick traceroute
         nmap -T4 -A -v HOST             # Intense scan  
@@ -965,7 +965,6 @@ exit
         # sftp> get $srcFname $dstFname     # Download remote src to dst
         # sftp> put -r $localDir            # Upload a local directory
 
-
 # CIFS/SAMBA
     # cifs-utils samba-client samba-common [3 packages]
 
@@ -1047,9 +1046,8 @@ exit
             ufw deny 53/udp  # deny UDP packets on port 53 
             ufw deny ssh     # deny all SSH connections
 
-
 # IRC 
-    # an ancient text-based chat protocol that is still very popular among programmers.
+    # an ancient text-based chat protocol; remains very popular among programmers.
     nc irc.freenode.net 6667
     # irc commands
         nick     # identify as a user
@@ -1270,4 +1268,5 @@ exit
         sudo firewall-cmd --zone=public --add-service=https --permanent
         sudo firewall-cmd --reload
         # SELinux fix
-        sudo chcon -R -t httpd_sys_rw_content_t /var/www/html
+        sudo semanage -a -t httpd_sys_content_t "/var/www/html(/.*)?" # GOOD
+        #sudo chcon -R -t httpd_sys_rw_content_t /var/www/html   # BAD1

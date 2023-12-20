@@ -5,7 +5,18 @@ exit
 # SELinux [Security Enhanced Linux] :: File AND Process Security Policy 
 	#
 	# TROUBLESHOOTING; turn it off, restart the problematic service; problem fixed?
-		getenforce                        # 'Enforcing'|'Permissive'; current SELinux setting  
+        sestatus                          # Status + info of SELinux 
+		getenforce                        # 'Enforcing'|'Permissive'; current SELinux setting
+
+        # Find reason for fail
+        sealert -l "*"
+
+        ausearch -m avc -c $process_name  # SELinux audit logs 
+        # Adjust policies : Allow Apache to use port 443
+        semanage port -a -t http_port_t -p tcp 443 
+        # Recursively relabel a directory
+		restorecon -vR  FOLDER            # Update SELinux policies at affected folder
+
 		setenforce {enforcing|permissive} # can toggle to roubleshoot
 		setenforce 0|1                    # '0' is 'permissive'
 
@@ -13,14 +24,29 @@ exit
 		systemctl status SERVICE          # shows LOG of ACTIVITY for that service
 
 		ls -ZA                            # show SECURITY CONTEXT; LABEL per USER:ROLE:TYPE 
-		restorecon -vR  FOLDER            # (re)writes to FS and validates, per POLICY; 
 	
-		# RESTORE uZer's home dir 
+		# RESTORE a user's home dir 
 	    cd /
-	    sudo restorecon -RFv /home/uZer
-	    sudo restorecon -RFv /home/uZer/*
-	    sudo restorecon -RFv /home/uZer/*.*
-	    sudo restorecon -RFv /home/uZer/.*
+	    sudo restorecon -RFv /home/$user
+	    sudo restorecon -RFv /home/$user/*
+	    sudo restorecon -RFv /home/$user/*.*
+	    sudo restorecon -RFv /home/$user/.*
+
+        # Examine http
+        semanage port -l |grep http
+        # Change the SELinux type of port 3131 to match port 80: 
+        semanage port -a -t http_port_t -p tcp 3131
+
+        # Change SELinux type of /new content to that of /old
+        semanage fcontext -a -e /old /new
+
+        # Identify SELinux booleans relevant for NFS, CIFS, and Apache:
+        semanage boolean -l |grep 'nfs\|cifs' |grep httpd
+        # Enable the identified booleans: 
+        setsebool httpd_use_nfs on
+        setsebool httpd_use_cifs on
+        # Verify booleans are on
+        getsebool -a |grep 'nfs\|cifs' |grep httpd
 
 	#
 	# Enforces MAC [Mandatory Access Control] vs. Linux's DAC [Discretionary Access Control]
@@ -35,21 +61,21 @@ exit
 	# UPG :: User Private Groups; each user gets own group 
 	# Typical UNIX umask of 022 [set @ /etc/bashrc] unnecessary, since group is private
 	id # =>
-	uid=500(Uzer) gid=500(Uzer) groups=500(Uzer),10(wheel) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+	uid=500($user) gid=500($user) groups=500($user),10(wheel) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
 
 	# RHEL / SELinux utilities
-		useradd(8)  	— to create new users.
-		userdel(8)  	— to delete users.
-		usermod(8) 	   — to modify users.
-		groupadd(8) 	— to create new groups.
-		groupdel(8) 	— to delete groups.
-		groupmod(8) 	— to modify group membership.
-		gpasswd(1) 	   — to manage the /etc/group file.
-		grpck(8) 	   — to verify the integrity of the /etc/group file.
-		pwck(8) 	   — to verify the integrity of the /etc/passwd and /etc/shadow files.
-		pwconv(8)	— pwconv, pwunconv, grpconv, and grpunconv; to convert shadowed information for passwords and groups.
-		id(1) 		   — to display user and group IDs.
-		umask(2) 	   — to work with the file mode creation mask. 
+		useradd(8)      # create new users.
+		userdel(8)      # delete users.
+		usermod(8) 	    # modify users.
+		groupadd(8)     # create new groups.
+		groupdel(8)     # delete groups.
+		groupmod(8)     # modify group membership.
+		gpasswd(1)      # manage /etc/group file.
+		grpck(8)        # verify integrity of /etc/group file.
+		pwck(8)         # verify integrity of /etc/passwd AND /etc/shadow files.
+		pwconv(8)       # pwconv, pwunconv, grpconv, grpunconv; convert shadowed info (pw,groups)
+		id(1)           # display user and group IDs.
+		umask(2)        # work with file mode creation mask. 
 
 		# Add user foo to sudo group
 		sudo usermod -a -G sudo foo 
@@ -58,9 +84,9 @@ exit
 		sudo groupadd foo 
 
 	# RHEL / SELinux files
-		group(5) 	   — /etc/group; to define system groups.
-		passwd(5) 	   — /etc/passwd; to define user information.
-		shadow(5) 	   — /etc/shadow; to set passwords and account expiration information for the system. 
+		group(5)    # /etc/group; define system groups.
+		passwd(5)   # /etc/passwd; define user information.
+		shadow(5)   # /etc/shadow; set passwords and account expiration info 
 
 	# SELinux MODE [enforcing|permissive]; set per boot
 		/etc/sysconfig/selinux 
@@ -71,7 +97,7 @@ exit
 				disabled   # No SELinux functionality
 				
 	# Functional Diagram
-		syscall [every process] => SELinux => policy [avc:denied] => auditd 
+		syscall # [every process] => SELinux => policy [avc:denied] => auditd 
 								
 		# auditd [AUDIT DAEMON]						
 			/etc/audit/auditd.conf
@@ -86,8 +112,8 @@ exit
 
 		# @ Files; show SECURITY CONTEXT; LABEL per USER:ROLE:TYPE 
 			ls -Z /foo # =>
-				drwxrwxr-x. Uzer Uzer unconfined_u:object_r:user_home_t:s0 scripts
-				-rwxrwxr-x. Uzer Uzer unconfined_u:object_r:user_home_t:s0 _UzerX.cfg
+				drwxrwxr-x. u1 u1 unconfined_u:object_r:user_home_t:s0 scripts
+				-rwxrwxr-x. u1 u1 unconfined_u:object_r:user_home_t:s0 _u1.cfg
 				
 				# on copy, context inherited from destination parent [typically]
 				# on move, context moves with the dir/file [typically]
@@ -95,7 +121,7 @@ exit
 		# @ Processes; show SECURITY CONTEXT; USER:ROLE:TYPE
 			ps Zaux # =>
 				system_u:system_r:sshd_t:s0-s0:c0.c1023 878 ?  Ss     0:00 /usr/sbin/sshd
-				system_u:system_r:sshd_t:s0-s0:c0.c1023 4079 ? Ss     0:00 sshd: Uzer [priv]
+				system_u:system_r:sshd_t:s0-s0:c0.c1023 4079 ? Ss     0:00 sshd: u1 [priv]
 
 			netstat -Ztulpen # =>
 				tcp  ... 0.0.0.0:22 ...  878/sshd  system_u:system_r:sshd_t:s0-s0:c0.c1023
@@ -146,7 +172,7 @@ exit
 			
 			# E.g., fix port binding ... 
 			#  [DocumentRoot (re)set @ /etc/httpd/conf/httpd.conf]  
-			semanage port -a -t http_port_t -p tcp 888
+			semanage port -a -t http_port_t -p tcp 8888
 			restorecon -R -v /web
 			# ... NOPE; failed.
 			
