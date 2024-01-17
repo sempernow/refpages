@@ -460,15 +460,16 @@ exit
     ethtool NIC  # get info on NIC, e.g., 'ethtool eth0' 
             -i NIC   # driver info
             
-    ss      # Socket Statistics; IP:PORT
+    ss      # Socket Statistics; IP:PORT; like netstat
      -r     # resolve names
      -n     # numeric; don't resolve names
      -p     # incl. processes
      -at4r  # all-sockets, tcp, IPv4, resolve-names
 
-    netstat # Network Connections, routing tables, ... stats ... [OBSOLETE; use 'ss']
+    netstat # Print network connections, routing tables, interface stats, ...
         netstat -i       # Interface Table; packet info for network cards
-        netstat -tulpen  # Active Internet connections; listening ports
+        netstat -tulpen  # Active TCP and UDP connections; servers (listening ports)
+        netstat -4tlpn   # Active TCP connections of IPv4; servers (listening ports)
         netstat -nr      # IP Routing Table; numeric [IP] instead of HOSTNAME
         netstat -a       # Active UNIX domain sockets; list all network ports
         netstat -at      # Active Internet Connections; list all TCP ports
@@ -478,10 +479,13 @@ exit
         lsof -U                 # List info of all UNIX socks
         lsof /tmp/demo.sock     # Info of only this one
         
-        # List all OPEN PORTs list : All LISTENING PORTs
+        # List all OPEN PORTs : All LISTENING PORTs
         sudo lsof -i -n -P |grep LISTEN
         # Is port 22 open?
         sudo lsof -i:22
+
+    nmap # Network Mapper : Security Scanner / Port Scanner  https://en.wikipedia.org/wiki/Nmap
+        nmap $server  # features: Host discovery, Port scanning, Version detection, OS detection  
 
     nc # Netcat : Read/Write data across TCP/UDP connections.
         # READ/WRITE to/from TCP/UDP connections
@@ -490,12 +494,13 @@ exit
         # https://linux.die.net/man/1/nc   https://en.wikipedia.org/wiki/Netcat
         [-46DdhklnrStUuvzC] [-i interval] [-p source_port] [-s source_ip_address] [-T ToS] 
         [-w timeout] [-X proxy_protocol] [-x proxy_address[:port]] [hostname] [port[s]]
+        -N # Shutdown network socket after EOF on the input.
 
-        -l # to listen; default is to initiate; do NOT use -l with -p, -s, or -z
+        # Listen (default is to initiate) : Use to test a client or reverse proxy
+            # Inspect client's request, or reverse-proxy's forwarded headers, proxy protocol, and such.
+            nc -l -p $port  # -k for repeatedly 
         
         # Port Scanning
-            # Attempt TCP connection
-            nc $host $port 
             # SCAN for a specific OPEN PORT by NUMBER quickly
             nc -zNvw 1 $ip_or_domain $port_number 
             # PORT RANGE is NOT RELIABLE (false negatives are typical)
@@ -504,6 +509,9 @@ exit
             seq ${pSTART:-1} ${pSTOP:-1000} \
                 |xargs -IX nc -zNvw 1 $ip_or_domain X 2>&1 >/dev/null \
                 |grep Connected
+
+        # Attempt TCP connection
+            nc $host $port 
 
         # Snoop : Get version info of target's OpenSSH server
             echo 'EXIT' |nc $ip 22 
@@ -537,9 +545,6 @@ exit
         # HTTP request 
             echo -n "GET / HTTP/1.0\r\n\r\n" |nc $host 80
 
-    nmap # Network Mapper : Security Scanner / Port Scanner  https://en.wikipedia.org/wiki/Nmap
-        nmap serverName  # features: Host discovery, Port scanning, Version detection, OS detection  
-
     socat  # SOcket CAT : netcat for sockets : multipurpose relay
         # Bidirectional data transfers between any two byte streams, each of almost any type.
         # EXAMPLES : http://www.dest-unreach.org/socat/doc/socat.html#EXAMPLES
@@ -548,6 +553,13 @@ exit
         socat [options] $address $address # Address syntax: protocol:ip:port
         socat -h[h[h]]  # List options and address types
         socat -d[d[d]]  # Verbosity
+
+        # TCP listener : Listen for (Proxy-forwarded) request; dump it to stdout
+            socat -v TCP-LISTEN:30080,fork -
+
+        # HTTP server : Echo server : Response container IP:PORT of both client and server
+            socat -v TCP-LISTEN:30080,fork SYSTEM:'(echo -ne "HTTP/1.1 200 OK\nDocumentType: text/plain\n\nserver: \$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\nclient: \$SOCAT_PEERADDR:\$SOCAT_PEERPORT\n";hostname;date --rfc-3339=s)'
+            #... ignores Proxy Protocol (headers), and so will not preserve client IP address.
 
         # Chat client/server : Bidirectional 
 
@@ -997,6 +1009,7 @@ exit
     sudo systemctl $action firewalld # start|stop|restart|enable|disable
     firewall-cmd # CLI for firewalld
     sudo firewall-cmd --list-all 
+    sudo firewall-cmd --list-services
     sudo firewall-cmd --reload
     # Per port
     sudo firewall-cmd --permanent --add-port=10255/tcp 
