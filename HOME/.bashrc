@@ -1,9 +1,4 @@
-# .bashrc
-
-# # If interactive login shell, then source only the all-users configurations.
-# [[ -n "$PS1" ]] && [[ "$SHLVL" == 1 ]] && [[ "$(ls -l /etc/profile.d |grep bashrc)" ]] && {
-#     [[ "$BASH_SOURCE" =~ "/etc/profile.d" ]] || return
-# }
+# source .bashrc || source /etc/profile.d/${USER}-01-bashrc.sh
 
 [[ "$isBashrcSourced" ]] && return
 isBashrcSourced=1
@@ -30,7 +25,7 @@ export HISTCONTROL=ignoreboth
 # Ignore some controlling instructions
 # HISTIGNORE is a colon-delimited list of patterns which should be excluded.
 # The '&' is a special pattern which suppresses duplicate entries.
-export HISTIGNORE=$'[ \t]*:&:[fb]g:exit'
+#export HISTIGNORE=$'[ \t]*:&:[fb]g:exit'
 [[ "$isBash" ]] && {
     shopt -s histappend
     shopt -s checkwinsize
@@ -57,7 +52,7 @@ alias vi=vim
 
 # FS
 alias ls='ls -hl --color=auto --group-directories-first'
-alias ll='ls -AhlrtgGL --time-style=long-iso' 
+alias ll='ls -AhlrtL --time-style=long-iso' 
 ll >/dev/null 2>&1 || alias ll='ls -AhlrtL --group-directories-first'
 alias df='df -hT'
 alias du='du -h'
@@ -88,7 +83,8 @@ alias ip='ip -c'
 [[ "$BASH_SOURCE" =~ "/etc/profile.d" ]] || {
     [[ -f "${HOME}/.bash_aliases" ]] && source "${HOME}/.bash_aliases"
     [[ -f "${HOME}/.bash_functions" ]] && source "${HOME}/.bash_functions"
-    [[ -f "${HOME}/.bash_win" && "$isBash" && "$isWindows" ]] && source "${HOME}/.bash_win"
+    [[ -f "${HOME}/.bashrc_win" ]] && source "${HOME}/.bashrc_win"
+    [[ -f "${HOME}/.bashrc_edn" ]] && source "${HOME}/.bashrc_edn"
 }
 
 # End here if not interactive
@@ -135,14 +131,19 @@ _completion_loader(){
 ##  revealed only on certain keypress, and only sometimes.
 ##  For example, up-arrow keypress may not clear prior content.
 #################################################################
-
+PS1=''
+[[ $isWindows ]] && {
+    [[ "$_OS" ]] && {
+        PS1='\[\e]0;$_OS\007\]'                                                 # Window title
+        PS1="$PS1"'\n'                                                          # newline
+    } || {
+        PS1='\[\e]0;\u@\h\007\]'                                                # Window title
+        PS1="$PS1"'\n'                                                          # newline
+    }
+}
 [[ "$_OS" ]] && {
-    PS1='\[\e]0;$_OS\007\]'                                                 # Window title
-    PS1="$PS1"'\n'                                                          # newline
     PS1="$PS1"'\[\e[1;34m\]$_OS'                                            # + $_OS
 } || {
-    PS1='\[\e]0;\u@\h\007\]'                                                # Window title
-    PS1="$PS1"'\n'                                                          # newline
     PS1="$PS1"'\[\e[1;34m\]\u\[\e[1;30m\]@\[\e[1;34m\]\h'                   # + $USER@$(hostname)
 }
 [[ $( type -t __git_ps1 ) ]] && PS1="$PS1"'\[\e[1;97m\]`__git_ps1`'         # + Show "(BRANCH)"            (@ ./.git)
@@ -188,4 +189,4 @@ PS1="$PS1"'\[\e[1;32m\] \w\[\e[0m\]'                                        # + 
 # PS1="$PS1"'\n'"$GREEN$prompt $NC"                               # + newline + prompt + whitespace
 
 #[[ $BASH_SOURCE ]] && echo "@ ${BASH_SOURCE##*/}"
-[[ "$BASH_SOURCE" ]] && echo "@ ${BASH_SOURCE}"
+[[ "$BASH_SOURCE" ]] && echo "@ $BASH_SOURCE"

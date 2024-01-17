@@ -38,7 +38,7 @@ set ignorecase                  " Case insensitive search
 set smartcase                   " Case insensitive search if capital letters
 set number                      " Display line numbers
 set nonumber                    " Do not display line numbers
-colo elflord                    " Color theme
+colo delek                      " Color scheme
 set wildmenu                    " Better command-line completion
 set nocompatible                " Required for vim (iMprovements), else is just vi
 set showmatch                   " Automatically show matching brackets, like bbedit.

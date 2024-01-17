@@ -308,13 +308,18 @@ exit
 
     # sudoers FILE
         /etc/sudoers 
-        # ALLOW sudo SANS PASSWORD per sudoers statements at ...
-        sudo visudo #... see/edit sudoers FILE thereof.
-
-        # ALLOW per sudoers statements at any file(s) created @ /etc/sudoers.d/ 
-        sudo vi /etc/sudoers.d/tony #... create and add ...
-            # ALLOW user tony to run all commands as sudo sans password
-            tony ALL=(ALL) NOPASSWD:ALL
+        # ALLOW sudo per user or group, per sudoers statements at:
+            sudo visudo /etc/sudoers # Edit
+        # Best practice is to leave that file untouched, 
+        # and rather add/edit file(s) at /etc/sudoers.d/,
+        # each of which is invoked automatically.
+        # So, ALLOW per file(s) of sudoers statements at /etc/sudoers.d/ 
+            sudo vi /etc/sudoers.d/$aUser # Create/Edit.
+            # Programatically, 
+            # ALLOW a user to run ALL COMMANDS as sudo SANS PASSWORD:
+            echo "$aUser ALL=(ALL) NOPASSWD: ALL" \
+                |sudo tee /etc/sudoers.d/$aUser
+                #... Ansible requires such one-time setup beforehand at each target node of its "inventory".
 
     # MONITOR users
     users  # print user names of users currently logged in @ current host 

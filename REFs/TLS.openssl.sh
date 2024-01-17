@@ -19,7 +19,7 @@ len=2048
 ## RSA
 dhparam=dhparam
 openssl dhparam -out $dhparam.pem $len 
-## ECDSA
+## ECDSA : The ecparams file is usually not required by TLS-termination servers
 ecparam=ecparam
 openssl genpkey -genparam -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out $ecparam.pem
 

@@ -1593,7 +1593,8 @@ exit
         sed "s/$foo//Ig"  FILE  # s/Ig; delete ALL $foo, case Insensitive; (NOTE double quotes)
         sed '/^[\t]["]/d' FILE  # Remove lines that START WITH TAB followed by a double-quotes char.
         sed 's/PATTERN.*$//' .. # Remove all lines START WITH OR APPENDED WITH PATTERN
-        sed '/^\s*$/d' FILE     # Remove all BLANK/EMPTY LINES
+        sed '/^$/d' FILE        # Remove all BLANK/EMPTY LINES
+        sed '/^\s*$/d' FILE     # Remove all BLANK/EMPTY LINES and those with only whitespace
 
         sed -i 's/.html//g; s/REF.//g' "names.log" # in-place; MULTIPLE EXPRESSIONs (delimited by `;`)
         sed 'n;n;s/./x/'  FILE  # Substtute every 3rd line w/ 'x'

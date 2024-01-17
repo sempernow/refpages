@@ -46,8 +46,8 @@ foo: 1
 # Dictionary (AKA Map) containing List(s) of Dictionaries
 ## Map of array of 1 map of 3 k-v pairs (indentaion optional)
 arr_of_1_map: # This oddity is masked by the use of 2-SPACE INDENTATION.
-  - a: 1 #... If we use any indentation other than 2-space, 
-    b: 2 #... then the keys must be manually aligned using spacebar. 
+  - a: 1 # If we use any (tab) indentation other than 2-space, 
+    b: 2 # then the keys must be manually aligned (spacebar vs. tab). 
     c: 3
 ## Kubernetes format
 arr_of_1_map_equivalent: 
@@ -96,6 +96,8 @@ preserve_newlines: |
   These three lines
   will appear exactly
   as you see them here.
+same_but_remove_final_linebreak: |-
+  foo
 ## Fold (>) : All LINES OF SAME INDENTATION are interpreted as one line.
 fold_newlines: >
         These four lines

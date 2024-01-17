@@ -57,6 +57,9 @@ exit
     :2,7s/foo/bar/g  # Change 'foo' to 'bar' on LINES 2-7
     :%s/foo/bar/g    # Change 'foo' to 'bar' on EVERY line in the file
     :%s/;$//         # Remove trailing semicolon, `;`, from all lines
+    :g/PATTERN/d     # Delete all lines matching a pattern
+    :g/^$/d          # Delete all BLANK lines
+    :g/\s*^$/d       # Delete all BLANK lines and those with only whitespace
 
     # Move :: L, D, U, R <==> h, j, k, l
 
