@@ -507,31 +507,33 @@ man ssh_config
             ssh -R 2222:localhost:22 $user@$ssh_host 
             ssh -p 2222 username@localhost
 
-        # SOCKS[5] proxy server (@ local/client) per SSH tunnel (dynamic port-forwarding)   
-            # SSH acts as a SOCKS5 server, forwarding the local port to wherever requested (dymanic).
+        # SOCKS[5] : local proxy server per SSH tunnel (dynamic port-forwarding).
+            # SSH acts as a SOCKS5 server at a local port to dynamically route traffic 
+            # of various protocols to remote destinations/ports based on client(s) requests, 
+            # without the need for predefined port forwarding rules for each service.
             # USE CASE: Local node has no web access, or restricted web access, 
             # but has access to a remote node that has (better) web access.
             # Configure (OS/App) PER APPLICATION https://wiki.archlinux.org/index.php/OpenSSH#Encrypted_SOCKS_tunnel
                 ssh -D 5555 -fNqTCv $user@$host #... tunnel from localhost:5555 to remote host
-                    -D  # Dynamic port forwarding; specify the local port (1025-65536).
+                    -D  # Dynamic port forwarding; create SOCKS5 server; listen on local port (1025-65536).
                     -f  # fork process to background
-                    -N  # disable interactive prompt; no commands sent once tunnel is up.
-                    -q  # quiet mode
-                    -T  # disable pseudo-tty allocation
-                    -C  # compress data before sending
-                    -v  # verbose (optionally)
-                #... (local) client apps use the local entry point; localhost:5555
-
+                    -N  # No commands; not interactive once tunnel is up.
+                    -q  # quiet mode; suppress messages
+                    -T  # disable pseudo-tty allocation; establish a tunnel-only connection
+                    -C  # compress all data 
+                    -v  # verbose (optional); use for debugging.
+                #.So (local) client apps use the local entry point : localhost:5555
+                # Optionally set binding address (network interface) "-D $BIND:$PORT",
+                # else SOCKS5 server listens on ALL network interfaces.
             # More detailed description ...
             # https://en.wikibooks.org/wiki/OpenSSH%2FCookbook%2FProxies_and_Jump_Hosts#SOCKS_Proxy
                 # Verify up
                 ps aux |grep ssh 
 
-                -D [bind_address:]port  # Dynamic (per request) APPLICATION-LEVEL port forwarding (1025-65536); 
-                # The APPLICATION PROTOCOL determines where to connect at remote machine;
-                # Allocates a socket on whatever HTTP(S) host machine per request thereafter, hence "dynamic".
-                # `bind_address` of `localhost` indicates that the listening port be bound for local use only, 
-                # while an empty address or `*` indicates that the port should be available from all interfaces.
+                -D [bind_address:]port  # Dynamic APPLICATION-LEVEL port forwarding; 
+                # The APPLICATION PROTOCOL determines destination IP:PORT;
+                # The `bind_address` of `localhost` indicates listening port bound for local use only, 
+                # while an empty address or `*` indicates that port should be available from all interfaces.
 
                 # APPLICATIONS MUST BE CONFIGURED to use SOCKS proxy server, e.g., 
                     # Firefox > Options > Advanced > Network > Settings 

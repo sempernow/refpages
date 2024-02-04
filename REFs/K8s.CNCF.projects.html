@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>REF.K8s.CNCF.projects</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://#" title="___">LINK</a></h1>
+
+<h1>Ephemeral Storage</h1>
+
+<p>The <code>kubelet</code> tracks:</p>
+
+<ul>
+<li><code>emptyDir</code> volumes, except volumes of <code>tmpfs</code></li>
+<li>Directories holding node-level logs</li>
+<li>Writeable container layers</li>
+</ul>
+
+<blockquote>
+<p>The <code>kubelet</code> tracks <strong><em>only the root filesystem</em></strong> for ephemeral storage. OS layouts that mount a separate disk to <code>/var/lib/kubelet</code> or <code>/var/lib/containers</code> <em>will not report ephemeral storage correctly</em>.</p>
+</blockquote>
+
+<h1>Cluster-level Logging</h1>
+
+<p>Aggregate application logs and store externally so they survive the pod.</p>
+
+<h2>EFK stack | <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes" title="DigitalOcean.com">HowTo</a> | <a href="https://artifacthub.io/packages/helm/elastic/elasticsearch">Helm</a></h2>
+
+<ul>
+<li>Elasticsearch: This is a highly scalable search and analytics engine. It allows you to store, search, and analyze big volumes of data quickly and in near real-time. In the context of Kubernetes, it is used as the central storage for logs.</li>
+<li>Fluentd: Fluentd is an open-source data collector for unified logging. It is used to collect and send logs from different sources (in this case, the Kubernetes nodes and pods) to Elasticsearch. Fluentd is efficient and flexible, with a lightweight footprint and a pluggable architecture.</li>
+<li>Kibana: Kibana is a visualization layer that works on top of Elasticsearch. It provides a user interface for visualizing and querying the log data stored in Elasticsearch. This makes it easier to perform data analysis, monitor applications, and troubleshoot issues.</li>
+</ul>
+
+<h2>ELK stack</h2>
+
+<p>Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.</p>
+
+<h2>Loki/Grafana</h2>
+
+<p>Newer. Simplest.</p>
+
+<h1>GitOps : CNCF Projects</h1>
+
+<p>Argo CD and Flux CD (Flux) are both popular open-source tools used for GitOps in Kubernetes environments. They enable <strong>automated, continuous delivery</strong> (CD) and make it easier to manage deployments and operations <strong>using Git as the source of truth</strong>. Flagger, on the other hand, is a progressive delivery tool often used in conjunction with Flux for implementing advanced deployment strategies like canary releases and A/B testing.</p>
+
+<h2>Argo CD</h2>
+
+<ul>
+<li>Purpose: Argo CD is a declarative, GitOps continuous delivery tool for Kubernetes, like Flux.</li>
+<li>Key Features:
+
+<ul>
+<li>Application Definitions, Configurations, and Environments: All these are declaratively managed and versioned in Git.</li>
+<li>Automated Deployment: Argo CD automatically applies changes made in the Git repository to the designated Kubernetes clusters.</li>
+<li>Visualizations and UI: Argo CD provides a rich UI and CLI for viewing the state and history of applications, aiding in troubleshooting and management.</li>
+<li>Rollbacks and Manual Syncs: Supports rollbacks and manual interventions for syncing with Git repositories.</li>
+</ul></li>
+</ul>
+
+<h2>Argo Rollouts</h2>
+
+<p>Similar to Flagger. It offers advanced deployment strategies like canary and blue/green.</p>
+
+<h2>Flux CD (Flux) and Flagger</h2>
+
+<ul>
+<li>Flux CD (Flux):
+
+<ul>
+<li>Purpose: Flux is primarily a continuous delivery solution that synchronizes a Git repository with a Kubernetes cluster. It ensures that the state of the cluster matches the configuration stored in the Git repository.</li>
+<li>Key Features: Flux supports automated deployments, where changes to the Git repo trigger updates in the Kubernetes cluster. It also has capabilities for handling secret management and multi-tenancy.</li>
+<li>Integration with Flagger: Flux can be used together with Flagger for progressive delivery. Flagger extends Flux’s functionality by adding advanced deployment strategies.</li>
+</ul></li>
+<li>Flagger:
+
+<ul>
+<li>Purpose: Flagger is designed for <strong>progressive delivery</strong> techniques like canary releases, A/B testing, and blue/green deployments.</li>
+<li>Key Features: It automates the release process by gradually shifting traffic to the new version while measuring metrics and running conformance tests. If anomalies are detected, Flagger can automatically rollback.</li>
+<li>Integration with Service Meshes: Flagger is often used with service meshes like Istio, Linkerd, and others, leveraging their features for traffic shifting and monitoring.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](file:///d:/1%20Data/IT/___.html "@ browser") | [MD](file:///d:/1%20Data/IT/___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

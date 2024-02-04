@@ -213,6 +213,7 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         docker [system|container|volume|image] prune [-f]
         docker system prune --all --force   # @ Swarm node
         docker image prune --force          # @ docker-desktop
+        docker buildx prune                 # Build cache 
     # IMAGEs image https://docs.docker.com/engine/reference/commandline/image/#child-commands  
         # Format to specify a repo (registry) image:
         [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_IMG_NAME:$_TAG  # Format 
@@ -224,23 +225,23 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             docker image ls             # list all images
             docker images               # list al images; alias
             docker images -q            # list all images; ID only
-            docker image ls --digests   # show SHA256
+            docker image ls --digests   # show sha256:hhh...hhh
             # Format  https://docs.docker.com/engine/reference/commandline/images/#format-the-output
             # JSON 
-            docker image ls --digests --format "{{json .}}" |jq -Mr . --slurp 
+            docker image ls --digests --format '{{json .}}' |jq -Mr . --slurp 
             # Table
             docker image ls \
-                --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}"
+                --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}' --digests
+                --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}'
                 # OR
-                --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}"  # default
-            
+                --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'  # default
         # DELETE
             docker image rm $_IMG  # delete an image 
             docker rmi $_IMG       # delete an image per id (tag); effectively an untag command 
             docker rmi $(docker images -q)  # delete ALL images 
             # E.g., remove tag (image listing), but not the image if others tagged to it
             docker rmi 'foo/bar:1.2'  
-            # delete per FILTER
+            # delete per FILTER 
             docker images | grep "$_FILTER" | gawk '{print $3}' | xargs docker rmi;
             drmi(){ [[ "$@" ]] && docker images | grep "$@" | gawk '{print $3}' | xargs docker rmi; }  
         # LAYERs @ (ls -l …)
@@ -249,6 +250,11 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             ls -l /var/lib/docker/$_STORAGE_DRIVER/diff/$_SHA256
             docker history $_IMG
             docker inspect $_IMG
+        # BUILDx https://docs.docker.com/engine/reference/commandline/buildx_build/
+            # Build, tag, and push
+            docker buildx build -t TAG --annotation "foo=bar" --push .
+                # Other flags
+                --sbom=true --provenance=true
         # BUILD (image)  https://docs.docker.com/engine/reference/commandline/build/#options  
             docker build [OPTIONS] PATH | URL | -
             ## build Docker image from Dockerfile per “context”; the set of files @ PATH or URL. 
@@ -268,6 +274,9 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             docker build -t $_REPO_NAME/$_IMG_NAME:$_VER  . # Format (convention) 
             docker build -t [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO_NAME/$_IMG_NAME:$_TAG  $_ABS_PATH
             #... Format full 
+            # Alternate syntax
+            docker build - < Dockerfile
+            cat Dockerfile |docker build -
             # BUILD @ STDIN ("-") per HEREDOC : entirely from commandline (sans Dockerfile)
                 # $ docker build -t foo -f - . <<-EOH
                 # > FROM busybox:1.34.1-musl

@@ -54,6 +54,7 @@ isoz(){
 ####
 # FS
 
+ug(){ printf "$(id -u):$(id -g)"; }
 path() { 
     # Parse and print $PATH 
     clear ; echo ; echo '  $PATH [parsed]'; echo

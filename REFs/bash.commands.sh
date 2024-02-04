@@ -167,6 +167,8 @@ exit
     _:               # The most recent previously executed command.
     IFS=$' \t\n'     # Internal File Separator
     BASHOPTS         # list of options that were used when bash was executed. 
+        shopt        # List some bash options
+        shopt -o     # List some other bash options and their settings
     BASH_VERSION
     SHELL=/bin/bash
     SHELLOPTS        # Shell options that can be set with the set option.
@@ -1472,7 +1474,7 @@ exit
         jq [options...] filter [files...] # https://jqlang.github.io/jq/manual/
         
             -r # Raw; unquoted.
-            -c # Compact
+            -c # Compact (vs. pretty print)
             -C # Colorized; some commands may FAIL @ PIPE due to the (hidden) CTRL chars.
             -M # Monochrome.
 
@@ -1529,9 +1531,15 @@ exit
                     # "77"
 
                 # Functions
-                    ...|jq -c '.a[] | select(.foo | contains("999"))'  # Compact (vs Pretty Print)
+
+                    # Filter ARRAY ELEMENTS by a KEY
+                        ...|jq '.[] |select(.aKey == "aVal")'
+
+                        ...|jq '.a[] | select(.foo | contains("999"))'  
+
+                    # Sum 'price' field
                         # {"foo":"999","bar":"77"} 
-                    ...|jq 'map(.price) | add'  # Sum 'price' field
+                        ...|jq 'map(.price) | add'  
 
             # Transform list of STRINGs to ARRAY
                 ...|jq -Rn '[inputs]' # If string delimiter is newline
