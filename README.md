@@ -168,6 +168,7 @@
 ## [K8s-HA-LBs.txt](./REFs/K8s-HA-LBs.txt)
 ## [K8s.CKA.md](./REFs/K8s.CKA.md)
 ## [K8s.CKAD.md](./REFs/K8s.CKAD.md)
+## [K8s.CNCF.projects.md](./REFs/K8s.CNCF.projects.md)
 ## [K8s.GatewayAPI.md](./REFs/K8s.GatewayAPI.md)
 ## [K8s.HostPath.md](./REFs/K8s.HostPath.md)
 ## [K8s.kops.md](./REFs/K8s.kops.md)

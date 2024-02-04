@@ -48,6 +48,7 @@ _ansibash(){
         [[ $mode == '-u' ]] && scp -pr "$1" "$vm:$target"       # Upload (push) via OpenSSH secure file copy
         [[ $mode == '-d' ]] && scp -pr "$vm:$1" "${2:-.}/${vm}_${1##*/}" # Download (pull) via OpenSSH secure file copy
     done 
+    true
 }
 
 _ansibash "$@"

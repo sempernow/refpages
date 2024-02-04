@@ -1,5 +1,48 @@
 # source .bashrc || source /etc/profile.d/${USER}-01-bashrc.sh
 
+# Aliases
+
+# Meta
+alias ffmpeg='ffmpeg -hide_banner'
+alias goclean='go clean -i -r -cache -testcache -fuzzcache'
+alias gpg=GnuPG
+alias os='cat /etc/os-release'
+alias pip='python3 -m pip'
+alias python=python3
+alias vi=vim
+
+# FS
+alias ls='ls -hl --color=auto --group-directories-first'
+alias ll='ls -AhlrtL --time-style=long-iso' 
+ll >/dev/null 2>&1 || alias ll='ls -AhlrtL --group-directories-first'
+alias df='df -hT'
+alias du='du -h'
+alias lsblk='lsblk -o SIZE,LABEL,NAME,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID'
+alias tree='tree -I vendor --dirsfirst'
+alias copy='cp -up'
+alias update='cp -urpv'
+alias edit=openedit
+alias open=openedit
+alias isdos=isDOS
+
+# Text
+alias cls=clear
+alias grep='grep --color'                       # show differences in colour
+alias grepb='grep -B10'
+alias grepa='grep -A10'
+alias grepba='grep -B5 -A5'
+# alias egrep='egrep --color=auto'              # show differences in colour
+# alias fgrep='fgrep --color=auto'              # show differences in colour
+alias jq='jq -C'
+alias sha2=sha256
+
+# End here if not bash 
+[[ true ]] || { . ~/.bash_functions; return; }
+
+# Network
+ip -c addr > /dev/null 2>&1 && alias ip='ip -c'
+
+# End here if previously sourced
 [[ "$isBashrcSourced" ]] && return
 isBashrcSourced=1
 
@@ -39,52 +82,13 @@ export HISTCONTROL=ignoreboth
 # Paranoid: neither group nor others have any perms:
 # umask 077
 
-# Aliases
-
-# Meta
-alias ffmpeg='ffmpeg -hide_banner'
-alias goclean='go clean -i -r -cache -testcache -fuzzcache'
-alias gpg=GnuPG
-alias os='cat /etc/os-release'
-alias pip='python3 -m pip'
-alias python=python3
-alias vi=vim
-
-# FS
-alias ls='ls -hl --color=auto --group-directories-first'
-alias ll='ls -AhlrtL --time-style=long-iso' 
-ll >/dev/null 2>&1 || alias ll='ls -AhlrtL --group-directories-first'
-alias df='df -hT'
-alias du='du -h'
-alias lsblk='lsblk -o SIZE,LABEL,NAME,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID'
-alias tree='tree -I vendor --dirsfirst'
-alias copy='cp -up'
-alias update='cp -urpv'
-alias edit=openedit
-alias open=openedit
-alias isdos=isDOS
-
-# Text
-alias cls=clear
-alias grep='grep --color'                       # show differences in colour
-alias grepb='grep -B10'
-alias grepa='grep -A10'
-alias grepba='grep -B5 -A5'
-# alias egrep='egrep --color=auto'              # show differences in colour
-# alias fgrep='fgrep --color=auto'              # show differences in colour
-alias jq='jq -C'
-alias sha2=sha256
-[[ "$(type -t encodeurl)" ]] && alias urlencode=encodeurl
-
-# network
-alias ip='ip -c'
-
-# Source siblings unless already configured or configuring from the all-users directory
+# Source sibling configs unless already configured or configuring at all-users directory
 [[ "$BASH_SOURCE" =~ "/etc/profile.d" ]] || {
     [[ -f "${HOME}/.bash_aliases" ]] && source "${HOME}/.bash_aliases"
     [[ -f "${HOME}/.bash_functions" ]] && source "${HOME}/.bash_functions"
-    [[ -f "${HOME}/.bashrc_win" ]] && source "${HOME}/.bashrc_win"
-    [[ -f "${HOME}/.bashrc_edn" ]] && source "${HOME}/.bashrc_edn"
+    for file in $(find $HOME -maxdepth 1 -type f -iname '.bashrc_*'); do 
+        [[ -f "$file" ]] && source "$file"
+    done 
 }
 
 # End here if not interactive
@@ -94,7 +98,7 @@ alias ip='ip -c'
 # Enable programmable completion features.
 # May already be enabled in /etc/bash.bashrc,
 # which is sourced by /etc/profile.
-[[ ! "$(shopt -oq posix)" ]] && {
+[[ $(type -t shopt) ]] && [[ ! "$(shopt -oq posix)" ]] && {
     [[ -f /usr/share/bash-completion/bash_completion ]] \
         && source /usr/share/bash-completion/bash_completion || {
             [[ -f /etc/bash_completion ]] && source /etc/bash_completion

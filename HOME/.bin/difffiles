@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------------
-#  cat A B B | sort | uniq -u 
+#  cat A B B |sort |uniq -u 
 # 
 #  Lists the positive residual: (A - B); then does (B - A).
 #     
@@ -13,10 +13,10 @@ clear
 echo -n '===  (A - B)  === [ENTER]' 
 read p
 
-cat "$1" "$2" "$2" | sort | uniq -u 
+cat "$1" "$2" "$2" |sort |uniq -u 
 
 echo ''
 echo -n '===  (B - A)  === [ENTER]'
 read p
 
-cat "$2" "$1" "$1" | sort | uniq -u
+cat "$2" "$1" "$1" |sort |uniq -u

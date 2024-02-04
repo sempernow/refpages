@@ -12,4 +12,5 @@ _printcolors()
 		echo $(tput sgr0)
 	done
 }
+
 _printcolors

@@ -42,7 +42,7 @@ export key=~/.ssh/swarm-aws.pem
 # common SSH options
 export opts_common="-o ConnectTimeout=5 -o StrictHostKeyChecking=no"
 # Scripts
-socks_proxy_script=${_PRJ_HOME}/.bin/ec2.socks_proxy.ubuntu.sh
+socks_proxy_script=${_PRJ_HOME:-~}/.bin/ec2.socks5.ubuntu.sh
 # Common query for `aws ecs ...` calls
 query="Reservations[*].Instances[*].{Type:InstanceType,Name:Tags[?Key=='Name']|[0].Value,IPpvt:PrivateIpAddress,IPweb:PublicIpAddress,ID:InstanceId,AZ:Placement.AvailabilityZone,State:State.Name}"
 # Validate an IP address (vs, e.g.,  'None')

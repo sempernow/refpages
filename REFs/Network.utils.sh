@@ -31,6 +31,11 @@ exit
     # 169.254.0.0/16   C       169.254.0.0   169.254.255.255   Link Local  
     # 224.0.0.0/4      D       224.0.0.0     239.255.255.255   Multicast  
 
+# Ephemeral-ports Range @ OS
+    cat /proc/sys/net/ipv4/ip_local_port_range #=> 32768   60999
+    # OR
+    sysctl net.ipv4.ip_local_port_range
+
 # MIME types @ HTTP POST Header:
     # If sending binary (non-alphanumeric) data, or significantly sized payload, use 
     'Content-Type: multipart/form-data'
@@ -94,6 +99,12 @@ exit
         # HTTP 
 
             wrk # HTTP benchmarking tool  https://github.com/wg/wrk 
+                # Install from source: 
+                    git clone https://github.com/wg/wrk.git
+                    cd wrk 
+                    make # Requires: gcc package
+                    sudo install wrk /usr/local/bin/
+
                 wrk -t12 -c400 -d30s http://127.0.0.1:8080/index.html
                     -c, --connections  # number of HTTP connections to keep open 
                                        # N = connections/threads
@@ -104,6 +115,12 @@ exit
                         --latency:     # print detailed latency statistics
                         --timeout:     # record max timeout @ no response thereunder
 
+            hey # ApacheBench replacement (Golang)  https://github.com/rakyll/hey 
+                # Load test an API endpoint
+                # Reports include LATENCIES; distributions, percentiles, ...
+                # To install, download binary, `cp` to /bin/hey, then `chmod +x /bin/hey`. 
+                hey -m GET -c 10 -n 10000 "http://localhost:3000/v1/u" 
+
             ab  # ApacheBench : HTTP benchmarking : apache2-utils
                 # Load test an API endpoint
                 ab -c $concurrently -n $iterations "$url"
@@ -113,12 +130,6 @@ exit
                 # If "socket: Too many open files (24)" @, e.g., `... -c 2000`
                 # then increase MAX open FDs:
                     ulimit -n 10000  # 1024 is default
-
-            hey # ApacheBench replacement (Golang)  https://github.com/rakyll/hey 
-                # Load test an API endpoint
-                # Reports include LATENCIES; distributions, percentiles, ...
-                # To install, download binary, `cp` to /bin/hey, then `chmod +x /bin/hey`. 
-                hey -m GET -c 10 -n 10000 "http://localhost:3000/v1/u" 
 
             # pprof @ Golang  https://golang.org/pkg/net/http/pprof/  
                 go pprof ...
@@ -415,18 +426,23 @@ exit
             # Attempt TCP connection
             nc $host $port # `nc -u ...` for UDP
             # SCAN for a specific OPEN PORT by NUMBER quickly
-            nc -zNvw 1 $ip_or_domain $port_number 
+            nc -zvw 1 $ip_or_domain $port_number 
             # PORT RANGE is NOT RELIABLE (false negatives are typical)
-            nc -zNvw 1 $ip_or_domain $port_range # Don't use, e.g., nc ... 1-1000
+            nc -zvw 1 $ip_or_domain $port_range # Don't use, e.g., nc ... 1-1000
             # SCAN a PORT RANGE quickly and RELIABLY:
             seq ${pSTART:-1} ${pSTOP:-1000} \
-                |xargs -IX nc -zNvw 1 $ip_or_domain X 2>&1 >/dev/null \
+                |xargs -IX nc -zvw 1 $ip_or_domain X 2>&1 >/dev/null \
                 |grep Connected
 
-            echo 'EXIT' |nc $ip 22 # Get version info of target's OpenSSH server
+            # Get version info of target's OpenSSH server
+            echo 'EXIT' |nc $ip 22 
 
             # # @ Windows CMD
             # netstat -aon | findstr :%_port%
+
+            ####################
+            # See MORE nc below
+            ####################
 
     nmap # advanced tool regarding remote services availability 
                          #   WARNING: nmap use considered HOSTILE by ISPs etal
@@ -502,12 +518,12 @@ exit
         
         # Port Scanning
             # SCAN for a specific OPEN PORT by NUMBER quickly
-            nc -zNvw 1 $ip_or_domain $port_number 
+            nc -zvw 1 $ip_or_domain $port_number 
             # PORT RANGE is NOT RELIABLE (false negatives are typical)
-            nc -zNvw 1 $ip_or_domain $port_RANGE # Don't use, e.g., nc ... 1-1000
+            nc -zvw 1 $ip_or_domain $port_RANGE # Don't use, e.g., nc ... 1-1000
             # SCAN a PORT RANGE quickly and RELIABLY:
             seq ${pSTART:-1} ${pSTOP:-1000} \
-                |xargs -IX nc -zNvw 1 $ip_or_domain X 2>&1 >/dev/null \
+                |xargs -IX nc -zvw 1 $ip_or_domain X 2>&1 >/dev/null \
                 |grep Connected
 
         # Attempt TCP connection
@@ -516,9 +532,11 @@ exit
         # Snoop : Get version info of target's OpenSSH server
             echo 'EXIT' |nc $ip 22 
 
-        # Chat client/server : peers-ish for 2-way comms
-            nc -l 1234            # @ listener  machine/terminal
-            nc $listener 1234     # @ connector machine/terminal 
+        # Chat : client/server (peers) : Two-way comms channel (STDIN/STDOUT)
+            # @ Server (listener) terminal
+            nc -l $port # Listen on all interface at port $port
+            # @ Client terminal
+            nc -N $ip $port # -N to shutdown the network socket after EOF (CTRL-D)
             #... thereafter, anything typed at one terminal is sent to the other 
 
         # Create a UNIX Socket 
@@ -526,18 +544,18 @@ exit
             # -l : act as the server-side; listen for incoming connections.
             nc -U /tmp/demo.sock -l
 
-        # File transfer 
+        # File transfer (PUSH)
             # @ target machine; listen; dump output to file
                 nc -l 8888 > /path/to/target/file
             # @ source machine; connect to the listen process, feeding it the file
-                nc target.machine 8888 < /path/to/source/file
+                nc $target_ip 8888 < /path/to/source/file
                 # ... connection closes upon transfer completion.
             
-        # FASTer [nc + pigz]  http://petrushin.org/
+        # FASTer file transfer (PULL) http://petrushin.org/
             # @ source machine; tar option `-` sets .tar output (BIGFILE.gz) to STDOUT (piped)
                 tar -cf - /path/to/BIGFILE |pigz |nc -l -p 8888  # pigz is a mutlithreaded gz archiver
             # @ target machine; tar option `-` sets source .tar (BIGFILE.gz) to STDIN (piped) 
-                nc target.machine 8888 |pigz -d |tar xf - [-C /target/dir]
+                nc $target_ip 8888 |pigz -d |tar xf - [-C /target/dir]
 
             # Parallel Implementation of GZip; used w/ Netcat (nc)  http://www.zlib.net/pigz/
             pigz  # file|STDIN compressed to file.gz|STDOUT; 
@@ -569,9 +587,9 @@ exit
             nc -l -p 1234
 
             # @ machine 2 
-            socat  STDIN TCP4:$m1_ip:1234
+            socat  STDIN TCP4:$machine1_ip:1234
             #... does same ...
-            socat TCP4:$m1_ip:1234 STDOUT
+            socat TCP4:$machine1_ip:1234 STDOUT
             #... type anything; transmits per newline.
 
         # Get time from time server : "-" or "STDOUT"
@@ -1001,28 +1019,71 @@ exit
         umount -a      # umounts ALL listed @ '/etc/mtab'
         cat /etc/mtab  # show mounts
 
-# FIREWALL  
+# FIREWALL : firewalld.service 
     firewalld      # Linux firewall daemon (See REF.RHCE.sh)
     systemctl status firewalld 
     # Apply changes made to config(s) of any systemd unit files 
     sudo systemctl daemon-reload 
     sudo systemctl $action firewalld # start|stop|restart|enable|disable
-    firewall-cmd # CLI for firewalld
+    sudo firewall-cmd ... # CLI for firewalld
     sudo firewall-cmd --list-all 
-    sudo firewall-cmd --list-services
-    sudo firewall-cmd --reload
-    # Per port
-    sudo firewall-cmd --permanent --add-port=10255/tcp 
-    # Per existing service 
-    sudo firewall-cmd --permanent --zone=public --add-service=http
-    sudo firewall-cmd --permanent --zone=public --add-service=https
-    # Add a service (having ports)
-    sudo firewall-cmd --permanent --new-service=istiod
-    sudo firewall-cmd --permanent --service=istiod --set-description="Istio control plane (istiod)"
-    sudo firewall-cmd --permanent --service=istiod --add-port=15010/tcp 
-    sudo firewall-cmd --permanent --service=istiod --add-port=15014/tcp 
-    ...
-    sudo firewall-cmd --permanent --add-service=istiod
+    sudo firewall-cmd --list-ports          # Lists ONLY those NOT of a service
+    sudo firewall-cmd --list-services       # ACTIVE services of CURRENT zone
+    sudo firewall-cmd --list-services --zone=$name # ACTIVE services of zone $name
+    sudo firewall-cmd --get-services        # All services (defined/available)
+    sudo firewall-cmd --list-interfaces
+    sudo firewall-cmd --list-rich-rules
+    sudo firewall-cmd --get-zones
+    sudo firewall-cmd --get-active-zone     # Get ACTIVE zone and its affected interface(s)
+    sudo firewall-cmd --get-default-zone    # Get DEFAULT zone
+    sudo firewall-cmd --set-default-zone    # Set DEFAULT zone
+
+    sudo firewall-cmd --info-zone=$name     # Get zone INFO
+    sudo firewall-cmd --info-service=$name  # Get service INFO; incl. allowed port(s)/proto(s)
+    sudo firewall-cmd --info-policy=$name   # Get policy INFO
+
+    sudo firewall-cmd --reload              # Update the active rules (sans systemctl)
+
+    # Add/Remove rule
+        # Add port (bare)
+        sudo firewall-cmd --permanent --add-port=10255/tcp 
+        # Remove same 
+        sudo firewall-cmd --permanent --remove-port=10255/tcp 
+        # Add service to zone 
+        sudo firewall-cmd --permanent --zone=public --add-service=http
+        sudo firewall-cmd --permanent --zone=public --add-service=https
+    # Create (define) service (having ports) 
+        sudo firewall-cmd --permanent --new-service=istiod
+        sudo firewall-cmd --permanent --service=istiod --set-description="Istio control plane (istiod)"
+        # Add port(s) to service 
+        sudo firewall-cmd --permanent --service=istiod --add-port=15010/tcp 
+        sudo firewall-cmd --permanent --service=istiod --add-port=15014/tcp 
+        #...
+    # Add/Remove service to currently-active zone
+        sudo firewall-cmd --permanent --add-service=istiod
+        sudo firewall-cmd --permanent --remove-service=istiod
+        #... same, but declare its zone 
+        sudo firewall-cmd --permanent --zone=$zone_name ...
+
+    # Add/Remove rich rule to a zone (cannot be scoped to service)
+        ## See `man firewalld.richlanguage` for rule syntax
+        ## Allow traffic to/from VIP address by IPv4
+        at="--permanent --zone=$zone"
+        do='add' # add || remove
+        sudo firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
+
+    # Service descriptions:
+        ## Custom services
+        /etc/firewalld/services/        # *.xml
+        ## Predefined services
+        /usr/lib/firewalld/services/    # *.xml 
+        #$ sudo cat /usr/lib/firewalld/services/http.xml
+        #  <?xml version="1.0" encoding="utf-8"?>
+        #  <service>
+        #    <short>WWW (HTTP)</short>
+        #    <description>HTTP is the protocol used to serve Web pages. ...</description>
+        #    <port protocol="tcp" port="80"/>
+        #  </service>
 
 	iptables  # IP Tables; tool for PACKET FILTERING and NAT [IPv4/IPv6] 
 	#  an extremely powerful FIREWALL 

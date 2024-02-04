@@ -1,12 +1,19 @@
-# [`kops` :: Kubernetes Operations](https://github.com/kubernetes/kops "GitHub")
+# [`kops`](https://kops.sigs.k8s.io/ "kops.sigs.k8s.io") (Kubernetes OPerationS) | [GitHub](https://github.com/kubernetes/kops "kubernetes/kops")
 
-A cluster deployment handler. A wrapper for `kubectl` and Cloud proider APIs.   
-Create, destroy, upgrade and maintain production-grade Kubernetes clusters.   
-Currently @ AWS-EKS, GCP-GCE, or DigitalOcean. (Mac/Linux only)  
+A CLI for deploying a cluster to certain cloud vendors. 
+A wrapper for Kubernetes tools and cloud-provider APIs. 
+Create, destroy, upgrade and maintain production-grade Kubernetes clusters. 
+
+Currently available for AWS, GCP, DigitalOcean, and Hetzner. 
+
+Using this tool, expect a highest-cost implementation. 
+That is, wherever there is a choice between a premium option 
+and a lesser-cost option of any cloud-service dependency, 
+expect it to select the former.
 
 ## [Install @ Ubuntu (`kops.sh`)](kops.sh) 
 
-## Install @ [Vagrant box](https://app.vagrantup.com/boxes/search?provider=hyperv&q=ubuntu&sort=downloads&utf8=%E2%9C%93 "Vagrant Boxes :: Ubuntu @ hyperv") (VM)
+## Install @ [Vagrant box](https://app.vagrantup.com/boxes/search?provider=hyperv&q=ubuntu&sort=downloads&utf8=%E2%9C%93 "Vagrant Boxes : Ubuntu @ hyperv") (VM)
 - [See `kops.sh`](kops.sh)   
 @ `Vagrantfile` per __Script Provisioner__  
 

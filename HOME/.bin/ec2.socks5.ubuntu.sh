@@ -21,23 +21,24 @@
 #                    SSH,HTTP,HTTPS,SMTP,...
 #                             |
 #                     | Public Subnet   |              | Private Subnet  |
-#                     | Jump Box node   | <-- SSH ---> | Target node     |
-#                     | (SOCKS5 Server) | <-- HTTPS -- | (SOCKS5 Client) |
+#                     | Jump Box node   | <-- SSH ---> | Origin node     |
+#                     | (SSH Server)    | <-- HTTPS -- | (SOCKS5 Server) |
 #
-# OpenSSH: Allows for configuring an ssh server as a SOCKS5 proxy server;
+# OpenSSH: Allows for configuring an ssh server as a SOCKS5 server;
 #   a session-layer firewall, internet gateway (with NAT), and proxy server, 
-#   allowing two-way HTTPS traffic, but only if originating from client.
+#   allowing two-way HTTPS traffic, but only that initiated at SOCKS5 node.
 # 
-#   Instantiate the SOCKS5 proxy server by establishing an SSH tunnel 
-#   that forwards a local port of the private node (running this script)
-#   back to an ephemeral (dynamic) port at a public node (jump box) 
-#   in a persistent background process: (See man page SSH(1); -D)
-#       ssh -D $local_port -fCNq ... USER@PRIVATE_IP_of_PUBLIC_NODE
+#   Instantiate the SOCKS5 proxy server on Private/Origin node and 
+#   tunnel into Public node (Jump Box). The SOCKS5 protocol dynamically
+#   handles protocol/port requests from client applications,
+#   as a persistent background process: (See man page SSH(1); -D)
+#       
+#     ssh -D $local_port -fCNq ... USER@PRIVATE_IP_of_PUBLIC_NODE
 # 
 # ARGs: IP [TTL(-1 for infinity, else seconds, else default=300)]
 # 
 # REQUIREs: 
-# - SSH key of proxy server (/home/ubuntu/.ssh/swarm-aws.pem)
+# - SSH key of proxy server (~/.ssh/swarm-aws.pem)
 # - Matching $USER names (this vs. proxy)
 ###############################################################################
 killSOCKS5(){
@@ -53,7 +54,7 @@ export port='5128' # 3128 is IANA squid-proxy, exploits, etal : https://www.spee
 ip=$1 #... PRIVATE IP of the PUBLIC NODE (jump box)
 export ttl=${2:-300}
 user=$USER
-key='/home/ubuntu/.ssh/swarm-aws.pem'
+key=/home/$user/.ssh/swarm-aws.pem
 [[ -f $key ]] || { echo "FAIL @ SSH key : NOT EXIST : '$key'";exit 2; }
 
 # Test for existing tunnel; abort if so.

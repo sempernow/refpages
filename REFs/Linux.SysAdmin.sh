@@ -1,17 +1,18 @@
 #!/bin/bash
 exit
 
-# PKG Manager : Ubuntu/Debian 
-    sudo apt update        # Refresh repo index 
-    sudo apt upgrade       # Upgrade ALL upgradable pkgs (DON'T)
-    sudo apt upgrade PKG   # Upgrade PKG
-    sudo apt install -y PKG1 PKG2 ...
-    sudo apt autoremove    # Remove unnecessary packages 
-    sudo apt remove        # Remove pkg 
-    sudo apt purge         # Remove pkg +config   ** NICE
-    sudo apt list          # List pkgs +criteria  ** NEW
-    sudo apt edit-sources  # Edit sources list    ** NEW
-    sudo apt search|show PKG
+# Ubuntu/Debian pkg mgr
+    sudo apt 
+        update        # Refresh repo index 
+        upgrade       # Upgrade ALL upgradable pkgs (DON'T)
+        upgrade PKG   # Upgrade PKG
+        install -y PKG1 PKG2 ...
+        autoremove    # Remove unnecessary packages 
+        remove        # Remove pkg 
+        purge         # Remove pkg +config   ** NICE
+        list          # List pkgs +criteria  ** NEW
+        edit-sources  # Edit sources list    ** NEW
+        search|show PKG
 
     # List installed packages
     dpkg -l 
@@ -43,13 +44,20 @@ exit
         traceroute google.com
         mtr google.com
 
-
     # Machine resources
         lscpu       # CPUs
         free -mh    # RAM
         df -h       # Disk space (@ root drive)
         vmstat      # I/O Usage
         htop        # Monitor process; top
+        # Get/Set hostname/info
+        hostnamectl 
+        # OS info
+        cat /etc/os-release
+        alias os='cat /etc/os-release'
+        # CPU info
+        cat /proc/cpuinfo
+        alias cpu='cat /proc/cpuinfo'
 
     # TIME : Network SYNCHRONIZATION
         timedatectl # newer; replces ntpq; FAILS TO SYNCH when behind a SOCKS5 proxy
@@ -503,22 +511,27 @@ exit
 
     # can integrate journald/rsyslogd; rcv other's logs; one|both directions
     journalctl # CLI for journald, which enerates BINARY log files
-            -b                  # boot logs
-            --system            # System journal
-            --user              # User journal
-            --since=yesterday   # Logs since yesterday|today|...
-            -u $unit            # Logs of a SERVICE, e.g., docker.service 
-        # The most recent entries are also printed at `systemctl status ...`
-        systemctl status $unit  # Unit AKA service status
 
-        # Delete old logs AKA journal entries
-        sudo journalctl --rotate         # systemd-journald SIGHUP (close/reopen)
-        sudo journalctl --vacuum-time=1s # Delete archives
+# Read systemd journal
+    journalctl 
+        -u NAME     # Of declared service (unit) NAME
+        -e          # Jump to end (most recent)
+        -x          # Augment with useful meta info 
+        --no-pager  # Full message (else truncates each)
+        -b                  # boot logs
+        --system            # System journal
+        --user              # User journal
+        --since=yesterday   # Logs since yesterday|today|...
+    # Recent journal messages (all services)
+    sudo journalctl -xe --no-pager
+    # Recent journal of kubelet
+    sudo journalctl --no-pager -xeu kubelet
+    # Boot log
+    sudo journalctl -xb
 
-        # Configure rotatons : prevent logs from filling storage capacity
-        /etc/logrotate.conf # manually edit 
-        /etc/logrotate.d/   # include files; overrides logrotate.conf; 
-        #... rpm dumps such files here  
+    # Delete old logs AKA journal entries
+    sudo journalctl --rotate         # systemd-journald SIGHUP (close/reopen)
+    sudo journalctl --vacuum-time=1s # Delete archives
 
 # TASK SCHEDULING :: cron, or at
     # How to @ https://www.cyberciti.biz/faq/how-do-i-add-jobs-to-cron-under-linux-or-unix-oses/
@@ -661,12 +674,18 @@ exit
 # SERVICEs
 
     # @ NOT systemd
-        service $_SERVICE status|start|stop|enable|disable 
+        service $service status|start|stop|enable|disable 
 
-    # @ systemd
-        systemctl status|start|stop|enable|disable $_SERVICE
+    # @ systemd : See man systemd.service
+        systemctl status|start|stop|enable|disable $service
 
     /etc/systemd/system
+
+    # Create a service quickly for COMMAND 
+        sudo systemctl enable --now COMMAND
+    # Delete a service
+        sudo systemctl disable --now COMMAND
+
     # create ssh-user-sessions.service
         /etc/systemd/system/ssh-sessions.service
         
@@ -738,15 +757,3 @@ exit
         echo standby > /sys/power/autosleep # CentOS 6 :: 'no such file or dir'
         echo mem     > /sys/power/autosleep
         echo off     > /sys/power/autosleep # disable autosleep 
-
-# META
-
-    cat /etc/os-release
-    alias os='cat /etc/os-release'
-
-    # @ Systemd
-    hostnamectl 
-
-    cat /proc/cpuinfo
-    alias cpu='cat /proc/cpuinfo'
-

@@ -1,7 +1,24 @@
 #!/bin/bash
 exit
-# BOOT MESSAGEs 
-    journalctl -xb # boot log 
+
+# RHEL spams the systemd journal (logs) with advertisement messages
+    sudo chmod -x /etc/update-motd.d/* # DISABLE
+    sudo chmod +x /etc/update-motd.d/* # ENABLE
+    # Disable per user
+    touch ~/.hushlogin
+
+# Read systemd journal
+    journalctl 
+        -u NAME     # Of declared service (unit) NAME
+        -e          # Jump to end (most recent)
+        -x          # Augment with useful meta info 
+        --no-pager  # Full message (else truncates each)
+    # Recent journal messages (all services)
+    sudo journalctl -xe --no-pager
+    # Recent journal of kubelet
+    sudo journalctl --no-pager -xeu kubelet
+    # Boot log
+    sudo journalctl -xb
 
 # MAINENTANCE MODE 
     # RESCUE MODE a.k.a. Single-User Mode a.k.a. Maintenance Mode a.k.a. runlevel 1
