@@ -28,8 +28,8 @@ exit
     # command $local_foo \$remote_foo       # Inject local and/or remote environment(s) using "-s" option with pipe, redirect, or HEREDOC.
     # EOH
 
-        # REMOTEly execute LOCAL script through a secure shell, injecting both local and remote ENVIRONMENTs
-        ssh ... '/bin/bash -s' < "/path/of/local/script.sh '$local_foo' '\$remote_foo'"
+        # REMOTEly execute LOCAL script through a secure shell, injecting both LOCAL and REMOTE ENVironments
+        ssh ... /bin/bash -s < /path/of/local/script.sh "$local_foo" "\$remote_foo"
         #... without pushing script.sh to remote machine.
 
     /bin/bash -x script.sh arg1 arg2        # Debug mode.
