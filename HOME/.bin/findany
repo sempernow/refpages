@@ -1,3 +1,0 @@
-#!/bin/bash
-[[ "$@" ]] || { script_info "$_SCRIPTS_FOLDER/findfile"; exit ; }
-findfile "*$@*"

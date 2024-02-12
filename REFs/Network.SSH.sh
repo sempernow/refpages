@@ -25,7 +25,7 @@ man ssh_config
 
         # Generate elliptical key pair : Default type (-t) is 'rsa'.
             # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default).
-                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -f ~/.ssh/keyname 
+                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -f ~/.ssh/keyname # id_ed25519
 
             # Re(Set) key's passphrase (local security)
                 ssh-keygen -p -P $old -P $new -f $_KEY_PATH
@@ -69,14 +69,11 @@ man ssh_config
                     # This key is not known by any other names
                     # Are you sure you want to continue connecting (yes/no/[fingerprint])? 
 
-        # PUSH (upload) a static FILE sans file-copy utility:
-            ssh ... "printf '$(</local/path/of/FILE)' >/remote/path/of/FILE"
-
         # REMOTEly execute a LOCAL script via secure shell, injecting both local and remote ENVIRONMENTs ...
-            ssh ... '/bin/bash -s' < "/local/path/of/script.sh '$local_foo' '2nd arg is static' '\$remote_foo'" |& tee bash.log
-            #... and log STDOUT + STDERR locally too. This scheme writes nothing to remote filesystem.
-            # For other script types, ...
-            ssh ... '/usr/bin/python3 -s' < /local/path/of/script.py
+            ssh ... /bin/bash -s < /path/to/local/script.sh "$local_foo" "\$remote_foo"
+            #... This scheme writes nothing to remote filesystem.
+            # For other interpreters, ...
+            ssh ... /usr/bin/python3 -s < /local/path/to/script.py
 
     # SCP : Secure Copy  https://en.wikipedia.org/wiki/Secure_copy
         scp # Secure Copy per ssh(1)
@@ -228,48 +225,50 @@ man ssh_config
 
         # REMOVE an "offending" key
             ssh-keygen -f ~/.ssh/known_hosts -R $_OFFENDING_IP_ADDR
-            #... this occurs whenever any network params change, 
-            #     e.g., when re-attaching EIP to a new instance (AWS EC2); 
-            #     public key of old instance is retained in client's known_hosts.
+                #... this occurs whenever any network params change, 
+                #     e.g., reprovisioned VM(s), or re-attach EIP to another VM (AWS EC2); 
+                #     public key of old instance is retained in client's known_hosts.
 
-        # Establish SOCKET for CONNECTION SHARING/REUSE, 
-            mkdir ~/.ssh/sockets # So may terminate a (non-terminal Git server) session.
-            # OPEN Socket
-            ssh  -S ~/.ssh/sockets/%r@%h:%p $user@$host
-            # CLOSE Socket
-            ssh -O exit -S $socket_path $user@$host # Quirky method, though advised.
-            rm $socket_path                         # Robust method 
-                
-                -S  # ControlPath; SOCKET for connection sharing/reuse
-                    -o ControlMaster=auto # auto|yes|no 
-                        #... 'auto' FAILs @ WSL; 'yes' FAILs on 1st connect.
-                    -o ControlPersist=600
-                -fNM
-                    -f  # go to background just before command execution; implies (includes) -n ().
-                    -N  # Do not execute a remote command; useful for forwarding ports.
-                    -n  # Redirects STDIN to /dev/null; MUST BE USED if ssh is run as background process
-                    -M  # “master” mode for connection sharing.
+        # Establish UNIX SOCKET for connection SHARING/REUSE 
+            # ControlMaster (man ssh_config) : FAILs @ WSL(2)
+            
+            # @ ~/.ssh/config
 
-            # set config 
-            ssh -o ControlPath=~/.ssh/sockets/%r@%h-%p
-            # OR @ ~/.ssh/config 
-            ControlMaster auto
-            ControlPath    ~/.ssh/sockets/%r@%h-%p
-            ControlPersist 600
-            # https://www.tecmint.com/speed-up-ssh-connections-in-linux/
-            # https://www.cyberciti.biz/faq/linux-unix-reuse-openssh-connection/
+                # Host *
+                #     ControlMaster auto                    # Automatically use if exist; create socket otherwise
+                #     ControlPersist 600                    # TTL (seconds) after idle; forever if 0 or yes (kill: ssh -O exit CONN)
+                #     ControlPath ~/.ssh/master-%r@%h:%p    # master-USER@HOST:PORT
 
-            # Thereafter, once configured at ~/.ssh/config,
-            ssh github          # logon
-            ssh -O exit github  # terminate
+                # Thereafter:
+                ssh github          # logon
+                ssh -O exit github  # kill that socket
+
+            # @ Imperatively
+
+                # Open 
+                ssh  -S ~/.ssh/cm-%r@%h:%p $user@$host
+                # Show
+                ssh -O check $user@$host
+                # Close
+                ssh -O exit $user@$host 
+                    # Options
+                    -S  # ControlPath; SOCKET for connection sharing/reuse
+                        -o ControlMaster=auto # auto|yes|no 
+                            #... 'auto' FAILs @ WSL; 'yes' FAILs on 1st connect.
+                        -o ControlPersist=600
+                    -fNM
+                        -f  # go to background just before command execution; implies (includes) -n ().
+                        -N  # Do not execute a remote command; useful for forwarding ports.
+                        -n  # Redirects STDIN to /dev/null; MUST BE USED if ssh is run as background process
+                        -M  # “master” mode for connection sharing.
 
         # TCP Forwarding  https://blog.fatedier.com/2015/07/22/ssh-port-forwarding/
         ssh -oPort=22 -CNfg -R 40000:localhost:22 root@11.11.11.11
 
         # RUN SCRIPT per redirect 
-        ssh user@host /bin/bash -s < "script" arg1 arg2 
+        ssh user@host /bin/bash -s < script $local_arg \$remote_arg 
         # RUN SCRIPT in background process
-        ssh -n -f user@host "/bin/bash -c 'cd /whereever; nohup ./whatever > /dev/null 2>&1 &'"
+        ssh -n -f user@host /bin/bash -c 'nohup /where/what >/dev/null 2>&1 &'
 
     # CONFIG CLIENT MACHINE
 
@@ -545,18 +544,24 @@ man ssh_config
                         export http_proxy=http://$_USERNAME:$_PASSWORD@$_SERVER:$_PORT/
 
                     # Example
-                        # From pvt box having NO WEB ACCESS (subnet allows no comms to/from anywhere outside VPC), 
-                        # establish jump box (that has web access) as SOCKS server, to proxy for the pvt box:
+                        # From pvt box having NO WEB ACCESS (subnet deny comms to/from anywhere outside VPC), 
+                        # establish jump box (that has web access) as SOCKS server, to proxy for pvt box:
                         user='ubuntu'
-                        #ip_jump='34.203.218.222'
-                        ip_jump_pvt='10.0.101.194' #... since we can't get to jump's public IP.
-                        key_jump=/home/ubuntu/.ssh/swarm-aws.pem 
+                        ip_jump_pvt='10.0.101.194' # Private IP of jump box
+                        key_jump=/home/ubuntu/.ssh/cluster-aws.pem 
 
                         # Establish jump box as web proxy (server), accessible from 127.0.0.1:5128
                         ssh -D 5128 -f -C -q -N ${user}@$ip_jump_pvt -i $key_jump # 3128 is IANA proxy; 5128 no IANA
                         
                         # Validate the tunnel is up
                         ps aux |grep ssh
+
+                        export http_proxy='socks5h://127.0.0.1:5522'
+                        curl -sI keycloak.local             # HTTP/1.1 200 OK ...
+                        export https_proxy='socks5h://127.0.0.1:5522'
+                        curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
+
+                        # Configure the box (All The Things) to use SOCKS
 
                             # Declare proxy params : current shell (cofigures OS and some utilities @ this shell)
                             export port='5128'
@@ -611,6 +616,7 @@ man ssh_config
 
                         kill -9 $_PID 
                         #... terminate the tunnel; does not survive the session, regarldess
+
 
         # SSH-based VPN 
             # TUN device: A virtual network device for point-to-point IP tunneling.

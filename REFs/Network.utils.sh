@@ -617,9 +617,9 @@ exit
         socat READLINE,history=$HOME/.cmd_history /dev/ttyS0,raw,echo=0,crnl 
 
         # File tranfer
-            # Listener
-            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat
-            # Connect and send
+            # Listener (@ destination)
+            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat  # Yes, "creat" NOT "create"
+            # Connect and send 
             socat -dd TCP-CONNECT:$listener_machine_ip:1234 FILE:/path/to/source/file
 
         # mTLS : Securing Traffic Between two Socat Instances Using SSL
@@ -634,7 +634,7 @@ exit
 
         # Remote bash session within an encrypted (OpenSSL) tunnel (sans ssh)
             # @ Local : Create a self-signed cert and its key : EMPTY FIELDS (all) OK
-            openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 1000 -out cert.crt
+            openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 1000 -out cert.crt # Prefer -noenc over -nodes
             # @ Local : Create PEM from key and cert
             cat cert.key cert.crt > sslkey.pem 
             # @ Local : Listener : self signing necessitates `verify=0`.

@@ -1,5 +1,0 @@
-#!/bin/bash
-
-echo Cygwin Version Info ...
-uname -r  # release version; 'print the kernel release'
-uname -v  # release date;    'print the kernel version'

@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# -------------------------------------------------------------
-#  hosts file @ gateway router (/tmp/etc/hosts) to STDOUT 
-#  (per ssh config)
-#  
-#  ARGs: <none>
-# -------------------------------------------------------------
-ssh router cat /tmp/etc/hosts
-

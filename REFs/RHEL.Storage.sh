@@ -1010,13 +1010,13 @@ exit
                 lvs   # show LV 
                 vgs   # show VG
                 
-                # if need to make VG bigger, then add PV from PD [create partition]
-                fdisk {PD} # E.g., 
-                fdisk /dev/sdb # p; show, /dev/sdb1, ..., /dev/sdb3
-                                    # n; add [extended] partition,   '/dev/sdb4 ...  5 Extended'; 
-                                             # n; add logical partition [PV], '/dev/sdb5 ... 83 Linux'
-                                    # t; change type to '8e',        '/dev/sdb5 ... 8e Linux LVM'
-                                    # w; write to disk and exit
+                # Recreate partition
+                    fdisk $pd # E.g., /dev/sdb 
+                        # d     delete
+                        # n     new
+                        # t     type change 
+                        # w     write to disk and exit
+
                 # resize VG
                     vg # display available utilities 
                     vgextend --help 
@@ -1028,6 +1028,7 @@ exit
                     lvextend -l +100%FREE -r /dev/vg{NAME}/lv{NAME}
                     # validate 
                     df -h 
+
 
             # SHRINK [REDUCE]
                 # view 
@@ -1050,3 +1051,34 @@ exit
             # SHRINK [REDUCE] :: ALT/FAST method; handles EVERYTHING
                 lvreduce -L {SIZE} -r /dev/vg{NAME}/lv{NAME} # '-r' resizes FS first
 
+        # EXAMPLE : INCREASE PD (sda; disk) @ hypervisor (from 20GB to 28GB), 
+                #   and then use LVM to gwow partition size
+
+                $ lsblk
+                NAME               MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+                sda                  8:0    0   28G  0 disk
+                ├─sda1               8:1    0  600M  0 part /boot/efi
+                ├─sda2               8:2    0    1G  0 part /boot
+                └─sda3               8:3    0 18.4G  0 part
+                ├─almalinux-root 253:0    0 16.4G  0 lvm  /
+                └─almalinux-swap 253:1    0    2G  0 lvm  [SWAP]
+
+                sudo pvresize /dev/sda3
+                sudo xfs_growfs /
+                sudo lvextend -l +100%FREE /dev/almalinux/root
+
+                # If volume fails grow, then delete and recreate partition (data is preserved).
+                    # Fix by running "`sudo fdisk /dev/sda`", 
+                    # and performing "`d`" (delete), "`n`" (new), "`w`" (write); 
+                    # and accepting all defaults.
+                    sudo fdisk /dev/sdb
+                
+                $ lsblk                                                                                     
+                NAME               MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS                                                
+                sda                  8:0    0   28G  0 disk                                                            
+                ├─sda1               8:1    0  600M  0 part /boot/efi                                                  
+                ├─sda2               8:2    0    1G  0 part /boot                                                      
+                └─sda3               8:3    0 26.4G  0 part                                                            
+                ├─almalinux-root 253:0    0 16.4G  0 lvm  /                                                          
+                └─almalinux-swap 253:1    0    2G  0 lvm  [SWAP]       
+  

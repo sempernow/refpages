@@ -322,19 +322,24 @@ exit
         # and rather add/edit file(s) at /etc/sudoers.d/,
         # each of which is invoked automatically.
         # So, ALLOW per file(s) of sudoers statements at /etc/sudoers.d/ 
-            sudo vi /etc/sudoers.d/$aUser # Create/Edit.
+            sudo visudo /etc/sudoers.d/$aUser # Create/Edit.
             # Programatically, 
-            # ALLOW a user to run ALL COMMANDS as sudo SANS PASSWORD:
-            echo "$aUser ALL=(ALL) NOPASSWD: ALL" \
-                |sudo tee /etc/sudoers.d/$aUser
-                #... Ansible requires such one-time setup beforehand at each target node of its "inventory".
+            # ALLOW current user to run ALL COMMANDS as sudo SANS PASSWORD:
+                echo "$USER ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
+                #... Ansible requires such one-time setup beforehand at each target node of its "inventory",
+                # else must manage password(s).
+
+        # Set sudo password-entry timeout : If unset, then defaults to 5 minutes. 
+            Defaults        timestamp_timeout=-1 # No timeout (enter password at sudo once per session); All users.
+            Defaults        timestamp_timeout=15 # 15 minutes; All users.
+            Defaults:u1     timestamp_timeout=0  # User 'u1' must enter password at every sudo invocation.
 
     # MONITOR users
-    users  # print user names of users currently logged in @ current host 
-        # E.g., monitor if user $1 logged in; send email to root on login
-        until users | grep $1 > /dev/null 
-        do; sleep 15; done 
-        mail -s "$1 just logged in" root < .
+        users  # print user names of users currently logged in @ current host 
+            # E.g., monitor if user $1 logged in; send email to root on login
+            until users | grep $1 > /dev/null 
+            do; sleep 15; done 
+            mail -s "$1 just logged in" root < .
 
     # TEST if user has elevated privileges 
     ls /root 

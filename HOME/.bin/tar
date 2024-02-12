@@ -1,9 +1,0 @@
-#!/bin/bash
-REQUIREs /bin/tar
-[[ "${1:0:1}" == '-' ]] && {
-	/bin/tar "$@" ; true ;
-} || {
-	export _ARCHIVE_HANDLER_TYPE='tar'
-	_archive_handler "$@"
-}
-exit 

@@ -4,13 +4,10 @@
 # -----------------------------------------------------------------------------
 
 getrefs() {
-    mkdir -p {HOME/.bin,REFs}
+    mkdir -p REFs
 
     # Purge folders
     find ./REFs -type f -exec rm "{}" \+ 
-    find ./HOME -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -exec rm "{}" \+ 
-    find ./HOME/.bin -type f -iname '*.zip' -exec rm "{}" \+ 
 
     # Dump all REF.* files to tmp folder under $TEMP dir
 	refsync temp
@@ -34,12 +31,7 @@ getrefs() {
     [[ -d '/d/1 Data/IT/Container/Kubernetes/CKA' ]] && cp -rp '/d/1 Data/IT/Container/Kubernetes/CKA/'* REFs/CKA/
     rm REFs/CKA/LOG.* REFs/REF.Kubernetes.CKA.* 2>/dev/null
 
-
-    # Copy/Update the specified ~/.* scripts to this project's HOME folder
-    cp -p ~/{.profile,.bash_profile,.bashrc,.bash_win,.bash_functions,.vimrc,.terraformrc,.gitconfig,.gitignore,.gitignore_global} HOME/
-
-    # Copy/Update all ...
-    cp -rp ~/.bin/* HOME/.bin/
+    return 0
 
 }
 

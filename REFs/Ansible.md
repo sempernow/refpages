@@ -102,14 +102,14 @@ ansible all --user x1 --become \
 ## [Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html) | [`ansible.cfg`](ansible.cfg)
 
 
-NONE EXIST lest you manually create them.
-
 Search order:
 
 - `ANSIBLE_CONFIG` 
 - `$(pwd)/ansible.cfg` 
 - `~/.ansible.cfg` 
 - `/etc/ansible/ansible.cfg`
+
+(None are created on install.)
 
 ### Create a local configuration 
 
