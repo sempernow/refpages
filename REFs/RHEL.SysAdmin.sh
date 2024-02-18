@@ -73,7 +73,7 @@ exit
             systemctl default
             systemctl reboot
 
-# YUM :: PKG MANAGER
+# YUM : PKG MANAGER
 
     # Update kernel
     yum -y update kernel
@@ -121,6 +121,32 @@ exit
     yum --disablerepo="*" --enablerepo="REPO_ID" list available
     /etc/yum.repos.d # all repos
 
+    # Make ISO of a YUM repo (by repo id)
+        # Used by hypervisor 
+        # Find "repo id" of desired repo from 
+        yum repolist
+        # Working dir
+        mkdir -p repos;cd repos
+        
+        ## by reposync method (RHEL 8)
+            sudo yum -y update 
+            sudo yum -y install yum-utils createrepo createrepo_c xorriso
+            # Download the repo including its metadata
+            sudo reposync --gpgcheck --repoid=$id --download-path=$(pwd) --downloadcomps --downloadonly --download-metadata
+            # Create repo
+            sudo createrepo_c $id || sudo createrepo $id
+            # Create ISO file
+            makeisofs -o $id.iso -R -J -joliet-long $id
+
+        ## By dnf reposync method (RHEL 9)
+            sudo dnf -y update 
+            sudo dnf -y install dnf-plugins-core createrepo_c genisoimage
+            # Download the repo including its metadata
+            sudo dnf reposync --gpgcheck --repoid=$id --download-path=$(pwd) --downloadcomps --downloadonly --download-metadata
+            # Create repo
+            sudo createrepo_c $id
+            # Create ISO file
+            genisoimage -o $id.iso -R -J -joliet-long $id
 
 # SELinux
     ## Show status

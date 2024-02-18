@@ -227,7 +227,7 @@ exit
         chown USER:GRP FILE 
         chown -R USER:GRP DIR  # Recurse; all thereunder
 
-        # MEANINGs ::     File  OR  Dir
+        # MEANINGs :     File  OR  Dir
                           ----      -------
             4 Read        open      list
             2 Write       modify    add/del
@@ -258,61 +258,94 @@ exit
 # USERS & GROUPS
 
     id [OPTION] [USER] # user, group, and groups of which user is member
-    #=> uid=1000(foo) gid=1000(x1) groups=1000(tribe),...,27(sudo),115(docker)
-    id -u   # 1000
-    id -un  # foo
-    id -G   # 1000 ... 27 115
-    id -Gn  # tribe ... sudo docker
-    
-    # List groups to which user has membership
-    groups $username 
+        #> uid=1000(foo) gid=1000(x1) groups=1000(tribe),...,27(sudo),115(docker)
+        id -u   # User UID
+        id -un  # User name
+        id -G   # User groups by GID
+        id -Gn  # User groups by name
+        
+    # Get MIN MAX values of UID:GID for REGULAR and SYSTEM accounts (users, groups)
+        cat /etc/login.defs
 
-    # Add/Create new group:user (foo:foo), NON-INTERACTIVELY,
-    # having UID:GID 1001:1001, 
-    # having NO HOME DIRECTORY
-    groupadd --gid 1001 foo
-    adduser --uid 1001 --gid 1001 --gecos "" --disabled-password --no-create-home foo
+    # user, pass : ADD user, SET PW
+        adduser $user            # create new user
+        passwd $user             # (re)set user's password  
 
-    # Add user foo to docker group
-    usermod -aG docker foo
-    newgrp docker # Take effect now.
+        # Get username from uid
+            uname_of_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
+            uname_of_uid 1000
 
-    # Change owner (UID:GID) of /mnt1, recursively
-    chown -R 1000:777 /mnt1
+        # Add a secure SSH-users account (user:group) at target machines.
+            # Add user:group foo:foo having no password, and so disabling password-based shell login.
+            # This is useful for remote user(s) to login as this user by ssh; 
+            # allowing only (ssh) key-based authtentication.
+            # Each user would have to add their public key to this user's ~/.ssh/authorized_keys file,
+            # and do so by some out-of-band (not ssh-copy-id) process requiring elevated privileges.
+            useradd -m -s /bin/bash foo
 
-    # Get username from uid
-    uname_of_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
+        # Add user:group (foo:foo) of declared IDs
+            # having UID:GID 1001:1001, 
+            # having NO HOME DIRECTORY
+            groupadd --gid 1001 foo
+            adduser --uid 1001 --gid 1001 --gecos "" --disabled-password --no-create-home foo
 
-    # user, pass :: ADD user, SET PW
-        adduser $USERNAME             # create new user
-        passwd $USERNAME              # set password  
-        # sudoers GROUP :: ADD USER | sudoers(5) https://linux.die.net/man/5/sudoers   
-        usermod -aG wheel $USERNAME   # RHEL/CentOS/Fedora (wheel group)
-        usermod -aG sudo $USERNAME    # Ubuntu/Debian      (sudo group)
-    # PASSWORD :: CHANGE
-        passwd $USERNAME  
-        chpasswd  # batch process cmd; must be root user 
-        # set the root acct pw to the ssh pw (e.g., Docker dev box)
-        echo  "root:$SSH_USERPASS" | chpasswd
-    # USER :: name CHANGE 
+        # Add a SYSTEM (-r) user:group $u:$u having home directory and no login shell
+            groupadd -r $u
+            useradd -r -m -g $u -s /bin/false $u
+
+        # Get entitites from Name Service Switch library
+            # Useful to test for existence of subject
+            getent group foo 
+            getent passwd foo
+
+        # Add user foo to docker group
+            usermod -aG docker foo
+            newgrp docker # Take effect now.
+
+        # List groups to which user has membership
+        groups foo
+
+        # LIST : group / members 
+        cat /etc/group 
+        getent group NAME
+
+        # Change owner (UID:GID) of /mnt1, recursively
+        chown -R 1000:777 /path
+        # Change owner to current user:group
+        chown -R $(id -u):$(id -g) /path
+
+        # sudoers GROUP : ADD USER | sudoers(5) https://linux.die.net/man/5/sudoers   
+        usermod -aG wheel $user  # RHEL/CentOS/Fedora (wheel group)
+        usermod -aG sudo $user   # Ubuntu/Debian      (sudo group)
+
+        # CHANGE NAME : user
+            usermod -l <newname> -d /home/<newname> -m <oldname>
+        # CHANGE NAME : group
+            groupmod -n <newgroup> <oldgroup>
+        # CHANGE PASSWORD
+            passwd $user 
+            # Batch password change
+            chpasswd  # batch process cmd; must be root user 
+            # set the root acct pw to the ssh pw (e.g., Docker dev box)
+            echo  "root:$SSH_USERPASS" | chpasswd
+        # Delete user foo's PASSWORD; may/not prevent login with no password
+        sudo passwd -d $user
+        # Lock user foo's account from password-authenticated login
+        sudo passwd -l $user
+        # CHANGE : HOME dir : default is /home/$USER
+            sudo vim /etc/passwd  # E.g., from `/home/uZer` to `/mnt/s/HOME`
+            # sudo(8)  https://linux.die.net/man/8/sudo 
+            # ... edit @ username, then reboot
+                sudo COMMAND # has very limited PATH; TERM, PATH, HOME, SHELL, LOGNAME, USER, USERNAME 
+                # ... to add more paths, modify: | sudoers(5) https://linux.die.net/man/5/sudoers   
+                /etc/sudoers.d 
+                    env_check
+                    env_keep 
+                    # a whitelist for environment variables.
+
+    # sudo / su 
         sudo su 
         sudo -E su  # preserve environment 
-        usermod -l <newname> -d /home/<newname> -m <oldname>
-    # GROUP :: name CHANGE
-        groupmod -n <newgroup> <oldgroup>
-    # GROUP :: LIST GROUPS / MEMBERS 
-    cat /etc/group 
-    getent group NAME
-    # HOME dir :: CHANGE; default is /home/$USERNAME
-    sudo vim /etc/passwd  # E.g., from `/home/uZer` to `/mnt/s/HOME`
-    # sudo(8)  https://linux.die.net/man/8/sudo 
-    # ... edit @ username, then reboot
-        sudo COMMAND # has very limited PATH; TERM, PATH, HOME, SHELL, LOGNAME, USER, USERNAME 
-        # ... to add more paths, modify: | sudoers(5) https://linux.die.net/man/5/sudoers   
-        /etc/sudoers.d 
-            env_check
-            env_keep 
-            # a whitelist for environment variables.
 
     # sudoers FILE
         /etc/sudoers 
@@ -346,7 +379,7 @@ exit
     # Show perms/owner
     ls -lh
     # Logout of GUI from terminal 
-    pkill -u $USERNAME 
+    pkill -u $user
 
     who  # who is logged in; USER TTY TIME 
     w    # who is logged in; USER TTY FROM LOGIN@ IDLE JCPU PCPU WHAT
@@ -386,7 +419,7 @@ exit
             VSZ      # bytes of RAM reserved (Virtual Memory Size)
             RSS      # bytes of RAM allocated (Resident Set Size)
             TTY      # current-terminal:'pts/0', background-process:'?'
-            STAT     # status :: sleep:'S', running:'R'
+            STAT     # status : sleep:'S', running:'R'
             START  
             TIME 
             COMMAND  # the command that lauched it
@@ -406,7 +439,7 @@ exit
 
     pstree # all processes per parent-child tree [graph]
 
-    # SHELL JOBs :: process launched from shell
+    # SHELL JOBs : process launched from shell
         COMMAND & # start as a BACKGROUND PROCESS 
         CTRL+C    # TERMINATE job
         CTRL+Z    # PAUSE job
@@ -423,7 +456,7 @@ exit
         SIGSTOP  17,19,23   Stop the process     # Severe
 
     # SENDING SIGNALS [man 7 signal]
-        #  terminate/kill :: SIGTERM[15]/SIGKILL[9] :: politely/NOW
+        #  terminate/kill : SIGTERM[15]/SIGKILL[9] : politely/NOW
         #  do NOT use SIGKILL [9] on file process; can destroy file[s] 
         top             # send signals: 'k'=kill, 'r'=renice [increment!]
         kill 0          # kill ALL JOBS except current shell
@@ -462,8 +495,8 @@ exit
             sys     0m0.003s # @ kernel-mode time
 
     # PERFORMANCE LOAD 
-    #  runqueue     :: PIDs [stack] => scheduler => cpu0/1/2/...
-    #  load average :: number of process in the runqueue @ 1min,5min,15min
+    #  runqueue     : PIDs [stack] => scheduler => cpu0/1/2/...
+    #  load average : number of process in the runqueue @ 1min,5min,15min
     #  CPU(s) user-space:us, system:sy, idle:id, waiting:wa
         uptime # up-time, #-of-users, & load-averages @ 1min 5min 15min
 
@@ -538,7 +571,7 @@ exit
     sudo journalctl --rotate         # systemd-journald SIGHUP (close/reopen)
     sudo journalctl --vacuum-time=1s # Delete archives
 
-# TASK SCHEDULING :: cron, or at
+# TASK SCHEDULING : cron, or at
     # How to @ https://www.cyberciti.biz/faq/how-do-i-add-jobs-to-cron-under-linux-or-unix-oses/
     cron  # crond daemon; for sheduling tasks to repeat on a regular basis
             # crond started on boot by default; other services depend on it
@@ -549,7 +582,7 @@ exit
     at  # atd daemon; for jobs to execute at a certain time
             # use to 'add jobs'
     
-    # CRON CONFIG FILEs :: CREATE CRON JOB
+    # CRON CONFIG FILEs : CREATE CRON JOB
 
         # create cron job [crontab file]
             #  all STORED @ [CentOS 6] ... 
@@ -601,14 +634,14 @@ exit
             /etc/cron.monthly
             /etc/cron.weekly
     
-    # at :: STATUS of atd daemon ...
+    # at : STATUS of atd daemon ...
     systemctl status atd -l # CentOS 7 [systemd]
     system atd status      # CentOS 6 
     
-    # at :: LOCATION 
+    # at : LOCATION 
         /var/spool/at/
     
-    # at :: CREATE 
+    # at : CREATE 
         at 14:30  # time; 24hr
         # => [typed @ at's prompt]
         > logger hello at 2:30 from at
@@ -620,10 +653,10 @@ exit
          .
          .
          .
-    # at :: SHOW JOBS
+    # at : SHOW JOBS
         atq
     
-    # at :: DELETE JOB[s]
+    # at : DELETE JOB[s]
         atrm 2 # remove job #2 
 
     # Cron Utility @ AsusWRT/Merlin router 
@@ -759,6 +792,6 @@ exit
             echo mem > /sys/power/state # go into suspend mode
 
         # set to auto standby|mem when idle ...
-        echo standby > /sys/power/autosleep # CentOS 6 :: 'no such file or dir'
+        echo standby > /sys/power/autosleep # CentOS 6 : 'no such file or dir'
         echo mem     > /sys/power/autosleep
         echo off     > /sys/power/autosleep # disable autosleep 

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>REF.GitOps</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code></h1>
+
+<blockquote>
+<p>GitOps is an operational framework that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).</p>
+</blockquote>
+
+<h2>GitOps v. DevOps</h2>
+
+<p>GitOps is considered a branch or category of DevOps.
+Both are methodoligies of software development, delivery,
+and lifecycle management.</p>
+
+<p>GitOps focuses on infrastructure for containerized workloads
+across environments, especially when run on Kubernetes
+and typically in the cloud.</p>
+
+<p>DevOps has a braoder scope,
+from the application-developers' environment
+to all matters of deployment automation
+across environments.</p>
+
+<p>DevOps is about automation across the lifecycle of an application.
+GitOps extends that with disciplined methods across all layers of all components,
+from infra to services, with the goal of repeatable, verifiable deployment states.</p>
+
+<h2>Principles</h2>
+
+<ol>
+<li><strong>Declarative</strong><br>
+A system managed by GitOps must have its desired state expressed declaratively.</li>
+<li><strong>Versioned and Immutable</strong><br>
+Desired state is stored in a way that enforces immutability, versioning and retains a complete version history.</li>
+<li><strong>Pulled Automatically</strong><br>
+Software agents automatically pull the desired state declarations from the source.</li>
+<li><strong>Continuously Reconciled</strong><br>
+Software agents continuously observe actual system state and attempt to apply the desired state.</li>
+</ol>
+
+<h2>Results</h2>
+
+<ul>
+<li>A standard workflow for application development.</li>
+<li>Increased security for setting application requirements upfront.</li>
+<li>Improved reliability with visibility and version control through Git.</li>
+<li>Consistency across clusters and their environments.</li>
+</ul>
+
+<h2>Tools | <a href="https://landscape.cncf.io/">CNCF Landscape</a></h2>
+
+<ul>
+<li>Infrastructure : Provision/Configure:<br>
+
+<ul>
+<li><a href="https://registry.terraform.io"><strong>Terraform</strong></a>:<br>
+Declarative provisioning of cloud infrastructure
+and policies (per-vendor modules),
+and managing Kubernetes resources.</li>
+<li><a href="https://docs.ansible.com/ansible/latest/index.html"><strong>Ansible</strong></a>:<br>
+Provision and configure infrastructure, OS/packages,
+and application software in any environment.
+A comprehensive, versatile automation tool
+allowing for both declarative and imperative methods.</li>
+</ul></li>
+<li>Workloads :
+
+<ul>
+<li>Install Applications :<br>
+Helm <em>and</em> Kustomize
+
+<ul>
+<li><a href="https://helm.sh/docs/helm/helm/" title="helm.sh/docs/"><strong>Helm</strong></a>:<br>
+A package manager for Kubernetes, Helm can be used to package applications into charts,
+which are then version-controlled in Git repositories. Helm charts can be deployed using GitOps tools like Flux or Argo CD.</li>
+<li><a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/" title="Kubernetes.io/docs/"><strong>Kustomize</strong></a>:<br>
+Generate, customize, and/or otherwise manage Kubernetes objects using files (YAML) stored in a Git repo.
+It's integrated into <code>kubectl</code> and can be used with other GitOps tools to manage deployments.
+Use to modify Helm chart per environment.</li>
+</ul></li>
+<li>Manage Application Lifecycle :<br>
+Flux <em>or</em> Argo CD
+
+<ul>
+<li><a href="https://github.com/fluxcd/flux2"><strong>Flux</strong></a><br>
+A tool to automatically sync Kubernetes clusters/applications
+with their configuration sources, across their lifecycles.</li>
+<li><a href="https://github.com/argoproj/argo-cd"><strong>Argo CD</strong></a>:<br>
+Visualize (Web UI) and manage the lifecycle of Kubernetes applications;
+supports automated or manual syncing of changes.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Methods</h2>
+
+<ul>
+<li><strong>Declarative Configuration</strong>:<br>
+Use declarative configurations (YAML files) for all resources and store them in a Git repository.
+This approach ensures that the desired state of your cluster is version-controlled and auditable.
+
+<ul>
+<li><strong>Branching Strategies</strong>:<br>
+<a href="https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development">Trunk-based</a>
+rather than <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow">Gitflow</a>
+to manage different environments (development, staging, production) or to handle feature development and releases.</li>
+</ul></li>
+<li><strong>Pull Request Workflow</strong>:<br>
+Use pull (merge) requests (PR/MR) to manage changes to the Kubernetes configuration.
+This allows for code review, approval processes,
+and automated testing before changes are merged and applied.</li>
+<li><strong>Automated Deployment</strong>:<br>
+Implement CI/CD pipelines that automatically apply changes from Git to your Kubernetes cluster.
+This could involve testing changes in a staging environment before promoting them to production.</li>
+<li><strong>Disaster Recovery</strong>:<br>
+Regularly back up your Git repository and Kubernetes cluster state.
+Ensure you have a process in place for restoring from backups in case of a disaster.
+<br></li>
+</ul>
+
+<h2>Configuration</h2>
+
+<ul>
+<li><strong>Repository Structure</strong>:<br>
+Organize your Git repository in a way that reflects your deployment environments and application structure.
+This could involve separate directories for each environment and application.</li>
+<li><strong>Secrets Management</strong>:<br>
+Use tools like <a href="https://github.com/bitnami-labs/sealed-secrets">Bitnami Sealed Secrets</a>,
+<a href="https://github.com/getsops/sops">SOPS</a>,
+or <a href="https://github.com/hashicorp/vault">Vault</a> for encrypting secrets that are stored in Git.
+This ensures that sensitive information is securely managed.</li>
+<li><strong>Monitoring and Alerting</strong>:<br>
+Integrate monitoring and alerting tools to track the health of your deployments and the Kubernetes cluster.
+<a href="https://prometheus.io/docs/introduction/overview/">Prometheus</a> and <a href="https://grafana.com/">Grafana</a>
+are commonly used tools that can be managed via GitOps.</li>
+<li><strong>Policy Enforcement</strong>:<br>
+Use policy-as-code tools like Open Policy Agent (OPA) or <a href="https://github.com/kyverno/kyverno">Kyverno</a>
+to enforce policies on your Kubernetes clusters.
+Store policies in Git to apply them consistently across your environments.</li>
+<li><strong>Security Scanning</strong>:<br>
+Implement security scanning of your Docker images and Kubernetes configurations as part of your CI/CD pipelines.
+Tools like <a href="https://trivy.dev/" title="trivy.dev">Trivy</a>, Clair, and KubeLinter can be integrated into your workflows.</li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](file:///d:/1%20Data/IT/___.html "@ browser") | [MD](file:///d:/1%20Data/IT/___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

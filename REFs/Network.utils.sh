@@ -444,9 +444,11 @@ exit
             # See MORE nc below
             ####################
 
-    nmap # advanced tool regarding remote services availability 
-                         #   WARNING: nmap use considered HOSTILE by ISPs etal
-                         #   @ Win: `chocolatey install nmap`
+    nmap # Network Mapper : Security Scanner : Port Scanner  
+        # Advanced tool regarding remote services availability 
+        # Features: Host discovery, Port scanning, Version detection, OS detection  
+        # WARNING: nmap use considered hostile by ISPs etal
+        # https://en.wikipedia.org/wiki/Nmap
         nmap HOST                       # Regular scan 
         nmap -sn CIDR                   # Ping scan : Discover nodes on subnet, e.g., 192.168.0.0/24
         nmap -T4 -F HOST                # Quick scan
@@ -455,7 +457,6 @@ exit
         nmap -p 1-65535 -T4 -A -v HOST  # Intense scan, all TCP ports
         # Slow comprehensive scan
         nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default or (discovery and safe)" HOST 
-
 
     nm-tool  # RedHat; NetworkManager Tool; reports status
              # ... Type, driver, speed, IP, MAC, Gateway IP, DNS, Subnet Netmask
@@ -499,9 +500,6 @@ exit
         sudo lsof -i -n -P |grep LISTEN
         # Is port 22 open?
         sudo lsof -i:22
-
-    nmap # Network Mapper : Security Scanner / Port Scanner  https://en.wikipedia.org/wiki/Nmap
-        nmap $server  # features: Host discovery, Port scanning, Version detection, OS detection  
 
     nc # Netcat : Read/Write data across TCP/UDP connections.
         # READ/WRITE to/from TCP/UDP connections
@@ -634,11 +632,11 @@ exit
 
         # Remote bash session within an encrypted (OpenSSL) tunnel (sans ssh)
             # @ Local : Create a self-signed cert and its key : EMPTY FIELDS (all) OK
-            openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 1000 -out cert.crt # Prefer -noenc over -nodes
+            openssl req -newkey rsa:2048 -nodes -keyout cert.key -x509 -days 1000 -out cert.crt # -nodes is depricated; prefer -noenc.
             # @ Local : Create PEM from key and cert
             cat cert.key cert.crt > sslkey.pem 
-            # @ Local : Listener : self signing necessitates `verify=0`.
-            socat -dd STDIN OPENSSL-LISTEN:1234,cert=sslkey.pem,verify=0
+            # @ Local : Listener : self signing necessitates `verify=0` 
+            socat -dd STDIN OPENSSL-LISTEN:1234,cert=sslkey.pem,verify=0 # many need to adjust tty params
             # @ Remote : Connector : execute the shell and forward it, encrypted
             socat -dd OPENSSL-CONNECT:$client_ip_or_hostname:1234,verify=0 EXEC:/bin/bash
 

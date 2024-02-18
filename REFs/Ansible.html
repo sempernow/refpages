@@ -24,22 +24,7 @@
 
 <p>Agentless Push Automation per SSH</p>
 
-<p><a href="ansible_topology.svg">ansible_topology.svg</a></p>
-
-<h2>TL;DR</h2>
-
-<p>This is nothing but a bash wrapper that is ssh centric. Yet it has an entire universe of new syntaxes, and requires special python modules per task.</p>
-
-<p>In effect, our bash provisioning scripts that call the ssh-wrapper function, injecting commands or scripts per positional parameters, does the same thing, will zero added mental load beyond bash.</p>
-
-<p>Perhaps use to run bash scripts per <code>playbook.yaml</code>:</p>
-
-<pre><code class="language-yaml">- name: Script runner
-  hosts: all
-  tasks:
-     - name: Install Docker  
-       script: {{ script_path }}
-</code></pre>
+<p><img src="ansible-topology.png" alt="ansible-topology.png"></p>
 
 <pre><code class="language-bash">ansible-playbook \
     -i inventory.file \
@@ -49,18 +34,27 @@
 
 </code></pre>
 
-<p>Bash is simpler, requires no prep, and is as automated:</p>
+<h2>Summary</h2>
 
-<pre><code class="language-bash"> ssh h1 /bin/bash -s &lt; install_docker.sh
+<p>In effect, Ansible is an ssh-centric bash wrapper, making the targets' SSH server its agent. Ansible is written in Python, so it runs about a thousand times slower than equivalent GNU/Bash utilities, yet has its own universe of lingo, syntax and quirks. Ansible is owned by RedHat, Inc.</p>
+
+<p>Ansible ignores the user's SSH configurations, <code>~/.ssh/config</code>, to enforce its own. Its default behavior is to establish a socket for connection reuse. Expect connection debugging per enviornment and target set, even after solving that for SSH per se. Ansible hardwires at least some of those connection settings (<code>ControlMaster</code>, <code>ControlPath</code>), and does not support override entries in <code>ansible.cfg</code>.</p>
+
+<p>Running ansible in verbose mode (<code>-vvv</code>) prints the attempted SSH connection statement:</p>
+
+<pre><code class="language-bash">ssh -C -o ControlMaster=auto -o ControlPersist=60s -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o 'User=&quot;u1&quot;' -o ConnectTimeout=10 -o 'ControlPath=&quot;/c/HOME/.ansible/cp/975de6127e&quot;' 192.168.0.80 '/bin/sh -c '&quot;'&quot;'echo ~u1 &amp;&amp; sleep 0'&quot;'&quot;''
 </code></pre>
 
-<p>Either way, target host must be prepared.
-Script user (<code>x1</code>) must have sudo privileges sans password entry:</p>
+<ul>
+<li>That fails on WSL2, for example.</li>
+</ul>
 
-<pre><code class="language-bash">sudo vim /etc/sudoers.d/x1
-</code></pre>
+<p>Each target environment and task has its own set of Ansible (Python) modules, and they make no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. Discovering and learning to use and configure each Ansible module adds significant time/resource costs. Ansible's popularity suggests it either offers significant benefits beyond bash scripting, or the project is well marketed.</p>
 
-<pre><code class="language-text">x1 ALL=(ALL) NOPASSWD:ALL
+<h3>Install package</h3>
+
+<pre><code class="language-bash">ansible all --user u1 --become \
+    --module-name dnf -a’name=docker state=latest’
 </code></pre>
 
 <h2>Install (@ Python 3.10)</h2>
@@ -89,31 +83,9 @@ python -m pip install --user argcomplete
   libyaml = True
 </code></pre>
 
-<h2>Ad-hoc Commands</h2>
-
-<p>Install a package onto a target machine.</p>
-
-<h3>Prep target</h3>
-
-<p>Target must contain file allowing ansible user (<code>x1</code>) sudo privileges.
-Here's how to configure:</p>
-
-<pre><code class="language-bash">ssh h1
-</code></pre>
-
-<pre><code class="language-bash">sudo vim /etc/sudoers.d/x1
-</code></pre>
-
-<pre><code class="language-text">x1 ALL=(ALL) NOPASSWD:ALL
-</code></pre>
-
-<h3>Install package</h3>
-
-<pre><code class="language-bash">ansible all --user x1 --become \
-    --module-name dnf -a’name=docker state=latest’
-</code></pre>
-
 <h2><a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html">Configuration Settings</a> | <a href="ansible.cfg"><code>ansible.cfg</code></a></h2>
+
+<p>NONE EXIST lest you manually create them.</p>
 
 <p>Search order:</p>
 
@@ -123,8 +95,6 @@ Here's how to configure:</p>
 <li><code>~/.ansible.cfg</code></li>
 <li><code>/etc/ansible/ansible.cfg</code></li>
 </ul>
-
-<p>(None are created on install.)</p>
 
 <h3>Create a local configuration</h3>
 
@@ -151,6 +121,79 @@ ansible-config init -t all &gt; ansible.cfg
 <p>The set(s) of target hosts upon which <code>ansible</code> operates.</p>
 
 <p>Set location to <code>$(pwd)/hosts</code> @ <code>ansible.cfg</code> : <code>inventory=hosts</code></p>
+
+<h2>Prep target(s)</h2>
+
+<p>Whether Ansible or vanilla Bash,
+the target host(s) to be provisioned
+must first be prepared manually.
+The script user (<code>u1</code>) must have ability to execute
+commands with elevated privileges sans password entry:</p>
+
+<p>Here's how to configure:</p>
+
+<p>@ Control machine</p>
+
+<pre><code class="language-bash">ssh $vm
+</code></pre>
+
+<p>@ Target machine</p>
+
+<pre><code class="language-bash">sudo vim /etc/sudoers.d/u1
+</code></pre>
+
+<pre><code class="language-text">u1 ALL=(ALL) NOPASSWD:ALL
+</code></pre>
+
+<p>Or, programmatically</p>
+
+<pre><code class="language-bash">echo &quot;$USER ALL=(ALL) NOPASSWD:ALL&quot; |sudo tee /etc/sudoers.d/$USER
+</code></pre>
+
+<h2><a href="https://docs.ansible.com/ansible/latest/getting_started/index.html">Getting Started</a></h2>
+
+<p>For context, this is the Bash way:</p>
+
+<pre><code class="language-bash"># Okay
+ssh u1@192.168.0.78 
+# Okay
+ping 192.168.0.78
+</code></pre>
+
+<p>And this is the Ansible way:</p>
+
+<p>@ <code>/etc/ansible/hosts</code></p>
+
+<pre><code class="language-ini">[machines]
+  a1
+  192.168.0.80
+</code></pre>
+
+<p>@ WSL2</p>
+
+<pre><code class="language-bash">
+☩ ansible all --list-hosts
+  hosts (2):
+    a1
+    192.168.0.80
+
+☩ ansible all -u u1 -m ping      
+
+a1 | UNREACHABLE! =&gt; {    
+    &quot;changed&quot;: false,   
+    &quot;msg&quot;: &quot;Failed to connect to the host via ssh: Control socket connect(/c/HOME/.ansible/cp/b4539065e0): Connection refused\r\nFailed to connect to new control master&quot;,     
+    &quot;unreachable&quot;: true   
+}     
+192.168.0.80 | UNREACHABLE! =&gt; {  
+    &quot;changed&quot;: false,       
+    &quot;msg&quot;: &quot;Failed to connect to the host via ssh: u1@192.168.0.80: Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).&quot;, 
+    &quot;unreachable&quot;: true 
+}     
+</code></pre>
+
+<ul>
+<li>And is very, very slow (Python) relative to equivalent GNU utils</li>
+</ul>
 
 <h3>&nbsp;</h3>
 

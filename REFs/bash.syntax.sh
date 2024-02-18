@@ -75,15 +75,19 @@ exit
     export -f    # list all exported functions.
     export       # list all Env. Vars. 
 
-    # Exit Codes : 0-255; 126-255 Reserved 
-    #  126: the requested command (file) can't be executed (but was found)
-    #  127: command (file) not found
-    #  128: (questionable) report an invalid argument to the exit builtin
-    #  128 + N: the shell was terminated by the signal N
-    #  255: wrong argument to the exit builtin (see code 128)
+    # EXIT CODEs : 0-255; 126-255 Reserved 
+        1       # general errors
+        2       # misuse of shell builtins (according to Bash documentation)
+        126     # command invoked cannot execute
+        127     # command (binary) not found
+        128     # invalid argument to exit, e.g., exit 333
+        128+n   # fatal error signal "n"
+        130     # script terminated by Control-C
+        255     # exit status out of range (See code 128)
 
     # CTRL+C == terminate script
     # CTRL+D == exit shell
+
 
 # FUNCTIONs [ name can NOT start w/ an integer ]
     name { command-list; }           # sh 
