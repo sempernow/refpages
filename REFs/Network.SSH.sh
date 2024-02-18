@@ -20,12 +20,21 @@ man ssh_config
 
         # Launch a login shell through an SSH tunnel
             ssh -i $_KEY_PATH ${user}@${hostname_OR_ip}
-            ## If host is Git server (GitHub/GitLab), then $user is 'git' *not* the user.
-            ssh -T -i ~/.ssh/gitlab git@gitlab.com # -T for sans tty/pty allocation.
+            ## If host is Git server (GitHub/GitLab), then user is 'git' *not* the ssh user.
+            ssh -T -i ~/.ssh/gitlab git@gitlab.com # -T to DISABLE tty/pty allocation.
+            ## If connection parameters are DECLARED at ~/.ssh/config  (See man ssh_config)
+                # Host abox 
+                #   HostName 10.111.0.101 www.foo.org foo.org 
+                #   User user1
+                #   CheckHostIP yes
+                #   Port 2222
+                #   IdentityFile ~/.ssh/abox
+            ## Then simply:
+            ssh abox 
 
         # Generate elliptical key pair : Default type (-t) is 'rsa'.
-            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default).
-                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -f ~/.ssh/keyname # id_ed25519
+            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default); no passphrase.
+                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname # id_ed25519
 
             # Re(Set) key's passphrase (local security)
                 ssh-keygen -p -P $old -P $new -f $_KEY_PATH
@@ -34,10 +43,10 @@ man ssh_config
                 ssh-keygen -c -C "$(id -un)@$(hostname)" -f $_KEY_PATH
 
             # Show fingerprint (FPR) of keypair : either key of a pair have same FPR
-                ssh-keygen [-E md5] -l[v] -f $_KEY_PATH # -v : show visual in addition to the hash.
+                ssh-keygen -l[v] -f $_KEY_PATH # -v : show visual in addition to the hash.
 
             # Show fingerprint(s) of KNOWN (remote) HOST(s) 
-                ssh-keygen [-E md5] -lf ~/.ssh/known_hosts
+                ssh-keygen -lf ~/.ssh/known_hosts
 
         # Copy user's PUBLIC key to remote (SSH server) by reference to either key of a pair AKA Identity File (-i)
             ssh-copy-id -i $_KEY_PATH -p $_PORT_NUMBER ${user}@${hostname_OR_ip}
@@ -175,11 +184,6 @@ man ssh_config
         ssh -l $user ${hostname_OR_ip}
         # OR, if `Host ...` @ `~/.ssh/config` 
         ssh xMachine
-        # Host xMachine
-        #   HostName centos
-        #   User rbox
-        #   CheckHostIP yes
-        #   IdentityFile ~/.ssh/centosvm_ed25519
 
         # most commmon connection ISSUES are due to FILE OWNER/PERMISSIONS
         # on private key or folder (see CLIENT section), or  USERNAME@HOST spelling
@@ -229,24 +233,22 @@ man ssh_config
                 #     e.g., reprovisioned VM(s), or re-attach EIP to another VM (AWS EC2); 
                 #     public key of old instance is retained in client's known_hosts.
 
-        # Establish UNIX SOCKET for connection SHARING/REUSE 
+        # Establish UNIX SOCKET for connection REUSE / SHAREing (multiple sessions)
             # ControlMaster (man ssh_config) : FAILs @ WSL(2)
-            
             # @ ~/.ssh/config
-
-                # Host *
+                # Host github
+                #     Hostname www.github.com
                 #     ControlMaster auto                    # Automatically use if exist; create socket otherwise
-                #     ControlPersist 600                    # TTL (seconds) after idle; forever if 0 or yes (kill: ssh -O exit CONN)
+                #     ControlPersist 600                    # TTL (seconds) after idle; forever if 0 or yes 
                 #     ControlPath ~/.ssh/master-%r@%h:%p    # master-USER@HOST:PORT
-
                 # Thereafter:
                 ssh github          # logon
                 ssh -O exit github  # kill that socket
 
             # @ Imperatively
 
-                # Open 
-                ssh  -S ~/.ssh/cm-%r@%h:%p $user@$host
+                # Open : See TOKENS section (%r, %h, %p, ...) of man ssh_config
+                ssh  -S ~/.ssh/master-%r@%h:%p $user@$host
                 # Show
                 ssh -O check $user@$host
                 # Close

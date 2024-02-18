@@ -107,6 +107,7 @@
 ## [git.md](./REFs/git.md)
 ## [git.sh](./REFs/git.sh)
 ## [GitHub.sh](./REFs/GitHub.sh)
+## [GitOps.md](./REFs/GitOps.md)
 ## [GKE.md](./REFs/GKE.md)
 ## [Go-jitsu.go](./REFs/Go-jitsu.go)
 ## [Go.Channels.go](./REFs/Go.Channels.go)

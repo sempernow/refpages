@@ -4,6 +4,24 @@
 
 ## Topics of Interest
 
+### Naming convention
+
+**Q:** Kubernetes is written in Golang. And best practices of Golang include naming convention that names should not "stutter". For example, if a struct value should not include the struct key name. However, it seems that Kubernetes has adopted the exact opposite convention. For example pod.volume.name=this-volume is the typical namiing convention. What's going on here? Is that just bad practices proliferating, or is this intentional?
+
+**A:** The naming patterns you've observed, such as the redundancy in Kubernetes object names (e.g., appending `-service` to service names), highlight an interesting intersection between Kubernetes' declarative, self-describing architecture and the practical aspects of managing resources in a complex system. This redundancy, while seemingly at odds with the principles of naming clarity and efficiency, serves several purposes in the Kubernetes ecosystem:
+
+1. **Contextual Clarity**: In large, complex deployments, where dozens or even hundreds of services, pods, and other resources interact, the additional context provided by such suffixes (`-service`, `-pod`, etc.) can be invaluable for quick identification and differentiation of resources. This is particularly true when resources of different types share similar base names, or when viewing aggregated logs or metrics across the system.
+
+2. **Convention and Consistency**: Kubernetes has spawned its own set of conventions and best practices, developed by the community and the experiences of its users. These conventions, including naming patterns, help maintain consistency across different deployments and projects. For new users, learning these patterns can make it easier to understand and navigate Kubernetes resources.
+
+3. **Automation and Tooling Compatibility**: Many tools and scripts are built around these naming conventions, expecting certain patterns to be present in resource names. This can help in automating tasks such as monitoring, logging, or CI/CD processes, where being able to predict and parse resource names based on their suffixes or prefixes becomes a powerful feature.
+
+4. **Namespacing and Scope**: Kubernetes allows for complex scoping and namespacing of resources. The redundant naming conventions can help in scoping resources appropriately, making it clearer which resources belong to which domain or functional area within a larger system.
+
+5. **Human Factors**: Ultimately, Kubernetes is used by humans, and the naming conventions reflect a balance between machine efficiency and human readability. While the redundancy might be "noise" in a strictly informational sense, it aids in quick comprehension and reduces cognitive load when scanning through resource lists or configurations.
+
+Despite these reasons, it's important for users and teams to develop and follow their own conventions that best suit their workflows and organizational practices. Kubernetes is flexible enough to accommodate different naming strategies, and what might be redundant or noisy in one context could be clarity-enhancing in another. The key is finding the right balance between Kubernetes' declarative nature, the practical requirements of managing complex systems, and the preferences and practices of the teams involved.
+
 ### [Static Pods](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/)
 
 **Q:** Why does `kubeadm init --pod-network-cidr="10.100.0.0/12"` assign each Static Pod (of the K8s-core Pods) an IP address in the node-network (host) CIDR versus that of the explicitly-declared Pod Network?
@@ -73,7 +91,8 @@ In summary, while the similarity between `10.244.0.0/12` and `10.240.0.0/12` mig
 
 # [Service](https://kubernetes.io/docs/concepts/services-networking/service/)
 
-Exposes a Deployment to a port under a protocol, sans IP Address(es). E.g., Create `my-service` to target TCP port 9376 on any Pod having the label `app.kubernetes.ip/name: MyApp` : 
+Exposes a Deployment to a port under a protocol, sans IP Address(es). 
+E.g., Create `my-service` to target TCP port `9376` on any Pod having the label `app.kubernetes.ip/name: MyApp` : 
 
 ```yaml
 apiVersion: v1
