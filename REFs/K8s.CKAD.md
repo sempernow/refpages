@@ -62,10 +62,11 @@ complete -o default -F __start_kubectl k
   which is not POSIX compliant, and so requires 
   Bash setting "`set +o posix`" else the script fails.
 ```bash
-# Redirect of Process Subsitition: 
-# Use where STATEMENT2 argument must be a file,
-# and STATEMENT1 generates and writes such content to STDOUT.
-STATEMENT2 < <(STATEMENT1)
+# REDIRECT of PROCESS SUBSITITION: 
+# STDOUT of command1 redirected to STDIN of command2.
+# Use where command2 takes STDIN argument, 
+# and command1 writes file content to STDOUT.
+command2 < <(command1)
 ``` 
 
 ## Kubernetes Cluster : Create by &hellip;
@@ -686,9 +687,11 @@ kubectl get all -A  # Equiv: --all-namespaces
 # See default namespaces
 kubectl get ns 
 ```
-- Do NOT set namespace; do per commandk, esp. on exam else forget and fail.
+- There is a `kubectl` command to declare a current namespace, 
+  but that is not advised for exam. 
+  Rather set per command using the `-n $ns` option.
 
-__Get all objects__ of `default` (or whatever is current) namespace:
+__Get "all" objects__ of `default` (or whatever is current) namespace:
 
 ```bash
 ☩ kubectl get all
@@ -701,7 +704,7 @@ NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   19d
 ```
 
-__Get all objects__ of ___all___ namespaces:
+__Get "all" objects__ of ___all___ namespaces:
 
 ```bash
 ☩ kubectl get all -A
@@ -733,33 +736,6 @@ NAMESPACE     NAME                                 DESIRED   CURRENT   READY   A
 kube-system   replicaset.apps/coredns-565d847f94   2         2         2       19d
 ```
 
-##  &nbsp;
-
-<!-- 
-
-# Markdown Cheatsheet
-
-[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
-
-
-# Link @ (HTML | MD)
-
-([HTML](___.md "___"))   
-
-
-# Bookmark
-
-- Reference
-[Foo](#foo)
-
-- Target
-<a name="foo"></a>
-
--->
-
-
-
-
 # Lesson 6 : Managing Pod Advanced Features <a name=Lesson6></a>
 
 ## Exploring Pod State 
@@ -782,6 +758,11 @@ kubectl explain pod.metadata
 kubectl explain pod.spec.containers.volumeMounts
 ## Connect : launch shell into container 
 kubectl exec -it $podName -- sh # /bin/bash instead of sh, if available
+```
+
+@ container 
+
+```bash
 ## Examining a container, if ps not available, use Linux /proc FS
 cd /proc
 ls  # the listing includes PID numbers

@@ -118,11 +118,22 @@ openssl x509 -in $any.crt -noout -text
 #   -text   : Prints out the certificate details in a human-readable format.
 #   -noout  : Show only the human-readable information.
 
+## Verify the server's ca-signed certificate ($any.crt) against the CA ($ca.crt) that signed it
+## (The CA file may be a trust-store bundle; a concatenated list of CA certs in PEM format.)
+openssl verify -CAfile $ca.crt $any.crt
+
 ## Print cert EXPIRATION DATE section
 openssl x509 -in $any.crt -noout -enddate 
 
 ## Print cert subject section
 openssl x509 -in $any.crt -noout -subject 
+
+###########################################################################
+# Get the (full-chain) certificate of a server ($h) at its port ($p):
+## E.g., 
+h=google.com
+p=443 
+openssl s_client -connect $h:$p -showcerts < /dev/null > ${h}_${p}.full-chain.txt
 
 #####################################
 # Test a cert/key pair (sans install)
@@ -140,6 +151,15 @@ openssl s_client -showcerts -connect $h:$p -CAfile $ca.crt
 ### - On DNS-resolution error : "...:Name or service not known".
 ###   To add local DNS resolution : echo "127.0.0.1 $h" >>/etc/hosts
 
+################################################################################
+# File Formats : Do NOT rely upon the file's extension to indicate format.
+## PEM (Privacy-Enhanced Mail) is human-readable text : .crt, .cer, .pem, .key
+## DER (Distinguished Encoding Rules) is binary data  : .crt, .cer, .der, .key
+## Convert:
+### DER to PEM (From binary to text) 
+openssl x509 -inform der -in certificate.der -outform pem -out certificate.pem
+### PEM to DER (From text to binary) 
+openssl x509 -in certificate.pem -outform der -out certificate.der
 
 ######
 # Meta

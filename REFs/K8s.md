@@ -2,6 +2,35 @@
 
 ## [Overview](https://kubernetes.io/docs/home/?path=users&persona=app-developer&level=foundational) | [Tools](https://kubernetes.io/docs/reference/tools/ "kubernetes.io/docs/...") | [GitHub](https://github.com/kubernetes "Kubernetes repo") | [Wikipedia](https://en.wikipedia.org/wiki/Kubernetes)  
 
+
+## [Admission Controller](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
+
+An admission controller is code of `kube-apiserver` that intercepts requests to the Kubernetes API server prior to persistence of the object, but after the request is authenticated and authorized.
+
+Admission controllers may be validating, mutating, or both. Mutating controllers may modify objects related to the requests they admit; validating controllers may not.
+
+Admission controllers limit requests to create, delete, modify objects. Admission controllers can also block custom verbs, such as a request connect to a Pod via an API server proxy. Admission controllers do not (and cannot) block requests to read (get, watch or list) objects.
+
+```bash
+# List all enabled admission controllers
+kube-apiserver -h |grep enable-admission-plugins
+
+# Enable some admission controllers
+kube-apiserver --enable-admission-plugins=NamespaceLifecycle,LimitRanger ...
+
+# Disable some 
+kube-apiserver --disable-admission-plugins=PodNodeSelector,AlwaysDeny ...
+```
+
+## [Operator (Pattern)](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+
+The goal of an Operator is to put operational knowledge into software. Previously this knowledge only resided in the minds of administrators, various combinations of shell scripts or automation software like Ansible. It was outside of your Kubernetes cluster and hard to integrate. With Operators, CoreOS changed that.
+
+Operators implement and automate common Day-1 (installation, configuration, etc.) and Day-2 (re-configuration, update, backup, failover, restore, etc.) activities in a piece of software running inside your Kubernetes cluster, by integrating natively with Kubernetes concepts and APIs. We call this a Kubernetes-native application. 
+
+With Operators an application is treated as a single object, and exposes only that 
+which makes sense for the application to work.
+
 ## Topics of Interest
 
 ### Naming convention
@@ -116,11 +145,15 @@ Client CLI to communicate with Kubernetes API server
 
 Must be configured to cluster, context and have user of `kubeadm`'s config.
 
-## [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) 
+## [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file 
 
->A file that is used to configure access to clusters is called a kubeconfig file. This is a generic way of referring to configuration files. It does not mean that there is a file named `kubeconfig`.
+>A reference to any file that is used to configure access to clusters. 
+>This is a generic way of referring to configuration files. 
+>It does not mean that there is a file named `kubeconfig`.
 
-@ `~/.kube/config`
+Optionally set using K8s environment variable: `KUBECONFIG=/path/to/that/file`
+
+Example @ `~/.kube/config` (default location)
 
 ```yaml
 apiVersion: v1
@@ -131,8 +164,8 @@ clusters:
 - cluster:
     server: https://192.168.0.81:6443
     certificate-authority-data: REDACTED    # CA certificate        (public)
-    # CA Certificate @ /etc/kubernetes/pki/ca.crt
-    # CA Key         @ /etc/kubernetes/pki/ca.key
+    # CA Certificate : /etc/kubernetes/pki/ca.crt
+    # CA Key         : /etc/kubernetes/pki/ca.key
   name: kubernetes
 contexts:
 - context:
