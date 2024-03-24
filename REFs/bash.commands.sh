@@ -815,6 +815,10 @@ exit
         # Download from cloud 
         rclone copy $_REMOTE:$_SRC $_DST  # DST is container (parent) 
 
+
+    # Reset all FOLDERs' mtime per newest therein : REQUIREs newest()
+        find . -maxdepth 1 -type d ! -iname '.' -exec /bin/bash -c 'touch -r "$(newest "$1")" "$1"' _ {} \;
+
     # Move/Rename one target FILE/FOLDER
         mv FROM TO      # Move/rename file/folder FROM path TO path
         mv PATH DIR/    # Move file/folder to DIR; if folder, then all thereunder (recursively)
@@ -1346,6 +1350,9 @@ exit
             # https://utcc.utoronto.ca/~cks/space/blog/unix/GNUGrepForceText  
 
         ... |grep -- '-foo-bar'
+
+        # OR : Filter thru EITHER pattern
+        ... |grep -e This -e That
 
         # ANY PATTERN listed in FILE (one pattern per line)
  		cat <<-EOH > FILE
@@ -2164,10 +2171,10 @@ exit
     cp /home/bozo/current_work/junk/* .
 
     # SYMBOLIC LINKs
-        # Hard link points to TARGET; SAME INODE; canNOT link btwn volumes (device/partition/filesystem)
-        ln TARGET LINK     # create HARD link
+        # Hard link points to TARGET; SAME INODE; NOT link btwn volumes (device/partition/filesystem)
+        ln TARGET LINK_NAME     # create HARD link
         # Soft link points to FILE|DIR; has its own inode; CAN link btwn volumes;
-        ln -s TARGET LINK  # create SOFT link
+        ln -s TARGET LINK_NAME  # create SOFT link
             
         # LINK TEST; is FILE is a symlink
         [[  $( stat -c %h FILE ) -gt 1 ]] && echo "FILE is a Symbolic Link"

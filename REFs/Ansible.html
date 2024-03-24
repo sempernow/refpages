@@ -20,27 +20,26 @@
 </head>
 <body>
     <main>
-        <h1>Ansible <a href="https://docs.ansible.com/ansible/latest/" title="docs.ansible.com">Documentation</a></h1>
+        <h1>Ansible <a href="https://docs.ansible.com/ansible/latest/" title="docs.ansible.com">Documentation</a> | <a href="https://docs.ansible.com/ansible/latest/getting_started/index.html">Getting Started</a></h1>
 
-<p>Agentless Push Automation per SSH</p>
+<p>Agentless Push Automation</p>
 
 <p><img src="ansible-topology.png" alt="ansible-topology.png"></p>
 
 <pre><code class="language-bash">ansible-playbook \
     -i inventory.file \
     -u ssh_user \
-    -e script_path=~/scripts/install_docker.sh \
     playbook.yaml
 
 </code></pre>
 
 <h2>Summary</h2>
 
-<p>In effect, Ansible is an ssh-centric bash wrapper, making the targets' SSH server its agent. Ansible is written in Python, so it runs about a thousand times slower than equivalent GNU/Bash utilities, yet has its own universe of lingo, syntax and quirks. Ansible is owned by RedHat, Inc.</p>
+<p>Ansible is a highly versatile tool for provisioning and confuguring user-declared sets of target machines. Though referred to as &quot;agentless&quot;, Ansible uses the SSH server running on its target as the agent. It's default behavior, however, is to ignore the user's SSH configurations. Ansible is written in Python, with an ecosystem of modules for a vast range of tasks and target types. Ansible is the property of RedHat, Inc.</p>
 
-<p>Ansible ignores the user's SSH configurations, <code>~/.ssh/config</code>, to enforce its own. Its default behavior is to establish a socket for connection reuse. Expect connection debugging per enviornment and target set, even after solving that for SSH per se. Ansible hardwires at least some of those connection settings (<code>ControlMaster</code>, <code>ControlPath</code>), and does not support override entries in <code>ansible.cfg</code>.</p>
+<p>Each target environment and task has its own set of (Python) modules and its own set of configuration (YAML) requirements (k-v pairs). Ansible makes no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. Discovering and learning to use and configure the array of Ansible modules required to perform even the typical provision/configure tasks upon a set of Linux VMs consumes a significant amount of manhours. Ansible's popularity suggests it either offers significant benefits beyond bash scripting, or the project is well marketed.</p>
 
-<p>Running ansible in verbose mode (<code>-vvv</code>) prints the attempted SSH connection statement:</p>
+<p>Running ansible in verbose mode (<code>-vvv</code>) prints its (attempted) SSH connection statement:</p>
 
 <pre><code class="language-bash">ssh -C -o ControlMaster=auto -o ControlPersist=60s -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o 'User=&quot;u1&quot;' -o ConnectTimeout=10 -o 'ControlPath=&quot;/c/HOME/.ansible/cp/975de6127e&quot;' 192.168.0.80 '/bin/sh -c '&quot;'&quot;'echo ~u1 &amp;&amp; sleep 0'&quot;'&quot;''
 </code></pre>
@@ -49,43 +48,36 @@
 <li>That fails on WSL2, for example.</li>
 </ul>
 
-<p>Each target environment and task has its own set of Ansible (Python) modules, and they make no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. Discovering and learning to use and configure each Ansible module adds significant time/resource costs. Ansible's popularity suggests it either offers significant benefits beyond bash scripting, or the project is well marketed.</p>
+<h2>Install</h2>
 
-<h3>Install package</h3>
+<pre><code class="language-bash"># Install Python 3
+sudo dnf -y install python3
+# Set Python 3 as default
+alternatives --set python /usr/bin/python3
+# Install Python pip
+sudo dnf -y install python3-pip
+# Install ansible for current user (@ ~/.local or %APPDATA%Python)
+python3 -m pip install --user ansible 
+# Or 
+python3 -m pip install --include-deps --user ansible
+# Or just the core
+python3 -m pip install ansible-core
 
-<pre><code class="language-bash">ansible all --user u1 --become \
-    --module-name dnf -a’name=docker state=latest’
-</code></pre>
+# Upgrade
+python3 -m pip install --upgrade --user ansible
 
-<h2>Install (@ Python 3.10)</h2>
-
-<pre><code class="language-bash">pipx install --include-deps ansible
-pipx inject ansible argcomplete
-
-# Alt method:
-python -m pip install ansible
+# Add Autocomplete
 python -m pip install --user argcomplete 
+
+# Verify
+ansible --version
 </code></pre>
 
-<p>Verify (@ WSL)</p>
-
-<pre><code class="language-bash">ansible --version
-</code></pre>
-
-<pre><code class="language-text">ansible [core 2.15.2]
-  config file = None
-  configured module search path = ['/c/HOME/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
-  ansible python module location = /c/HOME/.local/pipx/venvs/ansible/lib/python3.10/site-packages/ansible
-  ansible collection location = /c/HOME/.ansible/collections:/usr/share/ansible/collections
-  executable location = /c/HOME/.local/bin/ansible
-  python version = 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] (/c/HOME/.local/pipx/venvs/ansible/bin/python)
-  jinja version = 3.1.2
-  libyaml = True
-</code></pre>
+<ul>
+<li><a href="https://pip.pypa.io/en/stable/cli/pip_install/" title="pip.pypa.io"><code>pip install</code></a></li>
+</ul>
 
 <h2><a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html">Configuration Settings</a> | <a href="ansible.cfg"><code>ansible.cfg</code></a></h2>
-
-<p>NONE EXIST lest you manually create them.</p>
 
 <p>Search order:</p>
 
@@ -96,12 +88,12 @@ python -m pip install --user argcomplete
 <li><code>/etc/ansible/ansible.cfg</code></li>
 </ul>
 
+<p>(None are created upon installation.)</p>
+
 <h3>Create a local configuration</h3>
 
-<blockquote>
-<p><code>ansible-config</code> provides all the configuration settings available,
-  their defaults, how to set them and where their current value comes from.</p>
-</blockquote>
+<p>The <code>ansible-config</code> command provides all the configuration settings available,
+their defaults, how to set them and where their current value comes from.</p>
 
 <pre><code class="language-bash"># Defaults
 ansible-config init &gt; ansible.cfg
@@ -116,28 +108,35 @@ ansible-config init -t all &gt; ansible.cfg
 <li><a href="ansible-config.init-t.all.cfg"><code>ansible-config init -t all</code></a></li>
 </ul>
 
-<h3>Inventory</h3>
+<h3>Inventory | <a href="inventory.cfg"><code>inventory.cfg</code></a></h3>
 
 <p>The set(s) of target hosts upon which <code>ansible</code> operates.</p>
 
-<p>Set location to <code>$(pwd)/hosts</code> @ <code>ansible.cfg</code> : <code>inventory=hosts</code></p>
+<p>Set location of <code>inventory.cfg</code> at <code>inventory</code> key of <a href="ansible.cfg"><code>ansible.cfg</code></a>.</p>
+
+<pre><code class="language-ini">[defaults]
+inventory=inventory.cfg
+</code></pre>
+
+<p>Default inventory file: <code>/etc/ansible/hosts</code></p>
 
 <h2>Prep target(s)</h2>
 
-<p>Whether Ansible or vanilla Bash,
-the target host(s) to be provisioned
-must first be prepared manually.
-The script user (<code>u1</code>) must have ability to execute
-commands with elevated privileges sans password entry:</p>
+<p>There are several conventions for configuring target machines.
+A simple, secure method is to configure the script user (<code>gitops</code>)
+on the target(s) such that their password login is entirely disabled,
+making remote, key-based ssh login the only method of access,
+and then creating a <code>/etc/sudoers.d/gitops</code> file that enables
+elevated privileges sans password entry.</p>
 
-<p>Here's how to configure:</p>
+<ul>
+<li>Install Ansible on admin node (not a cluster node)</li>
+<li>Prepare all target machines by running this script on each one.
+It requires <code>root</code> privileges.
 
-<p>@ Control machine</p>
-
-<pre><code class="language-bash">ssh $vm
-</code></pre>
-
-<p>@ Target machine</p>
+<ul>
+<li><p><a href="create_provisioner_target_node.sh"><code>create_provisioner_target_node.sh</code></a><br>
+Manually at a target machine:</p>
 
 <pre><code class="language-bash">sudo vim /etc/sudoers.d/u1
 </code></pre>
@@ -145,54 +144,145 @@ commands with elevated privileges sans password entry:</p>
 <pre><code class="language-text">u1 ALL=(ALL) NOPASSWD:ALL
 </code></pre>
 
-<p>Or, programmatically</p>
+<p>Alternately:</p>
 
 <pre><code class="language-bash">echo &quot;$USER ALL=(ALL) NOPASSWD:ALL&quot; |sudo tee /etc/sudoers.d/$USER
+</code></pre></li>
+</ul></li>
+</ul>
+
+<p>@ <code>~/.ansible.cfg</code></p>
+
+<pre><code class="language-ini">[defaults]
+action_warnings=False
+inventory=inventory.cfg
+deprecation_warnings=False
+remote_user=gitops
+[privilege_escalation]
+become_user=root
+[persistent_connection]
+[connection]
+[colors]
+[selinux]
+[diff]
+[galaxy]
+[inventory]
+[netconf_connection]
+ssh_config=${HOME}/.ssh/config
+[paramiko_connection]
+[jinja2]
+[tags]
+
 </code></pre>
 
-<h2><a href="https://docs.ansible.com/ansible/latest/getting_started/index.html">Getting Started</a></h2>
+<h2>Use</h2>
 
-<p>For context, this is the Bash way:</p>
+<pre><code class="language-bash"># Ad-hoc command at one machine of default hosts file @ /etc/ansible/hosts
+ansible -i hosts 192.168.1.109 -m ping
+# Ad-hoc command (model: ping) at all target machines of hosts file @ /etc/ansible/hosts
+ansible -i hosts app -m ping
+# Same as above, but target is self
+ansible -m ping localhost 
+# Lists all facts of target (using model: setup)
+ansible -m setup localhost
 
-<pre><code class="language-bash"># Okay
-ssh u1@192.168.0.78 
-# Okay
-ping 192.168.0.78
+# Create ./ansible.cfg that includes declared inventory file.
+ansible-config init --disabled |tee ansible.cfg.disabled
+vim ansible.cfg.disabled # Edit; declare &quot;inventory=inventory.cfg&quot;, and save as ansible.cfg
+vim inventory.cfg # add [target] list of hosts
+target='target'
+
+# Ad-hoc command ping at $target machines declared in inventory file declared in ./ansible.cfg
+ansible $target -m ping
+# Ad-hoc : two commands
+ansible $target -a hostname -a id
+# Ad-hoc : Test is Ansible's ssh user (defaults to current user) has sudo sans password
+ansible $target -a 'sudo ls -hl /etc/sudoers.d/'
+# shell module
+ansible $target -m ansible.builtin.shell -a hostname
+# script module
+ansible $target -m ansible.builtin.script -a foo.sh 
+
+# playbook : script w/ args injected
+ansible-playbook foo.yaml -e a=foo -e b=bar 
+
 </code></pre>
 
-<p>And this is the Ansible way:</p>
+<h2>Playbook (YAML)</h2>
 
-<p>@ <code>/etc/ansible/hosts</code></p>
+<p>@ <code>example.yaml</code></p>
 
-<pre><code class="language-ini">[machines]
-  a1
-  192.168.0.80
+<pre><code class="language-yaml">---
+- name: example playbook
+  hosts: local
+  vars:
+    foo: &quot;bar&quot;
+    fbool: false
+    cities:
+    - Maryland
+    - Virginia
+  tasks:
+  - name: print foo
+    ## model: debug
+    ansible.builtin.debug:
+      msg: &quot;value of foo is: {{ foo }}&quot;
+    ## Run task only on fbool: true
+    when: fbool
+  - name: print cities
+    ## model: debug
+    ansible.builtin.debug:
+      #var: item 
+    loop: &quot;{{ cities }}&quot;
+
 </code></pre>
 
-<p>@ WSL2</p>
+<p>Because <code>ansible.cfg</code> set the inventory-file path <code>inventory.cfg</code> (@ PWD),
+and playbook (<code>example.yaml</code>) set target (group) name (<code>hosts: local</code>),
+the command to run the playbook is simply:</p>
 
-<pre><code class="language-bash">
-☩ ansible all --list-hosts
-  hosts (2):
-    a1
-    192.168.0.80
+<pre><code class="language-bash">☩ ansible-playbook example.yaml
 
-☩ ansible all -u u1 -m ping      
+PLAY [example playbook] ***...
 
-a1 | UNREACHABLE! =&gt; {    
-    &quot;changed&quot;: false,   
-    &quot;msg&quot;: &quot;Failed to connect to the host via ssh: Control socket connect(/c/HOME/.ansible/cp/b4539065e0): Connection refused\r\nFailed to connect to new control master&quot;,     
-    &quot;unreachable&quot;: true   
-}     
-192.168.0.80 | UNREACHABLE! =&gt; {  
-    &quot;changed&quot;: false,       
-    &quot;msg&quot;: &quot;Failed to connect to the host via ssh: u1@192.168.0.80: Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).&quot;, 
-    &quot;unreachable&quot;: true 
-}     
+
+TASK [Gathering Facts] ***...
+ok: [localhost]
+
+TASK [print foo] ***...
+skipping: [localhost]
+
+TASK [print cities] ***...
+ok: [localhost] =&gt; (item=Maryland) =&gt; {
+    &quot;msg&quot;: &quot;Hello world!&quot;
+}
+ok: [localhost] =&gt; (item=Virginia) =&gt; {
+    &quot;msg&quot;: &quot;Hello world!&quot;
+}
+
+PLAY RECAP ***...
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+</code></pre>
+
+<p>@ <code>foo.yaml</code></p>
+
+<pre><code class="language-yaml">---
+- name: Testing
+  hosts: target
+  vars:
+    config_file_path: ~/.ansible/ansible.cfg
+  become: true
+  #become_flags: &quot;-H -S -n&quot;
+  gather_facts: false
+  tasks:
+  - name: Task 1
+    #command: &quot;sh $HOME/devops/ansible/foo.sh {{a}} {{b}}&quot;
+    command: &quot;sh $HOME/devops/ansible/foo.sh&quot;
+
 </code></pre>
 
 <ul>
-<li>And is very, very slow (Python) relative to equivalent GNU utils</li>
+<li>Failing @ WSL(2); all attempts at tweaking ansible's bazillion parameters across its many configuration files (<code>ansible.cfg</code>, <code>inventory.cfg</code>, playbook, ...) yields same result: hosts not found; can't resolve.</li>
+<li>Every tool except <code>ansible</code> is able to connect to any and every host.</li>
 </ul>
 
 <h3>&nbsp;</h3>

@@ -38,19 +38,185 @@
 <p><strong>On TLS-handshake failure</strong>, the server is likely to send a &quot;handshake failure&quot; alert. Such may occur if the certificate's CA cannot be validated by the client, or <strong><em>if client and server have no mutually supported TLS-ciphers suite</em></strong>. The TLS handshake failure is not an HTTP-level response; it's part of the TLS protocol. The HTTP layer comes into play only after a secure TLS connection has been established. If the TLS handshake fails, the HTTP layer doesn't have an opportunity to send an HTTP response code because the connection hasn't been established.</p>
 </blockquote>
 
-<h2>OpenSSL (TLS) Tools</h2>
+<h2>OpenSSL</h2>
 
-<h3><a href="https://www.openssl.org/"><code>openssl</code></a> | <a href="REF.TLS.openssl.sh"><code>REF.TLS.openssl.sh</code></a> (commands)</h3>
+<p>Library and utility for all things TLS.</p>
 
-<p>The multi-purpose OpenSSL tool used to create, parse, validate, and test TLS keys, certificates, and such. Also useful for TLS at <code>https://localhost</code> (and aliases) for development. <strong>Satisfies all browsers</strong>.</p>
+<h3>See <a href="REF.TLS.openssl.sh"><code>REF.TLS.openssl.sh</code></a></h3>
+
+<p>The OpenSSL utility, <a href="https://www.openssl.org/"><code>openssl</code></a>, is a multi-purpose tool used to create, parse, validate, and test TLS keys, certificates, and such. Also useful for TLS at <code>https://localhost</code> (and aliases) for development.</p>
 
 <blockquote>
-<p>For useful information on any <code>openssl &lt;command&gt;</code>,<br>
-run <code>man openssl-&lt;command&gt;</code>.<br>
-For list of commands by category, just run <code>openssl</code>.</p>
+<p>To get useful information on any <code>openssl &lt;command&gt;</code>, run <code>man openssl-&lt;command&gt;</code>. For list of commands by category, just run <code>openssl</code>.</p>
 </blockquote>
 
-<h4>@ <a href="https://docs.docker.com/engine/swarm/configs/" title="docs.docker.com/swarm/configs">Docker/Nginx</a></h4>
+<h2>Glossary</h2>
+
+<h3>Transport Layer Security (TLS)</h3>
+
+<p>Transport Layer Security is the newer security protocol that <strong><em>replaced Secure Sockets Layer (SSL)</em></strong>. Though the SSL protocol is obsolete and has been so for about a quarter century, the term &quot;SSL&quot; stubbornly remains with us, e.g., &quot;OpenSSL&quot;. Engineers often refer to TLS as SSL, while actual SSL (protocols, ciphers, certificates and keys) are extremely insecure and entirely inadequate.</p>
+
+<p>Never use actual SSL.</p>
+
+<h3>PEM (Privacy-Enhanced Mail) format</h3>
+
+<p>The human-readable text (<a href="https://en.wikipedia.org/wiki/ASCII" title="Wikipedia.org">ASCII</a>) format for TLS key and certificate files; widely used in web servers and other network applications where textual configuration files are standard. It's also the format used by many command-line tools, including OpenSSL, and is more common in Unix/Linux environments. Common extensions for PEM files are: <code>.crt</code>, <code>.cer</code>, and <code>.pem</code> if a public certificate; <code>.key</code> if a private key. (Do not rely on the file's extenaion to indicate format.)</p>
+
+<p>PEM-formatted <em>certificates</em> include a header and footer:</p>
+
+<pre><code class="language-text">-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+</code></pre>
+
+<p>A <em>certificate</em> file may contain many such concatenated certificates. Either a list of root CA certificates AKA trust-store AKA ca-bundle file, or a certificate chain AKA full-chain certificate. The latter must be the ordered listing whereof the first cerificate is the end-entity (server), with each cerificate thereafter validating the one before it, all the way back to but not including the root-CA certificate, which is expected to be in the trust store(s) of clients.</p>
+
+<h3>DER (Distinguished Encoding Rules) format</h3>
+
+<p>The binary format for key and certificate files; often used in environments that require or prefer binary data; a common format for Java-based platforms, which utilize DER-encoded files in a specific format known as Java KeyStore (JKS). Common extensions for PEM files are: <code>.crt</code>, <code>.cer</code>, and <code>.der</code> if a public certificate; <code>.key</code> if a private key, so <strong><em>do not rely on the file's extension</em></strong> to indicate format.</p>
+
+<pre><code class="language-bash"># Convert format: DER to PEM (From binary to human-readable text) 
+openssl x509 -inform der -in certificate.der -outform pem -out certificate.pem
+
+# Convert format: PEM to DER (From human-readable text to binary) 
+openssl x509 -in certificate.pem -outform der -out certificate.der
+
+</code></pre>
+
+<h3>Certificate</h3>
+
+<p>AKA the Public Key; the public artifact of an asymmetric (public-private) key pair creation. Server certificates are public; presented by a web server whenever a new TLS connection is requested. They contain the name of the host the certificate is issued to (which should match the server you’re attempting to connect to) and are signed by a Certificate Authority (CA) to establish trust.</p>
+
+<h3>Key</h3>
+
+<p>AKA the Private Key; the private artifact of an asymmetric (public-private) key pair creation. The server key is private; a secret that must be well protected, never shared, and sufficiently rotated.</p>
+
+<h3>Certificate Authority (CA)</h3>
+
+<p>A certificate authority verifies details about a domain owner’s request for certificates. Only after validating the certificate-signing request (CSR) do CAs sign and issue the server certificate; typically returning the full-chain certificate. Browsers and operating systems maintain a list of trusted certificate authorities. If a server certificate is signed by one of these trusted CAs, it will also be trusted.</p>
+
+<h4>Full-Chain Certificate</h4>
+
+<p>AKA &quot;server certificate&quot; AKA &quot;certificate chain&quot; file.</p>
+
+<p>A &quot;full chain&quot; certificate refers to a certificate file containing the entire <strong><em>chain of trust</em></strong>; the end-entity (server) certificate and all the intermediate certificate(s) up to, but not icluding, the root CA certificate. This chain of certificates helps establish trust from the end-entity certificate back to a trusted root certificate authority (CA). Most CAs default to this &quot;bundle&quot; or &quot;full chain&quot; option when delivering certificates.</p>
+
+<p>Order matters. The first certificate listed is that of the end-entity (server). The second certificate (intermidiary) validates the 1st, the 3rd validates the 2nd and so on, so the last (Nth) intermidate certificate would be validated by the root CA, which must reside in the client's (TLS) trust store.</p>
+
+<blockquote>
+<p>Certificate Chain Trust: The server is responsible for sending its own certificate and any intermediate certificates necessary to form a complete path to a root certificate that the client trusts. The inclusion of intermediate certificates is <strong><em>crucial because clients might not have them</em></strong>, <em>unlike root certificates, which are expected to be pre-installed in the client's certificate store</em>.</p>
+</blockquote>
+
+<pre><code class="language-bash"># Get the (full-chain) certificate of a server ($h) at its port ($p)
+h='google.com' # Host
+p='443'        # Port
+openssl s_client -connect $h:$p -showcerts &lt; /dev/null &gt; ${h}_${p}.full-chain.crt
+
+# Verify the server's ca-signed certificate ($any.crt) against the CA ($ca.crt) that signed it
+# (The CA file may be a trust-store bundle; a concatenated list of CA certs in PEM format.)
+openssl verify -CAfile $ca.crt $any.crt
+</code></pre>
+
+<h3>Certificate hierarchy:</h3>
+
+<ul>
+<li><p><strong>End-entity certificate</strong>: This is the certificate that corresponds to the specific domain for which the certificate is issued. It contains the public key for the server and is signed by an intermediate CA.</p></li>
+
+<li><p><strong>Intermediate certificate(s)</strong>: Intermediate certificates sit between the end-entity certificate and the root certificate in the certificate chain. They are used to enhance security by creating a hierarchy of trust. The intermediate certificate is signed by a root CA and, in turn, signs the end-entity certificate.</p></li>
+</ul>
+
+<p>Intermediate Certificate (example)</p>
+
+<p><code>CN: GTS CA 1C3</code></p>
+
+<pre><code class="language-text">...                                         
+ 1 s:C = US, O = Google Trust Services LLC, CN = GTS CA 1C3          
+   i:C = US, O = Google Trust Services LLC, CN = GTS Root R1         
+   a:PKEY: rsaEncryption, 2048 (bit); sigalg: RSA-SHA256             
+   v:NotBefore: Aug 13 00:00:42 2020 GMT; NotAfter: Sep 30 00:00:42 2
+-----BEGIN CERTIFICATE-----                                          
+MIIFljCCA36gAwIBAgINAgO8U1lrNMcY9QFQZjANBgkqhkiG9w0BAQsFADBHMQsw     
+...     
+1IXNDw9bg1kWRxYtnCQ6yICmJhSFm/Y3m6xv+cXDBlHz4n/FsRC6UfTd             
+-----END CERTIFICATE-----                                            
+</code></pre>
+
+<ul>
+<li><p>Note that Subject (<code>s:</code>) and Issuer (<code>i:</code>) differ.</p>
+
+<ul>
+<li><code>s:..., CN = GTS CA 1C3</code></li>
+<li><code>i:..., CN = GTS Root R1</code>
+
+<ul>
+<li>Root cerficate is &quot;<code>GTS Root R1</code>&quot;,
+and it is not included in this full-chain certificate.</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Root certificate</strong>: The root certificate is the top-level certificate in the hierarchy and is self-signed. (Subject, &quot;<code>s:</code>&quot; and Issuer &quot;<code>i:</code>&quot; are the same entity.)  It is the ultimate authority that establishes trust in the entire chain. Web browsers and other client applications come pre-installed with a set of trusted root certificates.</p></li>
+</ul>
+
+<p>When a client, such as a web browser, connects to a server secured with SSL/TLS, it checks the certificate chain to ensure that the end-entity (server) certificate is valid and signed by a trusted intermediate certificate, which, in turn, is signed by a trusted root certificate. That is, the client must have its own set of trusted-CA certificates, or use that of the system (OS) in which it is running, against which to validate the server's certificate.</p>
+
+<p>Including the full chain when configuring SSL/TLS on a server is important to ensure that clients can validate the server's certificate properly. Without the full chain, clients may not be able to establish the chain of trust, and the connection could be deemed untrusted.</p>
+
+<h3><code>x509</code></h3>
+
+<p><a href="https://en.wikipedia.org/wiki/X.509" title="Wikipedia.org">X.509</a> is a standard that defines the format of public key certificates. These certificates are used in various security and networking protocols, including TLS/SSL, which is the basis for secure connections on the internet. The X.509 standard is part of the X.500 series of standards defined by the ITU-T (International Telecommunication Union Telecommunication Standardization Sector) for the Directory Services.</p>
+
+<p>Key features of X.509 certificates include:</p>
+
+<ul>
+<li>Public Key: The certificate includes the public key of the certificate holder.
+Identity Information: It contains identity information about the holder, such as the common name (<code>CN</code>), organization (<code>O</code>), and country (<code>C</code>). This information is used to verify the identity of the entity presenting the certificate.</li>
+<li>Issuer: The certificate specifies the issuing Certificate Authority (CA) that has signed and issued the certificate, thus vouching for its authenticity.</li>
+<li>Serial Number: Each certificate issued by a CA is given a unique serial number to distinguish it from other certificates.</li>
+<li>Validity Period: Certificates are valid for a specific period, indicated by the &quot;<code>Not Before</code>&quot; and &quot;<code>Not After</code>&quot; dates. The certificate should not be considered valid before or after this period.</li>
+<li>Digital Signature: The issuing CA digitally signs the certificate to prove its authenticity. The signature can be verified using the CA's public key.</li>
+</ul>
+
+<p>X.509 certificates play a crucial role in establishing trust in digital communications. By verifying the <strong><em>chain of trust</em></strong> from a given certificate up to a trusted root CA, entities can establish secure communication channels. This trust model underpins the security of HTTPS websites, email encryption (S/MIME), and many other protocols that secure data exchange over networks.</p>
+
+<h3>Domain Validation (DV)</h3>
+
+<p>A domain validated certificate will be issued to somebody who has proven they control the domain name requested for the certificate. This proof often takes the form of serving a unique token from your web server or DNS records, which the CA will check for before issuing the certificate.</p>
+
+<h3>Organization Validation (OV)</h3>
+
+<p>An organization validated certificate means that the certificate authority also verified the company name and address in public databases. This information is put into the certificate, and is typically displayed only when the user clicks the green padlock icon to investigate further.</p>
+
+<h3>Extended Validation (EV)</h3>
+
+<p>Extended validation is <strong><em>more thorough than domain or organization validation</em></strong>. EV certificates are issued after checking not only domain ownership, but also verifying the existence and location of the legal entity requesting the certificate, and that said entity controls the domain being verified.</p>
+
+<p>Unlike DV and OV certificates, EV cannot be issued as a wildcard certificate.</p>
+
+<p>EV certificate also <strong><em>gets special treatment in web browsers</em></strong>. Whereas browsers typically denote a DV certificate with a <strong><em>green-padlock icon</em></strong>, EV certificates also show a larger green bar containing the name of the organization it was issued to. This is intended to reduce phishing attacks, though some studies show that users tend not to notice when this green bar is missing.</p>
+
+<h3>SAN (Subject Alternative Name)</h3>
+
+<p>The new <strong>CN</strong> (Common Name) AKA Domain Name; a field of a certificate that indicates for which domain(s) the certificate is valid. A single certificate may contain many SANs and be valid for many different domain names.</p>
+
+<h3>Wildcard Certificate</h3>
+
+<p>The asterisk character (<code>*</code>) is the wildcard, and can be substituted with any valid hostname. Instead of being issued for a specific Fully Qualified Domain Name (FQDN), such as <code>app.example.com</code>, wildcard certs are valid for a whole range of subdomain names. So a cert issued to <code>*.example.com</code> would cover <code>app.example.com</code> and <code>database.example.com</code>.</p>
+
+<h3>Certificate Revocation List (CRL)</h3>
+
+<p>SSL certificates can include information on how to access a certificate revocation list. Clients will download and check this list to make sure the certificate has not been revoked. CRLs have largely been replaced by OCSP responders.</p>
+
+<h3>Online Certificate Status Protocol (OCSP)</h3>
+
+<p>The OCSP protocol is a TLS extension; a replacement for CRLs, with the benefits of being more real-time and requiring less bandwidth. The general operation is similar: clients are to query the OCSP responder to check if a certificate has been revoked.</p>
+
+<h4>OCSP Stapling</h4>
+
+<p>The server queries the OCSP responder at regular intervals and then &quot;staples&quot; the response to the handshake process when a client connects. This method reduces the performance impact, alleviates privacy concerns, and ensures that clients receive up-to-date revocation information without requiring separate OCSP queries.</p>
+
+<h2>Projects</h2>
+
+<h3>@ <a href="https://docs.docker.com/engine/swarm/configs/" title="docs.docker.com/swarm/configs">Docker/Nginx</a></h3>
 
 <ul>
 <li>Create: <a href="REF.TLS.openssl.sh"><code>REF.TLS.openssl.sh</code></a></li>
@@ -320,6 +486,10 @@ certmagic.HTTPS([]string{&quot;example.com&quot;}, mux)
 </ul></li>
 </ul>
 
+<h3><a href="https://letsencrypt.org/getting-started/" title="letsencrypt.org">Let's Encrypt</a> : ACME protocol : <a href="https://letsencrypt.org/docs/client-options/#clients-go">Client implementations (Golang)</a></h3>
+
+<p>The &quot;Let’s Encrypt&quot; organization is a CA. In order to get a certificate for your website’s domain from them, you have to demonstrate control over the domain. This is accomplished using the <a href="https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment">ACME protocol</a>.</p>
+
 <h3><a href="https://zerossl.com/pricing/">ZeroSSL Pricing</a></h3>
 
 <p><strong>No EV</strong> (Extended Validation) <strong>certificates</strong>.</p>
@@ -340,76 +510,6 @@ certmagic.HTTPS([]string{&quot;example.com&quot;}, mux)
     REST API Access
     90-Day ACME Certs   - unlimited
 </code></pre>
-
-<h3><a href="https://letsencrypt.org/getting-started/" title="letsencrypt.org">Let's Encrypt</a> : ACME protocol : <a href="https://letsencrypt.org/docs/client-options/#clients-go">Client implementations (Golang)</a></h3>
-
-<p>The &quot;Let’s Encrypt&quot; organization is a CA. In order to get a certificate for your website’s domain from them, you have to demonstrate control over the domain. This is accomplished using the <a href="https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment">ACME protocol</a>.</p>
-
-<h2>Glossary</h2>
-
-<h3>Transport Layer Security (TLS)</h3>
-
-<blockquote>
-<p>Transport Layer Security is the newer security protocol that <strong><em>replaced Secure Sockets Layer (SSL)</em></strong>. Though the SSL protocol is obsolete, and has been so for about a quarter century, the term &quot;SSL&quot; stubbornly remains with us.</p>
-</blockquote>
-
-<h3>Certificate</h3>
-
-<p>Server certificates are presented by a web server whenever a new TLS connection is requested. They contain the name of the host the certificate is issued to (which should match the server you’re attempting to connect to) and are signed by a Certificate Authority (CA) to establish trust.</p>
-
-<h4>Full-Chain Certificate</h4>
-
-<p>A &quot;full chain&quot; certificate refers to a certificate that includes not only the end-entity (server) certificate for a specific domain but also the intermediate and root certificates in the certification chain. This chain of certificates helps establish trust from the end-entity certificate back to a trusted root certificate authority (CA). Many CAs provide this &quot;bundle&quot; or &quot;full chain&quot; option when delivering certificates.</p>
-
-<p>Components of a full-chain certificate:</p>
-
-<ul>
-<li><p><strong>End-entity certificate</strong>: This is the certificate that corresponds to the specific domain for which the certificate is issued. It contains the public key for the server and is signed by an intermediate CA.</p></li>
-
-<li><p><strong>Intermediate certificate(s)</strong>: Intermediate certificates sit between the end-entity certificate and the root certificate in the certificate chain. They are used to enhance security by creating a hierarchy of trust. The intermediate certificate is signed by a root CA and, in turn, signs the end-entity certificate.</p></li>
-
-<li><p><strong>Root certificate</strong>: The root certificate is the top-level certificate in the hierarchy and is self-signed. It is the ultimate authority that establishes trust in the entire chain. Web browsers and other client applications come pre-installed with a set of trusted root certificates.</p></li>
-</ul>
-
-<p>When a client, such as a web browser, connects to a server secured with SSL/TLS, it checks the certificate chain to ensure that the end-entity (server) certificate is valid and signed by a trusted intermediate certificate, which, in turn, is signed by a trusted root certificate. That is, the client must have its own set of trusted-CA certificates, or use that of the system (OS) in which it is running, against which to validate the server's certificate.</p>
-
-<p>Including the full chain when configuring SSL/TLS on a server is important to ensure that clients can validate the server's certificate properly. Without the full chain, clients may not be able to establish the chain of trust, and the connection could be deemed untrusted.</p>
-
-<h3>Certificate Authority (CA)</h3>
-
-<p>Certificate authorities verify details about a domain owner’s request for SSL certificates, then – if everything checks out – issue and sign server certificates. Browsers and operating systems maintain a list of trusted certificate authorities. If a server certificate is signed by one of these trusted CAs, it will also be trusted.</p>
-
-<h3>Domain Validation (DV)</h3>
-
-<p>A domain validated certificate will be issued to somebody who has proven they control the domain name requested for the certificate. This proof often takes the form of serving a unique token from your web server or DNS records, which the CA will check for before issuing the certificate.</p>
-
-<h3>Organization Validation (OV)</h3>
-
-<p>An organization validated certificate means that the certificate authority also verified the company name and address in public databases. This information is put into the certificate, and is typically displayed only when the user clicks the green padlock icon to investigate further.</p>
-
-<h3>Extended Validation (EV)</h3>
-
-<p>Extended validation is <strong><em>more thorough than domain or organization validation</em></strong>. EV certificates are issued after checking not only domain ownership, but also verifying the existence and location of the legal entity requesting the certificate, and that said entity controls the domain being verified.</p>
-
-<p>Unlike DV and OV certificates, EV cannot be issued as a wildcard certificate.</p>
-
-<p>EV certificate also <strong><em>gets special treatment in web browsers</em></strong>. Whereas browsers typically denote a DV certificate with a <strong><em>green-padlock icon</em></strong>, EV certificates also show a larger green bar containing the name of the organization it was issued to. This is intended to reduce phishing attacks, though some studies show that users tend not to notice when this green bar is missing.</p>
-
-<h3>SAN (Subject Alternative Name)</h3>
-
-<p>The new <strong>CN</strong> (Common Name) AKA Domain Name; a field of a certificate that indicates for which domain(s) the certificate is valid. A single certificate may contain many SANs and be valid for many different domain names.</p>
-
-<h3>Wildcard Certificate</h3>
-
-<p>The asterisk character (<code>*</code>) is the wildcard, and can be substituted with any valid hostname. Instead of being issued for a specific Fully Qualified Domain Name (FQDN), such as <code>app.example.com</code>, wildcard certs are valid for a whole range of subdomain names. So a cert issued to <code>*.example.com</code> would cover <code>app.example.com</code> and <code>database.example.com</code>.</p>
-
-<h3>Certificate Revocation List (CRL)</h3>
-
-<p>SSL certificates can include information on how to access a certificate revocation list. Clients will download and check this list to make sure the certificate has not been revoked. CRLs have largely been replaced by OCSP responders.</p>
-
-<h3>Online Certificate Status Protocol (OCSP)</h3>
-
-<p>The OCSP protocol is a replacement for CRLs, with the benefits of being more real-time and requiring less bandwidth. The general operation is similar: clients are to query the OCSP responder to check if a certificate has been revoked.</p>
 
 <h3>&nbsp;</h3>
  

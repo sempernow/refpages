@@ -67,14 +67,20 @@ kubeadm token create --print-join-command
 ## 3. Join a new control plane node:
 $JOIN_COMMAND_FROM_STEP2 --control-plane --certificate-key $KEY_FROM_STEP1.
 
+# TLS PKI
 # Generate a new control-plane certificate key. 
 # Use at kubeadm init|join --certificate-key $key or 
 key=$(sudo kubeadm certs certificate-key)
+# Check expiration
+kubeadm certs check-expiration
+# Fix client-cert rotation failure
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/troubleshooting-kubeadm/#kubelet-client-cert
 
 # Generating kubeconfig files, ~/.kube/config, for ADDITIONAL USERS
 # https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/#kubeconfig-additional-users
 # https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-kubeconfig/
-kubeadm kubeconfig user --client-name=foo --config=example.yaml
-# Get settings of target cluster
+# Generate a kubeconfig file with credentials for user $user of group $group that is valid for 1 day:
+kubeadm kubeconfig user --config $kubeconfig_file --org $group --client-name $user --validity-period 24h
+# Get settings of existing cluster
 kubectl get cm kubeadm-config -n kube-system -o=jsonpath="{.data.ClusterConfiguration}"
 

@@ -308,12 +308,11 @@ exit
         # Download binary directly into its install location
             wget -O $destination $url
         # Download server response body to FILE @ $PWD; report meta @ STDERR
-            wget $url 
+            wget [-nv] $url # Silently: -nv 
             # IF compressed ...
-                $ file 'index.html'  # get file info
-                index.html: gzip compressed data, from Unix 
-                $ mv 'index.html' 'index.html.gz'  # move (rename) to 'index.html.gz'
-                $ gunzip 'index.html.gz'           # uncompress to 'index.html'
+                file index.html  # get file info : "index.html: gzip compressed data, from Unix"
+                mv index.html index.html.gz  # move (rename) to 'index.html.gz'
+                gunzip index.html.gz         # uncompress to 'index.html'
 
         # Download a Web page +ALL REQUISITES (css, js, images), posing as specified User-Agent. 
         # NOPE -- FAILS -- NEARLY NEVER WORKS
@@ -457,6 +456,10 @@ exit
         nmap -p 1-65535 -T4 -A -v HOST  # Intense scan, all TCP ports
         # Slow comprehensive scan
         nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default or (discovery and safe)" HOST 
+
+        # Get CIDR in which current machine exists
+            dev=eth0 # eth0 or ens192 
+            cidr=$(ip -4 -brief addr show $dev |awk '{print $3}')
 
     nm-tool  # RedHat; NetworkManager Tool; reports status
              # ... Type, driver, speed, IP, MAC, Gateway IP, DNS, Subnet Netmask
@@ -1042,6 +1045,13 @@ exit
 
     sudo firewall-cmd --reload              # Update the active rules (sans systemctl)
 
+    # Show/Verify settings 
+        zone=public
+        svc=halb
+        sudo firewall-cmd --zone=$zone --list-all
+        sudo firewall-cmd --direct --get-all-rules
+        sudo firewall-cmd --info-service=$svc
+
     # Add/Remove rule
         # Add port (bare)
         sudo firewall-cmd --permanent --add-port=10255/tcp 
@@ -1051,24 +1061,27 @@ exit
         sudo firewall-cmd --permanent --zone=public --add-service=http
         sudo firewall-cmd --permanent --zone=public --add-service=https
     # Create (define) service (having ports) 
-        sudo firewall-cmd --permanent --new-service=istiod
-        sudo firewall-cmd --permanent --service=istiod --set-description="Istio control plane (istiod)"
+        svc=istiod
+        sudo firewall-cmd --permanent --new-service=$svc
+        sudo firewall-cmd --permanent --service=$svc --set-description="Istio control plane ($svc)"
         # Add port(s) to service 
-        sudo firewall-cmd --permanent --service=istiod --add-port=15010/tcp 
-        sudo firewall-cmd --permanent --service=istiod --add-port=15014/tcp 
+        sudo firewall-cmd --permanent --service=$svc --add-port=15010/tcp 
+        sudo firewall-cmd --permanent --service=$svc --add-port=15014/tcp 
         #...
     # Add/Remove service to currently-active zone
-        sudo firewall-cmd --permanent --add-service=istiod
-        sudo firewall-cmd --permanent --remove-service=istiod
+        sudo firewall-cmd --permanent --add-service=$svc
+        sudo firewall-cmd --permanent --remove-service=$svc
         #... same, but declare its zone 
         sudo firewall-cmd --permanent --zone=$zone_name ...
 
-    # Add/Remove rich rule to a zone (cannot be scoped to service)
+    # Add/Remove RICH RULE to a zone (cannot be scoped to service)
         ## See `man firewalld.richlanguage` for rule syntax
         ## Allow traffic to/from VIP address by IPv4
         at="--permanent --zone=$zone"
         do='add' # add || remove
         sudo firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
+
+    # Add/Remove DIRECT RULE (cannot be scoped to service)
 
     # Service descriptions:
         ## Custom services

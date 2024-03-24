@@ -3,6 +3,7 @@
 #  Kubernetes tools : kubectl
 # -----------------------------------------------------------------------------
 
+
 # jsonpath : https://kubernetes.io/docs/reference/kubectl/jsonpath/
 kubectl get node -o jsonpath={.items[*].spec.podCIDRs}
 # ["10.240.0.0/24"] ["10.240.1.0/24"] ["10.240.2.0/24"] ["10.240.3.0/24"]
@@ -26,6 +27,12 @@ complete -o default -F __start_kubectl k
 
 # Usage info per command
 kubectl $command -h |less
+
+## Explain : Spec (YAML) node (sub)field
+kubectl explain $_OBJECT.$_FIELD.$_SUB_FIELD
+kubectl explain pod.metadata
+kubectl explain pod.spec.containers.volumeMounts
+kubectl explain --recursive deployment.spec.strategy
 
 # Pull file(s) from container to local path 
 ctnr=pname-7bb6f649c6-stl26
@@ -68,12 +75,6 @@ kubectl describe pods $podName
 ## Get pod name (POD_NAME) : E.g., 'kubernetes-dashboard-8665bfb777-vx5z2'
 export POD_NAME=$(kubectl get pods -n default -l "app.kubernetes.io/name=kubernetes-dashboard,app.kubernetes.io/instance=kubernetes-dashboard" -o jsonpath="{.items[0].metadata.name}")
 
-## Explain : Spec (YAML) node (sub)field
-kubectl explain $_OBJECT.$_FIELD.$_SUB_FIELD
-kubectl explain pod.metadata
-kubectl explain pod.spec.containers.volumeMounts
-kubectl explain --recursive deployment.spec.strategy
-
 ## Connect : launch shell into container 
 kubectl exec -it $pod -- sh # /bin/bash instead of sh, if available
 ## Examining a container, if ps not available, use Linux /proc FS
@@ -110,17 +111,31 @@ kubectl create -f namespace-01.yaml
 kubectl api-resources --namespaced=true # Those that are namespaced (true)
 ##... cluster-wide resources are NOT namespaced; nodes, PersistentVolumes
 
-# Switch between clusters
-kubectl config use-context minikube
-
-## Switch between namespaces 
-kubectl config set-context --current --namespace=$ns
-kubens $ns # OTHER UTILITY : https://github.com/ahmetb/kubectx
-## Validate it
-kubectl config view --minify |grep namespace:
-
 # Create a Deployment (imperatively)
 kubectl create deploy $name --image nginx --replicas 3
+# Scale a Deployment
+kubectl scale deploy $dname  --replicas=9
+# Label : Add
+kubectl label deploy $dname k1=v1
+# Label : Modify
+kubectl label deploy $dname k1=vZ --overwrite=true
+# Label : Delete
+kubectl label deploy $dname k1-
+
+# Create a service
+kubectl expose deploy $dname --port=80
+kubectl describe svc $dname # Look for endpoints
+kubectl get svc $dname -o=yaml
+kubectl get endpoints
+
+# Execute a shell into a container
+kubectl exec -it $pod -c $ctnr -- cat /etc/resolv.conf 
+
+# Port forwarding : Cluster network to Host network
+# Expose a service to node (host) network : Port forward a service (@ loopback interface)
+kubectl port-forward svc $svc $svc_port:$ctnr_port 
+# Listen on all interfaces : make available to another VM
+kubectl port-forward svc $svc $svc_port:$ctnr_port --address='0.0.0.0'
 
 # Create an App declaratively: Apply manifest (YAML)
 manifest='app.yaml' # May declare many K8s objects; concat documents.
@@ -172,3 +187,104 @@ kubectl drain $node --ignore-daemonsets --force
 
 # API Server info @ minikube
 kubectl -n kube-system describe pod kube-apiserver-minikube 
+
+# API Access
+## Role : scoped to namespace 
+### Allow get, watch, and list on pods
+name='a-role-name'
+kubectl create role $name --verb=get --verb=list --verb=watch --resource=pods
+### Allow get on Pods of declared names
+kubectl create role $name --verb=get --resource=pods --resource-name=$pod_name_1 --resource-name=$pod_name_2
+### apiGroups
+kubectl create role $name --verb=get,list,watch --resource=replicasets.apps 
+### Subresource 
+kubectl create role $name --verb=get,list,watch --resource=pods,pods/status
+## ClusterRole : scoped to cluster
+### Allow get on Pods of declared names
+kubectl create clusterrole $name --verb=get --resource=pods --resource-name=$pod_name_1 --resource-name=$pod_name_2
+### nonResourceURL 
+kubectl create clusterrole $name --verb=get --non-resource-url=/logs/*
+### aggregationRule
+kubectl create clusterrole $name --aggregation-rule="rbac.example.com/aggregate-to-monitoring=true"
+## RoleBinding : Bind EITHER role or clusterrole definition (either are bound/scoped to namespace, not cluster)
+kubectl create rolebinding $name --clusterrole=$clusterrole_name --user=$user --namespace=$ns
+kubectl create rolebinding $name --role=$role_name --serviceaccount=acme:myapp --namespace=$ns
+## ClusterRoleBinding 
+kubectl create clusterrolebinding $name --clusterrole=$cluserrole_name --user=$user
+
+# kubeconfig : Configure access to multiple clusters, users, and contexts 
+## https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
+## SET clusters 
+kubectl config --kubeconfig=$kubeconfig_file set-cluster $cluster_name_1 \
+    --server=https://192.168.0.100:8443 \
+    --certificate-authority=$ca_file
+kubectl config --kubeconfig=$kubeconfig_file set-cluster $cluster_name_2 \
+    --server=https://10.0.111.123:6443 \
+    --insecure-skip-tls-verify 
+## UNSET cluster 
+kubectl --kubeconfig=$kubeconfig_file config unset clusters.$cluster_name
+## SET users
+kubectl config --kubeconfig=$kubeconfig_file set-credentials $user_name_1 \
+    --client-certificate=$client_cert \
+    --client-key=$client_key
+kubectl config --kubeconfig=$kubeconfig_file set-credentials $user_name_2 \
+    --username=$creds_username \
+    --password=$creds_password # Instead of user creds here, use client-go credential plugin
+    # https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
+## UNSET user
+kubectl --kubeconfig=$kubeconfig_file config unset users.$user_name 
+## SET contexts
+kubectl config --kubeconfig=$kubeconfig_file set-context $context_1 \
+    --cluster=$cluster_name_1 \
+    --namespace=$ns_1 \
+    --user=$user_name_1
+kubectl config --kubeconfig=$kubeconfig_file set-context $context_2 \
+    --cluster=development \
+    --namespace=$ns_2 \
+    --user=$user_name_1
+kubectl config --kubeconfig=$kubeconfig_file set-context $context_3 \
+    --cluster=$cluster_name_2 \
+    --namespace=$ns_3 \
+    --user=$user_name_2
+## UNSET context
+kubectl --kubeconfig=$kubeconfig_file config unset contexts.$context_name_1
+
+# Switch between clusters
+kubectl config use-context $cluster_name
+
+## Switch between namespaces 
+kubectl config set-context --current --namespace=$ns
+#kubens $ns # OTHER UTILITY : https://github.com/ahmetb/kubectx
+## Validate it
+kubectl config view --minify |grep namespace:
+
+# Parse a TLS cert : 
+☩ cat ~/.kube/config |yq .users[].user.client-certificate-data |base64 -d |openssl x509 -text -noout
+# Certificate:
+#     Data:
+#         Version: 3 (0x2)
+#         Serial Number: 2004000483929044595 (0x1bcfa3d28e4d3673)
+#         Signature Algorithm: sha256WithRSAEncryption
+#         Issuer: CN = kubernetes
+#         Validity
+#             Not Before: Jan  6 22:45:28 2024 GMT
+#             Not After : Jan  5 22:50:29 2025 GMT
+#         Subject: O = system:masters, CN = kubernetes-admin
+#         Subject Public Key Info:
+#             Public Key Algorithm: rsaEncryption
+#                 Public-Key: (2048 bit)
+#                 Modulus:
+#                     REDACTED
+#                 Exponent: 65537 (0x10001)
+#         X509v3 extensions:
+#             X509v3 Key Usage: critical
+#                 Digital Signature, Key Encipherment
+#             X509v3 Extended Key Usage:
+#                 TLS Web Client Authentication
+#             X509v3 Basic Constraints: critical
+#                 CA:FALSE
+#             X509v3 Authority Key Identifier:
+#                 FD:4F:AD:29:59:BF:4E:8D:5A:94:BD:30:96:2C:22:5A:03:3C:02:94
+#     Signature Algorithm: sha256WithRSAEncryption
+#     Signature Value:
+#         REDACTED
