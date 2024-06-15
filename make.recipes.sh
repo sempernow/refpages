@@ -53,23 +53,18 @@ normalize(){
 }
 
 index() {
-    REQUIREs md2html.exe || exit
-    
     # Purge obsolete MD/HTML, and then refresh HTML
-    rm index.md *.html 2>/dev/null
+    rm README.md index.md *.html 2>/dev/null
     pushd ./REFs
-    rm index.md *.html 2>/dev/null
-    # find . -type f -iname '*.md' -exec md2html.exe "{}" \;
-
-    # Strip namespace used for the distributed source reference files
-    fname 'REF.'
-    pushd CKAD
-    fname 'REF.'
-    popd
-    pushd CKA
-    fname 'REF.'
-    popd
-
+        rm index.md *.html 2>/dev/null
+        # Strip namespace used for the distributed source reference files
+        fname 'REF.'
+        pushd CKAD
+            fname 'REF.'
+        popd
+        pushd CKA
+            fname 'REF.'
+        popd
     popd
 
     # Build index of links
@@ -79,10 +74,7 @@ index() {
         -printf "## [%f](%p)\n" >>index.md
     find ./REFs/CKA -maxdepth 1 -type f -iname 'Kubernetes.CKA.md' \
         -printf "## [%f](%p)\n" >>index.md
-
-    # Sort links alphabetically and build README.md .
     sort -f index.md >>README.md
-    md2html.exe README.md
 
     # Cleanup
     rm index.md 2>/dev/null
@@ -92,7 +84,7 @@ index() {
 
 perms() {
     find . -type f ! -path './.git/*' -exec chmod 0644 "{}" \+
-    find . -type f  -iname 'make.recipes.sh' -exec chmod 0755 "{}" \+
+    find . -maxdepth 1 -type f  -iname '*.sh' -exec chmod 0755 "{}" \+
 }
 
 "$@"
