@@ -9,8 +9,9 @@ gitpush() {
     REQUIREs gc git gl
     unset newest 
     [[ -f "$_NEWEST" ]] && newest=$(cat $_NEWEST) && echo "=== NEWEST: '$(cat "$_NEWEST")'"
-    gc "$newest" && git push && gl
-    [[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
+    #gc "$newest" && git push && gl
+    echo gc "$newest" #&& git push && gl
+    #[[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
 }
 
 getrefs() {
