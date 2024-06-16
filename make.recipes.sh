@@ -10,7 +10,6 @@ gitpush() {
     unset newest 
     [[ -f "$_NEWEST" ]] && newest=$(cat $_NEWEST) && printf "\n%s\n" "=== NEWEST: '$(cat "$_NEWEST")'"
     gc "$newest" && git push && gl
-    echo gc "$newest" #&& git push && gl
     [[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
 }
 
