@@ -385,13 +385,13 @@ sysctl
         /etc/hostname # Contains static hostname
             echo "$newHostName" |sudo tee /etc/hostname
 
-    # whois : Domain Name info: 
-        whois HOSTNAME  # regsitry ID, registrar, registrar server, update/creation/expiration dates
-
     # host : IP <==> domainname 
         host -t a HOSTNAME|IP     # IP (per authoritative query)
         host -C HOSTNAME|IP       # Nameserver(s); SOA records
         host -d HOSTNAME|IP       # verbose
+
+    # whois : Domain Name info: 
+        whois HOSTNAME  # regsitry ID, registrar, registrar server, update/creation/expiration dates
 
     nslookup 
         nslookup HOSTNAME         # returns IP Address 
@@ -419,13 +419,9 @@ sysctl
         getent ahostsv4 HOSTNAME  # IPv4
 
 # NETWORK UTILITIES
-    hostname [HOSTNAME]  # show or [temporarily] change HOSTNAME
     dnsdomainname        # show LAN domain
     ping -c 1 ROUTER_IP  # CONNECTIVITY TEST to Gateway Router; 1 ping
-    ping -f ROUTER_IP    # flood ping; BANDWIDTH TEST [@ LAN only!]]
-    host HOSTNAME        # DNS info
-    dig HOSTNAME         # DNS info; @SUCCESS: 'status: NOERROR'; @FAIL: 'status: NXDOMAIN'
-    traceroute           # hostname resolution test; routing info [blocked by many routers]
+    ping -f ROUTER_IP    # FLOOD ping; BANDWIDTH TEST [@ LAN only!]]
 
     # SCAN SUBNET for hosts
         netaddr=192.168.28 # Subnet: 192.168.28.0/24
@@ -687,10 +683,12 @@ sysctl
         nslookup -type=soa $domain  # query Start of Authority
         nslookup -port 56 $domain   # query port number
 
-        dig $domain                 # query DNS : yum install bind-utils : apt install dnsutils
+        dig $domain                 # DNS query : yum install bind-utils | apt install dnsutils
+        dig $nsIP $domain           # DNS query using declared (@$nsIP) nameserver
+        dig $nsIP -x $ip$domain     # Reverse DNS query using declared (@$nsIP) nameserver
         
-        # DNS latency due to the nameserver
-        dig @$nameserver_ip $domain |grep time #=> ;; Query time: 249 msec
+        # DNS latency due to declared nameserver
+        dig @$nsIP $domain |grep time #=> ;; Query time: 249 msec
 
     # DHCP release/renew IP Address
         dhclient 
