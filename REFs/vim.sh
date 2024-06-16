@@ -1,13 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # https://learnxinyminutes.com/docs/vim/
 # http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/
 # Windows install: do NOT use choco; its version is incompatible with Cygwin;
 #   Git-for-Windows installs with vim; 
 #   Cygwin requires installing vim pkg per native Cygin's setup 
 exit
-
-# HACKS 
-  if "E137: Viminfo file is not writable:", then delete it per `rm ~/.viminfo`; it regenerates on vim startup; 'E137' error/msg began/persisted after accidentally CTRL-Z out of vim [use ZQ instead].
 
 # MODES
 
@@ -152,6 +149,21 @@ exit
     .                # Repeat last ACTION
     ;                # Repeat last MOVEMENT
     :w !sudo tee %   # Save the current file as root
+    
+    # Prepend one character, '#', to a block of sequential lines  
+    v                # Enter visual mode with cursor at first line
+    j                # Scroll cursor down to last target line
+    '#'              # Type '#' ELSE ': s/^/#', which applies char to first line
+    ESC              # Affect is applied (wait) to the remaining lines
+    
+    # Delete 1st character, '#', from a block of sequential lines 
+    v                # Enter visual mode with cursor at first line
+    j                # Scroll cursor down to last target line
+    : s/^#//          # 
+    ESC              # Affect is applied (wait) to the remaining lines
+
+    # On "E137: Viminfo file is not writable:", 
+    # delete ~/.viminfo, which regenerates on vim startup.
 
 # MACROS 
    
@@ -163,8 +175,6 @@ exit
   /etc/vimrc
   ~/.vimrc 
   # For comment, start line with double-quote, '"'
-  # Does NOT allow '# ...' comments
-
 
 :set OPTION     @ Set any option while in the vim editor.
 :help OPTION    @ Get option info while in the vim editor.
@@ -195,20 +205,21 @@ set showmode                    # show the current mode
 set clipboard=unnamed           # set clipboard to unnamed to access the system clipboard under windows
 syntax on                       # turn syntax highlighting on by default
 
-# Functions : MUST start with Capital letter
-# "!" overwrites pre-existing function of same name.
+# Function Declaration : 
+# - Name must start with uppercase letter
+# - "function! Aname()" overwrites any pre-existing Aname() function.
 
-function! UseTabs()
+function! Tabs()
   set tabstop=4     " Size of a hard tabstop (ts).
   set shiftwidth=4  " Size of an indentation (sw).
   set noexpandtab   " Always uses tabs instead of space characters (noet).
   set autoindent    " Copy indent from current line when starting a new line (ai).
 endfunction
 
-function! UseSpaces()
+function! Spaces(n = 4)           " N whitespaces (default: 4)
   set expandtab                   " Always insert spaces on TAB keypress
-  set shiftwidth=4 smarttab       " Insert N spaces per TAB keypress if at start of line
-  set tabstop=6 softtabstop=0     " TAB width is N spaces (Distinguish from shiftwidth)
+  execute 'set shiftwidth=' . a:n . ' smarttab'
+  set tabstop=6 softtabstop=0     " TAB width differs to distinguish from whitespace indent
   set autoindent                  " indent line per preceeding line
 endfunction
 
@@ -220,4 +231,4 @@ function! Yaml()
 endfunction
 
 # Function Usage:
-:call UseTabs()
+:call Spaces()
