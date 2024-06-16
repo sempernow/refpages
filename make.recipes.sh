@@ -8,10 +8,10 @@ _NEWEST=/tmp/REFs.newest.file
 gitpush() {
     REQUIREs gc git gl
     unset newest 
-    [[ -f "$_NEWEST" ]] && newest=$(cat $_NEWEST) && echo "=== NEWEST: '$(cat "$_NEWEST")'"
-    #gc "$newest" && git push && gl
+    [[ -f "$_NEWEST" ]] && newest=$(cat $_NEWEST) && printf "\n%s\n" "=== NEWEST: '$(cat "$_NEWEST")'"
+    gc "$newest" && git push && gl
     echo gc "$newest" #&& git push && gl
-    #[[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
+    [[ -f "$_NEWEST" ]] && rm -f "$_NEWEST"
 }
 
 getrefs() {
@@ -40,7 +40,7 @@ getrefs() {
     # Capture the newest of all REFs/* (in UTC Zulu) before downstream mods (normalize and such) update file mtimes and otherwise ruin the record.
     printf "$(find REFs -type f -printf '%TY-%Tm-%TdT%TH:%TM %P @ ' -exec env TZ=UTC date -r {} +'%Y-%m-%dT%H:%MZ' \; |sort -r |head -n 1 |cut -d' ' -f2-)" \
         |tee $_NEWEST 
-    [[ -f "$_NEWEST" ]] && echo "=== NEWEST: '$(cat "$_NEWEST")'"
+    [[ -f "$_NEWEST" ]] && printf "\n%s\n" "=== NEWEST: '$(cat "$_NEWEST")'"
     
     return 0
 }

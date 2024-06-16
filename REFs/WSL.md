@@ -5,9 +5,10 @@
 ```powershell
 PS> wsl --install
 ```
-- This BREAKS Docker Desktop, but we don't need that anyway. 
-  Rather install Docker (server/client) 
-  or whatever other container handler directly onto WSL2 distro.
+- This BREAKS Docker Desktop, but that app is not needed at WSL2. 
+  Rather install Docker (server/client),
+  or whatever other container handler you prefer,
+directly onto the WSL2 distro.
 
 Install a distro either from Microsoft Store, 
 or direcly from PS or CMD command line using `wsl` utility:
