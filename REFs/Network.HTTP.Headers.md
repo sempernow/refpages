@@ -28,7 +28,7 @@
     User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0
     ```
 
-## [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#cors) | [Docs/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) | `HTTP.CORS+Fetch` ([MD](HTTP.CORS+Fetch.html "@ browser"))   
+## [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#cors) | [Docs/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) | `Network.HTTP.CORS+Fetch` ([MD](Network.HTTP.CORS+Fetch.html "@ browser"))   
 
 - [`Access-Control-Allow-Origin`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)  &mdash; Sent by the _server of the requested resource_.  See `PRJ.HTTP.CORS` ([MD](PRJ.HTTP.CORS.html "@ browser"))   
 - [`Origin`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin) &mdash; Indicates the server _requesting the resource_; sent with CORS requests and `POST` requests. It is similar to the [`Referer`](#referer) header, but, unlike this header, it doesn't disclose the whole path.

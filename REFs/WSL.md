@@ -5,9 +5,49 @@
 ```powershell
 PS> wsl --install
 ```
-- This BREAKS Docker Desktop
+- This BREAKS Docker Desktop, but we don't need that anyway. 
+  Rather install Docker (server/client) 
+  or whatever other container handler directly onto WSL2 distro.
+
+Install a distro either from Microsoft Store, 
+or direcly from PS or CMD command line using `wsl` utility:
+
+```powershell
+# List all distros available for installation
+wsl --list --online 
+# Install a distro
+wsl --install openSUSE-Leap-15.5
+# List installed distros
+wsl --list --verbose
+# Set a default distro
+wsl --set-default Ubuntu-22.04
+# Launch default distro
+wsl
+```
+
+### Configure a WSL2 distro 
+
+1. Edit `/etc/wsl.conf` to configure mount points as `/<DRIVE>` instead of `/mnt/<DRIVE>` .  
+    ```plaintext
+    [boot]
+    systemd=true
+
+    [automount]
+    root = /
+    options = "metadata,umask=22,fmask=11"
+    ```
+    - To take effect, must close WSL terminal, then run `wsl --shutdown` from CMD or PS. Then okay.
+    - Verify using `df -hT` that mount points at new WSL terminal are, e.g., `/c` instead of `/mnt/c`
+        - If that doesn't work, use the `/etc/fstab` method
+1. Edit `/etc/passwd` to change user's home dir to our common `$HOME`, e.g., `/c/HOME` 
+    - Requires effects of prior step, which require WSL restart, with "`wsl --shutdown`" being the first step.
+    - Also mod `root` user's home dir entry at `/etc/passwd`, setting it to that common `$HOME`, 
+      so "`sudo su`" invokes the same bash config scripts.
+
 
 ## Configuration | [Advanced Settings](https://learn.microsoft.com/en-us/windows/wsl/wsl-config) 
+
+UPDATE: No longer necessary. Configure only `/etc/wsl.conf` . See below.
 
 - `/etc/wsl.conf` (per distro)
 - `~/.wslconfig` (global; WSL 2 only)
@@ -27,7 +67,8 @@ PS> wsl --install
     and unchangeable even by "`sudo chown ...`".
     and user may not even have read access on some files.
 
->WSL mounts some `drvfs` as `type 9p`, which indicates a Windows server using 9P protocol. This is seen at output of `mount` command.
+>WSL mounts some `drvfs` as `type 9p`, which indicates a Windows server using 9P protocol. 
+>This is seen at output of `mount` command.
 
 ## WSL 2
 
@@ -54,7 +95,7 @@ See:
 ```bash
 $ cat /etc/resolv.conf
 ```
-- `nameserver 172.29.144.1`
+- E.g., `nameserver 172.29.144.1`
 
 LAN IP v. WSL2 Host IP
 
@@ -127,28 +168,14 @@ export DISPLAY=$(grep nameserver /etc/resolv.conf |awk '{print $2}'):0.0
 wsl.exe --unregister DISTRO_NAME
 ```
 
-## TL;DR
 
-__What__ to config anew &hellip;
 
-1. Reset (auto)mount points from, e.g., `/mnt/c` to `/c` .
-1. Change user's home dir location to that of our universal, e.g., `/c/HOME`
-1. Set that universal home dir for `root` user too.
+## `/etc/fstab` Mod(s)
 
-__How__ to config anew &hellip;
+This may not be necessary, depending on Windows 10/11 update status.
 
-```bash
-sudo su  # ... Do all below as root ...
+Want mount points `/<DRIVE>` instead of `/mnt/<DRIVE>`
 
-vim /etc/wsl.conf           # 1. Create/Edit/Add ...
-    [automount]
-    root = /
-    options = "metadata,umask=22,fmask=11"
-# ... save (ZZ)
-
-```
-
-UPDATE:
 
 Persistently mount the desired `HOME` 
 to `/home/$USER` per `/etc/fstab` entry.

@@ -1004,6 +1004,11 @@
 			"☧"[0]            // 226, 0xe2, "â", U+00E2; most Unicode/UTF-8 characters EXCEED 1 byte 
 			rune('☧')         // 9767, U+2627
 
+			fmt.Printf("%x\n", rune('·')) // b7   : \u00b7
+			fmt.Printf("%x\n", rune('•')) // 2022 : \u2022
+			fmt.Printf("%x\n", rune('▸')) // 25b8 : \u25b8
+
+
 			"A"[0]            // 65, 0x41, U+0041, 'A'; ACII subset of UTF-8 are all 1 byte/char
 			'\u0041'          // 65       int32 (rune) 
 			"\u0041"          // A        string 
