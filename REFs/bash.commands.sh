@@ -1641,7 +1641,7 @@ exit
             sed '/^[[:space:]]*$/d' FILE 
 
         # Remove non-word (neither letter, digit, nor underscore) characters
-            sed 's/\W//g'  FILE
+            sed 's/\W//g' FILE
 
         # Remove ANSI color codes and (some?) control characters
             sed -r 's/\x1B\[([0-9]{1,3}(;[0-9]{1,2};?)?)?[mGK]//g' FILE
@@ -1649,16 +1649,16 @@ exit
             sed -r 's/[[:cntrl:]]\[[0-9]{1,3}m//g' FILE
 
         # Remove control characters 
-            sed -e "s/\x1b\[.\{1,5\}m//g"
+            sed -e "s/\x1b\[.\{1,5\}m//g" FILE
                 
         # Remove SUBSTR (ALL instances)  per DELIMITERs L and R (all content btwn the two)  
             sed -e 's/L.*R//' FILE > RESULT  # I.e., per "wildcard" with delimiters
 
         # OTHER Delimiters okay; here use '#' instead of '/', so paths can be processed
-            sed 's#/foo/bar#/alpha/bravo#g'
+            sed 's#/foo/bar#/alpha/bravo#g' FILE
 
         # HANDLE WHITESPACE; 'Fo BaR' => 'fbar'
-            sed s/foo[[:space:]]bar/fbar/Ig  
+            sed s/foo[[:space:]]bar/fbar/Ig FILE 
         
         # STRIP PREPENDING `./` from PATH(s)
             find . ... |sed 's/\.\///g' # `./foo bar/baz` => `foo bar/baz`

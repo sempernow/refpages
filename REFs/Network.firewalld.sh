@@ -7,81 +7,94 @@ exit
     #               The nf_tables API provides backward compatibility; scripts of iptables commands still work on RHEL. 
     #               For new firewall scripts, Red Hat recommends using nftables
 
-    # firewall-cmd is the CLI for firewalld.service : systemd service and interface wrapping iptables/nftables 
-    systemctl status firewalld.service 
-    
-    sudo firewall-cmd ... # CLI for firewalld
-    sudo firewall-cmd --list-all 
-    sudo firewall-cmd --list-ports          # Lists ONLY those NOT of a service
-    sudo firewall-cmd --list-services       # ACTIVE services of CURRENT zone
-    sudo firewall-cmd --list-services --zone=$name # ACTIVE services of zone $name
-    sudo firewall-cmd --get-services        # All services (defined/available)
-    sudo firewall-cmd --list-interfaces
-    sudo firewall-cmd --list-rich-rules
-    sudo firewall-cmd --get-zones
-    sudo firewall-cmd --get-default-zone    # Get DEFAULT zone
-    sudo firewall-cmd --set-default-zone    # Set DEFAULT zone
-    sudo firewall-cmd --get-active-zone     # Get ACTIVE zone and its affected interface(s)
-    sudo firewall-cmd --get-zone-of-interface=$device    # Get zone bound to $device (e.g., device=ens192)
-
-    sudo firewall-cmd --info-zone=$name     # Get zone INFO
-    sudo firewall-cmd --info-service=$name  # Get service INFO; incl. allowed port(s)/proto(s)
-    sudo firewall-cmd --info-policy=$name   # Get policy INFO
-
-    sudo firewall-cmd --reload              # Update the active rules (sans systemctl)
-
-    # Show/Verify settings 
+    # firewall-cmd is the CLI for firewalld.service,
+    # which is a systemd service and interface wrapping iptables/nftables 
+        systemctl status firewalld.service 
+ 
+    # Show/Verify settings (fully) of a zone
         zone=public
         svc=halb
         sudo firewall-cmd --zone=$zone --list-all
         sudo firewall-cmd --direct --get-all-rules
         sudo firewall-cmd --info-service=$svc
 
-    # Add/Remove rule
-        # Add port (bare)
-        sudo firewall-cmd --permanent --add-port=10255/tcp 
-        # Remove same 
-        sudo firewall-cmd --permanent --remove-port=10255/tcp 
-        # Add service to zone 
-        sudo firewall-cmd --permanent --zone=public --add-service=http
-        sudo firewall-cmd --permanent --zone=public --add-service=https
-    # Create (define) service (having ports) 
-        svc=istiod
-        sudo firewall-cmd --permanent --new-service=$svc
-        sudo firewall-cmd --permanent --service=$svc --set-description="Istio control plane"
-        # Add port(s) to service 
-        sudo firewall-cmd --permanent --service=$svc --add-port=15010/tcp 
-        sudo firewall-cmd --permanent --service=$svc --add-port=15014/tcp 
-        #...
-    # Add/Remove service to currently-active zone
-        sudo firewall-cmd --permanent --add-service=$svc
-        sudo firewall-cmd --permanent --remove-service=$svc
-        #... same, but declare its zone 
-        sudo firewall-cmd --permanent --zone=$zone_name ...
+    # GET
+        # A zone is active if bound to an interface (network device)
+        # Default zone behavior is revealed by: "target: ACCEPT|DROP|REJECT"
+        sudo firewall-cmd --get-zones
+        sudo firewall-cmd --get-default-zone    # Get DEFAULT zone
+        sudo firewall-cmd --get-active-zone     # Get ACTIVE zone and its affected interface(s)
+        sudo firewall-cmd --get-zone-of-interface=$device # Get zone bound to $device (e.g., device=ens192)
 
-    # Sources : default behavior for the zone applies to all traffic lest sources declared
-        # Add source : simple
-        firewall-cmd --zone=$zone --add-source=$ip_or_cidr
-        # Add source : granular
-        firewall-cmd --zone=$zone --add-rich-rule='rule family="ipv4" source address="'$cidr'" service name="'$svc'" accept'
+        sudo firewall-cmd --list-all 
+        sudo firewall-cmd --list-ports          # Lists ONLY those NOT of a service
+        sudo firewall-cmd --list-services       # ACTIVE services of CURRENT zone
+        sudo firewall-cmd --list-services --zone=$name # ACTIVE services of zone $name
+        sudo firewall-cmd --get-services        # All services (defined/available)
+        sudo firewall-cmd --list-interfaces
+        sudo firewall-cmd --list-rich-rules
+        sudo firewall-cmd --direct --get-all-rules
+        sudo firewall-cmd --direct --get-rules  # Only those added using --add-rule 
+        sudo firewall-cmd --info-zone=$name     # Get zone INFO
+        sudo firewall-cmd --info-service=$name  # Get service INFO; incl. allowed port(s)/proto(s)
+        sudo firewall-cmd --info-policy=$name   # Get policy INFO
 
-    # Add/Remove RICH RULE to a zone (cannot be scoped to service)
-        ## See `man firewalld.richlanguage` for rule syntax
-        ## Allow traffic to/from VIP address by IPv4
-        at="--permanent --zone=$zone"
-        do='add' # add || remove
-        sudo firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
+    # SET
+        # Set default zone (don't)
+            sudo firewall-cmd --set-default-zone    
 
-    # Add/Remove DIRECT RULE (cannot be scoped to service)
+        # Add/Remove rule
+            # Add port (bare)
+            sudo firewall-cmd --permanent --add-port=10255/tcp 
+            # Remove same 
+            sudo firewall-cmd --permanent --remove-port=10255/tcp 
+            # Add service to zone 
+            sudo firewall-cmd --permanent --zone=public --add-service=http
+            sudo firewall-cmd --permanent --zone=public --add-service=https
 
-    # Masquerade : a type of NAT : Useful for comms between Pods and services external to cluster 
-        # REF: https://chatgpt.com/share/d0117056-05f9-40d3-a359-13233dd5697f
-        # Add 
-        firewall-cmd --permanent --zone=$zone --add-masquerade
-        # Verify
-        firewall-cmd --zone=$zone --query-masquerade
+        # Create (define) service (having ports) 
+            svc=istiod
+            sudo firewall-cmd --permanent --new-service=$svc
+            sudo firewall-cmd --permanent --service=$svc --set-description="Istio control plane"
+            # Add port(s) to service 
+            sudo firewall-cmd --permanent --service=$svc --add-port=15010/tcp 
+            sudo firewall-cmd --permanent --service=$svc --add-port=15014/tcp 
+            #...
+        # Add/Remove service to currently-active zone
+            sudo firewall-cmd --permanent --add-service=$svc
+            sudo firewall-cmd --permanent --remove-service=$svc
+            #... same, but declare its zone 
+            sudo firewall-cmd --permanent --zone=$zone_name ...
 
-    # Default zone behavior is revealed by target: ACCEPT DROP REJECT
+        # Sources : default behavior for the zone applies to all traffic lest sources declared
+            # Add source : simple
+            firewall-cmd --zone=$zone --add-source=$ip_or_cidr
+            # Add source : granular
+            firewall-cmd --zone=$zone --add-rich-rule='rule family="ipv4" source address="'$cidr'" service name="'$svc'" accept'
+
+        # Add/Remove RICH RULE to a zone (cannot be scoped to service)
+            ## See `man firewalld.richlanguage` for rule syntax
+            ## Allow traffic to/from VIP address by IPv4
+            at="--permanent --zone=$zone"
+            do='add' # add|remove
+            sudo firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
+
+        # Add/Remove DIRECT RULE interface (cannot be scoped to service or zone)
+            at="--permanent"
+            do='add' # add|remove
+            firewall-cmd --direct --$do-rule ipv4 filter IN_public_allow \
+                0 -m tcp -p tcp --dport 777 -j ACCEPT
+
+        # Masquerade : a type of NAT : Useful for comms between Pods and services external to cluster 
+            # REF: https://chatgpt.com/share/d0117056-05f9-40d3-a359-13233dd5697f
+            # Add 
+            firewall-cmd --permanent --zone=$zone --add-masquerade
+            # Verify
+            firewall-cmd --zone=$zone --query-masquerade
+        
+    # UPDATE active rules (without restarting firewalld.service)
+        sudo firewall-cmd --reload              
+
     # Service descriptions:
         ## Custom services
         /etc/firewalld/services/        # *.xml

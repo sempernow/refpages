@@ -28,10 +28,61 @@
 </code></pre>
 
 <ul>
-<li>This BREAKS Docker Desktop</li>
+<li>This BREAKS Docker Desktop, but that app is not needed at WSL2.
+Rather install Docker (server/client),
+or whatever other container handler you prefer,
+directly onto the WSL2 distro.</li>
 </ul>
 
+<p>Install a distro either from Microsoft Store,
+or direcly from PS or CMD command line using <code>wsl</code> utility:</p>
+
+<pre><code class="language-powershell"># List all distros available for installation
+wsl --list --online 
+# Install a distro
+wsl --install openSUSE-Leap-15.5
+# List installed distros
+wsl --list --verbose
+# Set a default distro
+wsl --set-default Ubuntu-22.04
+# Launch default distro
+wsl
+</code></pre>
+
+<h3>Configure a WSL2 distro</h3>
+
+<ol>
+<li><p>Edit <code>/etc/wsl.conf</code> to configure mount points as <code>/&lt;DRIVE&gt;</code> instead of <code>/mnt/&lt;DRIVE&gt;</code> .</p>
+
+<pre><code class="language-plaintext">[boot]
+systemd=true
+
+[automount]
+root = /
+options = &quot;metadata,umask=22,fmask=11&quot;
+</code></pre>
+
+<ul>
+<li>To take effect, must close WSL terminal, then run <code>wsl --shutdown</code> from CMD or PS. Then okay.</li>
+<li>Verify using <code>df -hT</code> that mount points at new WSL terminal are, e.g., <code>/c</code> instead of <code>/mnt/c</code>
+
+<ul>
+<li>If that doesn't work, use the <code>/etc/fstab</code> method</li>
+</ul></li>
+</ul></li>
+
+<li><p>Edit <code>/etc/passwd</code> to change user's home dir to our common <code>$HOME</code>, e.g., <code>/c/HOME</code></p>
+
+<ul>
+<li>Requires effects of prior step, which require WSL restart, with &quot;<code>wsl --shutdown</code>&quot; being the first step.</li>
+<li>Also mod <code>root</code> user's home dir entry at <code>/etc/passwd</code>, setting it to that common <code>$HOME</code>,
+so &quot;<code>sudo su</code>&quot; invokes the same bash config scripts.</li>
+</ul></li>
+</ol>
+
 <h2>Configuration | <a href="https://learn.microsoft.com/en-us/windows/wsl/wsl-config">Advanced Settings</a></h2>
+
+<p>UPDATE: No longer necessary. Configure only <code>/etc/wsl.conf</code> . See below.</p>
 
 <ul>
 <li><code>/etc/wsl.conf</code> (per distro)</li>
@@ -58,7 +109,8 @@ and user may not even have read access on some files.</li>
 </ul>
 
 <blockquote>
-<p>WSL mounts some <code>drvfs</code> as <code>type 9p</code>, which indicates a Windows server using 9P protocol. This is seen at output of <code>mount</code> command.</p>
+<p>WSL mounts some <code>drvfs</code> as <code>type 9p</code>, which indicates a Windows server using 9P protocol.
+This is seen at output of <code>mount</code> command.</p>
 </blockquote>
 
 <h2>WSL 2</h2>
@@ -85,7 +137,7 @@ and user may not even have read access on some files.</li>
 </code></pre>
 
 <ul>
-<li><code>nameserver 172.29.144.1</code></li>
+<li>E.g., <code>nameserver 172.29.144.1</code></li>
 </ul>
 
 <p>LAN IP v. WSL2 Host IP</p>
@@ -178,29 +230,11 @@ set the <code>DISPLAY</code> environment variable to :
 <pre><code class="language-bat">wsl.exe --unregister DISTRO_NAME
 </code></pre>
 
-<h2>TL;DR</h2>
+<h2><code>/etc/fstab</code> Mod(s)</h2>
 
-<p><strong>What</strong> to config anew &hellip;</p>
+<p>This may not be necessary, depending on Windows 10/11 update status.</p>
 
-<ol>
-<li>Reset (auto)mount points from, e.g., <code>/mnt/c</code> to <code>/c</code> .</li>
-<li>Change user's home dir location to that of our universal, e.g., <code>/c/HOME</code></li>
-<li>Set that universal home dir for <code>root</code> user too.</li>
-</ol>
-
-<p><strong>How</strong> to config anew &hellip;</p>
-
-<pre><code class="language-bash">sudo su  # ... Do all below as root ...
-
-vim /etc/wsl.conf           # 1. Create/Edit/Add ...
-    [automount]
-    root = /
-    options = &quot;metadata,umask=22,fmask=11&quot;
-# ... save (ZZ)
-
-</code></pre>
-
-<p>UPDATE:</p>
+<p>Want mount points <code>/&lt;DRIVE&gt;</code> instead of <code>/mnt/&lt;DRIVE&gt;</code></p>
 
 <p>Persistently mount the desired <code>HOME</code>
 to <code>/home/$USER</code> per <code>/etc/fstab</code> entry.</p>
