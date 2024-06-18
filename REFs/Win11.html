@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win11</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Window 11</h1>
+
+<h2>Network Adapters</h2>
+
+<p>@ &quot;Control Panel\Network and Internet\Network Connections&quot;</p>
+
+<ul>
+<li>Properties : UNCHECK (Disable) IPv6
+
+<ul>
+<li>At both the physical and virtual adapters connected to the gateway.</li>
+</ul></li>
+</ul>
+
+<h2>Install</h2>
+
+<p>Windows 11 Install using a local-only account.
+(Bypass requirement to have an online Microsoft account.)
+<a href="https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account">https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account</a></p>
+
+<h2>Method 1</h2>
+
+<ul>
+<li>Follow install menus until &quot;Select Country&quot; page</li>
+<li>Shift + F10, which launches a CMD window.</li>
+<li>Type: OOBE\BYPASSNRO and press Enter,
+which causes computer to reboot.</li>
+<li>Shift + F10 again</li>
+<li>Type: ipconfig /release</li>
+<li>Close CMD window</li>
+<li>Resume install.</li>
+<li>At screen: &quot;Let's connect you to a network&quot;,
+click &quot;I don't have Internet&quot; to continue.</li>
+<li>&quot;Continue with limited setup&quot;</li>
+</ul>
+
+<h2>Method 2</h2>
+
+<ul>
+<li>At Sign in screen, click and add a local-account name.</li>
+<li>Next and add local-account password.</li>
+<li>Click Sign in</li>
+<li>At &quot; &quot;Oops, something went wrong&quot; click Next.</li>
+<li>Repeat local-account creation: (name, password).</li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
