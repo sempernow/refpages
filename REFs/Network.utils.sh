@@ -4,7 +4,7 @@ exit
     # Udev Naming; classical linux
     #  eth0; NIC
      
-    # RHEL/aHOST 7 has Three [3] Naming Schemes
+    # RHEL 7 : Three [3] Naming Schemes 
     
         #  - Udev Naming; eth{X}; classical naming
         #  - Logical Naming; .{VLAN} and :{ALIAS}
@@ -18,7 +18,7 @@ exit
         #  https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/
         #  https://github.com/systemd/systemd/blob/master/src/udev/udev-builtin-net_id.c#L20
 
-        # e.g., eth0 => enp1s0 :: en=Ethernet, p1=PCI-bus1, s0=slot-0
+        # e.g., eth0 => enp1s0 : en=Ethernet, p1=PCI-bus1, s0=slot-0
 
     # -----[ Private IP Address Ranges : RFC-1918 ]--------- 
     # CIDR block      Class    Start         End  
@@ -253,12 +253,12 @@ sysctl
             curl -X POST -H 'Content-Type: application/json' \
                 -d "$json" http://${host}/v1/api
 
-        # PUT (HTTP method) :: CREATE [UPLOAD] FILE (file.txt), IF NOT EXIST @ server-root  
+        # PUT (HTTP method) : CREATE [UPLOAD] FILE (file.txt), IF NOT EXIST @ server-root  
             curl -X PUT -d ' Hello from server @ ${host}' http://${host}/file.txt 
             # Validate action
                 curl http://${host}/file.txt  # 'Hello from server @ ${host}'  
         
-        # DELETE (HTTP method) :: delete FILE (file.txt), @ server-root 
+        # DELETE (HTTP method) : delete FILE (file.txt), @ server-root 
             curl -X DELETE http://${host}/file.txt  
             # Validate action
                 curl http://${host}/file.txt  # 'File not found'  
@@ -385,13 +385,13 @@ sysctl
         /etc/hostname # Contains static hostname
             echo "$newHostName" |sudo tee /etc/hostname
 
+# DNS
     # host : IP <==> domainname 
         host -t a HOSTNAME|IP     # IP (per authoritative query)
         host -C HOSTNAME|IP       # Nameserver(s); SOA records
         host -d HOSTNAME|IP       # verbose
 
-    # whois : Domain Name info: 
-        whois HOSTNAME  # regsitry ID, registrar, registrar server, update/creation/expiration dates
+    whois HOSTNAME # regsitry ID, registrar, registrar server, update/creation/expiration dates
 
     nslookup 
         nslookup HOSTNAME         # returns IP Address 
@@ -418,47 +418,53 @@ sysctl
         getent hosts HOSTNAME     # IPv6
         getent ahostsv4 HOSTNAME  # IPv4
 
-# NETWORK UTILITIES
     dnsdomainname        # show LAN domain
-    ping -c 1 ROUTER_IP  # CONNECTIVITY TEST to Gateway Router; 1 ping
-    ping -f ROUTER_IP    # FLOOD ping; BANDWIDTH TEST [@ LAN only!]]
 
-    # SCAN SUBNET for hosts
-        netaddr=192.168.28 # Subnet: 192.168.28.0/24
-        seq 254 |xargs -I{} ping -ci -w1 ${netaddr}.{} |grep -B1 ttl |grep $netaddr
+    # NetworkManager CLI : See REF.Network.firewalld
+        nmcli device show $device # eth0, ens192, ...
+        #... use to configure NIC
 
-    # TEST CONNECTIVITY 
+# CONNECTIVITY 
+    # PING
+        ping -c 1 ROUTER_IP  # CONNECTIVITY TEST to Gateway Router; 1 ping
+        ping -f ROUTER_IP    # FLOOD ping; BANDWIDTH TEST [@ LAN only!]]
+
+        # SCAN SUBNET for hosts
+            netaddr=192.168.28 # Subnet: 192.168.28.0/24
+            seq 254 |xargs -I{} ping -ci -w1 ${netaddr}.{} |grep -B1 ttl |grep $netaddr
+
         export ip=10.0.101.130
         export port=22
 
-        traceroute -n -T -p $port $ip
+# NETWORKs / SUBNETs
+    traceroute -n -T -p $port $ip
         
-        # My Traceroute : combine traceroute + ping
+    # My Traceroute : combine traceroute + ping
         # https://en.wikipedia.org/wiki/MTR_(software)
         mtr -n -T -c 200 $ip --report # Per TCP (vs default; ICMP)
         #... neither are pre-installed @ `Ubuntu 18.04`
 
-        nc # Netcat : Read/Write data across TCP/UDP connections.
-            # Attempt TCP connection
-            nc $host $port # `nc -u ...` for UDP
-            # SCAN for a specific OPEN PORT by NUMBER quickly
-            nc -zvw 1 $ip_or_domain $port_number 
-            # PORT RANGE is NOT RELIABLE (false negatives are typical)
-            nc -zvw 1 $ip_or_domain $port_range # Don't use, e.g., nc ... 1-1000
-            # SCAN a PORT RANGE quickly and RELIABLY:
-            seq ${pSTART:-1} ${pSTOP:-1000} \
-                |xargs -IX nc -zvw 1 $ip_or_domain X 2>&1 >/dev/null \
-                |grep Connected
+    nc # Netcat : Read/Write data across TCP/UDP connections.
+        # Attempt TCP connection
+        nc $host $port # `nc -u ...` for UDP
+        # SCAN for a specific OPEN PORT by NUMBER quickly
+        nc -zvw 1 $ip_or_domain $port_number 
+        # PORT RANGE is NOT RELIABLE (false negatives are typical)
+        nc -zvw 1 $ip_or_domain $port_range # Don't use, e.g., nc ... 1-1000
+        # SCAN a PORT RANGE quickly and RELIABLY:
+        seq ${pSTART:-1} ${pSTOP:-1000} \
+            |xargs -IX nc -zvw 1 $ip_or_domain X 2>&1 >/dev/null \
+            |grep Connected
 
-            # Get version info of target's OpenSSH server
-            echo 'EXIT' |nc $ip 22 
+        # Get version info of target's OpenSSH server
+        echo 'EXIT' |nc $ip 22 
 
-            # # @ Windows CMD
-            # netstat -aon | findstr :%_port%
+        # # @ Windows CMD
+        # netstat -aon | findstr :%_port%
 
-            ####################
-            # See MORE nc below
-            ####################
+        ####################
+        # See MORE nc below
+        ####################
 
     nmap # Network Mapper : Security Scanner : Port Scanner  
         # Advanced tool regarding remote services availability 
@@ -522,6 +528,7 @@ sysctl
         sudo lsof -i:22
 
     nc # Netcat : Read/Write data across TCP/UDP connections.
+        # ncat-nmap pkg
         # READ/WRITE to/from TCP/UDP connections
         # CREATE SERVER, LISTEN to server,
         # PORT SCANNING/listening, FILE TRANSFERS; IPv4/IPv6 
@@ -714,7 +721,7 @@ sysctl
         # Debian/Ubuntu 
         /etc/init.d/networking restart 
 
-# CONFIGURE NIC   
+# CONFIGURE  
 
     # iproute2 library; https://en.wikipedia.org/wiki/Iproute2
     #   ip, ss, bridge, rtacct, rtmon, tc, ctstat, lnstat,  
@@ -875,47 +882,9 @@ sysctl
 
         sudo service network restart    # restart network @ RHEL/aHOST 6
 
-
-    # CONFIGURE NIC PERMANENTly 
-        #  Write to NetworkManager service;
-        #  CLI :: nmcli, nm-tool
-        #  GUI :: right-click on network icon for menu ...
-
-        # RedHat 7 :: nmcli [NetworkManager command-line tool]  
-        # See "REF.RHEL.RHCE.sh" 
-        
-        nmcli -f NAME,DEVICE,TYPE,UUID con show # =>
-            NAME    DEVICE  TYPE            UUID
-            LAN     enp1s0  802-3-ethernet  b9033960-b5c6-3f...
-
-        nmcli dev wifi            # Show available WiFi networks; channel/strength/...
-        nmcli -f ALL dev wifi     # Show available WiFi per SSID/BSSID/freq/...
-        nmcli -m multiline -f ALL dev wifi  # @ multi-line view
-        nmcli dev wifi rescan     # rescan 
-
-        nmcli con show                     # show connections; NAME UUID TYPE DEVICE 
-        nmcli con down NICname             # disable NICname
-        nmcli con up   NICname             # enable NICname 
-        nmcli general # =>
-            STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN
-            connected  full          enabled  enabled  enabled  enabled
-
-        # E.g., set permanent IP
-        nmcli con mod "Ifupdown"
-          ipv4.addresses "HOST_IP_ADDRESS"
-          ipv4.gateway "IP_GATEWAY"
-          ipv4.dns "DNS_SERVER(S)"
-          ipv4.dns-search "DOMAIN_NAME"
-          ipv4.method "manual"
-
-        # RedHat 6 
-        service network status|stop|start|restart
-    
-        # ... changes stored @ ...
-    
     # IP Networking Control Files http://linux-ip.net/html/basic-control-files.html
         
-        # Interface definitions :: per Connection Name,'*'; [RedHat]
+        # Interface definitions : per Connection Name,'*'; [RedHat]
         ls '/etc/sysconfig/network-scripts/ifcfg-'*
 
         # ifcfg-LAN2 [aHOST 6]
@@ -933,7 +902,7 @@ sysctl
             PEERDNS=no
             PEERROUTES=yes
 
-        # Interface definitions :: 'Routes...' [RedHat]
+        # Interface definitions : 'Routes...' [RedHat]
         ls '/etc/sysconfig/network-scripts/route-'*
         
         # route-LAN2 [aHOST 6] 
@@ -989,7 +958,7 @@ sysctl
                 0.0.0.0     malicious.site
                 0.0.0.0     bad.place.com
 
-# SSH / OpenSSH a.k.a. "OpenBSD Secure Shell" :: See 'REF.Network.SSH.sh' 
+# SSH / OpenSSH a.k.a. "OpenBSD Secure Shell" : See 'REF.Network.SSH.sh' 
 
     # BYOC (Bring your own creds)
     ssh -i ${key} ${user}@${host_name_OR_public_ip}
@@ -1006,7 +975,7 @@ sysctl
     #   CheckHostIP yes
     #   IdentityFile ~/.ssh/centosvm_ed25519
 
-    # SCP :: Secure Copy  https://en.wikipedia.org/wiki/Secure_copy
+    # SCP : Secure Copy  https://en.wikipedia.org/wiki/Secure_copy
         scp $source user@host:$target     # upload source FILE to host @ target
         scp -r $source user@host:$target  # upload source FOLDER to host @ target 
         scp user@host:$source $target     # download from host
@@ -1016,7 +985,7 @@ sysctl
         scp -i ~/.ssh/aKey.pem -r ./foo ${user}@${host}:~    # Copy local ./foo to ~/foo @ host 
         scp -i ~/.ssh/aKey.pem -r ./foo/* ${user}@${host}:~  # Copy CONTENT of local ./foo to ~/ @ host 
 
-    # SFP :: Secure FTP (SFTP)  https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
+    # SFP : Secure FTP (SFTP)  https://en.wikipedia.org/wiki/SSH_File_Transfer_Protocol
     # https://www.digitalocean.com/community/tutorials/how-to-use-sftp-to-securely-transfer-files-with-a-remote-server
     # SFTP uses the SSH protocol to authenticate and establish a secure connection. Because of this, the same authentication methods are available that are present in SSH
 
@@ -1037,13 +1006,13 @@ sysctl
 # CIFS/SAMBA
     # cifs-utils samba-client samba-common [3 packages]
 
-    # smbclient :: ftp-like client to access SMB/CIFS resources on servers
+    # smbclient : ftp-like client to access SMB/CIFS resources on servers
     smbclient -L netbios-name [-s config.filename] [-U username] [--option=clientusespnego=no]
     # or 
     smbclient //server/service [-s config.filename] [-U username] [--option=clientusespnego=no]
     # ... prompts for password
 
-    # mount :: mount whatever @ temporary/current-environment [on-the-fly] 
+    # mount : mount whatever @ temporary/current-environment [on-the-fly] 
         mkdir /media/SERVERsharename
         sudo mount -t cifs //SERVER/foldername /media/SERVERsharename -o user=winUSER,pass=winPASS[,dom=winDOMAIN]
 
@@ -1190,7 +1159,7 @@ sysctl
             #   /source  => target/source
             #   /source/ => /target 
 
-        # PUSH to AWS VM :: from local $PWD to remote $HOME/assets/ 
+        # PUSH to AWS VM : from local $PWD to remote $HOME/assets/ 
         #... dst dir, `~/assets`, is CREATED if not exist.
         _PRIVATE_KEY=~/.ssh/swarm-aws.pem
         _USER='ubuntu'  

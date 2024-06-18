@@ -108,6 +108,52 @@ exit
         #    <port protocol="tcp" port="80"/>
         #  </service>
 
+    # NetworkManager CLI 
+        nmcli # firewalld works with or conflicts with NetworkManager
+        # Write to NetworkManager service;
+        # CLI : nmcli, nm-tool
+        # GUI : right-click on network icon for menu ...
+        # See "REF.RHEL.RHCE.sh" 
+
+        nmcli device status         # List devices (interfaces) + info
+        nmcli device show eth0      # Network + Interface info
+        nmcli connection show eth0  # Network + Interface info
+
+        # Change firewalld zone to which interface (device) is bound
+            sudo firewall-cmd --zone=K8s --change-interface=ens192 --permanent
+            sudo firewall-cmd --reload
+            #... if "Warning ... controlled by NetworkManager", then ...
+            sudo nmcli connection modify "ens192" connection.zone K8s
+
+        nmcli -f NAME,DEVICE,TYPE,UUID con show # =>
+            NAME    DEVICE  TYPE            UUID
+            LAN     enp1s0  802-3-ethernet  b9033960-b5c6-3f...
+
+        nmcli dev wifi            # Show available WiFi networks; channel/strength/...
+        nmcli -f ALL dev wifi     # Show available WiFi per SSID/BSSID/freq/...
+        nmcli -m multiline -f ALL dev wifi  # @ multi-line view
+        nmcli dev wifi rescan     # rescan 
+
+        nmcli con show                     # show connections; NAME UUID TYPE DEVICE 
+        nmcli con down NICname             # disable NICname
+        nmcli con up   NICname             # enable NICname 
+        nmcli general # =>
+            STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN
+            connected  full          enabled  enabled  enabled  enabled
+
+        # E.g., set permanent IP
+        nmcli con mod "Ifupdown"
+            ipv4.addresses "HOST_IP_ADDRESS"
+            ipv4.gateway "IP_GATEWAY"
+            ipv4.dns "DNS_SERVER(S)"
+            ipv4.dns-search "DOMAIN_NAME"
+            ipv4.method "manual"
+
+        # RedHat 6 
+        service network status|stop|start|restart
+
+        # ... changes stored @ ...
+
     nftables # nft is the CLI for nftables : successor to iptables, ip6tables, arptables, and ebtables
         sudo nft list ruleset # firewalld is wrapper for nftables / iptables
 
