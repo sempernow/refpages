@@ -19,8 +19,8 @@ exit
     vim FILE         # Open FILE in vim
     :w               # Save current file
     :w newNAME       # Save as newNAME
-    :wq, :x, ZZ      # Save file and quit vim
-    :q!, ZQ          # Quit vim without saving file changes  
+    :wq, :x, :ZZ     # Save file and quit vim
+    :q!, :ZQ         # Quit vim without saving file changes  
     :q               # Quit vim if no file changes
 
 # ACTIONs
@@ -95,7 +95,7 @@ exit
 
 # GRAMMAR
 
-    # 'Verbs'
+    # 'Verbs' / :<CHAR>
 
     d                # Delete
     c                # Change 
@@ -106,7 +106,7 @@ exit
     g~3w             # Toggle case of next 3 words
     g~iw             # Toggle case of current word 
 
-    # 'Nouns' [PREpend number (n) for n-occurences]
+    # 'Nouns' / :<CHAR> / PREpend number (n) for n-occurences
 
     w                # Word
     s                # Sentence
@@ -153,13 +153,15 @@ exit
     # Prepend one character, '#', to a block of sequential lines  
     v                # Enter visual mode with cursor at first line
     j                # Scroll cursor down to last target line
-    '#'              # Type '#' ELSE ': s/^/#', which applies char to first line
-    ESC              # Affect is applied (wait) to the remaining lines
+    '#' OR :s/^/#    # Type '#' ELSE ':s/^/#', which APPLIES char TO FIRST LINE
+    ESC              # Applies to the remaining lines (WAIT).
     
     # Delete 1st character, '#', from a block of sequential lines 
+    8,17s/^#//       # sed RegEx prepended with 'FIRST,LAST' (CSV) line numbers 
+    ## OR, using Visual mode:
     v                # Enter visual mode with cursor at first line
     j                # Scroll cursor down to last target line
-    : s/^#//          # 
+    :s/^#//          # Delete leading '#'
     ESC              # Affect is applied (wait) to the remaining lines
 
     # On "E137: Viminfo file is not writable:", 
@@ -206,7 +208,7 @@ set clipboard=unnamed           # set clipboard to unnamed to access the system 
 syntax on                       # turn syntax highlighting on by default
 
 # Function Declaration : 
-# - Name must start with uppercase letter
+# - Name must start with UPPERCASE letter
 # - "function! Aname()" overwrites any pre-existing Aname() function.
 
 function! Tabs()
