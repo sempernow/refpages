@@ -11,73 +11,90 @@ exit
     # which is a systemd service and interface wrapping iptables/nftables 
         systemctl status firewalld.service 
  
-    # Show/Verify settings (fully) of a zone
-        zone=public
+    # Show/Verify ALL settings of a zone
+        z=public
         svc=halb
-        sudo firewall-cmd --zone=$zone --list-all
-        sudo firewall-cmd --direct --get-all-rules
-        sudo firewall-cmd --info-service=$svc
+        firewall-cmd --zone=$z --list-all
+        firewall-cmd --direct --get-all-rules
+        firewall-cmd --info-service=$svc
 
     # GET
-        # A zone is active if bound to an interface (network device)
-        # Default zone behavior is revealed by: "target: ACCEPT|DROP|REJECT"
-        sudo firewall-cmd --get-zones
-        sudo firewall-cmd --get-default-zone    # Get DEFAULT zone
-        sudo firewall-cmd --get-active-zone     # Get ACTIVE zone and its affected interface(s)
-        sudo firewall-cmd --get-zone-of-interface=$device # Get zone bound to $device (e.g., device=ens192)
+        # A zone is ACTIVE IF BOUND TO an INTERFACE (network device)
+        # Zone's default behavior is revealed by: "target: ACCEPT|DROP|REJECT"
+        firewall-cmd --get-zones
+        firewall-cmd --get-default-zone    # Get DEFAULT zone
+        firewall-cmd --get-active-zone     # Get ACTIVE zone and its affected interface(s)
+        firewall-cmd --get-zone-of-interface=$dev # Get zone bound to $dev (e.g., device=ens192)
 
-        sudo firewall-cmd --list-all 
-        sudo firewall-cmd --list-ports          # Lists ONLY those NOT of a service
-        sudo firewall-cmd --list-services       # ACTIVE services of CURRENT zone
-        sudo firewall-cmd --list-services --zone=$name # ACTIVE services of zone $name
-        sudo firewall-cmd --get-services        # All services (defined/available)
-        sudo firewall-cmd --list-interfaces
-        sudo firewall-cmd --list-rich-rules
-        sudo firewall-cmd --direct --get-all-rules
-        sudo firewall-cmd --direct --get-rules  # Only those added using --add-rule 
-        sudo firewall-cmd --info-zone=$name     # Get zone INFO
-        sudo firewall-cmd --info-service=$name  # Get service INFO; incl. allowed port(s)/proto(s)
-        sudo firewall-cmd --info-policy=$name   # Get policy INFO
+        firewall-cmd --list-all                 # List ports and services of ACTIVE zone
+        firewall-cmd --list-ports               # Lists ONLY those NOT of a service
+        firewall-cmd --list-services            # ACTIVE services of ACTIVE zone
+        firewall-cmd --list-services --zone=$z  # ACTIVE services of DECLARED zone
+        firewall-cmd --get-services             # All services (defined/available)
+        firewall-cmd --list-interfaces
+        firewall-cmd --list-rich-rules
+        firewall-cmd --direct --get-all-rules
+        firewall-cmd --direct --get-rules  # Only those added using --add-rule 
+        firewall-cmd --info-zone=$z        # Get zone INFO
+        firewall-cmd --info-service=$svc   # Get service INFO; incl. allowed port(s)/proto(s)
+        firewall-cmd --info-policy=$policy # Get policy INFO
 
     # SET
         # Set default zone (don't)
-            sudo firewall-cmd --set-default-zone    
+            firewall-cmd --set-default-zone    
+
+        # Add new zone 
+            firewall-cmd --permanent --new-zone=$z
+
+        # BIND interface to a zone (regardless of current binding)
+            firewall-cmd --permanent --change-interface=$dev --zone=$z
+            #... if device was bound to another zone, that would be the equivalent of:
+            firewall-cmd --permanent --remove-interface=$dev --zone=$old
+            firewall-cmd --permanent --add-interface=$dev --zone=$new
+            #... if "interface is under the control of NetworkManager", then MUST:
+            nmcli connection modify "$dev" connection.zone $z
+            nmcli connection down "$dev" # Then toggle the device for mod to take effect;
+            nmcli connection up "$dev"   # preferable to : systemctl restart NetworkManager
+            #... else firewall-cmd may report false positive "success",
+            #... yet device silently removed and returned to $old zone by NetworkManager:
+            firewall-cmd --get-zone-of-interface=$dev
+            nmcli connection show $dev |grep connection.zone
 
         # Add/Remove rule
             # Add port (bare)
-            sudo firewall-cmd --permanent --add-port=10255/tcp 
+            firewall-cmd --permanent --add-port=10255/tcp 
             # Remove same 
-            sudo firewall-cmd --permanent --remove-port=10255/tcp 
+            firewall-cmd --permanent --remove-port=10255/tcp 
             # Add service to zone 
-            sudo firewall-cmd --permanent --zone=public --add-service=http
-            sudo firewall-cmd --permanent --zone=public --add-service=https
+            firewall-cmd --permanent --zone=public --add-service=http
+            firewall-cmd --permanent --zone=public --add-service=https
 
         # Create (define) service (having ports) 
             svc=istiod
-            sudo firewall-cmd --permanent --new-service=$svc
-            sudo firewall-cmd --permanent --service=$svc --set-description="Istio control plane"
+            firewall-cmd --permanent --new-service=$svc
+            firewall-cmd --permanent --service=$svc --set-description="Istio control plane"
             # Add port(s) to service 
-            sudo firewall-cmd --permanent --service=$svc --add-port=15010/tcp 
-            sudo firewall-cmd --permanent --service=$svc --add-port=15014/tcp 
+            firewall-cmd --permanent --service=$svc --add-port=15010/tcp 
+            firewall-cmd --permanent --service=$svc --add-port=15014/tcp 
             #...
         # Add/Remove service to currently-active zone
-            sudo firewall-cmd --permanent --add-service=$svc
-            sudo firewall-cmd --permanent --remove-service=$svc
+            firewall-cmd --permanent --add-service=$svc
+            firewall-cmd --permanent --remove-service=$svc
             #... same, but declare its zone 
-            sudo firewall-cmd --permanent --zone=$zone_name ...
+            firewall-cmd --permanent --zone=$z ...
 
         # Sources : default behavior for the zone applies to all traffic lest sources declared
             # Add source : simple
-            firewall-cmd --zone=$zone --add-source=$ip_or_cidr
+            firewall-cmd --zone=$z --add-source=$ip_or_cidr
             # Add source : granular
-            firewall-cmd --zone=$zone --add-rich-rule='rule family="ipv4" source address="'$cidr'" service name="'$svc'" accept'
+            firewall-cmd --zone=$z --add-rich-rule='rule family="ipv4" source address="'$cidr'" service name="'$svc'" accept'
 
         # Add/Remove RICH RULE to a zone (cannot be scoped to service)
             ## See `man firewalld.richlanguage` for rule syntax
             ## Allow traffic to/from VIP address by IPv4
-            at="--permanent --zone=$zone"
+            at="--permanent --zone=$z"
             do='add' # add|remove
-            sudo firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
+            firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
 
         # Add/Remove DIRECT RULE interface (cannot be scoped to service or zone)
             at="--permanent"
@@ -88,19 +105,19 @@ exit
         # Masquerade : a type of NAT : Useful for comms between Pods and services external to cluster 
             # REF: https://chatgpt.com/share/d0117056-05f9-40d3-a359-13233dd5697f
             # Add 
-            firewall-cmd --permanent --zone=$zone --add-masquerade
+            firewall-cmd --permanent --zone=$z --add-masquerade
             # Verify
-            firewall-cmd --zone=$zone --query-masquerade
+            firewall-cmd --zone=$z --query-masquerade
         
     # UPDATE active rules (without restarting firewalld.service)
-        sudo firewall-cmd --reload              
+        firewall-cmd --reload              
 
     # Service descriptions:
         ## Custom services
         /etc/firewalld/services/        # *.xml
         ## Predefined services
         /usr/lib/firewalld/services/    # *.xml 
-        #$ sudo cat /usr/lib/firewalld/services/http.xml
+        #$ cat /usr/lib/firewalld/services/http.xml
         #  <?xml version="1.0" encoding="utf-8"?>
         #  <service>
         #    <short>WWW (HTTP)</short>
@@ -110,20 +127,25 @@ exit
 
     # NetworkManager CLI 
         nmcli # firewalld works with or conflicts with NetworkManager
-        # Write to NetworkManager service;
+        # Writes to NetworkManager service
+        systemctl status NetworkManager
         # CLI : nmcli, nm-tool
         # GUI : right-click on network icon for menu ...
         # See "REF.RHEL.RHCE.sh" 
 
-        nmcli device status         # List devices (interfaces) + info
-        nmcli device show eth0      # Network + Interface info
-        nmcli connection show eth0  # Network + Interface info
+        nmcli dev status         # List devices (interfaces) + info
+        nmcli dev show $dev      # Network + Interface info
+        nmcli con show $dev  # Network + Interface info
+
+        # Get zone to which interface AKA device AKA connection is bound:
+        firewall-cmd --get-zone-of-interface=$dev
+        nmcli con show $dev |grep connection.zone
 
         # Change firewalld zone to which interface (device) is bound
-            sudo firewall-cmd --zone=K8s --change-interface=ens192 --permanent
-            sudo firewall-cmd --reload
+            firewall-cmd --zone=$z --change-interface=$dev --permanent
+            firewall-cmd --reload
             #... if "Warning ... controlled by NetworkManager", then ...
-            sudo nmcli connection modify "ens192" connection.zone K8s
+            nmcli con modify "$dev" connection.zone $z
 
         nmcli -f NAME,DEVICE,TYPE,UUID con show # =>
             NAME    DEVICE  TYPE            UUID
@@ -134,9 +156,10 @@ exit
         nmcli -m multiline -f ALL dev wifi  # @ multi-line view
         nmcli dev wifi rescan     # rescan 
 
-        nmcli con show                     # show connections; NAME UUID TYPE DEVICE 
-        nmcli con down NICname             # disable NICname
-        nmcli con up   NICname             # enable NICname 
+        nmcli con show                  # show connections; NAME UUID TYPE DEVICE 
+        # Toggle device : preferable to systemctl restart NetworkManager
+        nmcli con down $dev             # disable connection
+        nmcli con up   $dev             # enable connection
         nmcli general # =>
             STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN
             connected  full          enabled  enabled  enabled  enabled
@@ -155,7 +178,7 @@ exit
         # ... changes stored @ ...
 
     nftables # nft is the CLI for nftables : successor to iptables, ip6tables, arptables, and ebtables
-        sudo nft list ruleset # firewalld is wrapper for nftables / iptables
+        nft list ruleset # firewalld is wrapper for nftables / iptables
 
     iptables  # IP Tables; tool for PACKET FILTERING and NAT [IPv4/IPv6] 
         #  Powerful, low-level FIREWALL implemented as Netfilter modules 
@@ -172,7 +195,7 @@ exit
             iptables -L        # List Rules as Tables
             iptables -L INPUT  # List Input Chain Rule Table 
             # Listen on port 22
-            sudo iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+            iptables -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
 
         # Commands to view ALL iptables rules
         # https://jvns.ca/blog/2017/06/07/iptables-basics/ [Julia Evans]
