@@ -701,6 +701,8 @@ sysctl
         dhclient 
         # LAN
         sudo dhclient -r 'eth0' && sudo dhclient 'eth0'
+        # IPv6 address
+        sudo dhclient -6 -r 'eth0' && sudo dhclient 'eth0'
         # @ WLAN
         sudo dhclient -v -r 'wlan0' && sudo dhclient -v 'wlan0'
 
@@ -769,12 +771,15 @@ sysctl
         done
 
         # @ Transport Layer [L4]
+        man ip-address
         ip addr                # show IP and MAC of all devices/interfaces 
-        ip addr show dev eth0  # show IP and MAC of eth0 device            
+        ip addr show dev $dev  # show IP and MAC of device (eth0 or whatever)           
 
-        ip addr add dev eth0 10.0.0.10/24  # add an IP address to NIC; always include subnet
+        ip addr add dev $dev 10.0.0.10/24  # add an IP address to NIC; always include subnet
                                            # ifconfig FAILs to see this newly added IP Address
-        
+
+        ip -6 addr del $ipv6_cidr dev $dev 
+        ip [-4] addr del $ipv4_cidr dev $dev 
         ip maddr show eth0                 # show MAC
 
         # @ Data Link Layer [L2]

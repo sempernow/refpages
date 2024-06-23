@@ -76,6 +76,16 @@ docker service create \
     $img
 ```
 - Registry endpoint: `http://localhost:5000`
+- [`/etc/docker/daemon.json](https://docs.docker.com/reference/cli/dockerd/#daemon-configuration-file)
+    ```json
+    {
+        "insecure-registries": [
+            "localhost:5000", 
+            "registry.local:5000", 
+            "172.27.240.169:5000"
+        ]
+    }
+    ```
 - Host paths (`$host_path*`) are to be created; exist only for their purpose here.
 - LB/Reverse-proxy considerations 
   ([NGINX example](https://distribution.github.io/distribution/recipes/nginx/)):   
@@ -131,7 +141,45 @@ curl -I https://$registry/v2/
             # nginx:1.25-alpine3.18
             # nginx:1.25.4-alpine-otel
             # redhat/ubi8:8.7
+            
+# GET all content of registry, both repos and images lists, 
+# in both JSON and flat-list formats.
+    curl -s http://$registry/v2/_catalog \
+        |tee catalog.json \
+        |jq -Mr .[][] \
+        |tee catalog.repositories.log \
+        |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+        |jq -Mr . --slurp \
+        |tee all.tags.list.json \
+        |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
+        |tee all.images.log
 
+```
+```bash
+# PUSH : Use docker (client)
+    docker tag $app:$tag $registry/$app:tag
+    docker push $registry/$app:tag
+
+    # PUSH all in local docker cache to registry
+    dit ()
+    {
+        function d ()
+        {
+            docker image ls --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" $@
+        }
+        h="$( d |head -n1)"
+        echo "$h"
+        d "$@" |grep -v REPOSITORY |sort -t' ' -k2
+    }
+    export -f dit
+    dit |grep -v $registry |grep -v IMAGE |awk '{print $2}' \
+    |xargs -I{} /bin/bash -c '
+        docker tag $1 $0/$1
+        docker push $0/$1
+    ' $registry  {}
+
+```
+```bash
 # DELETE an image from Registry v2 
     # 1. HEAD : returns the digest required of any subsequent DELETE request.
     # Digest is returned in HTTP response header: "Docker-Content-Digest: sha256:abc...123"

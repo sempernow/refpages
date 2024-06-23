@@ -1481,101 +1481,128 @@ exit
         # XOR per lines (lines not in both)
         awk 'FNR==NR {a[$0]++; next} !a[$0]' file1 file2
 
-        jq [options...] filter [files...] # https://jqlang.github.io/jq/manual/
+
+    jq # JSON Processor
+        # https://jqlang.github.io/jq/tutorial/
+        # https://jqlang.github.io/jq/manual/
         
-            -r # Raw; unquoted.
-            -c # Compact (vs. pretty print)
-            -C # Colorized; some commands may FAIL @ PIPE due to the (hidden) CTRL chars.
-            -M # Monochrome.
+        -r # Raw out; unquoted.
+        -c # Compact (vs. pretty print)
+        -C # Colorized; subsequent pipe may FAIL due to CTRL chars.
+        -M # Monochrome; fix for aformentioned pipe fail: -Mr 
+        -R # Raw (string) input
 
-            # Filter all selected keys-values at some layer of the hierarchy:
-                docker volume inspect $(docker volume ls -q)|jq -rM .[].CreatedAt 
-                    # List both Name and CreatedAt
-                    ...|jq -Mr '.[] | .Name, .CreatedAt'
+        # Filter all selected keys-values at some layer of the hierarchy:
+            docker volume inspect $(docker volume ls -q)|jq -rM .[].CreatedAt 
+                # List both Name and CreatedAt
+                ...|jq -Mr '.[] | .Name, .CreatedAt'
 
-            # Filter all selected keys-values at various layers of the hierarchy
-                aws ec2 describe-volumes \
-                    |jq '.Volumes | .[].Attachments | .[] | .Device, .VolumeId'
+        # SLURP a flat list of JSON objects to valid JSON
+            cat flat-list-of-json-objects.txt \
+                |jq -Mr . --slurp # -s
 
-                # ... as key:val pairs
-                    ...|jq '{Mtime: .LastModified, Size: .ContentLength, MIME: .ContentType}'
-                # ... natively, sans jq 
-                    --query "{Mtime:LastModified,Size:ContentLength,MIME:ContentType}"
+        # MAP a flat list of STRINGs to JSON array
+            cat flat-list-of-strings.txt \
+                |jq -R -s -c 'split("\n") | map(select(length > 0))'
+            # OR (if string delimiter is newline)
+            cat flat-list-of-strings.txt \
+                |jq -Rn '[inputs]'
 
-            # SYNTAX: ".[]" is ARRAY operation; all nodes of all indices therein; "[0]" is first index
-                ...|jq .[].foo.bar.baz    # get "baz" field VALUEs
-                ...|jq .[].baz            # equivalent
+        # MAP/REFACTOR object having array to flat list
+            echo '{"name": "abox", "tags": ["ubi","2.0.1","3"]}' |jq -Mr '.tags[] as $tag | "\(.name):\($tag)"'
+                # abox:ubi
+                # abox:2.0.1
+                # abox:3
 
-                ...|jq -r .keyX           # keyX VALUE; RAW output (unquoted)
-                ...|jq -r .               # ALL key-val pairs, unfiltered; RAW output
+        # GET all content of registry, both repos and images, 
+        # in both JSON and flat-list formats.
+            curl -s http://$registry/v2/_catalog \
+                |tee catalog.json \
+                |jq -Mr .[][] \
+                |tee catalog.repositories.log \
+                |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+                |jq -Mr . --slurp \
+                |tee all.tags.list.json \
+                |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
+                |tee all.images.log
 
-                ...|jq  '.P[] | .X, .W'  
-                #... Get all values of keys X and W in the array of objects under key P 
+        # Filter all selected keys-values at various layers of the hierarchy
+            aws ec2 describe-volumes \
+                |jq '.Volumes | .[].Attachments | .[] | .Device, .VolumeId'
 
-                    # Example ...
-                    aws route53 list-hosted-zones |jq  '.HostedZones[] | .Name, .Id'
-                        # =>
-                        "foo.com."
-                        "/hostedzone/Z2H0UGL2BNA1BN"
-                        "bar.org."
-                        "/hostedzone/Z03607453CJ16NGTHYTYE"
+            # ... as key:val pairs
+                ...|jq '{Mtime: .LastModified, Size: .ContentLength, MIME: .ContentType}'
+            # ... natively, sans jq 
+                --query "{Mtime:LastModified,Size:ContentLength,MIME:ContentType}"
 
-            # Filter and process an ARRAY of OBJECTS ...
+        # SYNTAX: ".[]" is ARRAY operation; all nodes of all indices therein; "[0]" is first index
+            ...|jq .[].foo.bar.baz    # get "baz" field VALUEs
+            ...|jq .[].baz            # equivalent
 
-                printf '{
-                    "a": [{"foo":"1", "bar":"2"},{"foo":"999", "bar":"77"}]
+            ...|jq -r .keyX           # keyX VALUE; RAW output (unquoted)
+            ...|jq -r .               # ALL key-val pairs, unfiltered; RAW output
 
-                }' |jq .a[].bar
-                    # "2"
-                    # "77"
-                ...|jq -r .a[].bar  # JOIN (raw)
-                    # 2
-                    # 77
-                ...|jq .a[1]        # PER INDEX; second el
-                # {"foo": "999","bar": "77"}
-                ...|jq -c '.a[] | .foo, .bar' 
-                #... All values of keys foo: and bar: in the array under key a:
-                    # "1"
-                    # "2"
-                    # "999"
-                    # "77"
+            ...|jq  '.P[] | .X, .W'  
+            #... Get all values of keys X and W in the array of objects under key P 
 
-                # Functions
+                # Example ...
+                aws route53 list-hosted-zones |jq  '.HostedZones[] | .Name, .Id'
+                    # =>
+                    "foo.com."
+                    "/hostedzone/Z2H0UGL2BNA1BN"
+                    "bar.org."
+                    "/hostedzone/Z03607453CJ16NGTHYTYE"
 
-                    # Filter ARRAY ELEMENTS by a KEY
-                        ...|jq '.[] |select(.aKey == "aVal")'
+        # Filter and process an ARRAY of OBJECTS ...
 
-                        ...|jq '.a[] | select(.foo | contains("999"))'  
+            printf '{
+                "a": [{"foo":"1", "bar":"2"},{"foo":"999", "bar":"77"}]
 
-                    # Sum 'price' field
-                        # {"foo":"999","bar":"77"} 
-                        ...|jq 'map(.price) | add'  
+            }' |jq .a[].bar
+                # "2"
+                # "77"
+            ...|jq -r .a[].bar  # JOIN (raw)
+                # 2
+                # 77
+            ...|jq .a[1]        # PER INDEX; second el
+            # {"foo": "999","bar": "77"}
+            ...|jq -c '.a[] | .foo, .bar' 
+            #... All values of keys foo: and bar: in the array under key a:
+                # "1"
+                # "2"
+                # "999"
+                # "77"
 
-            # Refactor object w/ array to flat list
-            echo '{"a": 11, "b": [1,2,3]}' |jq -Mr '.b[] as $el | "\(.a):\($el)"'
-                # 11:1
-                # 11:2
-                # 11:3
+            # Functions
 
-            # Transform list of STRINGs to ARRAY
-                ...|jq -Rn '[inputs]' # If string delimiter is newline
+                # Filter ARRAY ELEMENTS by a KEY
+                    ...|jq '.[] |select(.aKey == "aVal")'
 
-            # Transform ARRAY to Tab Separated Values : @tsv filter, or @csv, @html, ..
-                printf '[{
-                            "name": "George",
-                            "id": 12,
-                            "email": "george@domain.example"
-                        }, {
-                            "name": "Jack",
-                            "id": 18,
-                            "email": "jack@domain.example"
+                    ...|jq '.a[] | select(.foo | contains("999"))'  
 
-                }]' |jq -r '["NAME","ID"],["------","--"],(.[] | [.name,.id]) | @tsv'
+                # Sum 'price' field
+                    # {"foo":"999","bar":"77"} 
+                    ...|jq 'map(.price) | add'  
 
-                    # NAME    ID
-                    # ------  --
-                    # George  12
-                    # Jack    18
+        # Transform list of STRINGs to ARRAY
+            ...|jq -Rn '[inputs]' # If string delimiter is newline
+
+        # Transform ARRAY to Tab Separated Values : @tsv filter, or @csv, @html, ..
+            printf '[{
+                        "name": "George",
+                        "id": 12,
+                        "email": "george@domain.example"
+                    }, {
+                        "name": "Jack",
+                        "id": 18,
+                        "email": "jack@domain.example"
+
+            }]' |jq -r '["NAME","ID"],["------","--"],(.[] | [.name,.id]) | @tsv'
+
+                # NAME    ID
+                # ------  --
+                # George  12
+                # Jack    18
 
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 

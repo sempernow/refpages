@@ -111,6 +111,18 @@ sudo systemctl restart docker
                 # nginx:1.25.4-alpine-otel
                 # redhat/ubi8:8.7
 
+    # GET all content of registry, both repos and images lists, 
+    # in both JSON and flat-list formats.
+        curl -s http://$registry/v2/_catalog \
+            |tee catalog.json \
+            |jq -Mr .[][] \
+            |tee catalog.repositories.log \
+            |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+            |jq -Mr . --slurp \
+            |tee all.tags.list.json \
+            |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
+            |tee all.images.log
+
     # DELETE an image from Registry v2 
         # 1. HEAD : returns the digest required of any subsequent DELETE request.
         # Digest is returned in HTTP response header: "Docker-Content-Digest: sha256:abc...123"
@@ -150,6 +162,26 @@ sudo systemctl restart docker
         docker tag abox:v0.1.2 $reg:5000/abox:v0.1.2
         docker push $reg:5000/abox:v0.1.2
         docker image ls # ... registry.local:5000/abox     v0.1.2 ...
+
+    # PUSH image in local cache to registry : Use docker (client)
+        docker tag $app:$tag $registry/$app:tag
+        docker push $registry/$app:tag
+
+    # PUSH all in local docker cache to registry
+        dit ()
+        {
+            function d ()
+            {
+                docker image ls --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" $@
+            }
+            h="$( d |head -n1)"
+            echo "$h"
+            d "$@" |grep -v REPOSITORY |sort -t' ' -k2
+        }
+        export -f dit
+        dit |grep -v $registry |grep -v IMAGE |awk '{print $2}' \
+            |xargs -IX /bin/bash -c \
+                'docker tag $1 $0/$1 && docker push $0/$1' $registry X
 
 # Docker in Docker (DinD) : https://hub.docker.com/_/docker
     # Use to build images in a (containerized) CI pipeline, such as at Jenkins, GitLab, ...
@@ -289,11 +321,11 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         docker buildx prune                 # Build cache 
     # IMAGEs image https://docs.docker.com/engine/reference/commandline/image/#child-commands  
         # Format to specify a repo (registry) image:
-        [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_IMG_NAME:$_TAG  # Format 
-        $_USERNAME/$_REPONAME:$_TAG     # … typical reference (and lingo)
+        [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO/$_APP:$_TAG  # Format 
+        $_USERNAME/$_REPONAME:$_TAG     # … typical account AKA repo reference  
         # SEARCH / LIST @ Docker Hub 
-            docker search $_TERM        # Search Docker Hub  https://hub.docker.com/explore/  
-            docker search $_REPO_NAME   # List all thereof
+            docker search $_APP    # Search Docker Hub  https://hub.docker.com/explore/  
+            docker search $_REPO   # List all thereof
         # LIST (local)
             docker image ls             # list all images
             docker images               # list al images; alias
