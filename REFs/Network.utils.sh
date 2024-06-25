@@ -598,11 +598,26 @@ sysctl
         socat -d[d[d]]  # Verbosity
 
         # TCP listener : Listen for (Proxy-forwarded) request; dump it to stdout
-            socat -v TCP-LISTEN:30080,fork -
+            socat -v TCP-LISTEN:30080,fork -  # Create new process (fork) per request
 
         # HTTP server : Echo server : Response container IP:PORT of both client and server
             socat -v TCP-LISTEN:30080,fork SYSTEM:'(echo -ne "HTTP/1.1 200 OK\nDocumentType: text/plain\n\nserver: \$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\nclient: \$SOCAT_PEERADDR:\$SOCAT_PEERPORT\n";hostname;date --rfc-3339=s)'
             #... ignores Proxy Protocol (headers), and so will not preserve client IP address.
+
+            # @ JSON format response
+            socat -v TCP-LISTEN:30080,fork,bind=192.168.28.200 SYSTEM:'(echo -ne "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\\"server\\": \\"\$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\\", \\"client\\": \\"\$SOCAT_PEERADDR:\$SOCAT_PEERPORT\\", \\"hostname\\": \\"$(hostname)\\", \\"date\\": \\"$(date --rfc-3339=s)\\"}")'
+
+        # HTTP reverse-proxy server @ http://example.com : upstream @ http://localhost:8080
+            socat TCP-LISTEN:8080,fork TCP:example.com:80
+            # Daemonize it:
+            nohup socat TCP-LISTEN:8080,fork TCP:example.com:80 & 
+            # Add TLS (via openssl):
+            socat TCP-LISTEN:8443,fork,reuseaddr OPENSSL:example.com:443,verify=0
+            # Bind to a target interface, e.g., eth0 (vs lo)
+                # 1. Get IPv4 address of that interface AKA device:
+                ip -4 -brief addr show dev eth0
+                # 2. Bind the listener to it
+                socat TCP-LISTEN:8443,fork,bind=192.168.28.200 ...
 
         # Chat client/server : Bidirectional 
 
@@ -626,9 +641,11 @@ sysctl
         # Forward local port to remote
         socat TCP4-LISTEN:80,fork TCP4:host.example.com:80
         
-        # Monitor docker commands of Terminal 2
+        # Docker Socket Proxy : Monitor docker commands of Terminal 2 from Terminal 1
             # @ Terminal 1
-            socat -v UNIX-LISTEN:/tmp/sock,fork UNIX-CONNECT:/var/run/docker.sock
+            socat -v UNIX-LISTEN:/tmp/docker.sock,fork UNIX-CONNECT:/var/run/docker.sock
+            #... same, but more options: 
+            socat UNIX-LISTEN:/tmp/docker.sock,fork,mode=660,user=$(whoami) UNIX-CONNECT:/var/run/docker.sock
             # @ Terminal 2
             export DOCKERhost=unix///tmp/sock
             docker pull alpine
