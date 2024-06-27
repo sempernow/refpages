@@ -91,10 +91,29 @@ exit
 
         # Add/Remove RICH RULE to a zone (cannot be scoped to service)
             ## See `man firewalld.richlanguage` for rule syntax
-            ## Allow traffic to/from VIP address by IPv4
+            ## Allow traffic from VIP address by IPv4
             at="--permanent --zone=$z"
             do='add' # add|remove
             firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
+            
+            # DROP|REJECT traffic from CIDR address by IPv4, and LOG whenever traffic is affected
+            firewall-cmd $at --add-rich-rule='rule family="ipv4" source address="'$cidr'" log prefix="DROP: " level="info" drop'
+            firewall-cmd $at --add-rich-rule='rule family="ipv4" source address="'$cidr'" log prefix="REJECT: " level="info" reject'
+                # - Use DROP to minimize network/rule visibility or to handle higher volume of unwanted traffic.
+                # - Use REJECT to inform sender immediately that their traffic is not allowed, 
+                #   improving the user experience for legitimate users or systems.
+                # Same, using iptables
+                ## DROP + LOG
+                sudo iptables -A INPUT -s $cidr -j LOG --log-prefix "IPTABLES DROP: " --log-level 4 #  info (4) and warning (5)
+                sudo iptables -A INPUT -s $cidr -j DROP
+                ## REJECT + LOG
+                sudo iptables -A INPUT -s $cidr -j LOG --log-prefix "IPTABLES REJECT: " --log-level 4
+                sudo iptables -A INPUT -s $cidr -j REJECT
+
+                # View/Tail logs
+                    sudo journalctl -f
+                    # else
+                    sudo tail -f /var/log/messages
 
         # Add/Remove DIRECT RULE interface (cannot be scoped to service or zone)
             at="--permanent"
