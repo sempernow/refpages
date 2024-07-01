@@ -389,16 +389,30 @@ exit 0
             # ALLOW current user to run ALL COMMANDS as sudo SANS PASSWORD:
                 echo "$USER ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
                 #... Ansible requires such one-time setup beforehand at each target node of its "inventory",
-                # else must manage password(s).
+                #    else must manage password(s).
+
+            # Allow members of group gitops to run specific commands with specific subcommands:
+                sudo visudo /etc/sudoers/gitops
+            
+                    Cmnd_Alias GITOPS_CMDS = /usr/bin/dnf update, /usr/bin/dnf upgrade, \
+                                            /usr/bin/systemctl status *, /usr/bin/systemctl start apache2 \
+                                            /usr/bin/systemctl start firewalld
+
+                    # Sans password:
+                    %gitops ALL=(ALL) NOPASSWD: GITOPS_CMDS
+                    # OR
+                    # Require password:
+                    %gitops ALL=(ALL) GITOPS_CMDS
 
         # Set sudo password-entry timeout : If unset, then defaults to 5 minutes. 
             Defaults        timestamp_timeout=-1 # Once per session 
             Defaults        timestamp_timeout=15 # 15 minutes; All users.
             Defaults:u1     timestamp_timeout=0  # User 'u1' must enter password at every sudo invocation.
+            # Scoped to $USER
+            echo "Defaults:$USER    timestamp_timeout=-1" |sudo tee /etc/sudoers.d/$USER
 
         # Set default editor
-            sudo update-alternatives --config editor
-
+            sudo update-alternatives --config $editor
 
     # MONITOR users
         users  # print user names of users currently logged in @ current host 

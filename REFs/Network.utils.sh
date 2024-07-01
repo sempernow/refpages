@@ -431,14 +431,14 @@ sysctl
 
         # SCAN SUBNET for hosts
             netaddr=192.168.28 # Subnet: 192.168.28.0/24
-            seq 254 |xargs -I{} ping -ci -w1 ${netaddr}.{} |grep -B1 ttl |grep $netaddr
+            seq 254 |xargs -I{} ping -c1 -w1 ${netaddr}.{} |grep -B1 ttl |grep $netaddr
 
         export ip=10.0.101.130
         export port=22
 
 # NETWORKs / SUBNETs
     traceroute -n -T -p $port $ip
-        
+ 
     # My Traceroute : combine traceroute + ping
         # https://en.wikipedia.org/wiki/MTR_(software)
         mtr -n -T -c 200 $ip --report # Per TCP (vs default; ICMP)
@@ -466,19 +466,23 @@ sysctl
         # See MORE nc below
         ####################
 
+    arp-scan # ARP scanner
+        sudo arp-scan --interface=ens192 192.168.28.0/24
+
     nmap # Network Mapper : Security Scanner : Port Scanner  
+        # WARNING: nmap use considered hostile by ISPs etal
+        # >>> Use sudo else FAILs SILENTLY with many (yet not all) false negative(s)
         # Advanced tool regarding remote services availability 
         # Features: Host discovery, Port scanning, Version detection, OS detection  
-        # WARNING: nmap use considered hostile by ISPs etal
         # https://en.wikipedia.org/wiki/Nmap
-        nmap HOST                       # Regular scan 
-        nmap -sn CIDR                   # Ping scan : Discover nodes on subnet, e.g., 192.168.0.0/24
-        nmap -T4 -F HOST                # Quick scan
-        nmap -sn --traceroute HOST      # Quick traceroute
-        nmap -T4 -A -v HOST             # Intense scan  
-        nmap -p 1-65535 -T4 -A -v HOST  # Intense scan, all TCP ports
+        sudo nmap HOST                       # Regular scan 
+        sudo nmap -sn CIDR                   # Ping scan : Discover nodes on subnet, e.g., 192.168.0.0/24
+        sudo nmap -T4 -F HOST                # Quick scan
+        sudo nmap -sn --traceroute HOST      # Quick traceroute
+        sudo nmap -T4 -A -v HOST             # Intense scan  
+        sudo nmap -p 1-65535 -T4 -A -v HOST  # Intense scan, all TCP ports
         # Slow comprehensive scan
-        nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default or (discovery and safe)" HOST 
+        sudo nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default or (discovery and safe)" HOST 
 
         # Get CIDR in which current machine exists
             dev=eth0 # eth0 or ens192 
