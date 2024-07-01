@@ -4328,8 +4328,8 @@ k get pod
 
 Step 8. Create a View-only Role
 
-- [`role-student.yaml`](role-student.yaml)
-- [`rolebinding-student.yaml`](rolebinding-student.yaml)
+- [`role-students.yaml`](role-students.yaml)
+- [`rolebinding-students.yaml`](rolebinding-students.yaml)
 
 ```bash
 $ su - k1

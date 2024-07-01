@@ -96,6 +96,8 @@ from infra to services, with the goal of repeatable, verifiable deployment state
         - [**Argo CD**](https://github.com/argoproj/argo-cd):   
             Visualize (Web UI) and manage the lifecycle of Kubernetes applications;
             supports automated or manual syncing of changes.
+            - Argo Workflows + Argo Events required = CD 
+                - Argo Events > Tekton Events
 - Observability
     - [Inspektor-Gadget.io](https://www.inspektor-gadget.io/) : eBPF-based CLIs (gadgets)   
         ```bash

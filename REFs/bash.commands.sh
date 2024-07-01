@@ -543,13 +543,16 @@ exit
             tar -caf ARCH_PATH.EXT --exclude='.*' -C PATH  SOURCE
                 
         # EXTRACT $tarball to $target_parent/...
-        tar Cxavf $target_parent $tarball 
+        tar -Cxavf $target_parent $tarball 
         tar -xzv -C $target_parent --strip-components=1 -f $tarball
 
         # PIPEd input per `-` (stdin)
         ... |tar [OPTIONS] -
 
-            # Create foo.tgz of all .* files @ root dir
+            # Extract/Install all archived bin/* files to /usr/local/bin/*
+            curl -sSL https://source.com/set_of_binaries.tar.gz |sudo tar -C /usr/local -xzf - 
+
+            # Create foo.tgz of all dot files @ root dir
             find . -maxdepth 1 -type f -iname '.*' -print0 |tar --null -caf foo.tgz --files-from - 
 
     # LIST FOLDERs/FILEs
