@@ -53,7 +53,11 @@ sudo sysctl --system
 
 # Disable swap (idempotent)
 sudo swapoff -a
-sed -e '/swap/s/^/#/g' -i /etc/fstab
+swap="$(cat /etc/fstab |grep ' swap' |grep -v '^ *#' |awk '{print $1}')"
+[[ $swap ]] && swap="$(echo $swap |awk '{print $1}')"
+[[ $swap ]] && sudo sed -i "s,$swap,#$swap," /etc/fstab
+
+
 ```
 
 ### Install CRI 
