@@ -62,11 +62,31 @@ net.bridge.bridge-nf-call-iptables = 1
 EOH
 </code></pre>
 
-<p>|Kernel Parameter   |Description|
-|--|--|
-|<code>net.bridge.bridge-nf-call-iptables</code>|Bridged IPv4 traffic via iptables.|
-|<code>net.bridge.bridge-nf-call-ip6tables</code>|Bridged IPv6 traffic via iptables.|
-|<code>net.ipv4.ip_forward</code>|IPv4 packet forwarding.|</p>
+<table>
+<thead>
+<tr>
+<th>Kernel Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>net.bridge.bridge-nf-call-iptables</code></td>
+<td>Bridged IPv4 traffic via iptables.</td>
+</tr>
+
+<tr>
+<td><code>net.bridge.bridge-nf-call-ip6tables</code></td>
+<td>Bridged IPv6 traffic via iptables.</td>
+</tr>
+
+<tr>
+<td><code>net.ipv4.ip_forward</code></td>
+<td>IPv4 packet forwarding.</td>
+</tr>
+</tbody>
+</table>
 
 <pre><code class="language-bash"># Apply the settings
 sudo sysctl --system
