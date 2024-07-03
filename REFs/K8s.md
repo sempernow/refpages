@@ -40,8 +40,9 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOH
 ```
-|Kernel Parameter	|Description|
-|--|--|
+
+|Kernel Parameter	| Description |
+|-----------------|-------------|
 |`net.bridge.bridge-nf-call-iptables`|Bridged IPv4 traffic via iptables.|
 |`net.bridge.bridge-nf-call-ip6tables`|Bridged IPv6 traffic via iptables.|
 |`net.ipv4.ip_forward`|IPv4 packet forwarding.|
