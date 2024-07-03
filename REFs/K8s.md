@@ -1,5 +1,146 @@
 # [Kubernetes](https://kubernetes.io/docs "Kubernetes.io") (K8s) | [Releases](https://kubernetes.io/releases/)
 
+## TL;DR
+
+Kubernetes is a universal control plane that is most commonly used to build platforms for managing containerized workloads.
+
+## Vanilla Cluster
+
+[Install a production-environment cluster using `kubeadm`.](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/)
+
+### Prep at each node
+
+```bash
+# Install kernel headers 
+sudo dnf install kernel-headers-$(uname -r)
+sudo dnf install kernel-devel-$(uname -r)
+
+# Load kernel modules (now)
+sudo modprobe br_netfilter
+sudo modprobe ip_vs
+sudo modprobe ip_vs_rr
+sudo modprobe ip_vs_wrr
+sudo modprobe ip_vs_sh
+sudo modprobe overlay
+
+# Load kernel modules on boot
+cat <<-EOH |sudo tee /etc/modules-load.d/kubernetes.conf
+br_netfilter
+ip_vs
+ip_vs_rr
+ip_vs_wrr
+ip_vs_sh
+overlay
+EOH
+
+# Set runtime kernel params (sysctl) for K8s networking
+cat <<-EOH |sudo tee /etc/sysctl.d/kubernetes.conf
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOH
+```
+|Kernel Parameter	|Description|
+|--|--|
+|`net.bridge.bridge-nf-call-iptables`|Bridged IPv4 traffic via iptables.|
+|`net.bridge.bridge-nf-call-ip6tables`|Bridged IPv6 traffic via iptables.|
+|`net.ipv4.ip_forward`|IPv4 packet forwarding.|
+
+
+```bash
+# Apply the settings
+sudo sysctl --system
+
+# Disable swap (idempotent)
+sudo swapoff -a
+sed -e '/swap/s/^/#/g' -i /etc/fstab
+```
+
+### Install CRI 
+
+`containerd`
+
+```bash
+# If want Docker.io version : RPM method
+sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo dnf makecache
+# Install containerd package 
+sudo dnf -y install containerd.io
+# Else, if want Kubernetes.io version : binary method
+# Install runc : containerd dependency
+# @ https://github.com/opencontainers/runc/releases
+ver='1.1.13'
+arch=$(uname -m)
+[[ $arch == 'x86_64' ]] && arch=amd64
+url="https://github.com/opencontainers/runc/releases/download/v${ver}/runc.$arch"
+sudo curl -O /usr/local/sbin/runc -sSL $url
+# Install containerd binaries
+ver='1.7.19'
+arch=$(uname -m)
+[[ $arch == 'x86_64' ]] && arch=amd64
+url="https://github.com/containerd/containerd/releases/download/v$ver/containerd-${ver}-linux-${arch}.tar.gz"
+curl -sSL $url |sudo tar -C /usr/local -xzvf -
+
+# Configure as systemd service
+url='https://raw.githubusercontent.com/containerd/containerd/main/containerd.service'
+dst='/usr/local/lib/systemd/system/containerd.service'
+sudo curl -sSL -O $dst $url
+
+# Configure (TOML) 
+conf='/etc/containerd/config.toml'
+# https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd
+containerd config default |sudo tee $conf
+#... and edit:
+vi $conf 
+#... else:
+cat <<-EOH |sudo tee $conf
+version = 2
+[plugins]
+  [plugins."io.containerd.grpc.v1.cri"]
+    sandbox_image = "registry.k8s.io/pause:3.9"
+    [plugins."io.containerd.grpc.v1.cri".containerd]
+      discard_unpacked_layers = true
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes]
+        [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+          runtime_type = "io.containerd.runc.v2"
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+            SystemdCgroup = true
+EOH
+
+# Enable/start the service
+sudo systemctl daemon-reload
+sudo systemctl enable --now containerd.service
+
+# Print the running config
+containerd config dump
+
+```
+
+### Install K8s tools and CNI Plugins
+
+- `kubelet` : Node agent
+- `kubeadm` : Administration CLI
+- `kubectl` : API client CLI
+- `kubernetes-cni` : CNI Plugins
+
+```bash
+sudo dnf makecache
+# Install conntrack (undocumented dependency)
+sudo dnf install -y conntrack 
+# Install K8s tools
+sudo dnf install -y kubelet kubeadm kubectl kubernetes-cni --disableexcludes=kubernetes
+# Enable the node agent 
+sudo systemctl enable --now kubelet.service
+```
+- CNI Plugins : Either of `kubernetes-cni` (RPM) or a release (binaries): https://github.com/containernetworking/plugins/releases
+    ```bash
+    ver=1.5.1
+    arch=$(uname -m)
+    [[ $arch == 'x86_64' ]] && arch=amd64
+    url=https://github.com/containernetworking/plugins/releases/download/v${ver}/cni-plugins-linux-${arch}-v${ver}.tgz
+    curl -sSL $url |tar -C /opt/cni/bin -xzf -
+    ```
+
 ## [Overview](https://kubernetes.io/docs/home/?path=users&persona=app-developer&level=foundational) | [Tools](https://kubernetes.io/docs/reference/tools/ "kubernetes.io/docs/...") | [GitHub](https://github.com/kubernetes "Kubernetes repo") | [Wikipedia](https://en.wikipedia.org/wiki/Kubernetes)  
 
 
