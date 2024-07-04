@@ -1,25 +1,20 @@
 exit
-# NIC [Network Interface Card] NAMING SCHEMEs
-    
-    # Udev Naming; classical linux
-    #  eth0; NIC
-     
-    # RHEL 7 : Three [3] Naming Schemes 
-    
-        #  - Udev Naming; eth{X}; classical naming
-        #  - Logical Naming; .{VLAN} and :{ALIAS}
-        #  - BIOS Naming; based on HW properties
-        #     -- Embedded: em3;  em{1-N}
-        #     -- PCI:      p6p1; p{SLOT#}p{PORT#}; 
-        #  * Physical Naming; same as BIOS Naming
+# NETWORK DEVICEs
+    # AKA Connection AKA Link AKA Interface AKA Adapter AKA NIC (Network Interface Card)
+    # Naming schemes:
+        #  1. Udev naming; eth<X>; CLASSICAL naming
+        #  2. Logical naming; .{VLAN} and :{ALIAS}
+        #  3. BIOS (AKA Physical) naming; based on HW properties
+        #     - Embedded: em3;  em{1-N}
+        #     - PCI:      p6p1; p{SLOT#}p{PORT#}; 
     
         # Predictable Network Interface Names
         #  systemd/udev automatically assigns predictable, stable NIC names.
         #  https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/
         #  https://github.com/systemd/systemd/blob/master/src/udev/udev-builtin-net_id.c#L20
-
         # e.g., eth0 => enp1s0 : en=Ethernet, p1=PCI-bus1, s0=slot-0
 
+# CIDR blocks
     # -----[ Private IP Address Ranges : RFC-1918 ]--------- 
     # CIDR block      Class    Start         End  
     # --------------  -----    -----------   ---------------  
@@ -31,27 +26,64 @@ exit
     # 169.254.0.0/16   C       169.254.0.0   169.254.255.255   Link Local  
     # 224.0.0.0/4      D       224.0.0.0     239.255.255.255   Multicast  
 
-sysctl 
-    # Get : Read ephemeral-ports Range @ OS
-        cat /proc/sys/net/ipv4/ip_local_port_range #=> 32768   60999
-        # OR
-        sysctl net.ipv4.ip_local_port_range
-    
-    # Set : Configure kernel-network stack for K8s/containerd (CRI runtime)
-        # Bridging : Ensure that packets traversing a bridge are processed by iptables (IPv4/IPv6). 
-        net.bridge.bridge-nf-call-iptables  = 1
-        net.bridge.bridge-nf-call-ip6tables = 1
-        # Packet forwarding : Enable it, allowing inter-Pod comms across different network interfaces.
-        net.ipv4.ip_forward = 1:
+# KERNEL 
+    # @ RUNTIME : Params declared (by drop-in file(s)) here are LOADED AT RUNTIME
+        /etc/systctl.conf 
+        /etc/sysctl.d
+    # @ BOOT    : Module params declared (by drop-in file(s)) here are LOADED ON BOOT
+        /etc/modules-load.d 
 
-        # Do by /etc/sysctl.d/ drop-in file :
-        cat <<-EOF |sudo tee /etc/sysctl.d/k8s-containerd.conf
-		net.bridge.bridge-nf-call-iptables  = 1
-		net.bridge.bridge-nf-call-ip6tables = 1
-		net.ipv4.ip_forward                 = 1
-		EOF
+    sysctl  # Configure kernel's RUNTIME parameters : See /proc/sys/
+        # GET : Read ephemeral-ports Range @ OS
+            sysctl net.ipv4.ip_local_port_range
+            # Else
+            cat /proc/sys/net/ipv4/ip_local_port_range #=> 32768   60999
 
-        # Apply this kernel (re)config sans reboot
+        # SET : Ephemerally (now); does NOT survive reboot
+            sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
+
+        # SET : Persistently : Create drop-in file under /etc/sysctl.d
+			# >>>  PRESERVE TABs of HEREDOC  <<<
+			cat <<-EOF |sudo tee /etc/sysctl.d/kubernetes.conf
+			net.bridge.bridge-nf-call-iptables  = 1
+			net.bridge.bridge-nf-call-ip6tables = 1
+			net.ipv4.ip_forward                 = 1
+			EOF
+
+        # APPLY changes NOW (REGARDLESS) sans reboot
+            sudo sysctl --system
+
+    modprobe  # Ephemerally ADD/REMOVE kernel modules (now)
+        # E.g., br_netfilter ip_vs, ip_vs_rr, ip_vs_wrr, ip_vs_sh, overlay
+        modinfo br_netfilter           # Info
+        modprobe -c |grep br_netfilter # Shows if CHANGEd
+
+        # ADD : Load kernel modules ON BOOT
+        ok(){
+            conf='/etc/modules-load.d/kubernetes.conf'
+            [[ $(cat $conf |grep 'overlay') ]] && return 0
+			# >>>  PRESERVE TABs of HEREDOC  <<<
+			cat <<-EOH |sudo tee $conf
+			br_netfilter
+			ip_vs
+			ip_vs_rr
+			ip_vs_wrr
+			ip_vs_sh
+			overlay
+			EOH
+            # Confirm file
+            [[ $(cat $conf |grep 'overlay') ]] || return 1
+        }
+        ok || exit $?
+
+    lsmod   # Show status of kernel modules
+        lsmod |grep br_netfilter       # Shows if LOADED
+
+        # ADD unless already loaded (idempotent)
+        [[ $(lsmod |grep br_netfilter) ]] || sudo modprobe br_netfilter  
+        [[ $(lsmod |grep br_netfilter) ]] || echo FAILed
+
+    # APPLY changes sans reboot
         sudo sysctl --system
 
 # AUTHENTICATION/AUTHORIZATION (Identity/Access)
@@ -467,13 +499,16 @@ sysctl
         ####################
 
     arp-scan # ARP scanner
-        sudo arp-scan --interface=ens192 192.168.28.0/24
+        dev=ens192;cidr=192.168.28.0/24
+        sudo arp-scan --interface=$dev $cidr
+        sudo arp-scan $cidr
 
     nmap # Network Mapper : Security Scanner : Port Scanner  
-        # WARNING: nmap use considered hostile by ISPs etal
-        # >>> Use sudo else FAILs SILENTLY with many (yet not all) false negative(s)
         # Advanced tool regarding remote services availability 
         # Features: Host discovery, Port scanning, Version detection, OS detection  
+        # WARNINGs: 
+        # - nmap used on targets external to your VPC is FORBIDDEN by cloud vendors etal
+        # - May FAIL SILENTLY if run sans sudo; reports false negative(s)
         # https://en.wikipedia.org/wiki/Nmap
         sudo nmap HOST                       # Regular scan 
         sudo nmap -sn CIDR                   # Ping scan : Discover nodes on subnet, e.g., 192.168.0.0/24
@@ -484,7 +519,7 @@ sysctl
         # Slow comprehensive scan
         sudo nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script "default or (discovery and safe)" HOST 
 
-        # Get CIDR in which current machine exists
+        # Get CIDR binding device
             dev=eth0 # eth0 or ens192 
             cidr=$(ip -4 -brief addr show $dev |awk '{print $3}')
 
@@ -727,15 +762,17 @@ sysctl
         # @ WLAN
         sudo dhclient -v -r 'wlan0' && sudo dhclient -v 'wlan0'
 
-    # Reset NIC 
-        ifdown/ifup  # legacy utilities
-        # @ LAN
-        sudo ifdown 'eth0' && sudo ifup 'eth0'
-        # @ WLAN
-        sudo ifdown 'wlan0' && sudo ifup 'wlan0'
+    # Adapter AKA Link AKA Connection AKA Device AKA Interface AKA NIC
+        dev=ens192                                  # Common: eth0, ens192, wlan0, docker0, cni*
+        sudo ip link set $dev up|down               # Set UP/DOWN; toggle used to apply new config(s)
+        sudo ip link set $dev alias "Public link"   # Set alias AKA description 
 
-        # Newer
-        ip link set $adapter up|down
+        # LEGACY utilities 
+            ifdown/ifup  
+            # @ LAN
+            sudo ifdown 'eth0' && sudo ifup 'eth0'
+            # @ WLAN
+            sudo ifdown 'wlan0' && sudo ifup 'wlan0'
 
     # Restart Network 
         # RHEL/CentOS/Fedora 

@@ -150,22 +150,25 @@ exit
     ;                # Repeat last MOVEMENT
     :w !sudo tee %   # Save the current file as root
     
-    # Prepend one character, '#', to a block of sequential lines  
-    v                # Enter visual mode with cursor at first line
-    j                # Scroll cursor down to last target line
-    '#' OR :s/^/#    # Type '#' ELSE ':s/^/#', which APPLIES char TO FIRST LINE
-    ESC              # Applies to the remaining lines (WAIT).
-    
-    # Delete 1st character, '#', from a block of sequential lines 
-    8,17s/^#//       # sed RegEx prepended with 'FIRST,LAST' (CSV) line numbers 
-    ## OR, using Visual mode:
-    v                # Enter visual mode with cursor at first line
-    j                # Scroll cursor down to last target line
-    :s/^#//          # Delete leading '#'
-    ESC              # Affect is applied (wait) to the remaining lines
+    # Prepend one character, here '#', to a block of sequential lines  
+        8,17s/^/#        # sed RegEx prepended with 'FIRST,LAST' line numbers 
+        ## OR use Visual mode
+        v                # Enter visual mode with cursor at 1st line
+        j                # Scroll cursor down to last target line
+        :s/^/#           # Applies to 1st line
+        ESC              # Applies to all remaining lines. WAIT.
+        
+    # Delete 1st character, here '#', from a block of sequential lines 
+        8,17s/^#//       # sed RegEx prepended with 'FIRST,LAST' line numbers 
+        ## OR use Visual mode:
+        v                # Enter visual mode with cursor at 1st line
+        j                # Scroll cursor down to last target line
+        :s/^#//          # Applies to 1st line
+        ESC              # Applies to all remaining lines. WAIT.
 
-    # On "E137: Viminfo file is not writable:", 
-    # delete ~/.viminfo, which regenerates on vim startup.
+    # On report of "E137: Viminfo file is not writable:"
+        # Fix by deleting ~/.viminfo, which is regenerated per vim startup.
+        # Else track down and handle the swap file AKA backup file created during prior vi error.
 
 # MACROS 
    
