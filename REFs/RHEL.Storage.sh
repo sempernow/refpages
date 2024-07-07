@@ -68,7 +68,7 @@ exit
         # Hard link points to FILE; shares source inode; canNOT link btwn volumes (device/partition/filesystem)
         ln TARGET LINK     # create HARD link; TARGET is source 
         # Soft link points to FILE|DIR; has its own inode; CAN link btwn volumes;
-        ln -s TARGET LINK  # create SOFT link
+        ln -fs TARGET LINK # create SOFT link; delete preexisting
             # E.g., ...
                 $ link -s ./foo ./bar
                 $ ls -l ./bar
