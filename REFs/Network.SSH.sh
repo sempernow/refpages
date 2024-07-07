@@ -331,9 +331,11 @@ man ssh_config
                 # defaults; for ALL Hosts; PLACE LAST
                 Host *
                     GSSAPIAuthentication no  # used @ Kerberos; leave it 'no'
-                    ForwardAgent no
+                    ## For password prompt @ `ssh ... 'sudo ANY ...'
+                    RequestTTY yes # no|yes|force|auto
+                    ForwardAgent no # Default 
                     ForwardX11 no
-                    ForwardX11Trusted yes
+                    ForwardX11Trusted yes # Default per distro
                     Port 22
                     Protocol 2
                     ServerAliveInterval 60
@@ -751,6 +753,11 @@ man ssh_config
                 TCPKeepAlive yes             # prevent termination on inactive session    
                 ClientAliveInterval 60       # seconds per
                 ClientAliveCountMax 3        # so 3 minutes to AUTO-KILL idle connection
+                ## Fast + FIPS 140-2 (2024) ciphers : Set these at /etc/ssh/sshd_config
+                Ciphers aes256-gcm@openssh.com,chacha20-poly1305@openssh.com,aes256-ctr
+                # Additional recommended settings for security (2024)
+                KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+                MACs hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
 
             # Restart sshd daemon after changes
                 systemctl restart sshd   # restart after changes 

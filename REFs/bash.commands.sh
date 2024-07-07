@@ -356,7 +356,8 @@ exit
 
     # HD Parameters : get/set SATA/IDE device parameters
     # https://man7.org/linux/man-pages/man8/hdparm.8.html
-    hdparm -t --direct /dev/nvme0n1 # Read speed (MB/sec)
+        device=/dev/nvme0n1
+        hdparm -t --direct $device # Read speed (MB/sec)
 
     # COPY BLOCK DEVICES  https://wiki.archlinux.org/index.php/disk_cloning 
         dd  # The only standard command which can safely read EXACTLY ONE BYTE of input
@@ -1286,6 +1287,20 @@ exit
 
                 # Stream process files
                 find . -execdir /bin/bash -c 'streamArgs "$@"' _ {} \+
+
+            # Process a FILE or HEREDOC
+                # Define the list of parameters
+                params_list='a b c'
+                # Pass the arguments to the script using xargs
+                # @ FILE
+                printf "%s\n" $params_list |xargs -I{} /bin/bash process_args.sh -s
+                # @ HEREDOC : 'EOH' prevents variable expansion; HEREDOC is a literal.
+				printf "%s\n" $params_list |xargs -I{} /bin/bash -s <<'EOH'
+				while read -r arg; do
+				echo "Processing argument: $arg"
+				#... Do things ...
+				done
+				EOH
 
 # TEXTUTILS (package); Process text streams using filters ...
 

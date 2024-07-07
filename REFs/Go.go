@@ -74,9 +74,15 @@
 
 // INSTALL  https://golang.org/doc/install  |  https://golang.org/dl/   
 	// @ Linux
-		sudo tar -C /usr/local -xzf "go${_VERSION}.${_OS}-${_ARCH}.tar.gz" 
-		yum install git             // RHEL|CentOS|Fedora 
-		apt git                     // Ubuntu|Debian 
+		$ ver=1.22.5
+		$ arch=amd64
+		$ curl -sSL https://go.dev/dl/go${ver}.linux-${arch}.tar.gz |sudo tar -C /usr/local/go$ver -xz
+		// @ ~/.bashrc
+		// # Configure to newest Golang version if any installed @ /usr/local/go[N.N.N]
+		// export GOROOT=$(find /usr/local -maxdepth 1 -type d -path '*/go*' |sort |tail -n 1) \
+		//     && export PATH=$GOROOT/bin:$PATH
+		$ sudo yum install git      // RHEL|CentOS|Fedora 
+		$ sudo apt git              // Ubuntu|Debian 
 		                            // https://git-scm.com/download/linux 
 		// @ Windows 
 		choco install golang 

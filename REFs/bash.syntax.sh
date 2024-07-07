@@ -180,7 +180,7 @@ exit
 
 # COMMAND SUBSTITUTION; subshell (ephemeral; same SHLVL)
     $(command1)     # preferred
-    `command1`      # equivalent; old way
+    `command1`      # equivalent; legacy sytax
     # Subshell is not interpereted at current shell; do not escape quotes lest nested thereunder:
     echo "$(echo "shell level: $SHLVL")" # SHLVL of the "subshell" is that of current shell.
 
@@ -199,19 +199,20 @@ exit
     $(( expr1 ))  
 
 # CONDITIONAL EXPRESSION / TEST CONSTRUCT http://tldp.org/LDP/abs/html/testconstructs.html 
-    [ expr1 ]    # INTEGER/STR/FILE/ ... '[' is builtin command
-    [[ expr1 ]]  # INTEGER/STR/FILE/ ... '[[' is a keyword [extended test] @ bash >= 2.02
-    (( expr1 ))  # ARITHMETIC : If expr1 evaluates to 0|false, then exit code ($?) is non zero.
+    [ expr1 ]    # INTEGER/STR/FILE/ : '[' is builtin command
+    [[ expr1 ]]  # INTEGER/STR/FILE/ : '[[' is keyword (extended test); bash >= 2.02
+    (( expr1 ))  # ARITHMETIC 
     #... man test (1) https://linux.die.net/man/1/test
 
-    [[ $var ]]     && echo 'True'  || echo 'False'
-
+    [[ $var ]]     && echo 'True'  || echo 'False' # Zero-character string is False.
     (( $? ))       && echo 'Error' || echo 'Okay' 
     (( $a - $b ))  && echo 'Not 0' || echo 'Zero'
+    #... Error-code ($?) semantics of ARITHMETIC test is INVERTED: 
+    # "Okay" (0) is "False" case; "Error" (non-zero) is "True" case.
 
     # ARITHMETIC EXPANSION & EVALUATION  http://tldp.org/LDP/abs/html/dblparens.html
-        (( $a == $b ))
-        (( $a <= $b ))
+        (( $a == $b )) && echo T || echo F # True if equal
+        (( $a <= $b )) && echo T || echo F # True if a <= b
 
     # STRING COMPARISONS http://tldp.org/LDP/abs/html/comparison-ops.html#ICOMPARISON1
         [[ "$a" < "$b" ]]  # less than in ASCII alphabetical order
@@ -514,10 +515,10 @@ exit
 
         # HEREDOC : HERE DOCUMENT; redirect [MULTI-LINE] WORD to STDIN of COMMAND as if a FILE (DOC); instructs shell to read input from the current source (all text that follows) until a line containing only WORD (the delimiting identifer, with no trailing blanks) is seen. All of the lines read up to that point are then used as the COMMAND's STDIN or other FD (n) if specified.  https://en.wikipedia.org/wiki/Here_document
         
-        COMMAND [n]<<[-]WORD   # Disable leading TABs with ` <<-WORD `
-                here-document line1
-                here-document line2 ...
-        WORD    # Disable expansion (of any var in text str) by quoting the label, e.g., ` << 'EOH' `
+		COMMAND [n]<<-WORD   # Disable leading TABs with ` <<-WORD `
+			here-document line1
+			here-document line2 ...
+		WORD    # Disable expansion (of any var in text str) by quoting the label, e.g., ` << 'EOH' `
 
         # EXAMPLES BELOW : Indentation (tabs) removed 
         # else editor replaces with spaces, confusing code highligter.
@@ -1100,66 +1101,48 @@ cat <<-EOH > FILE # EQUIV: cat > FILE <<-EOH
 EOH
 
 # HEREDOC to COMMAND INPUT
-## Read a string as a file to the command expecting a file.
-wc -l <<-EOX
-echo $(git log --oneline)
-EOX
-## Exploit the dynamic to print a multi-line menu for user select (read)
-cat <<- EOX 
-    PostgreSQL server container (${image}) session
-    1) Bash shell
-
-        $ su - postgres
-        $ pushd /home 
-
-    2) Interactive psql
-EOX
-read q1
-case $q1 in
-    # ...
-esac
-
-# HEREDOC + NAMED PIPE
-mkfifo # FIFO special file  https://linux.die.net/man/3/mkfifo
-# Push DYNAMIC file CONTENT to remote sans both file and upload utility.
-# 1. @ ./foo.conf.sh
-#    Read/write dynamic content through pipe, 
-#    writing to STDOUT, per script:
-
-#!/usr/bin/env bash
-mkfifo pipe1
-cat <<-EOH > pipe1 &
-########################################
-###  AUTO-GENERATED @ ${0##*/} : ...
-########################################
-foo_config_param1 = $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-foo_config_param2 = $_DYNAMIC_LOCAL_ENV_VAR_X
-#... to configure remote nodes with dynamic 
-# content per local environment injected herein.
+## Redirect a (multi-line) string as a file (to command that takes a file).
+ssh $host /bin/bash -s <<-EOH
+echo "=== Local host: $(hostname)" 
+echo "=== USER @ local machine: $USER" 
 EOH
-cat < pipe1
-rm pipe1
 
-    # Note this method loses code editor's semantical highlighting; 
-    # everything is highlighted identically (read as a literal). 
+## SINGLE-QUOTE the 1st delimiter (EOH) to pass HEREDOC as LITERAL
+ssh $host /bin/bash -s <<-'EOH'
+echo "=== Remote host: $(hostname)" 
+echo "=== USER @ remote machine: $USER" 
+EOH
 
-    # 2. Execute script @ subshell (COMMAND SUBSTITUTION), 
-    #    reading the written pipe (as a string) into a variable.
-    tgt_file='foo.conf'             # Target file
-    src_str="$(./${tgt_file}.sh)"  # Source string (local file)
+# HEREDOC + NAMED PIPE 
+mkfifo # FIFO special file  https://linux.die.net/man/3/mkfifo
+## Push any/dynamic/mixed file CONTENT to remote sans file-upload utility.
+## 1. Create local file having HEREDOC content redirected through a NAMED PIPE 
+vi local.file
+    #!/usr/bin/env bash
+    mkfifo pipe1
+    # >>>  PRESERVE TABs of HEREDOC  <<<
+	cat <<-EOH > pipe1 &
+	# Content
+	local_now = $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+	remote_runtime = \$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+	local = $(hostname)
+	remote = \$(hostname)
+	EOH
+    cat < pipe1
+    rm pipe1
+## 2. Pipe or redirect locally-processed local.file CONTENT 
+##    to remote.file using COMMAND SUBSTITUTION
+chmod 0755 local.file
+ssh $host "echo '$(bash local.file)' |tee remote.file"
+## OR
+ssh $host "echo '$(bash local.file)' > remote.file"
+# Verify
+ssh $host cat remote.file
+    # # Content
+    # now = 2022-03-05T01:52:20Z
+    # runtime = $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    # local = XPC
+    # remote = $(hostname)
 
-    # 3. Write the source string to target file @ (remote) shell.
-    ssh user@host -i ~/.ssh/foo.pem /bin/bash -c "
-        echo '${src_str}' > ${PATH_ABS_CTNR}/${tgt_file}
-    "
-
-# HERESTR : HERE STRING : a [MULTI-LINE] WORD supplied as FILE to COMMAND 
-    # (with NEWLINE appended) on its STDIN (or its FD 'n' if 'n' is specified).  
+# HERESTR : HERE STRING : a lesser HEREDOC
     # https://www.tldp.org/LDP/abs/html/x17837.html
-
-    COMMAND [n]<<< WORD 
-
-    # E.g., Multi-line VARIABLE : Search/Test for substring therein.
-        [[ $( grep "foo" <<< "$var" ) ]] && {
-            echo 'The MULTI-LINE VARIABLE, `$var`, contains "foo"'
-        }

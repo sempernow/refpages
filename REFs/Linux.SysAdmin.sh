@@ -65,16 +65,40 @@ exit 0
             sudo timedatectl set-ntp true  # disable per `false`
 
 # MACHINE RESOURCES
-    df -h       # Disk space (@ root drive)
-    vmstat      # I/O Usage 
-    htop        # Monitor process; top
-    # CPU info
-    cat /proc/cpuinfo
-    alias cpu='cat /proc/cpuinfo'
-    lscpu       # CPUs
-    # Memory
-    free -mh    # RAM
+    
+    # Storage 
+        df -hT      # Per device    
+        du -h       # Disk usage per directory under PWD
+        du -hs $dir # Disk usage summary of all folders thereunder (default is PWD)
 
+    # CPU info
+        cat /proc/cpuinfo
+        lscpu 
+        
+    # Memory info
+        free -mh  # Units of Mi 
+        htop 
+            # RSS (Resident Set Size) : Actual physical memory used by the process
+            # - Total physical memory must be greater than sum of all RSS across all running processes. 
+            # VIRT (Virtual Memory Size) : Total virtual memory the process can access;
+            # - Incl. memory that was swapped out, memory that is mapped but not used, and shared memory.
+        ps aux --sort=-%mem |head -n 10 
+            # RSS (Resident Set Size) : Actual physical memory used by the process
+            # - Total physical memory must be greater than sum of all RSS across all running processes. 
+            # VSZ (Virtual-memory SiZe) in KiB; equivalent to htop's VIRT.
+            # - Incl. memory that was swapped out, memory that is mapped but not used, and shared memory.
+
+            # Example:
+            process=containerd
+            ps aux |grep -e RSS -e $process
+                USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+                root      1234  0.5  2.1 2097152 43152 ?       Ssl  10:00   1:23 /usr/bin/containerd
+                # - VSZ (Virtual-memory SiZe) is 2097152 KiB (roughly 2GB).
+                # - RES (Resident Memory Size) is 43152 KiB (roughly 42MiB).
+
+    # I/O Usage
+        vmstat -d 
+ 
 # OS : Get/Set hostname/info
     hostnamectl 
     # OS info
@@ -87,10 +111,16 @@ exit 0
         service $service status|start|stop|enable|disable 
 
     # @ systemd : See man systemd.service
-        systemctl status|start|stop|enable|disable $service
+        systemctl status|is-active|start|stop|enable|disable $service
 
         # Enable and start
         systemctl enable --now $service 
+
+        # Verify service STATUS is 'active'|'activating' : $? is 0|3 respectively. 
+        systemctl is-active [--quiet] $service # --quite prints nothing
+
+        # Verify service STATUS is 'failed' : $? is 0 if one or more in 'failed' state, else non-zero.
+        systemctl is-failed [--quiet] $service # --quite prints nothing
 
         # Disable and stop
         systemctl disable --now $service
@@ -98,48 +128,48 @@ exit 0
         # List all unit files and their status 
         systemctl list-unit-files 
 
-    /etc/systemd/system # Location of all unit (service) files
+        /etc/systemd/system # Location of all unit (service) files
 
-    # Create a service for COMMAND (quickly)
-        sudo systemctl enable --now COMMAND
-    # Delete a service
-        sudo systemctl disable --now COMMAND
+        # Create a service for COMMAND (quickly)
+            sudo systemctl enable --now COMMAND
+        # Delete a service
+            sudo systemctl disable --now COMMAND
 
-    # Create : Example : ssh-user-sessions.service
-        sudo vi /etc/systemd/system/ssh-sessions.service # Edit:
-        
-            [Unit]
-            Description=Shutdown all ssh sessions before network
-            After=network.target
-            Before=sleep.target
+        # Create : Example : ssh-user-sessions.service
+            sudo vi /etc/systemd/system/ssh-sessions.service # Edit:
             
-            [Service]
-            TimeoutStartSec=0
-            Type=oneshot
-            RemainAfterExit=yes
-            ExecStart=/bin/true
-            ExecStop=/usr/bin/killall sshd
+                [Unit]
+                Description=Shutdown all ssh sessions before network
+                After=network.target
+                Before=sleep.target
+                
+                [Service]
+                TimeoutStartSec=0
+                Type=oneshot
+                RemainAfterExit=yes
+                ExecStart=/bin/true
+                ExecStop=/usr/bin/killall sshd
+                
+                [Install]
+                WantedBy=multi-user.target
+                RequiredBy=sleep.target
             
-            [Install]
-            WantedBy=multi-user.target
-            RequiredBy=sleep.target
-        
-    # Create : Example : keepAwake.service
-        sudo vi /etc/systemd/system/keepAwake.service # Edit:
+        # Create : Example : keepAwake.service
+            sudo vi /etc/systemd/system/keepAwake.service # Edit:
 
-            [Unit]
-            Description=Inhibit suspend
-            Before=sleep.target
+                [Unit]
+                Description=Inhibit suspend
+                Before=sleep.target
 
-            [Service]
-            Type=oneshot
-            ExecStart=/usr/bin/sh -c "(( $( who | grep -cv '(:' ) > 0 )) && exit 1"
+                [Service]
+                Type=oneshot
+                ExecStart=/usr/bin/sh -c "(( $( who | grep -cv '(:' ) > 0 )) && exit 1"
 
-            [Install]
-            RequiredBy=sleep.target
-            
-        # LECAGCY METHOS [CentOS-6]  
-        # ... runs all executables [hooks] @ ...
+                [Install]
+                RequiredBy=sleep.target
+
+    # LECAGCY METHOS (RHEL 6)
+        # ... runs all executables (hooks) @ ...
         /etc/pm/sleep.d 
 
     # SUSPENSION IS PREVENTED if any such script returns [$?] non-zero exit status.
@@ -321,15 +351,19 @@ exit 0
             groupadd -r $u
             useradd -r -m -g $u -s /bin/false $u
 
-        # Get entitites from Name Service Switch library
+        # Get entitites (GID, name, ...) from Name Service Switch library
             # Useful to test for existence of subject
             getent group foo 
             getent passwd foo
 
         # Add user to group
-            usermod -aG docker foo 
-            sudo usermod -aG $group $USER # Add current user to group 
-            newgrp docker # Take effect now, but side effects linger, e.g., at $(id -g) : Better to logout/login 
+            usermod -aG $group $user 
+            newgrp docker # Supposedly to take effect now, but side effects linger. Better to logout/login 
+            # OR
+            gpasswd -a $user group 
+
+        # Remove a user from a grop
+            gpasswd -d $user $group
 
         # List groups to which user has membership
         groups foo
@@ -355,11 +389,11 @@ exit 0
             passwd $user 
             # Batch password change
             chpasswd  # batch process cmd; must be root user 
-            # set the root acct pw to the ssh pw (e.g., Docker dev box)
+            # set the root acct pw to the ssh pw 
             echo  "root:$SSH_USERPASS" | chpasswd
-        # Delete user foo's PASSWORD; may/not prevent login with no password
+        # Delete user's PASSWORD; may/not prevent login with no password
         sudo passwd -d $user
-        # Lock user foo's account from password-authenticated login
+        # Lock user account from password-authenticated login
         sudo passwd -l $user
         # CHANGE : HOME dir : default is /home/$USER
             sudo vim /etc/passwd  # E.g., from `/home/uZer` to `/mnt/s/HOME`
@@ -375,47 +409,56 @@ exit 0
     # sudo / su 
         sudo su 
         sudo -E su  # preserve environment 
+        sudo -l     # List commands allowed a sudoer
 
     # sudoers FILE
-        /etc/sudoers 
-        # ALLOW sudo per user or group, per sudoers statements at:
-            sudo visudo /etc/sudoers # Edit
-        # Best practice is to leave that file untouched, 
-        # and rather add/edit file(s) at /etc/sudoers.d/,
-        # each of which is invoked automatically.
-        # So, ALLOW per file(s) of sudoers statements at /etc/sudoers.d/ 
+        /etc/sudoers # The baseline sudoers file
+            sudo visudo /etc/sudoers # To edit, but don't. Rather:
+            # - Best practice is to leave that file untouched, 
+            #   and rather add/edit file(s) at /etc/sudoers.d/.
+            #   Each of which is named and scoped to a group or user.
+            # - The visudo utility is a safety net against user lockout due to wrong syntax,
+            #   yet it does *not* protect context-specific errors.
+            #   Such errors are uncaught, and fail to apply without hint as to why.
+        # ALLOW per file(s) of sudoers statements at /etc/sudoers.d/ 
             sudo visudo /etc/sudoers.d/$USER  # Create/Edit.
-            # Programatically, 
+            # - All files under /etc/sudoers.d/ are invoked automatically.
+            # - Changes take effect immediately.
             # ALLOW current user to run ALL COMMANDS as sudo SANS PASSWORD:
                 echo "$USER ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
-                #... Ansible requires such one-time setup beforehand at each target node of its "inventory",
-                #    else must manage password(s).
-
-            # Allow members of group gitops to run specific commands with specific subcommands:
-                sudo visudo /etc/sudoers/gitops
-            
-                    Cmnd_Alias GITOPS_CMDS = /usr/bin/dnf update, /usr/bin/dnf upgrade, \
-                                            /usr/bin/systemctl status *, /usr/bin/systemctl start apache2 \
-                                            /usr/bin/systemctl start firewalld
-
-                    # Sans password:
-                    %gitops ALL=(ALL) NOPASSWD: GITOPS_CMDS
-                    # OR
-                    # Require password:
-                    %gitops ALL=(ALL) GITOPS_CMDS
-
-        # Set sudo password-entry timeout : If unset, then defaults to 5 minutes. 
-            Defaults        timestamp_timeout=-1 # Once per session 
-            Defaults        timestamp_timeout=15 # 15 minutes; All users.
-            Defaults:u1     timestamp_timeout=0  # User 'u1' must enter password at every sudo invocation.
-            # Scoped to $USER
-            echo "Defaults:$USER    timestamp_timeout=-1" |sudo tee /etc/sudoers.d/$USER
-
+                # OR, by UID
+                echo "#$(id -u) ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
+            # GROUP-SCOPED declarations : group 'ops'
+                sudo visudo /etc/sudoers/ops
+                ## Allow group 'ops' members to run declared (CSV) list of (sub)commands/flags:
+                # Cmnd_Alias  GROUP_OPS_CMDS =  /usr/bin/dnf update, \
+                #                         /usr/bin/systemctl status *, \
+                #                         /usr/bin/systemctl list-unit-files, \
+                #                         /usr/bin/systemctl start apache2, \
+                #                         /usr/bin/journalctl, \
+                #                         /usr/bin/firewalld --list-all *, \
+                #                         /usr/bin/firewalld --get-services, \
+                #                         /usr/bin/firewalld --permanent --info-service=*
+                ##...Allow sans password:
+                # %ops ALL=(ALL) NOPASSWD: GROUP_OPS_CMDS
+                ## Modify sudo PATH (secure_path) for group 'ops':
+                # Defaults:%ops secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+                ## Similar, but password required (per timestamp_timeout setting):
+                # %ops ALL=(ALL) GROUP_OPS_CMDS
+                ## Similar, but group declared by its GID
+                # %#2222 ALL=(ALL) GROUP_OPS_CMDS
+            # Set timeout for sudo password entry
+                Defaults timestamp_timeout=-1 # Once per terminal session
+                Defaults timestamp_timeout=60 # 60 minutes 
+                # Scoped to user
+                Defaults:tom timestamp_timeout=-1
+                # Scoped to group
+                Defaults:%opstimestamp_timeout=-1
         # Set default editor
             sudo update-alternatives --config $editor
-
+    
     # MONITOR users
-        users  # print user names of users currently logged in @ current host 
+        users # print user names of users currently logged in @ current host 
             # E.g., monitor if user $1 logged in; send email to root on login
             until users | grep $1 > /dev/null 
             do; sleep 15; done 

@@ -5,9 +5,9 @@ exit
         #  1. Udev naming; eth<X>; CLASSICAL naming
         #  2. Logical naming; .{VLAN} and :{ALIAS}
         #  3. BIOS (AKA Physical) naming; based on HW properties
-        #     - Embedded: em3;  em{1-N}
-        #     - PCI:      p6p1; p{SLOT#}p{PORT#}; 
-    
+        #       - Embedded: em3;  em{1-N}
+        #       - PCI:      p6p1; p{SLOT#}p{PORT#}; 
+        #
         # Predictable Network Interface Names
         #  systemd/udev automatically assigns predictable, stable NIC names.
         #  https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/
@@ -27,11 +27,18 @@ exit
     # 224.0.0.0/4      D       224.0.0.0     239.255.255.255   Multicast  
 
 # KERNEL 
-    # @ RUNTIME : Params declared (by drop-in file(s)) here are LOADED AT RUNTIME
-        /etc/systctl.conf 
-        /etc/sysctl.d
-    # @ BOOT    : Module params declared (by drop-in file(s)) here are LOADED ON BOOT
-        /etc/modules-load.d 
+    # RUNTIME config : Params declared (by drop-in file(s)) here are LOADED AT RUNTIME
+        /etc/systctl.conf   # For configuring kernel parameters.
+        /etc/sysctl.d       # Dir for drop-in files, which override params declared above.
+            # Convention is to name drop-in file (*.conf) by its app/purpose, e.g., kubernetes.conf
+            # Contains "<param> = <val>" list : Example entry:
+                # net.bridge.bridge-nf-call-iptables = 1
+
+    # ON BOOT config : Module params declared (by drop-in file(s)) here are LOADED ON BOOT
+        /etc/modules-load.d # For specifying kernel modules to load.
+            # LOADED BY systemd-modules-load.service ON BOOT.
+            # Contains "<name_of_module>" list : Example entry:
+                # dm_mod
 
     sysctl  # Configure kernel's RUNTIME parameters : See /proc/sys/
         # GET : Read ephemeral-ports Range @ OS
@@ -43,7 +50,7 @@ exit
             sudo sysctl -w net.bridge.bridge-nf-call-iptables=1
 
         # SET : Persistently : Create drop-in file under /etc/sysctl.d
-			# >>>  PRESERVE TABs of HEREDOC  <<<
+            # >>>  PRESERVE TABs of HEREDOC  <<<
 			cat <<-EOF |sudo tee /etc/sysctl.d/kubernetes.conf
 			net.bridge.bridge-nf-call-iptables  = 1
 			net.bridge.bridge-nf-call-ip6tables = 1
@@ -52,17 +59,23 @@ exit
 
         # APPLY changes NOW (REGARDLESS) sans reboot
             sudo sysctl --system
-
+   
+    modinfo  # name, filename, descr, author, license, file 
+        modinfo $name
+ 
     modprobe  # Ephemerally ADD/REMOVE kernel modules (now)
         # E.g., br_netfilter ip_vs, ip_vs_rr, ip_vs_wrr, ip_vs_sh, overlay
-        modinfo br_netfilter           # Info
-        modprobe -c |grep br_netfilter # Shows if CHANGEd
-
+        modprobe $name                  # Add module ($name) else okay
+        modprobe -r $name               # Remove module ($name) else okay
+        modprobe ... --first-time $name # Fail if action (add/remove) would be redundant.
+        modprobe -c |grep $name         # Shows iff CHANGED (since last boot) : Do NOT use this.
+        lsmod |grep $name               # Shows if LOADED : See lsmod (below) : Use this.
+       
         # ADD : Load kernel modules ON BOOT
         ok(){
             conf='/etc/modules-load.d/kubernetes.conf'
-            [[ $(cat $conf |grep 'overlay') ]] && return 0
-			# >>>  PRESERVE TABs of HEREDOC  <<<
+            [[ $(cat $conf 2>/dev/null |grep 'overlay') ]] && return 0
+            # >>>  PRESERVE TABs of HEREDOC  <<<
 			cat <<-EOH |sudo tee $conf
 			br_netfilter
 			ip_vs
@@ -72,16 +85,17 @@ exit
 			overlay
 			EOH
             # Confirm file
-            [[ $(cat $conf |grep 'overlay') ]] || return 1
+            [[ $(cat $conf 2>/dev/null |grep 'overlay') ]] || return 1
         }
         ok || exit $?
+    
+    lsmod   # Show status of kernel modules : Prints list : Module, Size, Used by
+        lsmod |grep $name  # Shows if module ($name) LOADED
+        #... This is *the* reliable method of verifying a module is loaded. 
 
-    lsmod   # Show status of kernel modules
-        lsmod |grep br_netfilter       # Shows if LOADED
-
-        # ADD unless already loaded (idempotent)
-        [[ $(lsmod |grep br_netfilter) ]] || sudo modprobe br_netfilter  
-        [[ $(lsmod |grep br_netfilter) ]] || echo FAILed
+        # ADD (ephemerally) unless already loaded (idempotent)
+        sudo modprobe br_netfilter # Okay if already loaded
+        [[ $(lsmod |grep br_netfilter) ]] || echo FAILED-to-load
 
     # APPLY changes sans reboot
         sudo sysctl --system
@@ -210,22 +224,27 @@ exit
             -A UA, --user-agent UA # send `User-Agent` header
             -s, --silent           # silences progress meter & err msgs
             -sS, --show-error      # Show error, otherwise silent.
-            -v, --verbose          # Verbose report
             -u, --user USER:PASS   # credentials; username & password 
             -x, --proxy [PROTOCOL://]HOST[:PORT]  # to use specified proxy 
-            --trace FILE --trace-time # Write trace/time info to FILE   
-            -w, --write-out @FILE  # FORMAT the OUTPUT per txt FILE
-                   # https://stackoverflow.com/questions/18215389/how-do-i-measure-request-and-response-times-at-once-using-curl
-                    time_namelookup:  %{time_namelookup}s\n
-                       time_connect:  %{time_connect}s\n
-                    time_appconnect:  %{time_appconnect}s\n
-                   time_pretransfer:  %{time_pretransfer}s\n
-                      time_redirect:  %{time_redirect}s\n
-                 time_starttransfer:  %{time_starttransfer}s\n
-                                    ----------\n
-                         time_total:  %{time_total}s\n
-                # To STDOUT: 
-                curl -s -w "@curl-format.txt" -o /dev/null ...
+            -v, --verbose          # Verbose report
+            -v --trace-time        # Prepend each line with current time (usec resolution)
+            -v --trace FILE --trace-time # Write trace/time to FILE   
+            -w, --write-out @FILE  # FORMAT output per txt FILE
+
+        # Print connect-timing info (only) to STDOUT: 
+            # >>>  PRESERVE TABs of HEREDOC  <<<
+            file=curl-time-format.txt
+			cat <<-EOH |tee $file
+			   time_namelookup:  %{time_namelookup}s\n
+			      time_connect:  %{time_connect}s\n
+			   time_appconnect:  %{time_appconnect}s\n
+			  time_pretransfer:  %{time_pretransfer}s\n
+			     time_redirect:  %{time_redirect}s\n
+			time_starttransfer:  %{time_starttransfer}s\n
+			                     ----------\n
+			        time_total:  %{time_total}s\n
+			EOH
+            curl -s -w "@$file" -o /dev/null $url
 
         # Response Headers (only, lest error) to STDOUT: 
             curl -sSIL $url                                     # HEAD method
