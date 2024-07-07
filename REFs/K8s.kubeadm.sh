@@ -3,28 +3,27 @@
 #  Kubernetes tools : kubeadm
 # -----------------------------------------------------------------------------
 
-# @ kubeadm init
+# @ kubeadm init : Initial/Temp configuration file
 cfg=kubeadm.init.config.yaml
 
 # Pull all core K8s images prior to kubeadm init
-sudo kubeadm config images pull
+sudo kubeadm config images pull --config $cfg
 
+# Generating NEW cluster PKI @ /etc/kubernetes/pki/
+sudo kubeadm init phase certs all --config $cfg
 # Generate a STABLE certificateKey (sha256 hex) for later (init/join) use
-## kubeadm certs certificate-key
-key=$(sudo kubeadm certs certificate-key) # Set in kubeadm configuration file: kind: InitConfiguration
+key=$(sudo kubeadm certs certificate-key) # @ InitConfiguration.certificateKey
 # Upload certificates beforehand; instead of "kubeadm init --upload-certs" 
 sudo kubeadm init phase upload-certs --upload-certs --certificate-key $key
-# Use key declared at kubeadm configuration file: kind: InitConfiguration
+# Use key declared at InitConfiguration.certificateKey
 sudo kubeadm init phase upload-certs --upload-certs --config $cfg 
-#... Certificates @ /etc/kubernetes/pki/*
-
 # Generate a STABLE bootstrap token ([a-z0-9]{6}.[a-z0-9]{16}) for later (init/join) use 
-token=$(kubeadm token generate) # Set in kubeadm configuration file: kind: InitConfiguration
+token=$(kubeadm token generate) # @ InitConfiguration.bootstrapTokens.token
 # Use token declared at kubeadm configuration file: kind: InitConfiguration
 kubeadm init phase bootstrap-token --config $cfg
 
 kubeadm config print init-defaults |tee $cfg
-vim $cfg #... modify the configuration
+vim $cfg #... modify the configuration to add these params
 sudo kubeadm init --config $cfg
 
 vipp='192.168.0.100:8443' # HA-LB Endpoint
@@ -42,21 +41,28 @@ sudo kubeadm init -v5 \
     --service-cidr "$snet" \
     |& tee kubeadm.init.$(hostname).log
 
+# Create --ca-cert-hashes value : JoinConfiguration.bootstrapTokens.caCertHash,
+# which is the SHA-256 hash of public key
+hash=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt \
+        |openssl rsa -pubin -outform der 2>/dev/null \
+        |openssl dgst -sha256 -hex \
+        |sed 's/^.* //' \
+)
 # Join command @ CONTROL node(s)
 sudo kubeadm join $vipp \
     --ignore-preflight-errors=Mem \
-    --token rm7p6u.ujlcmduwnktx5g97 \
-    --discovery-token-ca-cert-hash sha256:13d77f4b489877b86640c71a7aaff0e66e2975481d823f1f64a6f94425d07956 \
-    --control-plane --certificate-key 44cf77610eba54fe1c3837ad3a38a4d758e503073091b81628a43d08c70904d7 \
+    --token $token \
+    --discovery-token-ca-cert-hash $hash \
+    --control-plane --certificate-key $key \
     |& tee kubeadm.join.$(hostname).log
 
 # Join command @ WORKER node(s)
 ## Note : Is exactly that for Control node sans "--control-plane" and "--certificate-key KEY" flags/values
 sudo kubeadm join $vipp \
     --ignore-preflight-errors=Mem \
-    --token rm7p6u.ujlcmduwnktx5g97 \
+    --token $token \
     --ignore-preflight-errors=Mem \
-    --discovery-token-ca-cert-hash sha256:13d77f4b489877b86640c71a7aaff0e66e2975481d823f1f64a6f94425d07956 \
+    --discovery-token-ca-cert-hash $hash \
     |& tee kubeadm.join.$(hostname).log
 
 # Generate a NEW join COMMAND for control node  (@ certs expire and so reload)
