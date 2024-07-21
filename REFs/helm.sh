@@ -11,16 +11,18 @@
 
 # Install Helm : https://helm.sh/docs/intro/install/
 ## Releases    : https://github.com/helm/helm/releases
-release='helm-v3.12.1-linux-amd64.tar.gz'
-tar -zaf $release
-sudo mv linux-amd64/helm /usr/local/bin/helm
-## Or, the latest by script
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-vim get_helm.sh # Examine it.
-sudo /bin/bash ./get_helm.sh
-
-helm version
+ok(){
+    arch=amd64
+    ver=3.15.3
+    curl -sSL https://get.helm.sh/helm-v${ver}-linux-$arch.tar.gz |tar -xzf -
+    sudo cp linux-$arch/helm /usr/local/bin/helm && rm -rf linux-$arch
+    helm version |grep $ver && return 0
+    ## Else install the latest release by trusted script:
+    curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+        |/bin/bash 
+    helm version || return 1
+}
+ok #|| exit $?
 
 # Repos
 ## Add repo of ArtifactHUB.io 

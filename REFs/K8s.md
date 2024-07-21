@@ -179,6 +179,85 @@ which makes sense for the application to work.
 
 ## Topics of Interest
 
+
+### [Downward API](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/)
+
+Used to configure a Pod's environment variables to expose information about itself to containers running in the Pod. 
+
+```yaml
+apiVersion: v1
+kind: Pod
+...
+spec:
+  containers:
+    - name: test-container
+      image: registry.k8s.io/busybox
+      command: [ "sh", "-c"]
+      args:
+      - while true; do
+          echo -en '\n';
+          printenv MY_NODE_NAME MY_POD_NAME MY_POD_IP;
+          sleep 10;
+        done;
+      env:
+        - name: MY_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+```
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+spec:
+  template:
+    metadata:
+      labels:
+        ...
+        app.kubernetes.io/name: ingress-nginx
+        ...
+    spec:
+      containers:
+      - args:
+        - create
+        ...
+        - --namespace=$(POD_NAMESPACE)
+        ...
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example
+spec:
+  containers:
+  - name: example-container
+    image: busybox
+    env:
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    command: ["/bin/sh", "-c"]
+    args:
+    - |
+      echo "If by Kubernetes substitution: $(POD_NAMESPACE)"; \
+      echo "If from shell environment: ${POD_NAMESPACE}"
+```
+
+
 ### Naming convention
 
 **Q:** Kubernetes is written in Golang. And best practices of Golang include naming convention that names should not "stutter". For example, if a struct value should not include the struct key name. However, it seems that Kubernetes has adopted the exact opposite convention. For example pod.volume.name=this-volume is the typical namiing convention. What's going on here? Is that just bad practices proliferating, or is this intentional?

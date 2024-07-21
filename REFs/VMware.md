@@ -1,11 +1,18 @@
 # [VMware](https://www.vmware.com/ "VMware.com")
 
 ## vSphere ESXi 
+
 - Type-1 Hypervisor
+- NSX : SDN 
+- vMotion : live migration of a VM to another physical machine without any downtime
+    - Enterprise feature : Requires license
+-  `.vmdk` : Proprietary virtualization format only, 
+   whereas Proxmox supports that and others; `.qcow2` and `.vdi`
 - Remote access only; per Web console
 - [Free version](https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6) per registered user
 
 ## vCenter 
+
 - Manage/Access multiple ESXi hosts, all from one console.
 - Deployed on VM, on vSphere ESXi host, as either:
     1. VCSA VMware Center Service Appliance VM (preferred)
@@ -13,4 +20,61 @@
     2. Windows VM on vSphere ESXi host; uses MS SQL database
 - Flash (legacy) and HTML5 based interfaces available. 
 - Advanced features; VM Cloning, load balancing, ...
+
+## ESXi : Subnets and Firewalls
+
+@ ChatGPT4o
+
+### Q: 
+
+Regarding VMs under ESXi, shouldn't each set of logically related VMs have 
+their own firewalled subnet defined and managed via the hypervisor 
+and perhaps allowing prgrammatic access from the VMs?
+
+### A: 
+
+Yes, it is a good practice to segment logically related VMs into their own 
+firewalled subnets within an ESXi environment. 
+This approach provides several advantages:
+
+### Advantages of Firewalled Subnets for Logically Related VMs:
+
+1. **Security**: By isolating groups of VMs, you can limit the blast radius of any potential security incidents. If one VM is compromised, the attacker’s ability to move laterally within the network is restricted.
+
+2. **Traffic Control**: Firewalled subnets allow you to control the flow of traffic between different groups of VMs. This ensures that only necessary and approved communication paths are allowed, reducing the risk of unauthorized access.
+
+3. **Compliance**: Many regulatory frameworks require strict network segmentation to protect sensitive data. Isolating VMs into different subnets can help meet these requirements.
+
+4. **Performance Management**: Segregating traffic can help in managing and optimizing network performance by reducing congestion and ensuring that critical applications have the necessary bandwidth.
+
+### Implementation in ESXi:
+
+1. **Virtual Switches (vSwitches)**: Use ESXi’s virtual switches to create isolated networks for different groups of VMs. Each vSwitch can have its own set of port groups and VLANs.
+    - Port groups define the network configuration, including VLAN ID, network traffic policies, and security settings for the connected VMs.
+
+2. **Distributed Virtual Switches (vDS)**: For larger environments, consider using VMware vSphere Distributed Switches, which provide centralized management of network configurations across multiple ESXi hosts.
+
+3. **Firewall Rules**: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX if available, or through physical firewalls and network devices if NSX is not in use.
+
+4. **Programmatic Access**: Allow programmatic access to manage and configure network settings from the VMs. This can be achieved using VMware’s APIs and tools like PowerCLI for scripting and automation.
+
+### Steps to Set Up Firewalled Subnets:
+
+>Terraform, or Ansible module `community.vmware`, can be used for this.
+
+1. **Define Subnets**: Plan and define the subnets based on the logical grouping of VMs.
+2. **Create vSwitches/vDS**: Set up virtual switches or distributed switches in ESXi to host the subnets.
+3. **Assign VLANs**: Assign VLAN IDs to the port groups on the switches to segregate the network traffic.
+4. **Configure Firewalls**: Implement firewall rules to control the traffic between different subnets. If using NSX, leverage its micro-segmentation capabilities.
+5. **Programmatic Configuration**: Use scripts and automation tools to manage network configurations and ensure consistency across the environment.
+
+### Example:
+
+- **Development Environment**: Subnet A
+- **Production Environment**: Subnet B
+- **Database Servers**: Subnet C
+
+Each of these subnets would be isolated on different vSwitches or port groups with appropriate VLANs and firewall rules to control the traffic flow between them, ensuring that development servers cannot directly access production databases, for instance.
+
+This segmentation and isolation strategy is a key part of a robust network security posture in a virtualized environment like ESXi.
 

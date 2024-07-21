@@ -65,8 +65,8 @@ exit 0
             sudo timedatectl set-ntp true  # disable per `false`
 
 # MACHINE RESOURCES
-    
     # Storage 
+        lsblk 
         df -hT      # Per device    
         du -h       # Disk usage per directory under PWD
         du -hs $dir # Disk usage summary of all folders thereunder (default is PWD)
@@ -96,9 +96,11 @@ exit 0
                 # - VSZ (Virtual-memory SiZe) is 2097152 KiB (roughly 2GB).
                 # - RES (Resident Memory Size) is 43152 KiB (roughly 42MiB).
 
-    # I/O Usage
-        vmstat -d 
- 
+    # I/O 
+        vmstat -d           # Usage 
+        lspci               # PCIe specs
+        /boot/firmware/     # Configuration file(s), e.g., to enable PCIe
+
 # OS : Get/Set hostname/info
     hostnamectl 
     # OS info
