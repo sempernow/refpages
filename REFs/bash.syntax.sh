@@ -20,17 +20,19 @@ exit
     /bin/bash                               # Launch subshell
     /bin/bash "cmd1 && cmd2 $a1;cmd3"       # Execute Bash command(s) at subshell
     /bin/bash -c "cmd1 a1 a2 a3"            # cmd1 becomes $0, a1 becomes $1, ... 
-    cat script.sh |/bin/bash -s a1 a2       # Execute `script.sh a1 a2` : Use -s to accept pipe, redirect, and HEREDOC
-    /bin/bash -s < script.sh $arg1 $arg2    # Execute `script.sh $arg1 arg$2` at subshell : Useful with ssh; args expand locally.
-    # /bin/bash -s <<-EOH |& tee bash.log   # Execute script via HEREDOC, and log remote STDOUT+STDERR locally : Useful with ssh.
-    # dnf -y update
-    # dnf -y install python311
-    # command $local_foo \$remote_foo       # Inject local and/or remote environment(s) using "-s" option with pipe, redirect, or HEREDOC.
-    # EOH
+    cat script.sh |/bin/bash -s - a1 a2     # Execute `script.sh a1 a2` : -s flag to accept pipe, redirect, or HEREDOC
 
-        # REMOTEly execute LOCAL script through a secure shell, injecting both LOCAL and REMOTE ENVironments
-        ssh ... /bin/bash -s < /path/of/local/script.sh "$local_foo" "\$remote_foo"
-        #... without pushing script.sh to remote machine.
+	# Similar, using HEREDOC syntax : Quote delimiter (EOH) to prevent pre-pipe expansion.
+	cat <<-'EOH' |/bin/bash -s - a1 a2 
+	echo "[$1] [$2]" 
+	EOH
+
+    # REMOTEly execute LOCAL script through a secure shell, injecting both local and remote environments
+    # Useful for remote (SSH) admin without pushing script(s) to target(s):
+    cat script.sh |ssh -T /bin/bash -s - a1 a2
+
+    # Similar, using REDIRECT syntax, but may err by "ambiguous rediect", i.e., script vs. positional param(s)
+    /bin/bash -s < script.sh $arg1 $arg2
 
     /bin/bash -x script.sh arg1 arg2        # Debug mode.
     /bin/bash -v ...                        # Debug; print script lines as they are read.

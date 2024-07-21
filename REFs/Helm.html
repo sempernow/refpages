@@ -30,29 +30,22 @@
 
 <p>Install a select version (<a href="https://github.com/helm/helm/releases">Releases</a>)</p>
 
-<pre><code class="language-bash">os='linux'
-arch='amd64'
-ver='3.12.2'
-release=&quot;helm-v${ver}-${os}-${arch}.tar.gz&quot;
-wget -O $release https://get.helm.sh/$release \
-    &amp;&amp; tar -xaf $release \
-    &amp;&amp; sudo mv ${os}-${arch}/helm /usr/local/bin/helm
-</code></pre>
+<pre><code class="language-bash"># Install Helm : https://helm.sh/docs/intro/install/
+## Releases    : https://github.com/helm/helm/releases
+ok(){
+    os=linux
+    arch=amd64
+    ver=3.15.3
+    curl -sSL https://get.helm.sh/helm-v$ver-$os-$arch.tar.gz |tar -xzf -
+    sudo cp $os-$arch/helm /usr/local/bin/helm &amp;&amp; rm -rf $os-$arch
+    helm version |grep $ver &amp;&amp; return 0
+    ## Else install the latest release by trusted script:
+    curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+        |/bin/bash 
+    helm version || return 1
+}
+ok #|| exit $?
 
-<p>Or install the latest</p>
-
-<pre><code class="language-bash">curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-vim get_helm.sh # Examine it.
-sudo /bin/bash ./get_helm.sh
-</code></pre>
-
-<p>Verify</p>
-
-<pre><code class="language-bash">helm version
-</code></pre>
-
-<pre><code class="language-text">version.BuildInfo{Version:&quot;v3.12.1&quot;, GitCommit:&quot;f32a52...&quot;, GitTreeState:&quot;clean&quot;, GoVersion:&quot;go1.20.4&quot;
 </code></pre>
 
 <h2>Commands</h2>

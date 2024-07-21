@@ -31,6 +31,22 @@ INIT
         
         systemctl
 
+LOCALE
+------
+Locale : defines the regional settings and language preferences for the user interface and system behavior; how elements like date and time formats, currency symbols, numbers, and text encoding are displayed and otherwise handled. 
+
+    - C.UTF-8 : an extension of the `C` locale that supports the UTF-8 character encoding; suitable for most applications that require UTF-8 encoding.
+
+    - C : a minimal locale that provides a basic, default environment for the system. It uses the ASCII character set and standard formatting for numbers, dates, and other data; used for scripts and system operations where nothing more than basic ASCII required.
+
+    - POSIX : Essentially another name for the `C` locale. It ensures compatibility with the POSIX (Portable Operating System Interface) standard, which defines a consistent API for Unix-like operating systems.
+
+    - fr_FR.UTF-8 : French
+
+    - en_US.UTF-8 : US English
+
+    - ... (per language)
+
 HELP
 ----
 www.ubuntu.com - PDF available.

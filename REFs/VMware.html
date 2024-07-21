@@ -26,6 +26,14 @@
 
 <ul>
 <li>Type-1 Hypervisor</li>
+<li>NSX : SDN</li>
+<li>vMotion : live migration of a VM to another physical machine without any downtime
+
+<ul>
+<li>Enterprise feature : Requires license</li>
+</ul></li>
+<li><code>.vmdk</code> : Proprietary virtualization format only,
+whereas Proxmox supports that and others; <code>.qcow2</code> and <code>.vdi</code></li>
 <li>Remote access only; per Web console</li>
 <li><a href="https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6">Free version</a> per registered user</li>
 </ul>
@@ -47,6 +55,76 @@
 <li>Flash (legacy) and HTML5 based interfaces available.</li>
 <li>Advanced features; VM Cloning, load balancing, ...</li>
 </ul>
+
+<h2>ESXi : Subnets and Firewalls</h2>
+
+<p>@ ChatGPT4o</p>
+
+<h3>Q:</h3>
+
+<p>Regarding VMs under ESXi, shouldn't each set of logically related VMs have
+their own firewalled subnet defined and managed via the hypervisor
+and perhaps allowing prgrammatic access from the VMs?</p>
+
+<h3>A:</h3>
+
+<p>Yes, it is a good practice to segment logically related VMs into their own
+firewalled subnets within an ESXi environment.
+This approach provides several advantages:</p>
+
+<h3>Advantages of Firewalled Subnets for Logically Related VMs:</h3>
+
+<ol>
+<li><p><strong>Security</strong>: By isolating groups of VMs, you can limit the blast radius of any potential security incidents. If one VM is compromised, the attacker’s ability to move laterally within the network is restricted.</p></li>
+
+<li><p><strong>Traffic Control</strong>: Firewalled subnets allow you to control the flow of traffic between different groups of VMs. This ensures that only necessary and approved communication paths are allowed, reducing the risk of unauthorized access.</p></li>
+
+<li><p><strong>Compliance</strong>: Many regulatory frameworks require strict network segmentation to protect sensitive data. Isolating VMs into different subnets can help meet these requirements.</p></li>
+
+<li><p><strong>Performance Management</strong>: Segregating traffic can help in managing and optimizing network performance by reducing congestion and ensuring that critical applications have the necessary bandwidth.</p></li>
+</ol>
+
+<h3>Implementation in ESXi:</h3>
+
+<ol>
+<li><p><strong>Virtual Switches (vSwitches)</strong>: Use ESXi’s virtual switches to create isolated networks for different groups of VMs. Each vSwitch can have its own set of port groups and VLANs.</p>
+
+<ul>
+<li>Port groups define the network configuration, including VLAN ID, network traffic policies, and security settings for the connected VMs.</li>
+</ul></li>
+
+<li><p><strong>Distributed Virtual Switches (vDS)</strong>: For larger environments, consider using VMware vSphere Distributed Switches, which provide centralized management of network configurations across multiple ESXi hosts.</p></li>
+
+<li><p><strong>Firewall Rules</strong>: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX if available, or through physical firewalls and network devices if NSX is not in use.</p></li>
+
+<li><p><strong>Programmatic Access</strong>: Allow programmatic access to manage and configure network settings from the VMs. This can be achieved using VMware’s APIs and tools like PowerCLI for scripting and automation.</p></li>
+</ol>
+
+<h3>Steps to Set Up Firewalled Subnets:</h3>
+
+<blockquote>
+<p>Terraform, or Ansible module <code>community.vmware</code>, can be used for this.</p>
+</blockquote>
+
+<ol>
+<li><strong>Define Subnets</strong>: Plan and define the subnets based on the logical grouping of VMs.</li>
+<li><strong>Create vSwitches/vDS</strong>: Set up virtual switches or distributed switches in ESXi to host the subnets.</li>
+<li><strong>Assign VLANs</strong>: Assign VLAN IDs to the port groups on the switches to segregate the network traffic.</li>
+<li><strong>Configure Firewalls</strong>: Implement firewall rules to control the traffic between different subnets. If using NSX, leverage its micro-segmentation capabilities.</li>
+<li><strong>Programmatic Configuration</strong>: Use scripts and automation tools to manage network configurations and ensure consistency across the environment.</li>
+</ol>
+
+<h3>Example:</h3>
+
+<ul>
+<li><strong>Development Environment</strong>: Subnet A</li>
+<li><strong>Production Environment</strong>: Subnet B</li>
+<li><strong>Database Servers</strong>: Subnet C</li>
+</ul>
+
+<p>Each of these subnets would be isolated on different vSwitches or port groups with appropriate VLANs and firewall rules to control the traffic flow between them, ensuring that development servers cannot directly access production databases, for instance.</p>
+
+<p>This segmentation and isolation strategy is a key part of a robust network security posture in a virtualized environment like ESXi.</p>
  
     </main>
 
