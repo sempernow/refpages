@@ -836,9 +836,6 @@ exit 0
         /etc/rc.d/init.d
         /etc/init.d.
 
-
-
-
 # VIRTUAL CONSOLE LOGIN
     CTRL+ALT+<F1-F7>
 
@@ -846,6 +843,49 @@ exit 0
     CTRL+ALT+F7  # GUI  
 
     # The Linux console is a SYSTEM CONSOLE internal to the Linux kernel. (A system console is the device which receives all kernel messages and warnings and which allows logins in SINGLE USER MODE). The Linux console provides a way for the kernel and other processes to send text output to the user, and to receive text input from the user. The user typically enters text with a computer keyboard and reads the output text on a computer monitor. The Linux kernel SUPPORTS VIRTUAL CONSOLES - consoles that are logically separate, but which access the same physical keyboard and display. The Linux console (and Linux virtual consoles) are implemented by the VT subsystem of the Linux kernel, and do not rely on any user space software. This is in contrast to a terminal emulator, which is a user space process that emulates a terminal, and is typically used in a graphical display environment.  https://en.wikipedia.org/wiki/Linux_console
+
+# GRUB : Protect using unique username and password
+
+    # Generate password 
+    sudo dnf install grub2-tools # Is *not* in grub2-tools-minimal @ RHEL 8.
+    grub2-mkpasswd-pbkdf2 
+    # Set string
+    pw_str='grub.pbkdf2.sha512.10000.FFC...CED.F30...0D1'
+
+	# Verify boot partition is hd0 or whatever
+    lsblk
+    df -hT
+        # And mapping is : 
+        /dev/sda1 -> (hd0,msdos1)
+        /dev/sda2 -> (hd0,msdos2)
+
+        # GRUB Partition Naming
+        #     (hd0,1) or (hd0,msdos1) refers to the first partition on the first hard disk (/dev/sda1 in Linux).
+        #     (hd0,2) or (hd0,msdos2) refers to the second partition on the first hard disk (/dev/sda2 in Linux).
+
+        # Explanation
+        #     (hd0,1): This is a shorthand notation. It refers to the first partition on the first hard disk.
+        #     (hd0,msdos1): This is a more explicit notation that also refers to the first partition on the first hard disk, indicating it's an MBR (Master Boot Record) partitioning scheme.
+
+
+    # Create/Edit grub config 
+	cat <<-EOH |tee sudo /etc/grub.d/40_custom
+	set superusers="grubadmin"
+	password_pbkdf2 grubadmin $pw_str
+
+	menuentry 'Red Hat Enterprise Linux' {
+		set root=(hd0,msdos2)
+		linux /boot/vmlinuz-$(uname -r) root=/dev/sda1
+		initrd /boot/initramfs-$(uname -r).img
+	}
+	EOH
+
+    # Update grub config
+    sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+    sudo grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
+    # Reboot
+    sudo reboot
+
 
 # MAINENTANCE MODE 
     # a.k.a. "Single User Mode" a.k.a. "runlevel 1"  
