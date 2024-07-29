@@ -15,6 +15,21 @@ kubectl get node -o template='{{range .items}}{{.spec.podCIDRs}}{{"\n"}}{{end}}'
 # ["10.240.2.0/24"]
 # ["10.240.3.0/24"]
 
+# Patch : https://chatgpt.com/share/a45d346d-270e-4919-94a7-dccabb1e1246
+## JSON Patch (RFC 6902)
+kubectl patch $kind $name --type='json' \
+    -p='[{"op": "replace", "path": "/spec/replicas", "value": 3}]'
+## JSON Merge Patch (RFC 7396) : concise syntax
+kubectl patch $kind $name --type='merge' \
+    -p='{"spec": {"replicas": 3}}'
+## K8s Strategic Merge Patch
+kubectl patch $kind $name --type='strategic' \
+    -p='{"spec": {"template": {"spec": {"containers": [{"name": "nginx", "image": "nginx:1.15.4"}]}}}}'
+## Using Kustomize / YAML 
+kustomize build $folder | kubectl apply -f -
+## Equivalent:
+kubectl kustomize $folder | kubectl apply -f -
+
 # Managed Kubernetes Environment @ Google Cloud Platform 
 ## Kubernetes Engine > Cluster > Create > GKE Standard
 

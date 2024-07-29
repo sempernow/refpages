@@ -237,9 +237,9 @@ Create a cluster configured for ingress (controller) at ports `80` (HTTP) and `4
 ### @ `Ubuntu [14:20:12] [1] [#0] /s/DEV/devops/infra/kubernetes/kind`
 
 ```bash
-kind create cluster --config kind-ingress-nginx-config.yaml
+kind create cluster --config kind-config-ingress-nginx.yaml
 ```
-- @ [`kind-ingress-nginx-config.yaml`](kind-ingress-nginx-config.yaml)
+- @ [`kind-config-ingress-nginx.yaml`](kind-config-ingress-nginx.yaml)
 
 
 Deploy Ingress NGINX Controller (`ingress-nginx`) using manifest configured for kind 

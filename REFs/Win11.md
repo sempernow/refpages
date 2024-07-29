@@ -5,7 +5,8 @@
 @ "Control Panel\Network and Internet\Network Connections"
 
 - Properties : UNCHECK (Disable) IPv6 
-    - At both the physical and virtual adapters connected to the gateway.
+    - At adapter(s) bound to gateway,
+      else DNS latency is some 10x greater.
 
 ## Install
 
@@ -13,7 +14,7 @@ Windows 11 Install using a local-only account.
 (Bypass requirement to have an online Microsoft account.)
 https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account
 
-## Method 1
+### Method 1
 
 - Follow install menus until "Select Country" page
 - Shift + F10, which launches a CMD window. 
@@ -27,7 +28,7 @@ https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account
  click "I don't have Internet" to continue.
 - "Continue with limited setup"
 
-## Method 2
+### Method 2
 
 - At Sign in screen, click and add a local-account name.
 - Next and add local-account password.

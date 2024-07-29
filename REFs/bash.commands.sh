@@ -1841,15 +1841,12 @@ exit
         tr ' ' '\n' < "$file" |xargs -l2 
 
         # translate (existing) lowercase file to (created) UPPERCASE file
-        tr "[a-z]" "[A-Z]" < lower > upper 
-        tr '[:lower:]' '[:upper:]' < lower > upper  # equivalent
+        tr '[:lower:]' '[:upper:]' < lowerFILE > upperFILE  
 
-        ...|tr ':' '\n'             # replace colons with newline
-        ...|tr A-Z a-z              # uppercase to lowercase
-        ...|tr [:upper:] [:lower:]  # uppercase to lowercase
-        ...|tr ABCDE 12345
-        ...|tr -d L                 # delete all 'L' chars
-        ...|tr -s L                 # squeeze (multiple to one)
+        ...|tr '[A-Z]' '[a-z']          # uppercase to lowercase (alt syntax)
+        ...|tr ':' '\n'                 # replace colons with newline
+        ...|tr -d L                     # delete all 'L' chars
+        ...|tr -s L                     # squeeze (multiple to one)
 
     # filter out all but ln 20-30
         tail +20 < unfiltered |head -n30 > filtered 
@@ -2227,20 +2224,19 @@ exit
     # copy all junk files to $PWD 
     cp /home/bozo/current_work/junk/* .
 
-    # SYMBOLIC LINKs
-        # Hard link points to TARGET; SAME INODE; NOT link btwn volumes (device/partition/filesystem)
-        ln TARGET LINK_NAME     # create HARD link
-        # Soft link points to FILE|DIR; has its own inode; CAN link btwn volumes;
-        ln -s TARGET LINK_NAME  # create SOFT link
-            
+    ln # SYMBOLIC LINKs : `man ln` refers to LINK as DIRECTORY, and the existing source path as TARGET.
+        # Do NOT USE relative paths, else may err: "Too many levels of symbolic links"
+        # Hard link points to TARGET; SAME INODE; NOT link between volumes (device/partition/fs)
+        ln TARGET LINK     # create HARD link
+        # Soft link points to TARGET (FILE|DIR); creates NEW INODE; Okay to link between volumes.
+        ln -s TARGET LINK  # create SOFT link  
+        ln -fs TARGET LINK # create SOFT link, forcibly (delete pre-existing)
         # LINK TEST; is FILE is a symlink
-        [[  $( stat -c %h FILE ) -gt 1 ]] && echo "FILE is a Symbolic Link"
-
+        [[  $(stat -c %h FILE) -gt 1 ]] && echo "FILE is a Symbolic Link"
         # LINK TEST; file exists AND is a symbolic link; FLAKY BEHAVIOR  
-        [[ -L "$@" ]] && echo "SYMLINKD" # -h; same
-
+        [[ -L "$@" ]] && echo "SYMLINKed" # -h; same
         # EXACT hardlink TEST; two files are SAME iNODE; 'ls -i' shows inode number
-        [[ "$( ls -i FILE1 |awk '{print $1}' )" == "$( ls -i FILE2 |awk '{print $1}' )" ]] 
+        [[ "$(ls -i FILE1 |awk '{print $1}')" == "$(ls -i FILE2 |awk '{print $1}')" ]] 
 
     # test mod/update before/after 
     _mtime="$( stat -c %Y "$@" 2> /dev/null )"
