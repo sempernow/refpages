@@ -64,27 +64,27 @@ exit
         ├── by-path
         └── by-uuid
 
-        # CREATE HARD/SOFT LINKs ('SOFT' === 'Symbolic')
-        # Hard link points to FILE; shares source inode; canNOT link btwn volumes (device/partition/filesystem)
-        ln TARGET LINK     # create HARD link; TARGET is source 
-        # Soft link points to FILE|DIR; has its own inode; CAN link btwn volumes;
-        ln -fs TARGET LINK # create SOFT link; delete preexisting
+        ln  # CREATE HARD/SOFT LINKs ('SOFT' === 'Symbolic')
+            # SYMBOLIC LINKs : `man ln` refers to LINK as DIRECTORY, and the existing source path as TARGET.
+            # Do NOT USE relative paths, else may err: "Too many levels of symbolic links"
+            # Hard link points to TARGET; SAME INODE; NOT link between volumes (device/partition/fs)
+            ln TARGET LINK     # create HARD link
+            # Soft link points to TARGET (FILE|DIR); creates NEW INODE; Okay to link between volumes.
+            ln -s TARGET LINK  # create SOFT link
+            ln -fs TARGET LINK # create SOFT link, forcibly (delete pre-existing)
             # E.g., ...
-                $ link -s ./foo ./bar
-                $ ls -l ./bar
-                lrwxrwxrwx. 1    5 2018-04-21 11:47 bar -> ./foo
+                $ link -s /foo /bar
+                $ ls -l /bar
+                lrwxrwxrwx. 1    5 2018-04-21 11:47 bar -> /foo
             # E.g., make link to RHEL's weird grub.conf file/location (menu.lst)
                 ln -s '/boot/grub/menu.lst' '/etc/grub.conf'
                 # SAFE to DELETE (hard/soft) LINK; target NOT affected; change target (name|del) breaks link.
-                
         # LINK TEST; is FILE is a symlink
-        [[  $( stat -c %h FILE ) -gt 1 ]] && echo "FILE is a Symbolic Link"
-
+        [[  $(stat -c %h FILE) -gt 1 ]] && echo "FILE is a Symbolic Link"
         # LINK TEST; file exists AND is a symbolic link; FLAKY BEHAVIOR  
-        [[ -L "$@" ]] && echo "SYMLINKD" # -h; same
-
+        [[ -L "$@" ]] && echo "SYMLINKed" # -h; same
         # EXACT hardlink TEST; two files are SAME iNODE; 'ls -i' shows inode number
-        [[ "$( ls -i FILE1 | awk '{print $1}' )" == "$( ls -i FILE2 | awk '{print $1}' )" ]] 
+        [[ "$(ls -i FILE1 | awk '{print $1}')" == "$(ls -i FILE2 | awk '{print $1}')" ]] 
 
     # FILE OWNERSHIP USER/GROUP/OTHER (ugo)
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>kind</title>
+    <title>K8s.kind</title>
     <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
@@ -261,11 +261,11 @@ sudo dnf install --allowerasing --nobest $pkgs
 
 <h3>@ <code>Ubuntu [14:20:12] [1] [#0] /s/DEV/devops/infra/kubernetes/kind</code></h3>
 
-<pre><code class="language-bash">kind create cluster --config kind-ingress-nginx-config.yaml
+<pre><code class="language-bash">kind create cluster --config kind-config-ingress-nginx.yaml
 </code></pre>
 
 <ul>
-<li>@ <a href="kind-ingress-nginx-config.yaml"><code>kind-ingress-nginx-config.yaml</code></a></li>
+<li>@ <a href="kind-config-ingress-nginx.yaml"><code>kind-config-ingress-nginx.yaml</code></a></li>
 </ul>
 
 <p>Deploy Ingress NGINX Controller (<code>ingress-nginx</code>) using manifest configured for kind</p>

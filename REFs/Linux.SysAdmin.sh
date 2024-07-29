@@ -867,7 +867,6 @@ exit 0
         #     (hd0,1): This is a shorthand notation. It refers to the first partition on the first hard disk.
         #     (hd0,msdos1): This is a more explicit notation that also refers to the first partition on the first hard disk, indicating it's an MBR (Master Boot Record) partitioning scheme.
 
-
     # Create/Edit grub config 
 	cat <<-EOH |tee sudo /etc/grub.d/40_custom
 	set superusers="grubadmin"
