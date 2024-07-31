@@ -2620,7 +2620,7 @@ exit
     $(date "+%F %a %H.%M.%S.%N") # 2018-10-10 Wed 08.28.31.268750400
 
     # uuid utility : apt install uuid
-    uuid -v 4 -m  # UUID v4; random MAC
+    uuid -v4 -m  # UUID v4; random MAC
     b0cf2b3d-842b-455f-86d3-669fd4815383
 
     uuid -d b0cf2b3d-842b-455f-86d3-669fd4815383  # Decode
@@ -2632,9 +2632,9 @@ exit
                         (no semantics: random data only)
 
     # v5 is non-random, unique, namespaced
-    uuid -v 5 $namespace $name # namespace is fixed-preset or UUID
-    uuid -v 5 ns:DNS 'uqrate.org'
-    uuid -v 5 '441fd472-a7e4-4ca0-8ab0-a83f0e104aac' 'uqrate.org'
+    uuid -v5 $namespace $name # namespace is a preset (ns:DNS|URL|OID|X500) or UUID
+    uuid -v5 ns:OID $(</etc/machine-id)
+    uuid -v5 '441fd472-a7e4-4ca0-8ab0-a83f0e104aac' 'uqrate.org'
 
 # RANDOM 
     mktemp --dry-run XXXXXXXX.abc   # gV4cFS2O.abc, lBsZSFD4.abc, ...
