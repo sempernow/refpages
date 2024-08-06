@@ -23,7 +23,7 @@
         <h1><a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code></h1>
 
 <blockquote>
-<p>GitOps is an operational framework that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).</p>
+<p>GitOps is <strong>an operational framework</strong> that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).</p>
 </blockquote>
 
 <h2>GitOps v. DevOps</h2>
@@ -72,12 +72,13 @@ Software agents continuously observe actual system state and attempt to apply th
 <p> <a href="https://www.youtube.com/watch?v=tgwxMfIsLJY" title="YouTube">DevOps Toolkit</a></p>
 
 <ul>
-<li>Service Catalog : UI on IDP (Built by Vendors/GitOps/DevOps not end users)
+<li><strong>Service Catalog</strong> : UI of IDP : built/maintained
+by GitOps/DevOps vendor/admin, not by end users.
 
 <ul>
 <li>Port : SasS only</li>
 <li><a href="https://backstage.io/">Backstage.io</a> : Build Developers' Portals (IDP)</li>
-<li><a href="https://www.crossplane.io/" title="crossplane.io">Crossplane.io</a> | <a href="https://github.com/crossplane">GitHub</a><br>
+<li><a href="https://www.crossplane.io/" title="crossplane.io">Crossplane.io</a> @ <a href="https://github.com/crossplane">GitHub</a><br>
 
 <ul>
 <li>Programmable Control Plane, Controllers, APIs</li>
@@ -85,11 +86,12 @@ Software agents continuously observe actual system state and attempt to apply th
 which converts IaC to Cloud-vendors' API requests.</li>
 </ul></li>
 </ul></li>
-<li>IaC : Service Management : Provision/Configure:<br>
+<li><strong>IaC</strong> : <strong>Service Management</strong> : Provision/Configure:<br>
 
 <ul>
-<li>Kubernetes : Cluster API, Crossplane, ...<br>
-Embrace it as the Control Plane</li>
+<li><a href="https://kubernetes.io/docs/home/" title="Kubernetes.io"><strong>Kubernetes</strong></a> :
+Cluster API, Crossplane, &hellip;<br>
+K8s is a <strong>universal Control Plane</strong></li>
 <li><a href="https://registry.terraform.io"><strong>Terraform</strong></a>:<br>
 Declarative provisioning of cloud infrastructure
 and policies (per-vendor modules),
@@ -101,11 +103,10 @@ A comprehensive, versatile automation tool
 allowing for both declarative and imperative methods.</li>
 <li>Pulumi : IaC in any language</li>
 </ul></li>
-
-<li><p>IaC : Workloads</p>
+<li><strong>IaC</strong> : <strong>Workloads</strong>
 
 <ul>
-<li><p>Application Management (K8s Manifests)</p>
+<li>Application Management (K8s Manifests)
 
 <ul>
 <li><a href="timoni.sh"><strong>Timoni.sh</strong></a> (Uses CUE)<br>
@@ -117,15 +118,14 @@ which are then version-controlled in Git repositories. Helm charts can be deploy
 Generate, customize, and/or otherwise manage Kubernetes objects using files (YAML) stored in a Git repo.
 It's integrated into <code>kubectl</code> and can be used with other GitOps tools to manage deployments.
 Use to modify Helm chart per environment.</li>
-<li><a href="https://www.kcl-lang.io/" title="kcl-lang.io">KCL</a> | <a href="https://github.com/kcl-lang/kcl/">GitHub</a>
+<li><a href="https://www.kcl-lang.io/" title="kcl-lang.io">KCL</a> @ <a href="https://github.com/kcl-lang/kcl/">GitHub</a>
 An open-source constraint-based record &amp; functional language mainly used in configuration and policy scenarios.
 Writtin in Rust, Golang, Python.</li>
 <li><a href="https://cuelang.org/" title="cuelang.org">CUE</a></li>
 <li><a href="https://pkl-lang.org/" title="pkl-lang.org">Pkl</a><br>
 Configuration that is Programmable, Scalable, and Safe</li>
 </ul></li>
-
-<li><p>CI : Glorified Chron Job</p>
+<li>CI : Glorified Chron Job
 
 <ul>
 <li><a href="https://docs.dagger.io/quickstart/daggerize">Dagger</a> functions:
@@ -136,8 +136,7 @@ Pipeline agnostic functions that run in CI/CD pipeline of any vendor.</li>
 <li>GitHub Actions</li>
 <li>GitLab CI</li>
 </ul></li>
-
-<li><p>CD : Application Lifecycle</p>
+<li>CD : Application Lifecycle
 
 <ul>
 <li><a href="https://github.com/fluxcd/flux2"><strong>Flux</strong></a><br>
@@ -156,43 +155,90 @@ supports automated or manual syncing of changes.
 </ul></li>
 </ul></li>
 </ul></li>
-
-<li><p>Logging : Log aggregation : Cluster-level</p>
+<li><strong>Logging</strong> (Cluster-level) AKA <strong>Log Aggregation</strong> :
+So that logs survive their (ephemeral) generator, be that in a Node, Pod, or container.
 
 <ul>
-<li>Elastic stack : Elasticsearch (TSDB backend) / Kibana (Web UI frontend) :
+<li><strong>Elastic stack</strong> : <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html" title="Elastic.co">Elasticsearch</a> (TSDB backend) / <a href="https://www.elastic.co/guide/en/kibana/current/introduction.html" title="Elastic.co">Kibana</a> (Web UI frontend) :
 to collect, store, query, and visualize log data;
 
 <ul>
-<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html">ECK (Elastic Cloud on K8s) Operator</a></li>
-</ul></li>
-</ul></li>
-
-<li><p>Observability</p>
+<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html" title="Elastic.co">ECK (Elastic Cloud on K8s) Operator</a>
 
 <ul>
-<li>Prometheus : TSDB optimized for Metrics and tracing;
-does not scale; has horrible alerts
+<li>Requires a <strong>collector</strong>/<strong>forwarder</strong> AKA <em>The Workhorse</em>; a data processing pipeline that ingests data from sources, transforms (normalizes) it, and then forwards it, i.e., <strong>Unified Loggging</strong> :
 
 <ul>
-<li><a href="https://thanos.io/">Thanos</a> : Prometheus HA + long-term storage</li>
+<li><a href="https://www.elastic.co/logstash" title="Elastic.co">Logstash</a> : Elastic's native solution</li>
+<li><a href="https://www.fluentd.org/architecture" title="Fluentd.org">Fluentd</a>
+
+<ul>
+<li><a href="https://fluentbit.io/">Fluent Bit</a> :
+<em>Lightweight forwarder for Fluentd</em>.</li>
+<li><a href="https://github.com/fluent/fluent-operator" title="GitHub">Fluent Operator</a> :
+Manage <strong>Fluent Bit</strong> and <strong>Fluentd</strong> the Kubernetes way.
+(Was FluentBit Operator)</li>
 </ul></li>
-<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/">Jaeger</a> : Tracing collector ingtegrates with OpenTelemetry via per-language library</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="https://grafana.com/oss/loki/">Grafana Loki</a> | <a href="https://github.com/grafana/loki/" title="GitHub"><code>grafana/loki</code></a> (<a href="https://grafana.com/docs/loki/latest/setup/install/">Install</a>) : &quot;<em>Prometheus, but for logs</em>&quot;. A lightweight alternative to Elastic stack.
+
+<ul>
+<li><strong>Does not provide full-text indexing</strong> of logs; indexes only the logs' metadata (<strong>labels</strong>).</li>
+<li>No viable installation method is available (2024-08), contrary to project claims.</li>
+</ul></li>
+</ul></li>
+<li><strong>Observability</strong> : Distributed <strong>Tracing</strong> and <strong>Metrics</strong>
+
+<ul>
+<li><a href="https://prometheus.io/" title="Prometheus.io">Prometheus</a> : TSDB and monitoring system optimized for telemetry (metrics and tracing).
+Does not scale, and has horrible alerts (Alertmanager). Provision using <a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1">Prometheus Operator</a> :
+
+<ul>
+<li><a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator" title="GitHub">prometheus-operator/prometheus-operator</a> :<br>
+The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml" title="GitHub"><code>bundle.yaml</code></a>)</li>
+<li><strong><code>kube-prometheus</code></strong> : *A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; <strong>end-to-end Kubernetes cluster monitoring</strong> with Prometheus using the Prometheus Operator.*
+
+<ul>
+<li>The Prometheus Operator</li>
+<li>Grafana</li>
+<li>Highly available Prometheus</li>
+<li>Highly available Alertmanager</li>
+<li>Prometheus <code>node-exporter</code></li>
+<li>Prometheus <code>blackbox-exporter</code></li>
+<li>Prometheus Adapter for Kubernetes Metrics APIs</li>
+<li><code>kube-state-metrics</code>; replacment for <code>metrics-server</code></li>
+<li>Install using one of two very similar projects:
+
+<ul>
+<li>Manifest method : <a href="https://github.com/prometheus-operator/kube-prometheus" title="GitHub">prometheus-operator/kube-prometheus</a></li>
+<li>Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub">prometheus-community/kube-prometheus-stack</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="https://thanos.io/" title="Thanos.io">Thanos</a> @ <a href="https://github.com/thanos-io/thanos" title="GitHub">GitHub</a> : Prometheus HA + long-term storage (<a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html" title="Min.io">MinIO</a>) : CNCF project; can &quot;seamlessly upgrade&quot; on top of an existing Prometheus deployment.</li>
+<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io">Jaeger</a> : Tracing collector that integrates with OpenTelemetry
+
+<ul>
+<li><a href="https://www.jaegertracing.io/docs/1.60/operator/" title="JaegerTracing.io">Jaeger Operator</a> @ <a href="https://github.com/jaegertracing/jaeger-operator" title="GitHub">GitHub</a>
+
+<ul>
+<li>Requires <a href="https://cert-manager.io/docs/"><code>cert-manager</code></a></li>
+</ul></li>
+</ul></li>
 <li><a href="https://opentelemetry.io/docs/collector/">OpenTelemetry</a> (OTEL)
-Vendor-agnostic tracing framework;
-app library (almost all languages covered) for generating traces</li>
-<li>Grafana : Web UI : Dashboards
+Vendor-agnostic tracing library;
+app library (almost all languages covered) for generating traces
 
 <ul>
-<li><a href="https://github.com/grafana/tempo">Grafana Tempo</a> : Tracing backend;
-scales and integrates with Jaeger, Zipkin, and OpenTelemetry;
-fixes Jaeger shortcommings</li>
-<li><a href="https://grafana.com/oss/loki/">Grafana Loki</a> :
-Lightweight alternative to Elasticsearch/Kibana
-<a href="https://github.com/grafana/loki/" title="GitHub"><code>grafana/loki</code></a> <a href="https://grafana.com/docs/loki/latest/setup/install/">Install</a>
-for log aggregation/visualization; &quot;<em>Prometheus, but for logs</em>&quot;
-collect, store, and query log data; emphasizes simplicity and scalability;
-<strong>does not do full-text indexing</strong> of logs; indexes only logs' metadata (<strong>labels</strong>)</li>
+<li><a href="https://opentelemetry.io/docs/kubernetes/operator/" title="OpenTelemetry.io">OpenTelemetry Operator</a> @ <a href="https://github.com/open-telemetry/opentelemetry-operator" title="GitHub">GitHub</a> :
+K8s Operator to manage collectors (<a href="https://github.com/open-telemetry/opentelemetry-collector" title="GitHub">OpenTelemetry Collector</a>) and auto-instrumentation of workloads using OTEL libraries.</li>
+</ul></li>
+<li><a href="https://grafana.com/">Grafana</a> : Web UI : Dashboards
+
+<ul>
+<li><a href="https://github.com/grafana/tempo">Grafana Tempo</a> : Tracing backend; scales and integrates with Jaeger, Zipkin, and OpenTelemetry; fixes Jaeger shortcommings</li>
 </ul></li>
 <li><a href="https://victoriametrics.com/products/open-source/">VictoriaMetrics</a> :
 TSDB &amp; Monitoring Solution (as a Service);
@@ -230,8 +276,7 @@ kubectl gadget trace tcp -n $ns
 
 <li><p>Groundcover : All in one</p></li>
 </ul></li>
-
-<li><p>Database</p>
+<li><strong>Database</strong>
 
 <ul>
 <li>Managed
@@ -243,8 +288,7 @@ kubectl gadget trace tcp -n $ns
 <li>CNPG : Cloud-native PG</li>
 <li>Atlas Operator : Schema</li>
 </ul></li>
-
-<li><p>Security</p>
+<li><strong>Security</strong>
 
 <ul>
 <li>Scanning
@@ -289,8 +333,7 @@ This ensures that sensitive information is securely managed.</li>
 <li>cert-manager</li>
 </ul></li>
 </ul></li>
-
-<li><p>Netowrking</p>
+<li><strong>Netowrking</strong>
 
 <ul>
 <li>Cilium</li>
@@ -299,8 +342,7 @@ This ensures that sensitive information is securely managed.</li>
 <li>Linkerd</li>
 <li>Kuma</li>
 </ul></li>
-
-<li><p>Miscellaneous</p>
+<li><strong>Misc</strong>
 
 <ul>
 <li>Charm : Library and Tools</li>
