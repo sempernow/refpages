@@ -221,6 +221,19 @@ Each container (MAC) given its own IP Address on an existing VLAN. Requires prom
 </ul></li>
 </ol>
 
+<p>List selected keys of &quot;<code>docker inspect ...</code>&quot; across all networks,
+refactored into another <em>valid</em> JSON object:</p>
+
+<pre><code class="language-bash">docker network ls -q |xargs docker network inspect $1 \
+    |jq -Mr '.[] | select(.Name != &quot;none&quot;) | {Name: .Name, Driver: .Driver, Address: .IPAM.Config}' \
+    |jq --slurp .
+
+</code></pre>
+
+<ul>
+<li><a href="docker.network.ls.inspect_jq.filtered.json">`docker.network.ls.inspect_jq.filtered.json</a></li>
+</ul>
+
 <h3>Network Services</h3>
 
 <ul>

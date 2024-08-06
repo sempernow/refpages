@@ -157,10 +157,49 @@ supports automated or manual syncing of changes.
 </ul></li>
 </ul></li>
 
+<li><p>Logging : Log aggregation : Cluster-level</p>
+
+<ul>
+<li>Elastic stack : Elasticsearch (TSDB backend) / Kibana (Web UI frontend) :
+to collect, store, query, and visualize log data;
+
+<ul>
+<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html">ECK (Elastic Cloud on K8s) Operator</a></li>
+</ul></li>
+</ul></li>
+
 <li><p>Observability</p>
 
 <ul>
-<li><p><a href="https://www.inspektor-gadget.io/">Inspektor-Gadget.io</a> : eBPF-based CLIs (gadgets)</p>
+<li>Prometheus : TSDB optimized for Metrics and tracing;
+does not scale; has horrible alerts
+
+<ul>
+<li><a href="https://thanos.io/">Thanos</a> : Prometheus HA + long-term storage</li>
+</ul></li>
+<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/">Jaeger</a> : Tracing collector ingtegrates with OpenTelemetry via per-language library</li>
+<li><a href="https://opentelemetry.io/docs/collector/">OpenTelemetry</a> (OTEL)
+Vendor-agnostic tracing framework;
+app library (almost all languages covered) for generating traces</li>
+<li>Grafana : Web UI : Dashboards
+
+<ul>
+<li><a href="https://github.com/grafana/tempo">Grafana Tempo</a> : Tracing backend;
+scales and integrates with Jaeger, Zipkin, and OpenTelemetry;
+fixes Jaeger shortcommings</li>
+<li><a href="https://grafana.com/oss/loki/">Grafana Loki</a> :
+Lightweight alternative to Elasticsearch/Kibana
+<a href="https://github.com/grafana/loki/" title="GitHub"><code>grafana/loki</code></a> <a href="https://grafana.com/docs/loki/latest/setup/install/">Install</a>
+for log aggregation/visualization; &quot;<em>Prometheus, but for logs</em>&quot;
+collect, store, and query log data; emphasizes simplicity and scalability;
+<strong>does not do full-text indexing</strong> of logs; indexes only logs' metadata (<strong>labels</strong>)</li>
+</ul></li>
+<li><a href="https://victoriametrics.com/products/open-source/">VictoriaMetrics</a> :
+TSDB &amp; Monitoring Solution (as a Service);
+compatible with Prometheus</li>
+
+<li><p><a href="https://www.inspektor-gadget.io/">Inspektor-Gadget.io</a> :
+eBPF-based CLIs (gadgets)</p>
 
 <pre><code class="language-bash">kubectl gadget deploy
 # Monitor all network traffic of a namespace
@@ -182,20 +221,6 @@ kubectl gadget trace tcp -n $ns
 <li>Several tools utilized it already, e.g., Kubescape</li>
 </ul></li>
 </ul></li>
-
-<li><p>Loki : Storage</p></li>
-
-<li><p>Prometheus : Metrics : Does not scale : Has horrible alerts</p>
-
-<ul>
-<li>Victoria Metrics : Scales : Compatible with Prometheus</li>
-</ul></li>
-
-<li><p>Jaeger : Tracing</p></li>
-
-<li><p>Grafana Tempo : Fixes Jaeger shortcommings</p></li>
-
-<li><p>Grafana (Dashboards)</p></li>
 
 <li><p>Robusta : Alerting</p></li>
 
