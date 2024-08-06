@@ -1,6 +1,6 @@
 # [GitOps](https://opengitops.dev/ "OpenGitOps.dev") `v1.0.0`
 
->GitOps is an operational framework that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).
+>GitOps is **an operational framework** that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).
 
 ## GitOps v. DevOps
 
@@ -43,16 +43,18 @@ from infra to services, with the goal of repeatable, verifiable deployment state
 
  [DevOps Toolkit](https://www.youtube.com/watch?v=tgwxMfIsLJY "YouTube")
 
-- Service Catalog : UI on IDP (Built by Vendors/GitOps/DevOps not end users)
+- **Service Catalog** : UI of IDP : built/maintained 
+  by GitOps/DevOps vendor/admin, not by end users.
     - Port : SasS only
     - [Backstage.io](https://backstage.io/) : Build Developers' Portals (IDP)
-    - [Crossplane.io](https://www.crossplane.io/ "crossplane.io") | [GitHub](https://github.com/crossplane)  
+    - [Crossplane.io](https://www.crossplane.io/ "crossplane.io") @ [GitHub](https://github.com/crossplane)  
         - Programmable Control Plane, Controllers, APIs
         - Embed IaC tooling such as Terraform, Helm, Ansible,
           which converts IaC to Cloud-vendors' API requests.
-- IaC : Service Management : Provision/Configure:  
-    - Kubernetes : Cluster API, Crossplane, ...  
-      Embrace it as the Control Plane
+- **IaC** : **Service Management** : Provision/Configure:  
+    - [**Kubernetes**](https://kubernetes.io/docs/home/ "Kubernetes.io") : 
+      Cluster API, Crossplane, &hellip;  
+      K8s is a **universal Control Plane**
     - [**Terraform**](https://registry.terraform.io):  
         Declarative provisioning of cloud infrastructure 
         and policies (per-vendor modules), 
@@ -63,7 +65,7 @@ from infra to services, with the goal of repeatable, verifiable deployment state
         A comprehensive, versatile automation tool 
         allowing for both declarative and imperative methods.
     - Pulumi : IaC in any language
-- IaC : Workloads
+- **IaC** : **Workloads**
     - Application Management (K8s Manifests)
         - [**Timoni.sh**](timoni.sh) (Uses CUE)  
           Distribution and Lifecycle Management for Cloud-Native Applictions
@@ -74,13 +76,12 @@ from infra to services, with the goal of repeatable, verifiable deployment state
             Generate, customize, and/or otherwise manage Kubernetes objects using files (YAML) stored in a Git repo. 
             It's integrated into `kubectl` and can be used with other GitOps tools to manage deployments. 
             Use to modify Helm chart per environment.
-        - [KCL](https://www.kcl-lang.io/ "kcl-lang.io") | [GitHub](https://github.com/kcl-lang/kcl/)
+        - [KCL](https://www.kcl-lang.io/ "kcl-lang.io") @ [GitHub](https://github.com/kcl-lang/kcl/)
         An open-source constraint-based record & functional language mainly used in configuration and policy scenarios. 
         Writtin in Rust, Golang, Python.
         - [CUE](https://cuelang.org/ "cuelang.org")
         - [Pkl](https://pkl-lang.org/ "pkl-lang.org")  
         Configuration that is Programmable, Scalable, and Safe
-
     - CI : Glorified Chron Job
         - [Dagger](https://docs.dagger.io/quickstart/daggerize) functions: 
         Pipeline agnostic functions that run in CI/CD pipeline of any vendor.
@@ -98,28 +99,50 @@ from infra to services, with the goal of repeatable, verifiable deployment state
             supports automated or manual syncing of changes.
             - Argo Workflows + Argo Events required = CD 
                 - Argo Events > Tekton Events
-- Logging : Log aggregation : Cluster-level
-    - Elastic stack : Elasticsearch (TSDB backend) / Kibana (Web UI frontend) : 
+- __Logging__ (Cluster-level) AKA **Log Aggregation** : 
+  So that logs survive their (ephemeral) generator, be that in a Node, Pod, or container.
+    - **Elastic stack** : [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") (TSDB backend) / [Kibana](https://www.elastic.co/guide/en/kibana/current/introduction.html "Elastic.co") (Web UI frontend) : 
        to collect, store, query, and visualize log data;
-       - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html)
-- Observability
-    - Prometheus : TSDB optimized for Metrics and tracing;
-    does not scale; has horrible alerts
-        - [Thanos](https://thanos.io/) : Prometheus HA + long-term storage
-    - [Jaeger](https://www.jaegertracing.io/docs/1.18/opentelemetry/) : Tracing collector ingtegrates with OpenTelemetry via per-language library
+        - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co") 
+            - Requires a **collector**/**forwarder** AKA *The Workhorse*; a data processing pipeline that ingests data from sources, transforms (normalizes) it, and then forwards it, i.e., **Unified Loggging** : 
+                - [Logstash](https://www.elastic.co/logstash "Elastic.co") : Elastic's native solution
+                - [Fluentd](https://www.fluentd.org/architecture "Fluentd.org")
+                    - [Fluent Bit](https://fluentbit.io/) : 
+                    *Lightweight forwarder for Fluentd*.
+                    - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub") : 
+                      Manage **Fluent Bit** and **Fluentd** the Kubernetes way. 
+                      (Was FluentBit Operator)
+    - [Grafana Loki](https://grafana.com/oss/loki/) | [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") ([Install](https://grafana.com/docs/loki/latest/setup/install/)) : "*Prometheus, but for logs*". A lightweight alternative to Elastic stack.
+        - **Does not provide full-text indexing** of logs; indexes only the logs' metadata (**labels**).
+        - No viable installation method is available (2024-08), contrary to project claims. 
+- **Observability** : Distributed **Tracing** and **Metrics**
+    - [Prometheus](https://prometheus.io/ "Prometheus.io") : TSDB and monitoring system optimized for telemetry (metrics and tracing). 
+    Does not scale, and has horrible alerts (Alertmanager). Provision using [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1) :
+        - [prometheus-operator/prometheus-operator](https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator "GitHub") :   
+        The bare operator ([`bundle.yaml`](https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml "GitHub"))
+        - **`kube-prometheus`** : *A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; **end-to-end Kubernetes cluster monitoring** with Prometheus using the Prometheus Operator.* 
+            - The Prometheus Operator
+            - Grafana
+            - Highly available Prometheus
+            - Highly available Alertmanager
+            - Prometheus `node-exporter`
+            - Prometheus `blackbox-exporter`
+            - Prometheus Adapter for Kubernetes Metrics APIs
+            - `kube-state-metrics`; replacment for `metrics-server`
+            - Install using one of two very similar projects:
+                - Manifest method : [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus "GitHub") 
+                - Helm method : [prometheus-community/kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack "GitHub") 
+    - [Thanos](https://thanos.io/ "Thanos.io") @ [GitHub](https://github.com/thanos-io/thanos "GitHub") : Prometheus HA + long-term storage ([MinIO](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html "Min.io")) : CNCF project; can "seamlessly upgrade" on top of an existing Prometheus deployment.
+    - [Jaeger](https://www.jaegertracing.io/docs/1.18/opentelemetry/ "JaegerTracing.io") : Tracing collector that integrates with OpenTelemetry
+        - [Jaeger Operator](https://www.jaegertracing.io/docs/1.60/operator/ "JaegerTracing.io") @ [GitHub](https://github.com/jaegertracing/jaeger-operator "GitHub")
+            - Requires [`cert-manager`](https://cert-manager.io/docs/)
     - [OpenTelemetry](https://opentelemetry.io/docs/collector/) (OTEL)
-      Vendor-agnostic tracing framework; 
+      Vendor-agnostic tracing library; 
       app library (almost all languages covered) for generating traces
-    - Grafana : Web UI : Dashboards
-        - [Grafana Tempo](https://github.com/grafana/tempo) : Tracing backend; 
-            scales and integrates with Jaeger, Zipkin, and OpenTelemetry; 
-            fixes Jaeger shortcommings
-        - [Grafana Loki](https://grafana.com/oss/loki/) : 
-          Lightweight alternative to Elasticsearch/Kibana 
-          [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") [Install](https://grafana.com/docs/loki/latest/setup/install/)
-          for log aggregation/visualization; "*Prometheus, but for logs*"
-          collect, store, and query log data; emphasizes simplicity and scalability;
-          **does not do full-text indexing** of logs; indexes only logs' metadata (**labels**)
+        - [OpenTelemetry Operator](https://opentelemetry.io/docs/kubernetes/operator/ "OpenTelemetry.io") @ [GitHub](https://github.com/open-telemetry/opentelemetry-operator "GitHub") : 
+        K8s Operator to manage collectors ([OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector "GitHub")) and auto-instrumentation of workloads using OTEL libraries. 
+    - [Grafana](https://grafana.com/) : Web UI : Dashboards
+        - [Grafana Tempo](https://github.com/grafana/tempo) : Tracing backend; scales and integrates with Jaeger, Zipkin, and OpenTelemetry; fixes Jaeger shortcommings
     - [VictoriaMetrics](https://victoriametrics.com/products/open-source/) : 
       TSDB & Monitoring Solution (as a Service); 
       compatible with Prometheus
@@ -144,13 +167,13 @@ from infra to services, with the goal of repeatable, verifiable deployment state
     - Komodor : Troubleshooting
     - Pixie : All in one
     - Groundcover : All in one
-- Database
+- **Database**
     - Managed
         - Aiven 
     - KubeBlocks : K8s Operator : Supports many databases
     - CNPG : Cloud-native PG
     - Atlas Operator : Schema
-- Security
+- **Security**
     - Scanning
         - Trivy
         - [Kubescape.io](https://kubescape.io/)  
@@ -174,13 +197,13 @@ from infra to services, with the goal of repeatable, verifiable deployment state
         - Notary
     - Certificates
         - cert-manager
-- Netowrking 
+- **Netowrking** 
     - Cilium 
     - K8s Gateway API 
     - Istio 
     - Linkerd
     - Kuma
-- Miscellaneous
+- **Misc**
     - Charm : Library and Tools
 
 ## Methods
