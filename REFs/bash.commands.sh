@@ -1544,6 +1544,11 @@ exit
                 |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
                 |tee all.images.log
 
+        # List selected keys of all Docker networks except "none", refactoring into another valid JSON obj:
+        docker network ls -q |xargs docker network inspect $1 \
+            |jq -Mr '.[] | select(.Name != "none") | {Name: .Name, Type: .Driver, Address: .IPAM.Config}' \
+            |jq --slurp .
+
         # Filter all selected keys-values at various layers of the hierarchy
             aws ec2 describe-volumes \
                 |jq '.Volumes | .[].Attachments | .[] | .Device, .VolumeId'

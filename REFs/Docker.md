@@ -126,6 +126,17 @@ Each container (MAC) given its own IP Address on an existing VLAN. Requires prom
     - "`--network none`"  adds container to a container-specific network stack.
     - "`--network host`" adds container to host’s network stack; to use host IP instead of virtual networks'. 
 
+List selected keys of "`docker inspect ...`" across all networks, 
+refactored into another *valid* JSON object: 
+
+```bash
+docker network ls -q |xargs docker network inspect $1 \
+    |jq -Mr '.[] | select(.Name != "none") | {Name: .Name, Driver: .Driver, Address: .IPAM.Config}' \
+    |jq --slurp .
+
+```
+- [`docker.network.ls.inspect_jq.filtered.json](docker.network.ls.inspect_jq.filtered.json)
+
 ### Network Services
 
 - __DNS Server__ &mdash; Containers are ephemeral, making their IP addresses unstable/unreliable, so containers are identified by DNS name, not IP addresses. That  is, ___container names are host names___.  _Docker uses embedded DNS to provide service discovery for containers running on a single Docker Engine and tasks running in a Docker Swarm. [Docker Engine has an internal DNS server](https://success.mirantis.com/article/networking#dockernetworkcontrolplane) that_ ___provides name resolution to all of the containers on the host___ _in user-defined bridge, overlay, and MACVLAN networks. Each Docker container (or task in Swarm mode) has a DNS resolver that forwards DNS queries to Docker Engine, which acts as a DNS server. Docker Engine then checks if the DNS query belongs to a container or service on network(s) that the requesting container belongs to. If it does, then Docker Engine looks up the IP address that matches a container, task, or service's name in its key-value store and returns that IP or service Virtual IP (VIP) back to the requester._ NOTE:

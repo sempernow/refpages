@@ -98,8 +98,33 @@ from infra to services, with the goal of repeatable, verifiable deployment state
             supports automated or manual syncing of changes.
             - Argo Workflows + Argo Events required = CD 
                 - Argo Events > Tekton Events
+- Logging : Log aggregation : Cluster-level
+    - Elastic stack : Elasticsearch (TSDB backend) / Kibana (Web UI frontend) : 
+       to collect, store, query, and visualize log data;
+       - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html)
 - Observability
-    - [Inspektor-Gadget.io](https://www.inspektor-gadget.io/) : eBPF-based CLIs (gadgets)   
+    - Prometheus : TSDB optimized for Metrics and tracing;
+    does not scale; has horrible alerts
+        - [Thanos](https://thanos.io/) : Prometheus HA + long-term storage
+    - [Jaeger](https://www.jaegertracing.io/docs/1.18/opentelemetry/) : Tracing collector ingtegrates with OpenTelemetry via per-language library
+    - [OpenTelemetry](https://opentelemetry.io/docs/collector/) (OTEL)
+      Vendor-agnostic tracing framework; 
+      app library (almost all languages covered) for generating traces
+    - Grafana : Web UI : Dashboards
+        - [Grafana Tempo](https://github.com/grafana/tempo) : Tracing backend; 
+            scales and integrates with Jaeger, Zipkin, and OpenTelemetry; 
+            fixes Jaeger shortcommings
+        - [Grafana Loki](https://grafana.com/oss/loki/) : 
+          Lightweight alternative to Elasticsearch/Kibana 
+          [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") [Install](https://grafana.com/docs/loki/latest/setup/install/)
+          for log aggregation/visualization; "*Prometheus, but for logs*"
+          collect, store, and query log data; emphasizes simplicity and scalability;
+          **does not do full-text indexing** of logs; indexes only logs' metadata (**labels**)
+    - [VictoriaMetrics](https://victoriametrics.com/products/open-source/) : 
+      TSDB & Monitoring Solution (as a Service); 
+      compatible with Prometheus
+    - [Inspektor-Gadget.io](https://www.inspektor-gadget.io/) : 
+       eBPF-based CLIs (gadgets)   
         ```bash
         kubectl gadget deploy
         # Monitor all network traffic of a namespace
@@ -115,12 +140,6 @@ from infra to services, with the goal of repeatable, verifiable deployment state
         - Maps low-level Linux resources to high-level Kubernetes concepts integration
         - Use stand-alone or integrate into your own tooling, e.g., Prometheus metrics.
             - Several tools utilized it already, e.g., Kubescape
-    - Loki : Storage 
-    - Prometheus : Metrics : Does not scale : Has horrible alerts
-        - Victoria Metrics : Scales : Compatible with Prometheus
-    - Jaeger : Tracing
-    - Grafana Tempo : Fixes Jaeger shortcommings
-    - Grafana (Dashboards)
     - Robusta : Alerting 
     - Komodor : Troubleshooting
     - Pixie : All in one
