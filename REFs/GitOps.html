@@ -216,8 +216,13 @@ The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operato
 <li>Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub">prometheus-community/kube-prometheus-stack</a></li>
 </ul></li>
 </ul></li>
-</ul></li>
 <li><a href="https://thanos.io/" title="Thanos.io">Thanos</a> @ <a href="https://github.com/thanos-io/thanos" title="GitHub">GitHub</a> : Prometheus HA + long-term storage (<a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html" title="Min.io">MinIO</a>) : CNCF project; can &quot;seamlessly upgrade&quot; on top of an existing Prometheus deployment.</li>
+</ul></li>
+<li><a href="https://grafana.com/">Grafana</a> : Web UI : Dashboards
+
+<ul>
+<li><a href="https://github.com/grafana/tempo">Grafana Tempo</a> : Tracing backend; scales and integrates with Jaeger, Zipkin, and OpenTelemetry; fixes Jaeger shortcommings</li>
+</ul></li>
 <li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io">Jaeger</a> : Tracing collector that integrates with OpenTelemetry
 
 <ul>
@@ -234,11 +239,6 @@ app library (almost all languages covered) for generating traces
 <ul>
 <li><a href="https://opentelemetry.io/docs/kubernetes/operator/" title="OpenTelemetry.io">OpenTelemetry Operator</a> @ <a href="https://github.com/open-telemetry/opentelemetry-operator" title="GitHub">GitHub</a> :
 K8s Operator to manage collectors (<a href="https://github.com/open-telemetry/opentelemetry-collector" title="GitHub">OpenTelemetry Collector</a>) and auto-instrumentation of workloads using OTEL libraries.</li>
-</ul></li>
-<li><a href="https://grafana.com/">Grafana</a> : Web UI : Dashboards
-
-<ul>
-<li><a href="https://github.com/grafana/tempo">Grafana Tempo</a> : Tracing backend; scales and integrates with Jaeger, Zipkin, and OpenTelemetry; fixes Jaeger shortcommings</li>
 </ul></li>
 <li><a href="https://victoriametrics.com/products/open-source/">VictoriaMetrics</a> :
 TSDB &amp; Monitoring Solution (as a Service);
