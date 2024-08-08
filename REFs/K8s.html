@@ -218,7 +218,186 @@ which makes sense for the application to work.</p>
 
 <h2>Topics of Interest</h2>
 
-<h3><a href="https://kubernetes.io/docs/concepts/workloads/pods/downward-api/">Downward API</a></h3>
+<h3>Pods' Inherit Environment</h3>
+
+<p>All Pods of a Namespace inherit the environment variables created by certain mechanisms:</p>
+
+<p>The common environment variables like <code>KUBERNETES_*</code> come from Kubernetes itself and are automatically injected into every container running in a pod. These variables are part of Kubernetes' internal mechanism to provide containers with necessary information about the cluster environment.</p>
+
+<h4>Key Sources of Common Environment Variables:</h4>
+
+<ol>
+<li><p><strong>Service Environment Variables</strong>: Kubernetes automatically creates environment variables for each service in the same namespace as the pod, providing the pod with the necessary information to interact with the services in the cluster. These variables follow a pattern:</p>
+
+<ul>
+<li><code>${SVC_NAME}_SERVICE_HOST</code> : The IP address of the Service.</li>
+<li><code>${SVC_NAME}_SERVICE_PORT</code> : The port that the Service is exposed on.</li>
+<li><code>${SVC_NAME}_PORT</code> : The full TCP URL (including protocol and port) for the Service.</li>
+<li>...</li>
+
+<li><p>Example:</p>
+
+<ul>
+<li><p><strong>Service</strong>:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+name: my-service
+spec:
+selector:
+app: my-app
+ports:
+- protocol: TCP
+  port: 80
+  targetPort: 8080
+</code></pre></li>
+
+<li><p><strong>Environment</strong> injected into <strong>newer Pods</strong> and shared:</p>
+
+<ul>
+<li>MY_SERVICE_SERVICE_HOST=10.96.0.2</li>
+<li>MY_SERVICE_SERVICE_PORT=80</li>
+<li>MY_SERVICE_PORT=tcp://10.96.0.2:80</li>
+</ul></li>
+</ul></li>
+
+<li><p>DNS-Based Service Discovery (Alternative): In addition to environment variables, Kubernetes provides DNS-based service discovery, where services can be accessed via their DNS names like <code>${SVC_NAME}.default.svc.cluster.local</code>. This is often preferred over relying on environment variables because it provides more flexibility and reduces reliance on environment variable injection. This behavior is the default configuration, so services are discovered by <strong>pre-existing Pods</strong>.</p></li>
+</ul></li>
+
+<li><p><strong>Pod and Container Metadata</strong>:</p>
+
+<ul>
+<li>Variables like <code>HOSTNAME</code> are set to the name of the pod, and <code>HOME</code> is set to the home directory of the container's root user.</li>
+<li>These variables help containers know their own identity and environment.</li>
+</ul></li>
+
+<li><p><strong>Default Shell Environment</strong>:</p>
+
+<ul>
+<li>Variables like <code>PATH</code>, <code>TERM</code>, and <code>HOME</code> are standard environment variables that are typically provided by the container's base image or operating system. These are not injected by Kubernetes but come from the container's environment setup.</li>
+</ul></li>
+
+<li><p><strong>ConfigMaps</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: ConfigMaps are used to store configuration data as key-value pairs. Pods can reference ConfigMaps to set environment variables.</li>
+<li><strong>Effect</strong>: If multiple pods within a namespace reference the same ConfigMap in their environment configuration, they will share the same environment variables.</li>
+
+<li><p><strong>Example</strong>:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+name: my-config
+data:
+MY_VAR: &quot;my_value&quot;
+</code></pre>
+
+<p>Pods can use this ConfigMap to set an environment variable:</p>
+
+<pre><code class="language-yaml">envFrom:
+- configMapRef:
+ name: my-config
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>Secrets</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: Secrets store sensitive data like passwords, tokens, or keys. Similar to ConfigMaps, Secrets can be used to set environment variables in pods.</li>
+<li><strong>Effect</strong>: Pods that reference the same Secret will share the environment variables derived from that Secret.</li>
+
+<li><p><strong>Example</strong>:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Secret
+metadata:
+name: my-secret
+data:
+MY_SECRET: bXktdmFsdWU=
+</code></pre>
+
+<p>Pods can use this Secret to set an environment variable:</p>
+
+<pre><code class="language-yaml">envFrom:
+- secretRef:
+ name: my-secret
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>ServiceAccounts</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: ServiceAccounts provide identity to pods, allowing them to authenticate to the Kubernetes API server.</li>
+<li><strong>Effect</strong>: Pods using the same ServiceAccount will inherit environment variables related to service authentication, such as <code>KUBERNETES_SERVICE_HOST</code>, <code>KUBERNETES_SERVICE_PORT</code>, and the token associated with the ServiceAccount.</li>
+</ul></li>
+
+<li><p><strong>Downward API</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: The Downward API allows pods to access metadata about themselves or their environment, such as the pod's name, namespace, labels, and annotations.</li>
+<li><strong>Effect</strong>: If multiple pods in a namespace are configured to use the Downward API, they can inherit environment variables related to their own metadata.</li>
+
+<li><p><strong>Example</strong>:</p>
+
+<pre><code class="language-yaml">env:
+- name: MY_POD_NAME
+valueFrom:
+ fieldRef:
+   fieldPath: metadata.name
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>NetworkPolicies</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: Although not directly related to environment variables, NetworkPolicies can indirectly cause pods to be aware of certain configurations or restrictions in their environment.</li>
+</ul></li>
+
+<li><p><strong>Admission Controllers and Mutating Webhooks</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: Admission controllers or mutating webhooks can modify the pod spec before it is created, including adding environment variables.</li>
+<li><strong>Effect</strong>: If a webhook is set up to inject environment variables based on specific criteria (e.g., all pods in a namespace), those pods will inherit the same environment variables.</li>
+</ul></li>
+
+<li><p><strong>PodSecurityPolicies (PSPs)</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: While PSPs are used to enforce security standards, they might influence environment variables if they enforce certain runtime configurations.</li>
+</ul></li>
+
+<li><p><strong>Custom Resources</strong>:</p>
+
+<ul>
+<li><strong>Purpose</strong>: Custom resources and operators can be designed to inject environment variables into pods based on custom logic.</li>
+<li><strong>Effect</strong>: If deployed in a namespace, these can cause all pods to inherit specific environment variables based on custom policies.</li>
+</ul></li>
+</ol>
+
+<h4>How These Variables Are Injected:</h4>
+
+<ul>
+<li><p><strong>Kubernetes Service Discovery Mechanism</strong>:</p>
+
+<ul>
+<li>When a service is created in Kubernetes, it automatically injects environment variables into all pods within the same namespace. This is part of Kubernetes' built-in service discovery mechanism.</li>
+<li>These variables are made available by the kubelet when it starts the container in a pod.</li>
+</ul></li>
+
+<li><p><strong>Pod Specification</strong>:</p>
+
+<ul>
+<li>Some environment variables can be explicitly defined in the pod specification (e.g., in a <code>Deployment</code>, <code>DaemonSet</code>, or when using <code>kubectl run</code>), but the ones you are seeing are automatically injected by Kubernetes.</li>
+</ul></li>
+</ul>
+
+<p>In most cases, the inheritance or sharing of environment variables is due to explicit configuration via objects like ConfigMaps, Secrets, or ServiceAccounts, or due to cluster-wide policies applied by admission controllers or other custom mechanisms.</p>
+
+<p>These common environment variables provide a way for containers to discover and connect to other services within the Kubernetes cluster, facilitating communication and integration between components.</p>
+
+<h3><a href="https://kubernetes.io/docs/concepts/workloads/pods/downward-api/">Downward API</a> Example</h3>
 
 <p>Used to configure a Pod's environment variables to expose information about itself to containers running in the Pod.</p>
 
