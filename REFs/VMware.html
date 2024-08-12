@@ -26,7 +26,11 @@
 
 <ul>
 <li>Type-1 Hypervisor</li>
-<li>NSX : SDN</li>
+<li>NSX : Networking and Security Virtualization SDN
+
+<ul>
+<li>Requires <a href="https://www.vmware.com/products/cloud-infrastructure/vmware-cloud-foundation">VMware Cloud Foundation</a> (VCF) : Private Cloud Platform</li>
+</ul></li>
 <li>vMotion : live migration of a VM to another physical machine without any downtime
 
 <ul>
@@ -95,7 +99,7 @@ This approach provides several advantages:</p>
 
 <li><p><strong>Distributed Virtual Switches (vDS)</strong>: For larger environments, consider using VMware vSphere Distributed Switches, which provide centralized management of network configurations across multiple ESXi hosts.</p></li>
 
-<li><p><strong>Firewall Rules</strong>: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX if available, or through physical firewalls and network devices if NSX is not in use.</p></li>
+<li><p><strong>Firewall Rules</strong>: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX (Networking and Security Virtualization) if available, or through physical firewalls and network devices if NSX is not in use.</p></li>
 
 <li><p><strong>Programmatic Access</strong>: Allow programmatic access to manage and configure network settings from the VMs. This can be achieved using VMware’s APIs and tools like PowerCLI for scripting and automation.</p></li>
 </ol>

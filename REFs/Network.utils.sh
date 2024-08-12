@@ -215,7 +215,8 @@ exit
             --data-binary DATA     # HTTP POST binary data 
             --compressed           # Detect compression and auto-decompress  
             -f, --fail             # Fail silently; no output; used when fetching scripts
-            -o, --output FILE      # write output to FILE; all concatenated into ONE file
+            -o, --output FILE      # write body to FILE; one per url
+            -O URL                 # write body to file of URL BASENAME
             -L, --location         # follow redirects; intelligently handle server response codes 
             --create-dirs          # used w/ `-o`; creates local dirs as necessary 
             -T, --upload-file FILE # upload FILE; create FILE [@ server-root] if not exist
@@ -246,15 +247,18 @@ exit
 			EOH
             curl -s -w "@$file" -o /dev/null $url
 
-        # Response Headers (only, lest error) to STDOUT: 
-            curl -sSIL $url                                     # HEAD method
-            curl -sSILX GET $url                                # GET  method
-            curl -sSLX POST -d '{..}' -D - $url -o /dev/null    # POST method
-            ##... Too many protected endpoints respond to HEAD requests
-            ##    with 405 Method Not Allowed, or worse, misleadingly with 403 Forbidden.
+        # Response Headers only, lest error, to STDOUT: 
+            curl -sSLIX GET $url                                # GET  method
+            curl -D - -sSLo /dev/null $url                      # Alt, any method
+            curl -sSLX POST -d '{..}' -D - -o /dev/null $url    # POST method
+            curl -sSLI $url                                     # HEAD method
+            ##... Simplest, but too many protected endpoints respond to HEAD requests
+            ##    with 405 Method Not Allowed, or worse (misleading: 403 Forbidden).
 
         # Pull a script to ./a.sh quietly; follow redirects; rpt only if error.
-            curl -fsSL -o a.sh https://foo.com/path/to/a.sh
+            curl -fsSLO https://foo.com/path/to/a.sh
+        # Pull a script to ./b.sh quietly; follow redirects; rpt only if error.
+            curl -fsSL -o b.sh https://foo.com/path/to/a.sh
 
         # Online Golang tool: cURL-to-Golang: https://mholt.github.io/curl-to-go  
 
@@ -744,12 +748,13 @@ exit
 
     # CAPTURE/INSPECT per PROTOCOL  
         wireshark  # gui
-        
+
         tcpdump    # cli; dump traffic on a network 
         
             -A  # print each packet in ASCII; for capturing web pages. 
             -X  # print headers & data of each packet
-            tcpdump -v -i eth0 port 2377     # Docker Swarm cluster-management traffic
+            tcpdump -i $dev icmp             # Capture ICMP messages (incl. PMTUD modifying MTU)
+            tcpdump -v -i $dev port 2377     # Docker Swarm cluster-management traffic
             tcpdump 'tcp port 80' -X         # all tcp packets to/from port 80
             tcpdump host foo                 # all traffic to/from host foo
             tcpdump ip host foo and not bar  # all IP packets between foo and any host except bar
@@ -781,18 +786,6 @@ exit
         # @ WLAN
         sudo dhclient -v -r 'wlan0' && sudo dhclient -v 'wlan0'
 
-    # Adapter AKA Link AKA Connection AKA Device AKA Interface AKA NIC
-        dev=ens192                                  # Common: eth0, ens192, wlan0, docker0, cni*
-        sudo ip link set $dev up|down               # Set UP/DOWN; toggle used to apply new config(s)
-        sudo ip link set $dev alias "Public link"   # Set alias AKA description 
-
-        # LEGACY utilities 
-            ifdown/ifup  
-            # @ LAN
-            sudo ifdown 'eth0' && sudo ifup 'eth0'
-            # @ WLAN
-            sudo ifdown 'wlan0' && sudo ifup 'wlan0'
-
     # Restart Network 
         # RHEL/CentOS/Fedora 
         /etc/init.d/network restart
@@ -822,65 +815,184 @@ exit
         netplan --debug apply
         /etc/netplan/... # Config files auto-applied on boot
 
-    # NOTE: newer utils have horrible stdout, so legacy utils remain in use.
-    
     ip  # configure/show routing, devices, policy routing and tunnels
         # replaces 'ifconfig' & 'route' utilities
         # changes do NOT persist; used as config-test tool; config per apropos files
-                    
-        ip help|address|neigh|route|addr|link
-
+ 
         ip a  # List all addresses; per interface
             -c  # color highlights
             alias ip='ip -c'
-            
-        ip neigh  # show IP and MAC of all neighbors, and device/interface
-
-            192.168.1.2 dev eth0 lladdr 00:21:29:ae:77:b6 STALE      # CB router [eth0 connected]
-            192.168.1.1 dev eth0 lladdr e0:3f:49:9a:8b:b8 REACHABLE  # Gateway router
-            192.168.1.101 dev eth0 lladdr 00:1c:c0:4d:94:bf STALE    # XPC
-
-        # ... that available @ eth1
-        ip neigh show dev eth1
 
         for ip in $(seq 1 254); do 
             ping -c 1 192.168.1.$ip>/dev/null; [ $? -eq 0 ] && echo "192.168.1.$ip UP" || : 
         done
 
-        # @ Transport Layer [L4]
-        man ip-address
-        ip addr                # show IP and MAC of all devices/interfaces 
-        ip addr show dev $dev  # show IP and MAC of device (eth0 or whatever)           
+        # L4 AKA Layer 4 AKA Transport layer AKA Transport Control Layer
+            # AKA Session Layer AKA TCP/UDP Layer AKA Ports Layer 
+            # AKA End-to-end Comms Layer AKA Connection Layer
+            # AKA Flow Control Layer AKA Reliability Layer AKA Segmentation Layer
+            man ip-address         # Protocol address management
+            ip addr                # show IP and MAC of all devices/interfaces 
+            ip addr show dev $dev  # show IP and MAC of device (eth0 or whatever)           
 
-        ip addr add dev $dev 10.0.0.10/24  # add an IP address to NIC; always include subnet
-                                           # ifconfig FAILs to see this newly added IP Address
+            sudo ip addr add dev $dev 10.0.0.10/24  # add an IP address to NIC; always include subnet
+                                               # ifconfig FAILs to see this newly added IP Address
 
-        ip -6 addr del $ipv6_cidr dev $dev 
-        ip [-4] addr del $ipv4_cidr dev $dev 
-        ip maddr show eth0                 # show MAC
+            sudo ip -6 addr del $ipv6_cidr dev $dev 
+            sudo ip [-4] addr del $ipv4_cidr dev $dev 
+            ip maddr show eth0                 # show MAC
 
-        # @ Data Link Layer [L2]
+        # L3 AKA Layer 3 AKA Network Layer 
+            # AKA Routing Layer AKA IP Layer AKA Switching Layer
+            # AKA Packet Forwarding Layer AKA Logical Addressing Layer 
+            # AKA Internet Layer
+            man ip-route                # Routing table management
+            ip route                    # Route to gateway at all interfaces.
+            ip -4 route show dev $dev   # Route to Gateway at device; IPv4
+                # Shows node's public IP address:
+                #... scope link  src 192.168.1.183 ...
+            ip -r route  # Resolve your public IP address to name of Gateway
+            sudo ip route add 20.0.0.0/8 via 192.168.1.1  # add a route
+            sudo ip route add default via 192.168.50.100  # add default gateway
 
-        ip link            # show NICs; MAC of all devices 
-        # Turn Adapter on|off
-        ip link set $adapter up|down  # e.g., LAN (eth0) or WLAN/WiFi (wlan0) adapters
-        ip -s link         # show statistics; Physical Layer info
-        ip link show eth0  # show MAC of eth0
+            man ip-tunnel               # Tunnel configuration
+            ip tunnel list 
+                # https://en.wikipedia.org/wiki/IP_tunnel
+                # Connect two IPv6 islands, A and B (IPv6 address of each gateway), across an IPv4 network. 
+                # Create the 6in4 Tunnel:
+                dev=tun6in4
+                mode=sit # Simple Internet Transition (Used for IPv6-over-IPv4)
+                av6='2001:db8:1::1/64'
+                bv6='2001:db8:2::1/64'
+                ipv4='203.0.113.1'
+                sudo ip tunnel add $dev mode $mode remote $ipv4 local $av6 ttl 255
+                # Assign the IPv6 Address to the tunnel interface (device):
+                sudo ip addr add $av6 dev $dev
+                # Bring up the tunnel 
+                sudo ip link set $dev up
+                # Set up routing (lest single purpose, host-to-host and declared/configured by app)
+                ip -6 route add $bv6 dev $dev
 
-        ip -4 route     # route to Gateway; IPv4
-            # Shows your public IP address:
-            #... scope link  src 192.168.1.183 ...
+            # Setup a VPN tunnel through untrusted network (internet), connecting two private subnets:
+                sub_a=10.0.1.0/24
+                sub_b=10.0.2.0/24
+                gw_a=192.0.2.1
+                gw_b=198.51.100.1
+                mode=gre
+                tun=gre1
+                tun_a=10.255.255.1/30
+                tun_b=10.255.255.2/30
+                # 1. Create the GRE Tunnel on Site A:
+                    # Add the GRE tunnel interface
+                    ip tunnel add $tun mode $mode remote $gw_b local $gw_a ttl 255
+                    # Assign an IP address to the GRE tunnel interface
+                    ip addr add $tun_a dev $tun
+                    # Bring up the tunnel interface
+                    ip link set $tun up
+                    # Add a route to send traffic destined for Subnet B through the tunnel
+                    ip route add $sub_b dev $tun
+                # 2. Create the GRE Tunnel on Site B:
+                    # Add the GRE tunnel interface
+                    ip tunnel add $tun mode $mode remote $gw_a local $gw_b ttl 255
+                    # Assign an IP address to the GRE tunnel interface
+                    ip addr add $tun_b dev $tun
+                    # Bring up the tunnel interface
+                    ip link set $tun up
+                    # Add a route to send traffic destined for Subnet A through the tunnel
+                    ip route add $sub_a dev $tun
+                # 3. Secure with OpenVPN (else IPsec)
+                    # https://chatgpt.com/share/a5700da7-916a-4570-a501-642340fedb4d 
+                    # Site A : OpenVPN server configuration file : /etc/openvpn/server.conf
+                    # On the server, ensure IP forwarding is enabled and add a route to the client’s subnet.
+                        b=10.0.2.0 
+                        vpn=10.8.0.0 
+                        # OpenVPN routes traffic by assigning client IPs (10.8.0.1 to 10.8.0.254) 
+                        # under that declared 24-bit mask (255.255.255.0)
+                        # Note VPN network masks have to match source as apropos.
+						cat <<-EOH |sudo tee /etc/openvpn/server.conf
+						port 1194
+						proto udp
+						dev tun
+						ca ca.crt
+						cert server.crt
+						key server.key
+						dh dh.pem
+						server $vpn 255.255.255.0
+						ifconfig-pool-persist ipp.txt
+						push "route $b 255.255.255.0"
+						client-to-client
+						keepalive 10 120
+						cipher AES-256-CBC
+						persist-key
+						persist-tun
+						status openvpn-status.log
+						log-append /var/log/openvpn.log
+						verb 3
+						EOH
+                    # Site B 
+                    # OpenVPN client configuration file (e.g., /etc/openvpn/client.conf)
+                    # On the client, add a route to the server’s subnet.
+                        a=10.0.1.0
+						cat <<-EOH |sudo tee /etc/openvpn/client.conf
+						client
+						dev tun
+						proto udp
+						remote $gw_a 1194
+						resolv-retry infinite
+						nobind
+						persist-key
+						persist-tun
+						ca ca.crt
+						cert client.crt
+						key client.key
+						remote-cert-tls server
+						cipher AES-256-CBC
+						verb 3
+						route $a 255.255.255.0
+						EOH
 
-        ip -r route  # Resolve your public IP address to name of Gateway
+        # L3/L2 (Network/Link layers)
+            # ARP (Address Resolution Protocol) table for IPv4
+            # Neighbor Discovery Protocol (NDP) table for IPv6.
+            # - These tables map IP addresses (L3) to MAC addresses (L2).
+            # - Essential for LAN traffic 
+            ip neigh 
+            ip neigh show dev $dev  # Show IP (v4/v6) to MAC address maps for that device
+                # 172.27.240.1              lladdr 00:15:5d:91:f1:6c STALE
+                # fe80::c9c4:32bb:162f:22cb lladdr 00:15:5d:91:f1:6c STALE
+                #... Same MAC (physical address) regardless of IP version
+            ip -4 neigh show dev eth0
+                # 192.168.1.2 dev eth0 lladdr 00:21:29:ae:77:b6 STALE      # CB router with eth0 connected
+                # 192.168.1.1 dev eth0 lladdr e0:3f:49:9a:8b:b8 REACHABLE  # Gateway router
+                # 192.168.1.101 dev eth0 lladdr 00:1c:c0:4d:94:bf STALE    # Local host (this machine)
 
-        ip route list # Route to gateway at all interfaces.
+        # L2 AKA Layer 2 AKA Data Link layer AKA Link Layer (TCP/IP model)
+            # AKA MAC Layer AKA Frame Layer AKA Switching Layer AKA Bridge Layer 
+            # AKA Ethernet Layer AKA Physical Addressing Layer
+                # Manage physical and logical device settings (MAC address)
+                # Device AKA adapter AKA interface AKA connection AKA NIC
+            man ip-link                 # Network device configuration
+            ip link                     # Show MAC of all devices
+            dev=ens192                  # Common: eth0, ens192, wlan0, docker0, cni*
+            ip -s link dev show $dev    # Show link statistics
+                # Path MTU Discovery (PMTUD) may cause a transitory, 
+                # per-connection change MTU setting (nominally 1500) of a device, 
+                # e.g., to account for tunnel protocol (VPN, SSH, ...),
+                # which adds data to packets' header
+                # See:
+                sudo tcpdump -i $dev                    # Reports size per packet, e.g., "length 1414"
+            sudo ip link set dev $dev mtu 9000          # Set MTU to allow Jumbo Frames
+            #... both TX and RX devices must support, else no affect.
+            sudo ip link set $dev up|down               # Set UP/DOWN; toggle on/off; use to apply new config(s)
+            sudo ip link set $dev alias "Public link"   # Set alias AKA description 
 
-        ip route add 20.0.0.0/8 via 192.168.1.1  # add a route
-        
-        ip route add default via 192.168.50.100  # add default gateway
-        
-        ip link set NICname up|down  # enable/disable [NOT persist]
-        
+            # LEGACY utilities 
+                ifdown/ifup  
+                # @ LAN
+                sudo ifdown 'eth0' && sudo ifup 'eth0'
+                # @ WLAN
+                sudo ifdown 'wlan0' && sudo ifup 'wlan0'
+       
     ifconfig  # OBSOLETE since 1996 !!! : use `ip` utility instead
     
         ifconfig -a                   # show info for all adapters

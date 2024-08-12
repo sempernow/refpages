@@ -227,12 +227,12 @@ which makes sense for the application to work.</p>
 <h4>Key Sources of Common Environment Variables:</h4>
 
 <ol>
-<li><p><strong>Service Environment Variables</strong>: Kubernetes automatically creates environment variables for each service in the same namespace as the pod, providing the pod with the necessary information to interact with the services in the cluster. These variables follow a pattern:</p>
+<li><p><strong>Service Environment Variables</strong>: Kubernetes automatically creates environment variables for each service <strong>in the same namespace</strong> as the pod, providing the pod with the necessary information to interact with the services in the cluster. Note the Pod/container port is not included. These variables follow a pattern:</p>
 
 <ul>
-<li><code>${SVC_NAME}_SERVICE_HOST</code> : The IP address of the Service.</li>
-<li><code>${SVC_NAME}_SERVICE_PORT</code> : The port that the Service is exposed on.</li>
-<li><code>${SVC_NAME}_PORT</code> : The full TCP URL (including protocol and port) for the Service.</li>
+<li><code>${SVC_NAME}_SERVICE_HOST</code> : Service IP address.</li>
+<li><code>${SVC_NAME}_SERVICE_PORT</code> : Service port exposed.</li>
+<li><code>${SVC_NAME}_PORT</code> : Service's full TCP URL, including protocol and port.</li>
 <li>...</li>
 
 <li><p>Example:</p>
@@ -249,16 +249,20 @@ selector:
 app: my-app
 ports:
 - protocol: TCP
-  port: 80
-  targetPort: 8080
+  port: 80          # Service port
+  targetPort: 8080  # Pod/Container port
 </code></pre></li>
 
-<li><p><strong>Environment</strong> injected into <strong>newer Pods</strong> and shared:</p>
+<li><p><strong>Environment</strong> injected into <strong>newer Pods</strong>:</p>
 
 <ul>
-<li>MY_SERVICE_SERVICE_HOST=10.96.0.2</li>
-<li>MY_SERVICE_SERVICE_PORT=80</li>
-<li>MY_SERVICE_PORT=tcp://10.96.0.2:80</li>
+<li><code>MY_SERVICE_SERVICE_HOST=10.96.0.2</code></li>
+<li><code>MY_SERVICE_SERVICE_PORT=80</code></li>
+<li><code>MY_SERVICE_PORT=tcp://10.96.0.2:80</code>
+
+<ul>
+<li>Note this is <em>not</em> an IANA scheme, but rather a convention adopted by projects (Docker, Redis, ZeroMQ, ...) to distinguish non-HTTP TCP from other transports (UDP, FTP, ) of Layer 4.</li>
+</ul></li>
 </ul></li>
 </ul></li>
 

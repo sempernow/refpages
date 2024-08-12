@@ -156,31 +156,34 @@ supports automated or manual syncing of changes.
 </ul></li>
 </ul></li>
 <li><strong>Logging</strong> (Cluster-level) AKA <strong>Log Aggregation</strong> :
-So that logs survive their (ephemeral) generator, be that in a Node, Pod, or container.
+So that logs survive their (ephemeral) generator, be that of a host or container process, or K8s Node, Pod, &hellip; .
 
 <ul>
-<li><strong>Elastic stack</strong> : <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html" title="Elastic.co">Elasticsearch</a> (TSDB backend) / <a href="https://www.elastic.co/guide/en/kibana/current/introduction.html" title="Elastic.co">Kibana</a> (Web UI frontend) :
-to collect, store, query, and visualize log data;
+<li><strong>Elastic stack</strong> : to collect, store, query, and visualize log data. Composed of <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html" title="Elastic.co">Elasticsearch</a> (backend; distributed search &amp; analytics engine) &amp; <a href="https://www.elastic.co/guide/en/kibana/current/introduction.html" title="Elastic.co">Kibana</a> (frontend; Web UI)
 
 <ul>
-<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html" title="Elastic.co">ECK (Elastic Cloud on K8s) Operator</a>
+<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html" title="Elastic.co">ECK (Elastic Cloud on K8s) Operator</a>  @ <a href="https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba" title="ChatGPT.com">Air-gap environment</a>
 
 <ul>
-<li>Requires a <strong>collector</strong>/<strong>forwarder</strong> AKA <em>The Workhorse</em>; a data processing pipeline that ingests data from sources, transforms (normalizes) it, and then forwards it, i.e., <strong>Unified Loggging</strong> :
+<li><strong>Requires</strong> a <strong>collector</strong>/<strong>forwarder</strong>; a data processing pipeline to ingest data from sources, then transform (normalize) and forward that data. This is the stack's <em>workhorse</em>. It provides <strong>Unified Loggging</strong> :
 
 <ul>
 <li><a href="https://www.elastic.co/logstash" title="Elastic.co">Logstash</a> : Elastic's native solution</li>
-<li><a href="https://www.fluentd.org/architecture" title="Fluentd.org">Fluentd</a>
+<li><a href="https://www.fluentd.org/architecture" title="Fluentd.org">Fluentd</a> : Data collector (not limited to logs, metrics and tracing).
 
 <ul>
 <li><a href="https://fluentbit.io/">Fluent Bit</a> :
 <em>Lightweight forwarder for Fluentd</em>.</li>
-<li><a href="https://github.com/fluent/fluent-operator" title="GitHub">Fluent Operator</a> :
-Manage <strong>Fluent Bit</strong> and <strong>Fluentd</strong> the Kubernetes way.
-(Was FluentBit Operator)</li>
+<li><a href="https://github.com/fluent/fluent-operator" title="GitHub">Fluent Operator</a>, formerly &quot;FluentBit Operator&quot; :
+<em>Manage Fluent Bit and Fluentd the Kubernetes way</em>.</li>
 </ul></li>
 </ul></li>
 </ul></li>
+</ul></li>
+<li><a href="https://opensearch.org/docs/latest/about/" title="OpenSearch.org">OpenSearch</a> : FOSS fork of Elastic stack (Elasticsearch/Kibana)
+
+<ul>
+<li><a href="https://opensearch.org/docs/latest/data-prepper/">Data Prepper</a> : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces.</li>
 </ul></li>
 <li><a href="https://grafana.com/oss/loki/">Grafana Loki</a> | <a href="https://github.com/grafana/loki/" title="GitHub"><code>grafana/loki</code></a> (<a href="https://grafana.com/docs/loki/latest/setup/install/">Install</a>) : &quot;<em>Prometheus, but for logs</em>&quot;. A lightweight alternative to Elastic stack.
 
@@ -242,7 +245,7 @@ K8s Operator to manage collectors (<a href="https://github.com/open-telemetry/op
 </ul></li>
 <li><a href="https://victoriametrics.com/products/open-source/">VictoriaMetrics</a> :
 TSDB &amp; Monitoring Solution (as a Service);
-compatible with Prometheus</li>
+compatible with Prometheus.</li>
 
 <li><p><a href="https://www.inspektor-gadget.io/">Inspektor-Gadget.io</a> :
 eBPF-based CLIs (gadgets)</p>
@@ -285,7 +288,10 @@ kubectl gadget trace tcp -n $ns
 <li>Aiven</li>
 </ul></li>
 <li>KubeBlocks : K8s Operator : Supports many databases</li>
-<li>CNPG : Cloud-native PG</li>
+<li><a href="https://github.com/tikv/tikv">TiKV</a> : distributed, and transactional key-value database. FOSS. CNCF Graduated project.</li>
+<li><a href="https://github.com/apache/cassandra">Cassandra</a> : NoSQL distributed database. Apache/CNCF project.</li>
+<li><a href="https://github.com/apache/nifi">NiFi</a> @ <a href="https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce">GPTchat</a> : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.</li>
+<li><a href="https://cloudnative-pg.io/">CloudNativePG</a> (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a <strong>primary/standby architecture</strong>, using native <strong>streaming replication</strong>. A CNCF project.</li>
 <li>Atlas Operator : Schema</li>
 </ul></li>
 <li><strong>Security</strong>
