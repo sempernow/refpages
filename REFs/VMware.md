@@ -3,7 +3,8 @@
 ## vSphere ESXi 
 
 - Type-1 Hypervisor
-- NSX : SDN 
+- NSX : Networking and Security Virtualization SDN
+    - Requires [VMware Cloud Foundation](https://www.vmware.com/products/cloud-infrastructure/vmware-cloud-foundation) (VCF) : Private Cloud Platform
 - vMotion : live migration of a VM to another physical machine without any downtime
     - Enterprise feature : Requires license
 -  `.vmdk` : Proprietary virtualization format only, 
@@ -13,7 +14,7 @@
 
 ## vCenter 
 
-- Manage/Access multiple ESXi hosts, all from one console.
+- Manage/Access multiple ESXi hosts, all from one console. 
 - Deployed on VM, on vSphere ESXi host, as either:
     1. VCSA VMware Center Service Appliance VM (preferred)
         - Was openSUSE; @ 6.5 is VMware Photon OS
@@ -54,7 +55,7 @@ This approach provides several advantages:
 
 2. **Distributed Virtual Switches (vDS)**: For larger environments, consider using VMware vSphere Distributed Switches, which provide centralized management of network configurations across multiple ESXi hosts.
 
-3. **Firewall Rules**: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX if available, or through physical firewalls and network devices if NSX is not in use.
+3. **Firewall Rules**: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX (Networking and Security Virtualization) if available, or through physical firewalls and network devices if NSX is not in use.
 
 4. **Programmatic Access**: Allow programmatic access to manage and configure network settings from the VMs. This can be achieved using VMware’s APIs and tools like PowerCLI for scripting and automation.
 

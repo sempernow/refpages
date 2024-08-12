@@ -100,18 +100,18 @@ from infra to services, with the goal of repeatable, verifiable deployment state
             - Argo Workflows + Argo Events required = CD 
                 - Argo Events > Tekton Events
 - __Logging__ (Cluster-level) AKA **Log Aggregation** : 
-  So that logs survive their (ephemeral) generator, be that in a Node, Pod, or container.
-    - **Elastic stack** : [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") (TSDB backend) / [Kibana](https://www.elastic.co/guide/en/kibana/current/introduction.html "Elastic.co") (Web UI frontend) : 
-       to collect, store, query, and visualize log data;
-        - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co") 
-            - Requires a **collector**/**forwarder** AKA *The Workhorse*; a data processing pipeline that ingests data from sources, transforms (normalizes) it, and then forwards it, i.e., **Unified Loggging** : 
+  So that logs survive their (ephemeral) generator, be that of a host or container process, or K8s Node, Pod, &hellip; .
+    - **Elastic stack** : to collect, store, query, and visualize log data. Composed of [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") (backend; distributed search &amp; analytics engine) &amp; [Kibana](https://www.elastic.co/guide/en/kibana/current/introduction.html "Elastic.co") (frontend; Web UI) 
+        - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co")  @ [Air-gap environment](https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba "ChatGPT.com")
+            - **Requires** a **collector**/**forwarder**; a data processing pipeline to ingest data from sources, then transform (normalize) and forward that data. This is the stack's *workhorse*. It provides **Unified Loggging** : 
                 - [Logstash](https://www.elastic.co/logstash "Elastic.co") : Elastic's native solution
-                - [Fluentd](https://www.fluentd.org/architecture "Fluentd.org")
+                - [Fluentd](https://www.fluentd.org/architecture "Fluentd.org") : Data collector (not limited to logs, metrics and tracing).
                     - [Fluent Bit](https://fluentbit.io/) : 
                     *Lightweight forwarder for Fluentd*.
-                    - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub") : 
-                      Manage **Fluent Bit** and **Fluentd** the Kubernetes way. 
-                      (Was FluentBit Operator)
+                    - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub"), formerly "FluentBit Operator" : 
+                      *Manage Fluent Bit and Fluentd the Kubernetes way*.
+    - [OpenSearch](https://opensearch.org/docs/latest/about/ "OpenSearch.org") : FOSS fork of Elastic stack (Elasticsearch/Kibana)
+        - [Data Prepper](https://opensearch.org/docs/latest/data-prepper/) : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces. 
     - [Grafana Loki](https://grafana.com/oss/loki/) | [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") ([Install](https://grafana.com/docs/loki/latest/setup/install/)) : "*Prometheus, but for logs*". A lightweight alternative to Elastic stack.
         - **Does not provide full-text indexing** of logs; indexes only the logs' metadata (**labels**).
         - No viable installation method is available (2024-08), contrary to project claims. 
@@ -142,12 +142,12 @@ from infra to services, with the goal of repeatable, verifiable deployment state
       Vendor-agnostic tracing library; 
       app library (almost all languages covered) for generating traces
         - [OpenTelemetry Operator](https://opentelemetry.io/docs/kubernetes/operator/ "OpenTelemetry.io") @ [GitHub](https://github.com/open-telemetry/opentelemetry-operator "GitHub") : 
-        K8s Operator to manage collectors ([OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector "GitHub")) and auto-instrumentation of workloads using OTEL libraries. 
+        K8s Operator to manage collectors ([OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector "GitHub")) and auto-instrumentation of workloads using OTEL libraries.
     - [VictoriaMetrics](https://victoriametrics.com/products/open-source/) : 
       TSDB & Monitoring Solution (as a Service); 
-      compatible with Prometheus
+      compatible with Prometheus.
     - [Inspektor-Gadget.io](https://www.inspektor-gadget.io/) : 
-       eBPF-based CLIs (gadgets)   
+       eBPF-based CLIs (gadgets)
         ```bash
         kubectl gadget deploy
         # Monitor all network traffic of a namespace
@@ -171,7 +171,10 @@ from infra to services, with the goal of repeatable, verifiable deployment state
     - Managed
         - Aiven 
     - KubeBlocks : K8s Operator : Supports many databases
-    - CNPG : Cloud-native PG
+    - [TiKV](https://github.com/tikv/tikv) : distributed, and transactional key-value database. FOSS. CNCF Graduated project.
+    - [Cassandra](https://github.com/apache/cassandra) : NoSQL distributed database. Apache/CNCF project.
+    - [NiFi](https://github.com/apache/nifi) @ [GPTchat](https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce) : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.
+    - [CloudNativePG](https://cloudnative-pg.io/) (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a **primary/standby architecture**, using native **streaming replication**. A CNCF project.
     - Atlas Operator : Schema
 - **Security**
     - Scanning

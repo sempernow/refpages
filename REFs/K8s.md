@@ -187,10 +187,10 @@ The common environment variables like `KUBERNETES_*` come from Kubernetes itself
 
 #### Key Sources of Common Environment Variables:
 
-1. **Service Environment Variables**: Kubernetes automatically creates environment variables for each service in the same namespace as the pod, providing the pod with the necessary information to interact with the services in the cluster. These variables follow a pattern:
-    - `${SVC_NAME}_SERVICE_HOST` : The IP address of the Service.
-    - `${SVC_NAME}_SERVICE_PORT` : The port that the Service is exposed on.
-    - `${SVC_NAME}_PORT` : The full TCP URL (including protocol and port) for the Service.
+1. **Service Environment Variables**: Kubernetes automatically creates environment variables for each service **in the same namespace** as the pod, providing the pod with the necessary information to interact with the services in the cluster. Note the Pod/container port is not included. These variables follow a pattern:
+    - `${SVC_NAME}_SERVICE_HOST` : Service IP address.
+    - `${SVC_NAME}_SERVICE_PORT` : Service port exposed.
+    - `${SVC_NAME}_PORT` : Service's full TCP URL, including protocol and port.
     -  ...
     - Example:
         - **Service**:
@@ -204,13 +204,14 @@ The common environment variables like `KUBERNETES_*` come from Kubernetes itself
             app: my-app
           ports:
             - protocol: TCP
-              port: 80
-              targetPort: 8080
+              port: 80          # Service port
+              targetPort: 8080  # Pod/Container port
         ```
-        - **Environment** injected into **newer Pods** and shared:
-          - MY_SERVICE_SERVICE_HOST=10.96.0.2
-          - MY_SERVICE_SERVICE_PORT=80
-          - MY_SERVICE_PORT=tcp://10.96.0.2:80
+        - **Environment** injected into **newer Pods**:
+          - `MY_SERVICE_SERVICE_HOST=10.96.0.2`
+          - `MY_SERVICE_SERVICE_PORT=80`
+          - `MY_SERVICE_PORT=tcp://10.96.0.2:80`
+              - Note this is *not* an IANA scheme, but rather a convention adopted by projects (Docker, Redis, ZeroMQ, ...) to distinguish non-HTTP TCP from other transports (UDP, FTP, ) of Layer 4.
     - DNS-Based Service Discovery (Alternative): In addition to environment variables, Kubernetes provides DNS-based service discovery, where services can be accessed via their DNS names like `${SVC_NAME}.default.svc.cluster.local`. This is often preferred over relying on environment variables because it provides more flexibility and reduces reliance on environment variable injection. This behavior is the default configuration, so services are discovered by **pre-existing Pods**.
 
 1. **Pod and Container Metadata**:
