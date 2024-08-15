@@ -183,6 +183,7 @@
 ## [K8s.kubectl-cheatsheet.md](./REFs/K8s.kubectl-cheatsheet.md)
 ## [K8s.kubectl.sh](./REFs/K8s.kubectl.sh)
 ## [K8s.md](./REFs/K8s.md)
+## [K8s.minikube-setup.sh](./REFs/K8s.minikube-setup.sh)
 ## [K8s.Minikube.Install.md](./REFs/K8s.Minikube.Install.md)
 ## [K8s.minik_NONE_DRIVER.md](./REFs/K8s.minik_NONE_DRIVER.md)
 ## [K8s.QuickStart.md](./REFs/K8s.QuickStart.md)
