@@ -22,36 +22,36 @@
     <main>
         <h1><code>kind</code> : <a href="https://kind.sigs.k8s.io/" title="kind.sigs.k8s.io">Kubernetes in Docker</a> | <a href="https://github.com/kubernetes-sigs/kind/releases">Releases</a></h1>
 
+<h2>TL;DR</h2>
+
 <p><code>kind</code> is a tool for running local Kubernetes clusters
 using Docker container(s) as &quot;node(s)&quot;.
 The app was designed for testing Kubernetes itself,
 but is widely used <strong>for local development</strong> or CI.</p>
 
+<pre><code class="language-bash">bash kind-install.sh
+</code></pre>
+
+<ul>
+<li><a href="kind-install.sh"><code>kind-install.sh</code></a></li>
+</ul>
+
 <h2>Install</h2>
 
-<pre><code class="language-bash">[[ $(uname -m) == x86_64 ]] &amp;&amp; arch=amd64
+<pre><code class="language-bash">unset arch
+[[ $(uname -m) == x86_64 ]]  &amp;&amp; arch=amd64
 [[ $(uname -m) == aarch64 ]] &amp;&amp; arch=arm64
-
-# Install kind : https://github.com/kubernetes-sigs/kind/releases
-ver=0.23.0
+# https://github.com/kubernetes-sigs/kind/releases
+v=0.24.0
 to=/usr/local/bin/kind
-[[ $arch ]] \
-    &amp;&amp; sudo curl -sSLo $to https://kind.sigs.k8s.io/dl/v$ver/kind-linux-$arch \
-    &amp;&amp; sudo chmod +x $to 
+type -t kind &amp;&amp; kind --version |grep $v || {
+    [[ $arch ]] &amp;&amp; { 
+        sudo curl -sSLo $to https://kind.sigs.k8s.io/dl/v$v/kind-linux-$arch &amp;&amp; 
+        sudo chmod +x $to &amp;&amp; 
+        kind --version |grep $v || exit 1
+    }
+}
 
-# Install kubectl : https://github.com/kubernetes/kubernetes/tree/master/CHANGELOG#changelogs
-# Find k8s-server version @ kind : `docker container ps` for &quot;kind-control-plane&quot; container
-ver=1.30.0 # Match k8s server components of kind
-to=/usr/local/bin
-# [[ $arch ]] \
-#     &amp;&amp; sudo curl -sSLo $to/kubectl https://dl.k8s.io/release/v$ver/bin/linux/$arch/kubectl \
-#     &amp;&amp; sudo chmod +x $to/kubectl
-# Install kubectl and all other K8s-client apps
-tarball=kubernetes-client-linux-$arch.tar.gz
-[[ $arch ]] \
-    &amp;&amp; wget -nv https://dl.k8s.io/v$ver/$tarball \
-    &amp;&amp; tar -xaf $tarball \
-    &amp;&amp; sudo cp kubernetes/client/bin/* $to/
 </code></pre>
 
 <h2>Useage</h2>
@@ -283,11 +283,11 @@ kubectl wait --namespace ingress-nginx \
 
 <p>Save the ingress-nginx controller installation manifest</p>
 
-<pre><code class="language-bash">curl -sSLo ingress-nginx.kind.yaml $url
+<pre><code class="language-bash">curl -sSLo ingress-nginx-kind.yaml $url
 </code></pre>
 
 <ul>
-<li>@ <a href="ingress-nginx.kind.yaml"><code>ingress-nginx.kind.yaml</code></a></li>
+<li>@ <a href="ingress-nginx-kind.yaml"><code>ingress-nginx-kind.yaml</code></a></li>
 </ul>
 
 <p>Usage : Deploy a test app</p>
@@ -314,11 +314,11 @@ bar-app
 
 <p>Save the usage manifest</p>
 
-<pre><code class="language-bash">curl -sSLo ingress-nginx.kind.usage.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+<pre><code class="language-bash">curl -sSLo ingress-nginx-kind-usage.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
 </code></pre>
 
 <ul>
-<li>@ <a href="ingress-nginx.kind.usage.yaml"><code>ingress-nginx.kind.usage.yaml</code></a></li>
+<li>@ <a href="ingress-nginx-kind-usage.yaml"><code>ingress-nginx-kind-usage.yaml</code></a></li>
 </ul>
 
 <h3>&nbsp;</h3>

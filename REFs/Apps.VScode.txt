@@ -1,20 +1,20 @@
 VSCode  https://code.visualstudio.com/
 
-# Install per EITHER:
+# Install by EITHER:
 
     1. GUI: download (.msi), @ https://code.visualstudio.com/
     2. CLI: `choco install vscode` @ CMD terminal.
 
-=== < 2020 
 
-# Disable Telemetry 
+## Disable Telemetry 
 
     @ Menu: File > Preferences > Settings > Search > telemetry
     
-    @ settings.JSON: telemetry.enableTelemetry = false
+    @ settings.JSON: "telemetry.enableTelemetry": "false",
+    If by GUI, adds: "telemetry.telemetryLevel": "off",  (instead)
 
 
-# @ v1.46.0, FAIL @ downloading Extensions, unless per VPN adapter.
+## @ v1.46.0, FAIL @ downloading Extensions, unless via VPN adapter.
     "Unable to open extension ..."
     
     FIX: Enable IPv6 @ Gateway Router (ASUS RT-AC66U)
@@ -35,11 +35,11 @@ VSCode  https://code.visualstudio.com/
         netsh int ipv6 reset reset.log
         REF: https://www.meltcomics.com/ipv6-no-network-access/
 
-# Install per User setup by downloading from MS site
+## OBSOLETE : Install per User setup by downloading from MS site
     
     VSCodeUserSetup-x64-v.vv.v.exe @ https://code.visualstudio.com/
 
-    - No Administrator privileges required!
+    - No Administrator privileges required
     - Icons per filetype @ Window File Explorer
     
     NOTE: Chocolatey installs as System setup, 
@@ -48,7 +48,7 @@ VSCode  https://code.visualstudio.com/
           
           DON'T NEED Chocolatey; VScode is self-updating.
 
-# JUNCTION POINT @ "%ProgramFiles%\VS-Code" 
+## OBSOLETE : JUNCTION POINT @ "%ProgramFiles%\VS-Code" 
   is required by File Explorer REG entries, and by open.bat 
     @ System setup
     symlink.bat j "%ProgramFiles%\VS-Code" "%ProgramFiles%\Microsoft VS Code" 
@@ -56,13 +56,13 @@ VSCode  https://code.visualstudio.com/
     symlink.bat j "%ProgramFiles%\VS-Code" "%USERPROFILE%\AppData\Local\Programs\Microsoft VS Code" 
     symlink.bat j "%ProgramFiles%\Microsoft VS Code" "%USERPROFILE%\AppData\Local\Programs\Microsoft VS Code"  
     
-# https://code.visualstudio.com/docs/getstarted/userinterface
+## https://code.visualstudio.com/docs/getstarted/userinterface
 
-# Extensions :: Rollback/Specify Version
+## Extensions :: Rollback/Specify Version
     @ Extensions side bar > settings (icon) > "Install Another Version"
         - Vim 1.12.0 kills itself; NO COMMAND MODE; rolled back to 1.11.3 .
         
-# "Remote - WSL" 
+## "Remote - WSL" 
 
     DO NOT INSTALL this extension 
         - It breaks paths by prepending drive path to absolute path, 
@@ -73,7 +73,7 @@ VSCode  https://code.visualstudio.com/
         - It forces new app launch for each call.
     (Note there is NO WAY TO DISABLE THE NAGGING POP UP to install it.)
     
-# Go extension :: install per Git bash [MINGW64]
+## Go extension :: install per Git bash [MINGW64]
 
     Requires '.git' folders of PKGs intact,  
         else `go get -u -v PKG` fails.
@@ -81,7 +81,7 @@ VSCode  https://code.visualstudio.com/
     
     (Golang 1.12.6 installed per Chocolatey @ C:\tools\go)
 
-# Shortcut Keys 
+## Shortcut Keys 
 
     CTRL + SHIFT + TAB    Files [Cycle]
     CTRL + P              Files Menu
@@ -92,13 +92,13 @@ VSCode  https://code.visualstudio.com/
     CTRL + SHIFT + P      Command Pallete
     F11                   Full Screen [Toggle]
 
-# Format Code [w/ Beautify extension installed]
+## Format Code [w/ Beautify extension installed]
 
     SHIFT + ALT + F       Windows 
     SHIFT + OPTION + F    Mac
     CTRL + SHIFT + I      Ubuntu
 
-# Vim emulation (Extension; publisher:"vscodevim")
+## Vim emulation (Extension; publisher:"vscodevim")
 
     File > Preferences > Keyboard Extensions > "Vim emulation ..."
 
@@ -108,7 +108,7 @@ VSCode  https://code.visualstudio.com/
     "
     So, @ Windows, delete dir @ %USERNAME%/.vscode/extensions/vscodevim.vim-...
 
-# User Settings
+## User Settings
 
 {
     "workbench.startupEditor": "none",
@@ -128,9 +128,9 @@ VSCode  https://code.visualstudio.com/
     "workbench.sideBar.location": "left",
 }
 
-# Terminal (CTRL+`) uses Git-for-Windows, but invokes `.bashrc` NOT `.bash_profile` (@USERPROFILE)
+## Terminal (CTRL+`) uses Git-for-Windows, but invokes `.bashrc` NOT `.bash_profile` (@USERPROFILE)
 
-# Add "Open with ..." @ Explorer Context Menu 
+## Add "Open with ..." @ Explorer Context Menu 
 
 ```
 Windows Registry Editor Version 5.00

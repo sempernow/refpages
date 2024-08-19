@@ -26,176 +26,172 @@
 
 <p>Kubernetes is a universal control plane that is most commonly used to build platforms for managing containerized workloads.</p>
 
+<h2><a href="https://kubernetes.io/docs/home/?path=users&amp;persona=app-developer&amp;level=foundational">Overview</a> | <a href="https://kubernetes.io/docs/reference/tools/" title="kubernetes.io/docs/...">Tools</a> | <a href="https://github.com/kubernetes" title="Kubernetes repo">GitHub</a> | <a href="https://en.wikipedia.org/wiki/Kubernetes">Wikipedia</a></h2>
+
 <h2>Vanilla Cluster</h2>
 
-<p><a href="https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/">Install a production-environment cluster using <code>kubeadm</code>.</a></p>
+<p><a href="https://kubernetes.io/docs/setup/production-environment/">Install a production-environment cluster using <code>kubeadm</code>.</a></p>
 
-<h3>Prep at each node</h3>
+<h3>Prep host</h3>
 
-<pre><code class="language-bash"># Install kernel headers 
-sudo dnf install kernel-headers-$(uname -r)
-sudo dnf install kernel-devel-$(uname -r)
-
-# Load kernel modules (now)
-sudo modprobe br_netfilter
-sudo modprobe ip_vs
-sudo modprobe ip_vs_rr
-sudo modprobe ip_vs_wrr
-sudo modprobe ip_vs_sh
-sudo modprobe overlay
-
-# Load kernel modules on boot
-cat &lt;&lt;-EOH |sudo tee /etc/modules-load.d/kubernetes.conf
-br_netfilter
-ip_vs
-ip_vs_rr
-ip_vs_wrr
-ip_vs_sh
-overlay
-EOH
-
-# Set runtime kernel params (sysctl) for K8s networking
-cat &lt;&lt;-EOH |sudo tee /etc/sysctl.d/kubernetes.conf
-net.ipv4.ip_forward = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOH
-</code></pre>
-
-<table>
-<thead>
-<tr>
-<th>Kernel Parameter</th>
-<th>Description</th>
-</tr>
-</thead>
-
-<tbody>
-<tr>
-<td><code>net.bridge.bridge-nf-call-iptables</code></td>
-<td>Bridged IPv4 traffic via iptables.</td>
-</tr>
-
-<tr>
-<td><code>net.bridge.bridge-nf-call-ip6tables</code></td>
-<td>Bridged IPv6 traffic via iptables.</td>
-</tr>
-
-<tr>
-<td><code>net.ipv4.ip_forward</code></td>
-<td>IPv4 packet forwarding.</td>
-</tr>
-</tbody>
-</table>
-
-<pre><code class="language-bash"># Apply the settings
-sudo sysctl --system
-
-# Disable swap (idempotent)
-sudo swapoff -a
-swap=&quot;$(cat /etc/fstab |grep ' swap' |grep -v '^ *#' |awk '{print $1}')&quot;
-[[ $swap ]] &amp;&amp; swap=&quot;$(echo $swap |awk '{print $1}')&quot;
-[[ $swap ]] &amp;&amp; sudo sed -i &quot;s,$swap,#$swap,&quot; /etc/fstab
-
-
-</code></pre>
+<p>See <a href="K8s.configure-kernel.sh"><code>K8s.configure-kernel.sh</code></a></p>
 
 <h3>Install CRI</h3>
 
-<p><code>containerd</code></p>
-
-<pre><code class="language-bash"># If want Docker.io version : RPM method
-sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-sudo dnf makecache
-# Install containerd package 
-sudo dnf -y install containerd.io
-# Else, if want Kubernetes.io version : binary method
-# Install runc : containerd dependency
-# @ https://github.com/opencontainers/runc/releases
-ver='1.1.13'
-arch=$(uname -m)
-[[ $arch == 'x86_64' ]] &amp;&amp; arch=amd64
-url=&quot;https://github.com/opencontainers/runc/releases/download/v${ver}/runc.$arch&quot;
-sudo curl -O /usr/local/sbin/runc -sSL $url
-# Install containerd binaries
-ver='1.7.19'
-arch=$(uname -m)
-[[ $arch == 'x86_64' ]] &amp;&amp; arch=amd64
-url=&quot;https://github.com/containerd/containerd/releases/download/v$ver/containerd-${ver}-linux-${arch}.tar.gz&quot;
-curl -sSL $url |sudo tar -C /usr/local -xzvf -
-
-# Configure as systemd service
-url='https://raw.githubusercontent.com/containerd/containerd/main/containerd.service'
-dst='/usr/local/lib/systemd/system/containerd.service'
-sudo curl -sSL -O $dst $url
-
-# Configure (TOML) 
-conf='/etc/containerd/config.toml'
-# https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd-systemd
-containerd config default |sudo tee $conf
-#... and edit:
-vi $conf 
-#... else:
-cat &lt;&lt;-EOH |sudo tee $conf
-version = 2
-[plugins]
-  [plugins.&quot;io.containerd.grpc.v1.cri&quot;]
-    sandbox_image = &quot;registry.k8s.io/pause:3.9&quot;
-    [plugins.&quot;io.containerd.grpc.v1.cri&quot;.containerd]
-      discard_unpacked_layers = true
-      [plugins.&quot;io.containerd.grpc.v1.cri&quot;.containerd.runtimes]
-        [plugins.&quot;io.containerd.grpc.v1.cri&quot;.containerd.runtimes.runc]
-          runtime_type = &quot;io.containerd.runc.v2&quot;
-          [plugins.&quot;io.containerd.grpc.v1.cri&quot;.containerd.runtimes.runc.options]
-            SystemdCgroup = true
-EOH
-
-# Enable/start the service
-sudo systemctl daemon-reload
-sudo systemctl enable --now containerd.service
-
-# Print the running config
-containerd config dump
-
-</code></pre>
+<p>See <a href="K8s.provision-cri.sh"><code>K8s.provision-cri.sh</code></a></p>
 
 <h3>Install K8s tools and CNI Plugins</h3>
 
+<p>See <a href="K8s.provision-kubernetes.sh"><code>K8s.provision-kubernetes.sh</code></a></p>
+
+<h2>Topics of Interest</h2>
+
+<h3><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/operator/">Operator (Pattern)</a></h3>
+
+<p>The goal of an Operator is to put operational knowledge into software. Previously this knowledge only resided in the minds of administrators, various combinations of shell scripts or automation software like Ansible. It was outside of your Kubernetes cluster and hard to integrate. With Operators, CoreOS changed that.</p>
+
+<p>Operators implement and automate common Day-1 (installation, configuration, etc.) and Day-2 (re-configuration, update, backup, failover, restore, etc.) activities in a piece of software running inside your Kubernetes cluster, by integrating natively with Kubernetes concepts and APIs. We call this a Kubernetes-native application.</p>
+
+<p>With Operators an application is treated as a single object, and exposes only that
+which makes sense for the application to work.</p>
+
+<h3><a href="https://kubernetes.io/docs/tasks/administer-cluster/certificates/">Cluster Control-plane TLS</a> | <a href="https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/">Managing TLS</a></h3>
+
+<h3><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a></h3>
+
+<p>Regarding identity, Kubernetes has
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#user-accounts-versus-service-accounts">two categories</a>)
+of subject:</p>
+
+<ol>
+<li><p><a href="https://kubernetes.io/docs/concepts/security/service-accounts/"><strong><code>ServiceAccount</code></strong></a> :  K8s object for non-human subjects AKA <em>entities</em>; Pod, DaemonSet, CronJob,
+Job, CRD, controllers, operators, &hellip;, and <strong>external services</strong> (CI/CD pipelines for example). Upon creation of a Pod, K8s generates/attaches to it a common ServiceAccount named <code>default</code> in Pod's namespace (). This has neither <code>Role</code> nor <code>RoleBinding</code> objects and so its permissions are very limited (depending on cluster policies). Authentication is typically by Bearer Token.</p>
+
+<pre><code class="language-bash">sa=$(k get -n kube-system pod coredns-576bfc4dc7-f9kkh -o jsonpath='{.spec.serviceAccount}')
+tkn=$(k create -n kube-system token $sa --duration 10m)
+ip=$(k -n kube-system get svc traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+# Send GET request to the protected API server
+curl -ikH &quot;Authorization: Bearer $tkn&quot; https://$ip:6443/version # JSON response body
+</code></pre></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#users-in-kubernetes"><strong>user</strong> or <strong>group</strong></a> : K8s concepts of human subjects. Neither are objects of the K8s API; however, both are searched for, and can be authenticated against, by K8s API from client's TLS certificate fields, and mapped to <code>kind</code> of <code>[Cluster]RoleBinding</code> :</p>
+
+<pre><code class="language-bash">$ k explain clusterrolebinding.subjects.kind
+GROUP:      rbac.authorization.k8s.io
+KIND:       ClusterRoleBinding
+VERSION:    v1
+
+FIELD: kind &lt;string&gt;
+
+
+DESCRIPTION:
+    Kind of object being referenced. Values defined by this API group are
+    &quot;User&quot;, &quot;Group&quot;, and &quot;ServiceAccount&quot;. If the Authorizer does not recognized
+    the kind value, the Authorizer should report an error.
+</code></pre>
+
 <ul>
-<li><code>kubelet</code> : Node agent</li>
-<li><code>kubeadm</code> : Administration CLI</li>
-<li><code>kubectl</code> : API client CLI</li>
+<li><p>Organization (<code>O</code>) maps to <code>Group</code> and Common Name (<code>CN</code>) fields of client's TLS certificate.
+For example, &quot;<code>Subject: O = team-x1-devs + O = system:basic-user, CN = fred</code>.
+To see that of <code>default</code> user of a default kubeconfig:</p>
 
-<li><p><code>kubernetes-cni</code> : CNI Plugins</p>
+<pre><code class="language-bash"># View certificate text
+kubectl config view --raw -o jsonpath='{.users[].user.client-certificate-data}' \
+|base64 -d \
+|openssl x509 -text -noout
 
-<pre><code class="language-bash">sudo dnf makecache
-# Install conntrack (undocumented dependency)
-sudo dnf install -y conntrack 
-# Install K8s tools
-sudo dnf install -y kubelet kubeadm kubectl kubernetes-cni --disableexcludes=kubernetes
-# Enable the node agent 
-sudo systemctl enable --now kubelet.service
+# Send GET request to the protected API server using TLS certificate and key
+curl -k \
+--cert &lt;(k config view --raw -o jsonpath='{.users[0].user.client-certificate-data}' |base64 -d) \
+--key &lt;(k config view --raw -o jsonpath='{.users[0].user.client-key-data}' |base64 -d) \
+https://$(k -n kube-system get svc traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}'):6443/version
 </code></pre></li>
 
-<li><p>CNI Plugins : Either of <code>kubernetes-cni</code> (RPM) or a release (binaries): <a href="https://github.com/containernetworking/plugins/releases">https://github.com/containernetworking/plugins/releases</a></p>
+<li><p>The build-in <strong><code>system:masters</code></strong> group is the break-glass <em>uber admin</em> having unrestricted access to K8s API;
+this subject is typically bound to the <code>cluster-admin</code> ClusterRole, <strong>allowing any action</strong> (<code>* verb</code>)
+on <strong>any resource</strong> (<code>* resource</code>) in <strong>any API group</strong> across <strong>all namespaces</strong>.</p>
 
-<pre><code class="language-bash">ver=1.5.1
-arch=$(uname -m)
-[[ $arch == 'x86_64' ]] &amp;&amp; arch=amd64
-url=https://github.com/containernetworking/plugins/releases/download/v${ver}/cni-plugins-linux-${arch}-v${ver}.tgz
-curl -sSL $url |tar -C /opt/cni/bin -xzf -
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+...
+name: cluster-admin
+...
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+kind: Group
+name: system:masters
 </code></pre></li>
-</ul>
 
-<h2><a href="https://kubernetes.io/docs/home/?path=users&amp;persona=app-developer&amp;level=foundational">Overview</a> | <a href="https://kubernetes.io/docs/reference/tools/" title="kubernetes.io/docs/...">Tools</a> | <a href="https://github.com/kubernetes" title="Kubernetes repo">GitHub</a> | <a href="https://en.wikipedia.org/wiki/Kubernetes">Wikipedia</a></h2>
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user">Create TLS certificate</a> for a <strong>user</strong> or <strong>group</strong> : See <a href="K8s.users.and.groups.sh"><code>K8s.users.and.groups.sh</code></a> .</p></li>
+</ul></li>
 
-<h2><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">Admission Controller</a></h2>
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" title="Kubernetes.io"><strong>Authentication</strong></a> (Authn)</p>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#authentication-strategies" title="Kubernetes.io">Authentication Plugins</a>
+
+<ul>
+<li>Static Token file
+
+<ul>
+<li>Bearer token</li>
+<li>Service Account token</li>
+</ul></li>
+<li>X.509 certificates</li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">Open ID Connect (OIDC) token</a></li>
+<li>Authentication proxy</li>
+<li>Webhook</li>
+</ul></li>
+<li>Two scenarios
+
+<ol>
+<li>Clients authenticating against the K8s API server
+
+<ul>
+<li>The two most common methods:
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user" title="Kubernetes.io">X.509 certificate issued by K8s CA</a></li>
+<li>Token (JWTs) generated by an OIDC provider, e.g., <strong>Dex</strong> or <strong>Keycloak</strong>, that acts as proxy of upstream Identity Provider (<strong>IdP</strong>), such as AD/LDAP, against which it authenticates a subject, which is <a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">presumably recognizable to K8s</a>, i.e., a user/group or <code>ServiceAccount</code> having K8s <code>cluster.user</code> and (<code>Cluster</code>)<code>RoleBinding</code>.</li>
+</ul></li>
+</ul></li>
+<li>Users authenticating at web UI against an application running on the cluster.
+
+<ul>
+<li>Token (JWTs) generated by an OIDC provider (same as above method).</li>
+</ul></li>
+</ol></li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/" title="Kubernetes.io"><strong>Authorization</strong></a> (Authz) | Modules/<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#authorization-modules" title="Kubernetes.io">Modes</a><br>
+Regardless of authentication method,
+K8s can implement Role-based Access Control (<a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">RBAC</a>) model
+against subjects (<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">known by request attribute(s)</a>)
+using a pair of K8s objects for each of the two scopes of K8s API resources (<code>api-resources</code>):
+
+<ol>
+<li>Namespaced (<code>Deployment</code>, <code>Pod</code>, <code>Service</code>, &hellip;)
+
+<ul>
+<li><code>Role</code> : Rules declaring the allowed actions (<code>verbs</code>) upon <code>resources</code> scoped to APIs (<code>apiGroup</code>).</li>
+<li><code>RoleBinding</code> : Binding a subject (authenticated user or ServiceAccount) to a role.</li>
+</ul></li>
+<li>Cluster-wide (<code>PersistentVolume</code>, <code>StorageClass</code>, &hellip;)
+
+<ul>
+<li><code>ClusterRole</code></li>
+<li><code>ClusterRoleBinding</code></li>
+</ul></li>
+</ol></li>
+</ul></li>
+</ol>
+
+<h3><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">Admission Controller</a></h3>
 
 <p>An admission controller is code of <code>kube-apiserver</code> that intercepts requests to the Kubernetes API server prior to persistence of the object, but after the request is authenticated and authorized.</p>
 
-<p>Admission controllers may be validating, mutating, or both. Mutating controllers may modify objects related to the requests they admit; validating controllers may not.</p>
+<p>Admission controllers may be validating, mutating, or both. <strong>Mutating controllers may modify objects</strong> related to the requests they admit; <strong>validating controllers may not</strong>.</p>
 
-<p>Admission controllers limit requests to create, delete, modify objects. Admission controllers can also block custom verbs, such as a request connect to a Pod via an API server proxy. Admission controllers do not (and cannot) block requests to read (get, watch or list) objects.</p>
+<p>Admission controllers <strong>limit requests to create, delete, modify</strong> objects. Admission controllers can also block custom verbs, such as a request connect to a Pod via an API server proxy. Admission controllers do not (and cannot) block requests to read (get, watch or list) objects.</p>
 
 <pre><code class="language-bash"># List all enabled admission controllers
 kube-apiserver -h |grep enable-admission-plugins
@@ -206,17 +202,6 @@ kube-apiserver --enable-admission-plugins=NamespaceLifecycle,LimitRanger ...
 # Disable some 
 kube-apiserver --disable-admission-plugins=PodNodeSelector,AlwaysDeny ...
 </code></pre>
-
-<h2><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/operator/">Operator (Pattern)</a></h2>
-
-<p>The goal of an Operator is to put operational knowledge into software. Previously this knowledge only resided in the minds of administrators, various combinations of shell scripts or automation software like Ansible. It was outside of your Kubernetes cluster and hard to integrate. With Operators, CoreOS changed that.</p>
-
-<p>Operators implement and automate common Day-1 (installation, configuration, etc.) and Day-2 (re-configuration, update, backup, failover, restore, etc.) activities in a piece of software running inside your Kubernetes cluster, by integrating natively with Kubernetes concepts and APIs. We call this a Kubernetes-native application.</p>
-
-<p>With Operators an application is treated as a single object, and exposes only that
-which makes sense for the application to work.</p>
-
-<h2>Topics of Interest</h2>
 
 <h3>Pods' Inherit Environment</h3>
 
