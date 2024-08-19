@@ -1,36 +1,35 @@
 # `kind` : [Kubernetes in Docker](https://kind.sigs.k8s.io/ "kind.sigs.k8s.io") | [Releases](https://github.com/kubernetes-sigs/kind/releases)
 
+## TL;DR
+
 `kind` is a tool for running local Kubernetes clusters 
 using Docker container(s) as "node(s)". 
 The app was designed for testing Kubernetes itself, 
 but is widely used **for local development** or CI.
 
+
+```bash
+bash kind-install.sh
+```
+- [`kind-install.sh`](kind-install.sh)
+
 ## Install
 
 ```bash
-[[ $(uname -m) == x86_64 ]] && arch=amd64
+unset arch
+[[ $(uname -m) == x86_64 ]]  && arch=amd64
 [[ $(uname -m) == aarch64 ]] && arch=arm64
-
-# Install kind : https://github.com/kubernetes-sigs/kind/releases
-ver=0.23.0
+# https://github.com/kubernetes-sigs/kind/releases
+v=0.24.0
 to=/usr/local/bin/kind
-[[ $arch ]] \
-    && sudo curl -sSLo $to https://kind.sigs.k8s.io/dl/v$ver/kind-linux-$arch \
-    && sudo chmod +x $to 
+type -t kind && kind --version |grep $v || {
+    [[ $arch ]] && { 
+        sudo curl -sSLo $to https://kind.sigs.k8s.io/dl/v$v/kind-linux-$arch && 
+        sudo chmod +x $to && 
+        kind --version |grep $v || exit 1
+    }
+}
 
-# Install kubectl : https://github.com/kubernetes/kubernetes/tree/master/CHANGELOG#changelogs
-# Find k8s-server version @ kind : `docker container ps` for "kind-control-plane" container
-ver=1.30.0 # Match k8s server components of kind
-to=/usr/local/bin
-# [[ $arch ]] \
-#     && sudo curl -sSLo $to/kubectl https://dl.k8s.io/release/v$ver/bin/linux/$arch/kubectl \
-#     && sudo chmod +x $to/kubectl
-# Install kubectl and all other K8s-client apps
-tarball=kubernetes-client-linux-$arch.tar.gz
-[[ $arch ]] \
-    && wget -nv https://dl.k8s.io/v$ver/$tarball \
-    && tar -xaf $tarball \
-    && sudo cp kubernetes/client/bin/* $to/
 ```
 
 ## Useage
@@ -259,9 +258,9 @@ kubectl wait --namespace ingress-nginx \
 Save the ingress-nginx controller installation manifest 
 
 ```bash
-curl -sSLo ingress-nginx.kind.yaml $url
+curl -sSLo ingress-nginx-kind.yaml $url
 ```
-- @ [`ingress-nginx.kind.yaml`](ingress-nginx.kind.yaml)
+- @ [`ingress-nginx-kind.yaml`](ingress-nginx-kind.yaml)
 
 Usage : Deploy a test app
 
@@ -286,9 +285,9 @@ bar-app
 Save the usage manifest
 
 ```bash
-curl -sSLo ingress-nginx.kind.usage.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+curl -sSLo ingress-nginx-kind-usage.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
 ```
-- @ [`ingress-nginx.kind.usage.yaml`](ingress-nginx.kind.usage.yaml)
+- @ [`ingress-nginx-kind-usage.yaml`](ingress-nginx-kind-usage.yaml)
 
 
 ### &nbsp;
