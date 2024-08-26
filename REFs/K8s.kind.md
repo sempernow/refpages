@@ -281,6 +281,8 @@ foo-app
 bar-app
 ```
 - Despite warnings, it works flawlessly!
+- Docker config may require use `node`'s `INTERNAL-IP` (Docker bridge network) instead of `localhost`
+    - `ip=$(k get node kind-control-plane -o jsonpath='{.status.addresses[0].address}')`
 
 Save the usage manifest
 

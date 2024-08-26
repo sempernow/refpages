@@ -10,17 +10,20 @@
 - Ingress: Traefik Ingress controller
 - LB: [ServiceLB](https://docs.k3s.io/networking/networking-services#service-load-balancer "docs.k3s.io") Load-Balancer controller
     - Formerly [Klipper LB](https://github.com/k3s-io/klipper-lb "GitHub : /k3s-io/klipper-lb") : `docker.io/rancher/klipper-lb:v0.4.7`
-    - [*&hellip; to set up those DNAT iptables rules on the node.*](https://github.com/k3s-io/k3s/discussions/9927)
+    - [*&hellip; to set up DNAT `iptables` rules on node(s).*](https://github.com/k3s-io/k3s/discussions/9927)
         - &hellip; watches Kubernetes Services with the `spec.type` field set to `LoadBalancer`. 
         - For each __LoadBalancer__ Service, a __DaemonSet__ is created in the `kube-system` namespace. This DaemonSet in turn creates Pods with a `svc-` prefix, on each node. These Pods use __iptables__ to forward traffic from the Pod's __NodePort__, to the Service's __ClusterIP__ address and port.
 - Network Policy: Kube-router Network Policy controller
 - Registry: Spegel distributed container image registry mirror
 - Host configuration: Host utilities (iptables, socat, etc)
 
-
 ## TL;DR
 
-Unconventional distro. Installs quickly and includes *All The Things*; CRI, CNI, service load balancer, and ingress controller. It is designed for use by root, yet tooling is installed canonically (`/usr/local/bin`), so ensure root `PATH` has that path.
+Unconventional distro. Installs quickly and includes *All The Things*; CRI, 
+CNI, service load balancer, and ingress controller. 
+It is designed for use by root, 
+yet tooling is installed canonically (`/usr/local/bin`), 
+so ensure root `PATH` has that path.
 
 Includes a [`k3s` CLI](https://docs.k3s.io/cli), 
 which functions as some kind of wrapper 
