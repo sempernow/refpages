@@ -310,6 +310,11 @@ bar-app
 
 <ul>
 <li>Despite warnings, it works flawlessly!</li>
+<li>Docker config may require use <code>node</code>'s <code>INTERNAL-IP</code> (Docker bridge network) instead of <code>localhost</code>
+
+<ul>
+<li><code>ip=$(k get node kind-control-plane -o jsonpath='{.status.addresses[0].address}')</code></li>
+</ul></li>
 </ul>
 
 <p>Save the usage manifest</p>

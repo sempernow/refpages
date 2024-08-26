@@ -36,7 +36,7 @@
 
 <ul>
 <li>Formerly <a href="https://github.com/k3s-io/klipper-lb" title="GitHub : /k3s-io/klipper-lb">Klipper LB</a> : <code>docker.io/rancher/klipper-lb:v0.4.7</code></li>
-<li><a href="https://github.com/k3s-io/k3s/discussions/9927"><em>&hellip; to set up those DNAT iptables rules on the node.</em></a>
+<li><a href="https://github.com/k3s-io/k3s/discussions/9927"><em>&hellip; to set up DNAT <code>iptables</code> rules on node(s).</em></a>
 
 <ul>
 <li>&hellip; watches Kubernetes Services with the <code>spec.type</code> field set to <code>LoadBalancer</code>.</li>
@@ -50,7 +50,11 @@
 
 <h2>TL;DR</h2>
 
-<p>Unconventional distro. Installs quickly and includes <em>All The Things</em>; CRI, CNI, service load balancer, and ingress controller. It is designed for use by root, yet tooling is installed canonically (<code>/usr/local/bin</code>), so ensure root <code>PATH</code> has that path.</p>
+<p>Unconventional distro. Installs quickly and includes <em>All The Things</em>; CRI,
+CNI, service load balancer, and ingress controller.
+It is designed for use by root,
+yet tooling is installed canonically (<code>/usr/local/bin</code>),
+so ensure root <code>PATH</code> has that path.</p>
 
 <p>Includes a <a href="https://docs.k3s.io/cli"><code>k3s</code> CLI</a>,
 which functions as some kind of wrapper
