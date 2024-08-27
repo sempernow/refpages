@@ -173,6 +173,7 @@
 ## [JS.XHR.js](./REFs/JS.XHR.js)
 ## [JWT.md](./REFs/JWT.md)
 ## [JWT.OAuth.md](./REFs/JWT.OAuth.md)
+## [K8s-AD-integration-Keycloak.md](./REFs/K8s-AD-integration-Keycloak.md)
 ## [K8s-HA-LBs.txt](./REFs/K8s-HA-LBs.txt)
 ## [K8s.CKA.md](./REFs/K8s.CKA.md)
 ## [K8s.CKAD.md](./REFs/K8s.CKAD.md)
