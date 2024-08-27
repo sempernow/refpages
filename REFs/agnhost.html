@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>agnhost</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://github.com/kubernetes/kubernetes/tree/master/test/images/agnhost#agnhost" title="GitHub.com/kubernetes/.../test/images">Agnhost</a></h1>
+
+<p>Agnostic Host</p>
+
+<p><a href="https://github.com/kubernetes/kubernetes/blob/master/test/images/agnhost/Dockerfile" title="Dockerfile"><code>registry.k8s.io/e2e-test-images/agnhost:2.39</code></a></p>
+
+<blockquote>
+<p>Container image having an extendable CLI that <strong>outputs the same</strong> expected content, <strong>regardless of host</strong> (Linux or Windows) OS. The <code>agnhost</code> binary has several subcommands which are <a href="https://github.com/kubernetes/kubernetes/tree/master/test/images/agnhost#usage">used to test various K8s features</a>.</p>
+</blockquote>
+
+<h2><a href="https://github.com/kubernetes/kubernetes/tree/master/test/images/agnhost#netexec"><code>netexec</code></a></h2>
+
+<p>@ Server</p>
+
+<pre><code class="language-bash">kubectl exec test-agnhost -- \
+    /agnhost netexec --http-port 8080
+</code></pre>
+
+<p>@ Client</p>
+
+<pre><code class="language-bash">curl http://localhost:8080/echo?msg=hello%20$(hostname)
+hello XPC
+</code></pre>
+
+<h3>@ <code>kind</code> cluster</h3>
+
+<pre><code class="language-bash">☩ dps
+CONTAINER ID  NAMES                IMAGE                  PORTS 
+adfc57f39b37  kind-control-plane   kindest/node:v1.31.0   0.0.0.0:80-&gt;80/tcp, 0.0.0.0:443-&gt;443/tcp, 127.0.0.1:44235-&gt;6443/tcp ...
+
+☩ k get node
+NAME                 STATUS   ROLES           AGE   VERSION
+kind-control-plane   Ready    control-plane   16h   v1.31.0
+
+☩ k get pod -o wide
+NAME   READY   STATUS    RESTARTS   AGE   IP            NODE               ...
+bar    1/1     Running   0          16h   10.244.0.14   kind-control-plane ...
+foo    1/1     Running   0          16h   10.244.0.13   kind-control-plane ...
+...
+
+☩ k get pod bar -o jsonpath='{.spec.containers[*].image}'
+registry.k8s.io/e2e-test-images/agnhost:2.39
+</code></pre>
+
+<ul>
+<li><p>Reference:</p>
+
+<pre><code class="language-bash">☩ type dps
+dps is aliased to `docker container ps --format &quot;table {{.ID}}  {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}&quot;'
+</code></pre>
+
+<pre><code class="language-bash">☩ type k           
+k is a function    
+k ()               
+{                  
+kubectl &quot;$@&quot;   
+}
+</code></pre></li>
+</ul>
+
+<p>@ Server</p>
+
+<pre><code class="language-bash"># Override default command (/agnhost netexec) with another (/agnhost fake-gitserver)
+☩ docker exec -it kind-control-plane \
+    kubectl exec -it bar -- \
+        /agnhost fake-gitserver
+
+# Equivalent
+☩ k exec -it bar -- \
+        /agnhost fake-gitserver
+
+</code></pre>
+
+<p>@ Client</p>
+
+<pre><code class="language-bash">☩ docker exec -it kind-control-plane \
+    kubectl exec -it bar -- \
+        curl http://localhost:8000/get
+I am a fake git server
+
+# Equivalent
+☩ k exec -it bar -- \
+    curl http://localhost:8000/get
+I am a fake git server
+
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
