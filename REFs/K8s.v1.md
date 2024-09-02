@@ -1,4 +1,7 @@
 # Kubernetes [`k8s`]
+
+## WARNING : 2018 notes
+
 ## [Overview](https://kubernetes.io/docs/home/?path=users&persona=app-developer&level=foundational) | [Tools](https://kubernetes.io/docs/reference/tools/ "kubernetes.io/docs/...") | [GitHub](https://github.com/kubernetes "Kubernetes repo") | [Kubernetes.io](https://kubernetes.io/) | [Wikipedia](https://en.wikipedia.org/wiki/Kubernetes)  
 
 - [___Why?___](https://kubernetes.io/docs/concepts/overview/what-is-kubernetes/#why-do-i-need-kubernetes-and-what-can-it-do "Kubernetes.io Docs/Concepts")   

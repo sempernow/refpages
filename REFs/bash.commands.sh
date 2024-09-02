@@ -1499,6 +1499,19 @@ exit
         # XOR per lines (lines not in both)
         awk 'FNR==NR {a[$0]++; next} !a[$0]' file1 file2
 
+    JsonPath # XPath for JSON : A language library : https://jsonpath.com/
+        # https://kubernetes.io/docs/reference/kubectl/jsonpath/
+        # COMMON PATTERN using its array filter "?()" :
+        # Get value of key-X of an array-el obj having a key-Y set to a *declared value*.
+        # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
+        # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
+        user=kind-kind # See config.users[] at `kubectl config view`
+        kubectl config view --raw -o \
+            jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
+            |base64 -d |openssl x509 -text -noout
+            # OR just one field, e.g., Subject:
+            |base64 -d |openssl x509 -subject -noout
+                #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
 
     jq # JSON Processor
         # https://jqlang.github.io/jq/tutorial/
@@ -1532,8 +1545,29 @@ exit
                 # abox:2.0.1
                 # abox:3
 
-        # GET all content of registry, both repos and images, 
-        # in both JSON and flat-list formats.
+        # Filter key names 
+
+            # @ Array : Using keys (obj to arr operator)
+            echo '{ "k1": [{"/api/k2a": 11}, {"/api/k2b": 22}, {"/api/kxb": 86}, {"/api/k2c": 33}]}' \
+                |jq '.k1[] | select(keys[] | test("^/api/k2"))'
+
+                # OR, to get filtered key names only : Using keys operator
+                |jq -Mr '.k1[] | keys[] | select(test("^/api/k2"))'
+
+            # @ Object : Using to_entries (obj to arr of its k-v pairs) |...| from_entries (arr to obj)
+            echo '{ "k1": { "/api/k2a": 11, "/api/k2b": 22, "/api/kxb": 86, "/api/k2c": 33 }}' \
+                |jq '.k1 | to_entries | map(select(.key | test("^/api/k2"))) | from_entries'
+                
+                # OR, to get filtered key names only : Using keys operator
+                |jq -Mr '.k1 | keys[] | select(test("^/api/k2"))'
+
+            # Filter out subkey(s) under unknown key name(s) : Using walk()
+                |jq '. |walk(if type == "object" then del(.keynam1, keyname2, keyname3) else . end)'
+                # If keynames are dynamic
+                jq --argjson keys '["keyname1", "keyname2", "keyname3"]' 'walk(if type == "object" then {($keys[]): .[]} else . end)'
+
+            # GET all content of container registry, both repos and images lists, 
+            # in both JSON and flat-list formats.
             curl -s http://$registry/v2/_catalog \
                 |tee catalog.json \
                 |jq -Mr .[][] \
@@ -1831,10 +1865,13 @@ exit
         # [:upper:]       all upper case letters
         # [:xdigit:]      all hexadecimal digits
         # [=CHAR=]        all characters which are equivalent to CHAR
-        # strip all non-printable characters from $_bad_str
+        
+        # Strip all non-printable characters from $_bad_str
+        echo "$_bad_str" |tr -dc '[[:print:]]'
+        # Equivalent:
         tr -dc '[[:print:]]' <<< "$_bad_str"
 
-        # translate (convert) all NEWLINE to whitespace
+        # Convert (translate) all NEWLINE to whitespace
         tr '\n' ' '  < FILE     
 
         # Delete all NEWLINE and WHITESPACE chars
@@ -1842,18 +1879,21 @@ exit
 
         # xargs : 2 input lines per 1 output line
         cat "$file" |tr ' ' '\n' |xargs -l2
-        # equivalent command w/out using cat command
+        # Equivalent
         tr ' ' '\n' < "$file" |xargs -l2 
 
-        # translate (existing) lowercase file to (created) UPPERCASE file
+        # Convert (translate) lowercase (existing file) to UPPERCASE (create file)
         tr '[:lower:]' '[:upper:]' < lowerFILE > upperFILE  
 
-        ...|tr '[A-Z]' '[a-z']          # uppercase to lowercase (alt syntax)
+        ...|tr '[A-Z]' '[a-z']          # Alt syntax (uppercase to lowercase)
         ...|tr ':' '\n'                 # replace colons with newline
         ...|tr -d L                     # delete all 'L' chars
         ...|tr -s L                     # squeeze (multiple to one)
 
-    # filter out all but ln 20-30
+    head -$N FILE # Filter out all but FIRST N lines of FILE 
+        -c $bytes  # Bytes instead of lines.
+        -z         # NULL delimited instead of NEWLINE.
+    tail -$N FILE # filter out all but LAST N lines of FILE
         tail +20 < unfiltered |head -n30 > filtered 
 
     groff  # front-end for the groff document formatting system  https://www.gnu.org/software/groff/

@@ -1,27 +1,16 @@
-# Kubernetes [`k8s`]
+# [Minikube](https://minikube.sigs.k8s.io/docs/) | [Kubernetes.io](https://kubernetes.io/docs/tasks/tools/#minikube "Kubernetes.io") | [QuickStart](https://kubernetes.io/docs/tutorials/hello-minikube/) | [GitHub](https://github.com/kubernetes/minikube)
 
-## [Tools](https://kubernetes.io/docs/reference/tools/ "kubernetes.io/docs/.../tools") | [GitHub](https://github.com/kubernetes "GitHub/Kubernetes") | [Kubernetes.io](https://kubernetes.io/) | [Wikipedia](https://en.wikipedia.org/wiki/Kubernetes "en.wikipedia.org")  
 
-- Install Minikube ( [MD](file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.md "Minikube.Install.md")  |  [HTML](file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.html "If @ browser")) for Development (single-node cluster)
-- [Minikube @ GitHub](https://github.com/kubernetes/minikube)
-- [Running Kubernetes Locally via Minikube](https://kubernetes.io/docs/setup/minikube/) (Useful info.)
-- [Hello Minikube :: QuickStart](https://kubernetes.io/docs/tutorials/hello-minikube/) | Local Reference ( [MD](Kubernetes.QuickStart.html "If @ browser"))
-- [Interactive Tutorials](https://kubernetes.io/docs/tutorials/)
-- [`minikube` commands](https://kubernetes.io/docs/setup/minikube/#managing-your-cluster "kubernetes.io/docs/setup/minikube/...")
-- [`kubectl` commands](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands "kubernetes.io/docs/reference/...")
-- [Web UI (Dashboard)](https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/)
+## See [`K8s.minikube-setup.sh`](K8s.minikube-setup.sh)
 
-- `kops` ([MD](kops.html "@ browser"))  
-Production-grade cluster @ cloud provider.  
-An alternative to provider-managed K8s.
+```bash
+# API Server info @ minikube
+kubectl -n kube-system describe pod kube-apiserver-minikube 
+```
 
-- [`kubadm` (manual Kubernetes install)](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/ "kubernetes.io")  
-Bootstrap a minimum viable Kubernetes cluster  
-that conforms to best practices.
+## WARNING : 2018 Notes
 
-## [`minikube` commands](https://kubernetes.io/docs/setup/minikube/#managing-your-cluster "'Managing Your Cluster' [Kubernetes.io]")  
-
-Commands to this tool wrap [PowerShell (Hyper-V)](https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/try-hyper-v-powershell) [commands](https://www.altaro.com/hyper-v/10-awesome-hyper-v-cmdlets/). Run it only from the PowerShell console. If run @ `cmd.exe` or `mintty` (Git-for-Windows), some commands/options fail. The tool sans `command` (argument) lists _all available commands_.  
+### [Commands](https://minikube.sigs.k8s.io/docs/commands/)  
 
 ```powershell  
 minikube update-check           # list installed v. available

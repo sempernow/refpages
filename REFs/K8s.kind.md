@@ -280,17 +280,24 @@ foo-app
 ☩ curl localhost/bar/hostname
 bar-app
 ```
-- Despite warnings, it works flawlessly!
-- Docker config may require use `node`'s `INTERNAL-IP` (Docker bridge network) instead of `localhost`
+- Despite warnings, it works.
+- Docker config may require use `node`'s `INTERNAL-IP` (Docker bridge network) __instead of `localhost`__.
+  Obtain from either:
     - `ip=$(k get node kind-control-plane -o jsonpath='{.status.addresses[0].address}')`
+    - `ip=$(docker network inspect kind |jq -Mr .[].Containers[].IPv4Address)`
+    ```bash
+    ☩ curl $ip/bar/hostname
+    ```
 
 Save the usage manifest
 
 ```bash
-curl -sSLo ingress-nginx-kind-usage.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+curl -sSLo ingress-nginx-kind-usage-oem.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
 ```
-- @ [`ingress-nginx-kind-usage.yaml`](ingress-nginx-kind-usage.yaml)
-
+- @ [`ingress-nginx-kind-usage-oem.yaml`](ingress-nginx-kind-usage-oem.yaml)
+- @ [`ingress-nginx-kind-usage.yaml`](ingress-nginx-kind-usage.yaml) 
+    - Modify `hostname`s, from `foo-app` to `foo` (similary for `bar`), 
+      and allow apply to `stack-test` namespace.
 
 ### &nbsp;
 <!-- 

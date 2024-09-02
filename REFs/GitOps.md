@@ -1,27 +1,16 @@
-# [GitOps](https://opengitops.dev/ "OpenGitOps.dev") `v1.0.0`
+# DevOps/[GitOps](https://opengitops.dev/ "OpenGitOps.dev") `v1.0.0`
 
->GitOps is __an operational framework__ that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).
+## Overview
 
-## GitOps v. DevOps
-
-GitOps is considered a branch or category of DevOps.
-Both are methodoligies of software development, delivery, 
-and lifecycle management.  
-
-GitOps focuses on infrastructure for containerized workloads
-across environments, especially when run on Kubernetes 
-and typically in the cloud. 
-
-DevOps has a braoder scope, 
-from the application-developers' environment
-to all matters of deployment automation 
-across environments.
+GitOps is __an operational framework__ that takes DevOps best practices used for application development such as version control, collaboration, compliance, and __CI/CD__, and applies them to infrastructure automation. GitOps consists of __Infrastructure as Code__ (IaC), configuration management (__CM__) by Git, <def title="Provide everything below microservices">__platform engineering__</def>, and continuous integration and continuous delivery (CI/CD).  
 
 DevOps is about automation across the lifecycle of an application.
-GitOps extends that with disciplined methods across all layers of all components, 
-from infra to services, with the goal of repeatable, verifiable deployment states.
+GitOps extends that with disciplined methods &mdash;Git as the Source of Truth (SoT) 
+&mdash;across all layers of all components, 
+from infra to services, with the goal of repeatable, 
+verifiable deployment states.
 
-## Principles
+### Principles
 
 1. __Declarative__  
     A system managed by GitOps must have its desired state expressed declaratively.
@@ -32,17 +21,41 @@ from infra to services, with the goal of repeatable, verifiable deployment state
 4. __Continuously Reconciled__  
     Software agents continuously observe actual system state and attempt to apply the desired state.
 
-## Results
+### Results
 
 - A standard workflow for application development.
 - Increased security for setting application requirements upfront.
 - Improved reliability with visibility and version control through Git.
 - Consistency across clusters and their environments.
 
+## Environments
+
+__Upon what infrastructure__ does the app AKA workload AKA service run?
+
+- __Cloud__ : 3rd-party vendor, typically virtual; SDNs, VMs, &hellip;
+- __On-prem__ : Self managed; physical and/or virtual
+- __Bare-metal__ : OS and app on physical machine, sans hypervisor/virtualization, 
+  _regardless_ of whether on-prem or in cloud.
+- __Edge__ : More than just a reference to gateway router(s); an environment and topology. 
+  Distributed architectures and practices for __processing data closer to where it is generated or consumed__.
+    - __Computing__: 
+        - Proximal to Data : Located close to the source of data, such as IoT devices, sensors, or users. This proximity allows for faster data processing and reduced latency.
+        - Distributed Architecture : Deploying smaller, localized data centers or computing resources that work together with centralized cloud services. This creates a distributed architecture where certain tasks are handled at the edge, while others are processed in the cloud or a central data center.
+        - Real-Time Processing : For applications that require real-time processing and quick decision-making, such as autonomous vehicles, industrial automation, and smart cities.
+        - Reduced Bandwidth Usage : Only the relevant or processed data needs sent to central data center/cloud, reducing amount of data egress.
+    - __Environment__:
+        - Edge Devices : Sensors, IoT devices, smart appliances, &hellip;
+            - To generate or consume data.
+        - Edge Servers or Mini Data Centers : small-scale computing resources in retail stores, factories, telecom towers, vehicles, &hellip; deployed close to edge devices 
+            - To process and analyze data locally.
+        - Edge Gateways : Routers and other devices.
+            - To aggregating data from various edge devices and sometimes perform initial processing before forwarding data to central servers or the cloud.
+
 ## Tools | [CNCF Landscape](https://landscape.cncf.io/)
 
- [DevOps Toolkit](https://www.youtube.com/watch?v=tgwxMfIsLJY "YouTube")
-
+- Videos
+    - [DevOps Toolkit](https://www.youtube.com/watch?v=tgwxMfIsLJY "YouTube")
+    - [__eBPF__ Cilium](https://www.youtube.com/@eBPFCilium/videos "YouTube : eBPFCilium")
 - __Service Catalog__ : UI of IDP : built/maintained 
   by GitOps/DevOps vendor/admin, not by end users.
     - Port : SasS only
@@ -205,6 +218,11 @@ from infra to services, with the goal of repeatable, verifiable deployment state
     - Pixie : All in one
     - Groundcover : All in one
 - __Netowrking__
+    - External Load Balancer
+        - `kube-vip` ([GitHub](https://github.com/kube-vip/kube-vip "GitHub.com") | [Docs](https://kube-vip.io/ "kube-vip.io")): 
+          K8s Virtual IP and Load Balancer (LB) for both control plane and services 
+          for On-prem, Edge, Bare-Metal, &hellip;
+            - [Architecture](https://kube-vip.io/docs/about/architecture/)
     - CNI
         - [Calico](https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises)
         - [Cilium](https://cilium.io/) : eBPF
