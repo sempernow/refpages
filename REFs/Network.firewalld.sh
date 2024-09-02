@@ -6,17 +6,20 @@ exit
     # - iptables  : RHEL's uses the nf_tables kernel API instead of the legacy back end. 
     #               The nf_tables API provides backward compatibility; scripts of iptables commands still work on RHEL. 
     #               For new firewall scripts, Red Hat recommends using nftables
-
+    # 
+    # firewalld @ K8s : https://chatgpt.com/c/d3822fbe-5c9d-4ec4-8844-964294985bb5
+all-policies
     # firewall-cmd is the CLI for firewalld.service,
     # which is a systemd service and interface wrapping iptables/nftables 
         systemctl status firewalld.service 
  
     # Show/Verify ALL settings of a zone
-        z=public
-        svc=halb
-        firewall-cmd --zone=$z --list-all
-        firewall-cmd --direct --get-all-rules
-        firewall-cmd --info-service=$svc
+        z=k8s
+        firewall-cmd --zone=$z --list-all       # This does *not* list allowed port(s) of any *service*
+        firewall-cmd --direct --get-all-rules   # Direct Rules cannot be scoped to zone or service
+        # Ports and such of all services of declared zone, listed by service.
+        printf "%s\n" $(sudo firewall-cmd --list-services --zone=$z) \
+            |xargs -I{} sudo firewall-cmd --info-service={}
 
     # GET
         # A zone is ACTIVE IF BOUND TO an INTERFACE (network device)
@@ -31,8 +34,9 @@ exit
         firewall-cmd --list-services            # ACTIVE services of ACTIVE zone
         firewall-cmd --list-services --zone=$z  # ACTIVE services of DECLARED zone
         firewall-cmd --get-services             # All services (defined/available)
-        firewall-cmd --list-interfaces
+        firewall-cmd --list-interfaces          # All interfaces bound to the ACTIVE zone
         firewall-cmd --list-rich-rules
+        firewall-cmd --list-all-policies
         firewall-cmd --direct --get-all-rules
         firewall-cmd --direct --get-rules  # Only those added using --add-rule 
         firewall-cmd --info-zone=$z        # Get zone INFO
@@ -59,6 +63,13 @@ exit
             #... yet device silently removed and returned to $old zone by NetworkManager:
             firewall-cmd --get-zone-of-interface=$dev
             nmcli connection show $dev |grep connection.zone
+
+            # Bind multiple interfaces to a zone
+            # E.g., K8s CNI providers create virtual interfaces *dynamically*, one per Pod.
+            # See https://chatgpt.com/share/7c5d78ff-8305-4051-9209-5bc39d4900cd
+            firewall-cmd --permanent --zone=k8s --add-interface=cni+ 
+            firewall-cmd --permanent --zone=k8s --add-interface=veth+
+            #... else by Direct Rule (See section on that)
 
         # Add/Remove rule
             # Add port (bare)
@@ -95,7 +106,11 @@ exit
             at="--permanent --zone=$z"
             do='add' # add|remove
             firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
-            
+
+            ## Allow service (ssh) traffic only if source is of the declared CIDR
+            firewall-cmd $at --$do-rich-rule='rule family="ipv4" service name="ssh" reject'
+            firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$cidr'" service name="ssh" accept'
+
             # DROP|REJECT traffic from CIDR address by IPv4, and LOG whenever traffic is affected
             firewall-cmd $at --add-rich-rule='rule family="ipv4" source address="'$cidr'" log prefix="DROP: " level="info" drop'
             firewall-cmd $at --add-rich-rule='rule family="ipv4" source address="'$cidr'" log prefix="REJECT: " level="info" reject'
@@ -116,10 +131,29 @@ exit
                     sudo tail -f /var/log/messages
 
         # Add/Remove DIRECT RULE interface (cannot be scoped to service or zone)
-            at="--permanent"
+            at="--permanent --direct"
             do='add' # add|remove
-            firewall-cmd --direct --$do-rule ipv4 filter IN_public_allow \
-                0 -m tcp -p tcp --dport 777 -j ACCEPT
+            firewall-cmd $at --$do-rule ipv4 filter IN_public_allow 0 -m tcp -p tcp --dport 777 -j ACCEPT
+            # K8s CNI providers create virtual interfaces *dynamically*, one per Pod.
+            # Either bind interfaces to zone (see above), or directly allow traffic across interfaces, as here.
+            # Allow all IPv4 traffic across all interfaces having pattern cni* or veth* .
+            # See https://chatgpt.com/share/7c5d78ff-8305-4051-9209-5bc39d4900cd
+                firewall-cmd $at --$do-rule ipv4 filter FORWARD 0 -o cni+ -j ACCEPT
+                firewall-cmd $at --$do-rule ipv4 filter INPUT 0 -i cni+ -j ACCEPT
+                firewall-cmd $at --$do-rule ipv4 filter FORWARD 0 -o veth+ -j ACCEPT
+                firewall-cmd $at --$do-rule ipv4 filter INPUT 0 -i veth+ -j ACCEPT
+            # Restrict to podCIDR src/dst
+                # Allow Pod CIDR traffic on CNI interfaces
+                firewall-cmd $at --$do-rule ipv4 filter FORWARD 0 -s $podCIDR -o cni+ -j ACCEPT
+                firewall-cmd $at --$do-rule ipv4 filter FORWARD 0 -d $podCIDR -i cni+ -j ACCEPT
+                # Allow cross-node Pod CIDR traffic on main network interfaces
+                firewall-cmd $at --$do-rule ipv4 filter FORWARD 0 -s $podCIDR -o eth+ -j ACCEPT
+                firewall-cmd $at --$do-rule ipv4 filter FORWARD 0 -d $podCIDR -i eth+ -j ACCEPT
+                # -s <Pod_CIDR>: Specifies the source IP range (Pod CIDR) for outgoing traffic.
+                # -d <Pod_CIDR>: Specifies the destination IP range (Pod CIDR) for incoming traffic.
+                # -o cni+: Matches outgoing traffic on interfaces created by the CNI (such as cni0, cni1, etc.).
+                # -i cni+: Matches incoming traffic on interfaces created by the CNI.
+                # -j ACCEPT: Accepts the traffic that matches these rules.
 
         # Masquerade : a type of NAT : Useful for comms between Pods and services external to cluster 
             # REF: https://chatgpt.com/share/d0117056-05f9-40d3-a359-13233dd5697f
@@ -143,6 +177,18 @@ exit
         #    <description>HTTP is the protocol used to serve Web pages. ...</description>
         #    <port protocol="tcp" port="80"/>
         #  </service>
+
+    # Policy targets:
+        ACCEPT      # Stops processing and allows the traffic.
+        DROP        # Stops processing and silently drops the traffic.
+        REJECT      # Stops processing and rejects the traffic, often sending an error response back.
+        CONTINUE    # Does not stop processing; continues to the next rule or policy.
+
+            sudo firewall-cmd --list-all 
+            ...
+            target: default # This policy (default) is implicit (not listed); 
+            # its target is CONTINUE *unless* modified by related processes, 
+            # e.g., NetworkManager, nftables, iptables (depricated).
 
     # NetworkManager CLI 
         nmcli # firewalld works with or conflicts with NetworkManager

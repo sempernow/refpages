@@ -309,21 +309,34 @@ bar-app
 </code></pre>
 
 <ul>
-<li>Despite warnings, it works flawlessly!</li>
-<li>Docker config may require use <code>node</code>'s <code>INTERNAL-IP</code> (Docker bridge network) instead of <code>localhost</code>
+<li>Despite warnings, it works.</li>
+
+<li><p>Docker config may require use <code>node</code>'s <code>INTERNAL-IP</code> (Docker bridge network) <strong>instead of <code>localhost</code></strong>.
+Obtain from either:</p>
 
 <ul>
 <li><code>ip=$(k get node kind-control-plane -o jsonpath='{.status.addresses[0].address}')</code></li>
+
+<li><p><code>ip=$(docker network inspect kind |jq -Mr .[].Containers[].IPv4Address)</code></p>
+
+<pre><code class="language-bash">☩ curl $ip/bar/hostname
+</code></pre></li>
 </ul></li>
 </ul>
 
 <p>Save the usage manifest</p>
 
-<pre><code class="language-bash">curl -sSLo ingress-nginx-kind-usage.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+<pre><code class="language-bash">curl -sSLo ingress-nginx-kind-usage-oem.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
 </code></pre>
 
 <ul>
-<li>@ <a href="ingress-nginx-kind-usage.yaml"><code>ingress-nginx-kind-usage.yaml</code></a></li>
+<li>@ <a href="ingress-nginx-kind-usage-oem.yaml"><code>ingress-nginx-kind-usage-oem.yaml</code></a></li>
+<li>@ <a href="ingress-nginx-kind-usage.yaml"><code>ingress-nginx-kind-usage.yaml</code></a>
+
+<ul>
+<li>Modify <code>hostname</code>s, from <code>foo-app</code> to <code>foo</code> (similary for <code>bar</code>),
+and allow apply to <code>stack-test</code> namespace.</li>
+</ul></li>
 </ul>
 
 <h3>&nbsp;</h3>

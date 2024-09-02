@@ -99,9 +99,8 @@ sudo systemctl restart docker
             https://$registry/v2/$name/tags/list \
             |tee list.$app.tags.json # {"name":"repo/app","tags":["a","b",...]}
 
-    # GET flat list of ALL IMAGES of a Distribution Registry v2 
-    # in a single pipeline of two GET requests using jq to flatten 
-    # JSON responses to resulting format ([REPO/]APP:TAG).
+    # GET all content of container registry; all images of all repos,
+    # in flat-list format : [REPO/]APP:TAG 
         curl -s http://$registry/v2/_catalog \
             |jq -Mr .[][] \
             |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
@@ -111,7 +110,7 @@ sudo systemctl restart docker
                 # nginx:1.25.4-alpine-otel
                 # redhat/ubi8:8.7
 
-    # GET all content of registry, both repos and images lists, 
+    # GET all content of container registry, both repos and images lists, 
     # in both JSON and flat-list formats.
         curl -s http://$registry/v2/_catalog \
             |tee catalog.json \

@@ -22,68 +22,112 @@
     <main>
         <h1><a href="https://docs.k3s.io/" title="docs.k3s.io">K3S</a></h1>
 
-<blockquote>
-<p><em>K3s is a lightweight &quot;batteries included&quot; Kubernetes distribution created by Rancher Labs, and is a CNCF project. K3s is <strong>highly available and production-ready</strong>. It has a very small binary size and very low resource requirements.</em> &mdash; <a href="https://traefik.io/glossary/k3s-explained/">traefiklabs.io</a></p>
-</blockquote>
-
-<ul>
-<li>CRI: containerd / cri-dockerd container runtime (CRI)</li>
-<li>CNI: Flannel Container Network Interface (CNI)</li>
-<li>CSI: Local-path-provisioner Persistent Volume controller</li>
-<li>DNS: CoreDNS Cluster DNS</li>
-<li>Ingress: Traefik Ingress controller</li>
-<li>LB: <a href="https://docs.k3s.io/networking/networking-services#service-load-balancer" title="docs.k3s.io">ServiceLB</a> Load-Balancer controller
-
-<ul>
-<li>Formerly <a href="https://github.com/k3s-io/klipper-lb" title="GitHub : /k3s-io/klipper-lb">Klipper LB</a> : <code>docker.io/rancher/klipper-lb:v0.4.7</code></li>
-<li><a href="https://github.com/k3s-io/k3s/discussions/9927"><em>&hellip; to set up DNAT <code>iptables</code> rules on node(s).</em></a>
-
-<ul>
-<li>&hellip; watches Kubernetes Services with the <code>spec.type</code> field set to <code>LoadBalancer</code>.</li>
-<li>For each <strong>LoadBalancer</strong> Service, a <strong>DaemonSet</strong> is created in the <code>kube-system</code> namespace. This DaemonSet in turn creates Pods with a <code>svc-</code> prefix, on each node. These Pods use <strong>iptables</strong> to forward traffic from the Pod's <strong>NodePort</strong>, to the Service's <strong>ClusterIP</strong> address and port.</li>
-</ul></li>
-</ul></li>
-<li>Network Policy: Kube-router Network Policy controller</li>
-<li>Registry: Spegel distributed container image registry mirror</li>
-<li>Host configuration: Host utilities (iptables, socat, etc)</li>
-</ul>
-
 <h2>TL;DR</h2>
 
-<p>Unconventional distro. Installs quickly and includes <em>All The Things</em>; CRI,
-CNI, service load balancer, and ingress controller.
-It is designed for use by root,
-yet tooling is installed canonically (<code>/usr/local/bin</code>),
-so ensure root <code>PATH</code> has that path.</p>
+<p>K3S is an unconventional though <strong>very useful</strong> distro, and has <strong>excellent documentation</strong>.
+It installs quickly and requires <strong>zero configuration</strong> for its default &quot;<em>batteries included</em>&quot; cluster; CRI, CNI, service mesh, load balancer, and ingress controller. It is <strong>designed for use by root</strong>, yet installs CLIs to <code>/usr/local/bin</code>, which is not in root <code>PATH</code> of many Linux distros. It is the go-to distro for edge devices.</p>
 
 <p>Includes a <a href="https://docs.k3s.io/cli"><code>k3s</code> CLI</a>,
 which functions as some kind of wrapper
 for some or all of the related tools
 to perform a variety of common cluster-administration tasks.</p>
 
-<p>The distro also includes an <a href="https://docs.k3s.io/helm">embedded Helm</a>,
-which is deployed as a K8s resource.</p>
+<h2>Overview</h2>
 
-<p>K3s requires <strong>zero configuration</strong> for its default &quot;<em>batteries included</em>&quot; cluster,</p>
+<blockquote>
+<p><em>K3s is a lightweight &quot;batteries included&quot; Kubernetes distribution created by Rancher Labs, and is a CNCF project. K3s is <strong>highly available and production-ready</strong>. It has a very small binary size and very low resource requirements.</em> &mdash; <a href="https://traefik.io/glossary/k3s-explained/">traefiklabs.io</a></p>
+</blockquote>
 
-<pre><code class="language-bash">sudo k3s server
+<ul>
+<li>CRI: <strong>containerd</strong> / cri-dockerd container runtime (CRI)</li>
+<li>CNI: <strong>Flannel</strong> Container Network Interface (CNI)</li>
+<li>CSI: <strong>Local-path-provisioner</strong> Persistent Volume controller</li>
+<li>DNS: <strong>CoreDNS</strong> Cluster DNS</li>
+<li>Ingress: <strong>Traefik</strong> Ingress controller</li>
+<li>LB: <a href="https://docs.k3s.io/networking/networking-services#service-load-balancer" title="docs.k3s.io">ServiceLB</a> Load-Balancer controller
+
+<ul>
+<li>Formerly <a href="https://github.com/k3s-io/klipper-lb" title="GitHub : /k3s-io/klipper-lb">Klipper LB</a> : <code>docker.io/rancher/klipper-lb:v0.4.7</code></li>
+<li><a href="https://github.com/k3s-io/k3s/discussions/9927"><em>&hellip; to set up DNAT <code>iptables</code> rules on node(s)</em></a>
+
+<ul>
+<li>&hellip; watches Kubernetes Services with the <code>spec.type</code> field set to <code>LoadBalancer</code>.</li>
+<li>For each <strong>LoadBalancer</strong> Service, a <strong>DaemonSet</strong> is created in the <code>kube-system</code> namespace. This DaemonSet in turn creates Pods with a <code>svc-</code> prefix, on each node. These Pods use <strong>iptables</strong> to forward traffic from the Pod's <strong>NodePort</strong>, to the Service's <strong>ClusterIP</strong> address and port.</li>
+</ul></li>
+</ul></li>
+<li>Network Policy: <strong>Kube-router</strong> Network Policy controller</li>
+<li>Registry: <strong>Spegel</strong> distributed container image registry mirror</li>
+<li>Host configuration: Host utilities (iptables, socat, etc)</li>
+<li><a href="https://docs.k3s.io/helm">Helm</a> <strong>Controller</strong>; allowing for managing charts by <code>HelmChart</code> declarations instead of imperatively by CLI.</li>
+</ul>
+
+<h2><a href="https://docs.k3s.io/cli">k3s CLI</a></h2>
+
+<pre><code class="language-bash">k3s             # List commands
+k3s server -h   # List all server config/options
+sudo k3s server # Launch a cluster (server node)
+
+# Check host config for k3s
+sudo k3s check-config
+
+# Cluster access : kubectl
+sudo k3s kubectl 
+# Else configure shell
+alias k='sudo k3s kubectl'
+# Else configure shell for regular user : Protect existing kubeconfig
+[[ -f ~/.kube/config ]] ||
+    sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config &amp;&amp;
+        chown $USER:$USER ~/.kube/config &amp;&amp; {
+            type -t k || alias k='k3s kubectl'
+        }
+
+# To merge multiple kubeconfig (contexts)
+export KUBECONFIG=$pathConf1:$pathConf2:$pathConf3
+# To save that all as a single kubeconfig file:
+kubectl config view --flatten |tee /path/to/new/merged/kubeconfig
+
+# Access K8s API server 
+k get node,deploy,ds,sts,svc,ingress
+k top node
+k top pod -A
+
+# - GET /healthz
+# Set cluster server URL : See `k config view` else `k get node -o wide` else `k get svc -A`
+name=default # config.clusters[].cluster.name
+url=&quot;$(k config view -o jsonpath='{.clusters[?(@.name==&quot;'$name'&quot;)].cluster.server}')&quot;
+tkn=&quot;$(k -n default create token default --duration=10m)&quot; # Create/use its token
+curl -k -H &quot;Authorization: Bearer $(k -n kube-system create token default)&quot; $url/healthz?verbose
 </code></pre>
 
-<p>but here are the locations of all configuration files,
-if and where created to further configure:</p>
+<ul>
+<li><a href="https://docs.k3s.io/cli/server"><code>k3s server</code></a></li>
+</ul>
+
+<p>Configuration files:</p>
 
 <ul>
-<li><code>/etc/rancher/k3s/config.yaml</code>
+<li>kubeconfig : <code>kubectl</code> configuration
 
 <ul>
-<li>@ CLI : <code>k3s --config $file</code></li>
+<li><code>/etc/rancher/k3s/k3s.yaml</code></li>
+<li>Else declare: <code>k3s --config $file</code></li>
 </ul></li>
-<li><code>/etc/systemd/system/k3s.service.env</code>
+<li>systemd : <code>k3s.service</code>
 
 <ul>
-<li>@ systemd : <code>systemctl status k3s.service</code></li>
+<li><code>/etc/systemd/system/k3s.service</code></li>
+<li><code>/etc/systemd/system/k3s.service.env</code></li>
 </ul></li>
 </ul>
+
+<h2>@ <code>systemd</code></h2>
+
+<pre><code class="language-bash"># Start/Stop @ systemd
+# - Servers
+sudo systemctl $verb k3s
+# - Agents 
+sudo systemctl $verb k3s-agent
+</code></pre>
 
 <h2><a href="https://docs.k3s.io/quick-start">Quick Start</a></h2>
 
@@ -118,11 +162,6 @@ path=/usr/local/bin
     [[ $(sudo cat /root/.bashrc |grep 'PATH=' |grep $path) ]] ||
         echo 'export PATH=$PATH:'&quot;$path&quot; |sudo tee -a /root/.bashrc
 
-# Check config
-k3s check-config
-
-# Configure for regular user 
-alias k='k3s kubectl'
 </code></pre>
 
 <ul>
@@ -185,6 +224,10 @@ while also removing the <code>iptables</code> chain with all the associated rule
 <pre><code class="language-bash">/usr/local/bin/k3s-killall.sh
 </code></pre>
 
+<ul>
+<li>A script of K3S installation</li>
+</ul>
+
 <h3><a href="https://docs.k3s.io/installation/uninstall">Uninstall</a></h3>
 
 <blockquote>
@@ -197,7 +240,11 @@ while also removing the <code>iptables</code> chain with all the associated rule
 /usr/local/bin/k3s-agent-uninstall.sh
 </code></pre>
 
-<h2><a href="https://docs.k3s.io/advanced">Configuration</a></h2>
+<ul>
+<li>Scripts of K3S installation</li>
+</ul>
+
+<h2>Advanced <a href="https://docs.k3s.io/advanced">Configuration</a></h2>
 
 <blockquote>
 <p>In general, CLI arguments map to their respective YAML key,

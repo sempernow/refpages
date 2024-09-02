@@ -20,32 +20,19 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code></h1>
+        <h1>DevOps/<a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code></h1>
 
-<blockquote>
-<p>GitOps is <strong>an operational framework</strong> that takes DevOps best practices used for application development such as version control, collaboration, compliance, and CI/CD, and applies them to infrastructure automation. GitOps consists of infrastructure as code (IaC), configuration management (CM), <def title="Provide everything below the microservices">platform engineering</def>, and continuous integration and continuous delivery (CI/CD).</p>
-</blockquote>
+<h2>Overview</h2>
 
-<h2>GitOps v. DevOps</h2>
-
-<p>GitOps is considered a branch or category of DevOps.
-Both are methodoligies of software development, delivery,
-and lifecycle management.</p>
-
-<p>GitOps focuses on infrastructure for containerized workloads
-across environments, especially when run on Kubernetes
-and typically in the cloud.</p>
-
-<p>DevOps has a braoder scope,
-from the application-developers' environment
-to all matters of deployment automation
-across environments.</p>
+<p>GitOps is <strong>an operational framework</strong> that takes DevOps best practices used for application development such as version control, collaboration, compliance, and <strong>CI/CD</strong>, and applies them to infrastructure automation. GitOps consists of <strong>Infrastructure as Code</strong> (IaC), configuration management (<strong>CM</strong>) by Git, <def title="Provide everything below microservices"><strong>platform engineering</strong></def>, and continuous integration and continuous delivery (CI/CD).</p>
 
 <p>DevOps is about automation across the lifecycle of an application.
-GitOps extends that with disciplined methods across all layers of all components,
-from infra to services, with the goal of repeatable, verifiable deployment states.</p>
+GitOps extends that with disciplined methods &mdash;Git as the Source of Truth (SoT)
+&mdash;across all layers of all components,
+from infra to services, with the goal of repeatable,
+verifiable deployment states.</p>
 
-<h2>Principles</h2>
+<h3>Principles</h3>
 
 <ol>
 <li><strong>Declarative</strong><br>
@@ -58,7 +45,7 @@ Software agents automatically pull the desired state declarations from the sourc
 Software agents continuously observe actual system state and attempt to apply the desired state.</li>
 </ol>
 
-<h2>Results</h2>
+<h3>Results</h3>
 
 <ul>
 <li>A standard workflow for application development.</li>
@@ -67,11 +54,58 @@ Software agents continuously observe actual system state and attempt to apply th
 <li>Consistency across clusters and their environments.</li>
 </ul>
 
-<h2>Tools | <a href="https://landscape.cncf.io/">CNCF Landscape</a></h2>
+<h2>Environments</h2>
 
-<p> <a href="https://www.youtube.com/watch?v=tgwxMfIsLJY" title="YouTube">DevOps Toolkit</a></p>
+<p><strong>Upon what infrastructure</strong> does the app AKA workload AKA service run?</p>
 
 <ul>
+<li><strong>Cloud</strong> : 3rd-party vendor, typically virtual; SDNs, VMs, &hellip;</li>
+<li><strong>On-prem</strong> : Self managed; physical and/or virtual</li>
+<li><strong>Bare-metal</strong> : OS and app on physical machine, sans hypervisor/virtualization,
+<em>regardless</em> of whether on-prem or in cloud.</li>
+<li><strong>Edge</strong> : More than just a reference to gateway router(s); an environment and topology.
+Distributed architectures and practices for <strong>processing data closer to where it is generated or consumed</strong>.
+
+<ul>
+<li><strong>Computing</strong>:
+
+<ul>
+<li>Proximal to Data : Located close to the source of data, such as IoT devices, sensors, or users. This proximity allows for faster data processing and reduced latency.</li>
+<li>Distributed Architecture : Deploying smaller, localized data centers or computing resources that work together with centralized cloud services. This creates a distributed architecture where certain tasks are handled at the edge, while others are processed in the cloud or a central data center.</li>
+<li>Real-Time Processing : For applications that require real-time processing and quick decision-making, such as autonomous vehicles, industrial automation, and smart cities.</li>
+<li>Reduced Bandwidth Usage : Only the relevant or processed data needs sent to central data center/cloud, reducing amount of data egress.</li>
+</ul></li>
+<li><strong>Environment</strong>:
+
+<ul>
+<li>Edge Devices : Sensors, IoT devices, smart appliances, &hellip;
+
+<ul>
+<li>To generate or consume data.</li>
+</ul></li>
+<li>Edge Servers or Mini Data Centers : small-scale computing resources in retail stores, factories, telecom towers, vehicles, &hellip; deployed close to edge devices
+
+<ul>
+<li>To process and analyze data locally.</li>
+</ul></li>
+<li>Edge Gateways : Routers and other devices.
+
+<ul>
+<li>To aggregating data from various edge devices and sometimes perform initial processing before forwarding data to central servers or the cloud.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Tools | <a href="https://landscape.cncf.io/">CNCF Landscape</a></h2>
+
+<ul>
+<li>Videos
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=tgwxMfIsLJY" title="YouTube">DevOps Toolkit</a></li>
+<li><a href="https://www.youtube.com/@eBPFCilium/videos" title="YouTube : eBPFCilium"><strong>eBPF</strong> Cilium</a></li>
+</ul></li>
 <li><strong>Service Catalog</strong> : UI of IDP : built/maintained
 by GitOps/DevOps vendor/admin, not by end users.
 
@@ -355,6 +389,17 @@ kubectl gadget trace tcp -n $ns
 <li><strong>Netowrking</strong>
 
 <ul>
+<li>External Load Balancer
+
+<ul>
+<li><code>kube-vip</code> (<a href="https://github.com/kube-vip/kube-vip" title="GitHub.com">GitHub</a> | <a href="https://kube-vip.io/" title="kube-vip.io">Docs</a>):
+K8s Virtual IP and Load Balancer (LB) for both control plane and services
+for On-prem, Edge, Bare-Metal, &hellip;
+
+<ul>
+<li><a href="https://kube-vip.io/docs/about/architecture/">Architecture</a></li>
+</ul></li>
+</ul></li>
 <li>CNI
 
 <ul>

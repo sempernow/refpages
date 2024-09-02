@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>K8s.Tools</title>
+    <title>K8s.minikube</title>
     <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
@@ -20,33 +20,17 @@
 </head>
 <body>
     <main>
-        <h1>Kubernetes [<code>k8s</code>]</h1>
+        <h1><a href="https://minikube.sigs.k8s.io/docs/">Minikube</a> | <a href="https://kubernetes.io/docs/tasks/tools/#minikube" title="Kubernetes.io">Kubernetes.io</a> | <a href="https://kubernetes.io/docs/tutorials/hello-minikube/">QuickStart</a> | <a href="https://github.com/kubernetes/minikube">GitHub</a></h1>
 
-<h2><a href="https://kubernetes.io/docs/reference/tools/" title="kubernetes.io/docs/.../tools">Tools</a> | <a href="https://github.com/kubernetes" title="GitHub/Kubernetes">GitHub</a> | <a href="https://kubernetes.io/">Kubernetes.io</a> | <a href="https://en.wikipedia.org/wiki/Kubernetes" title="en.wikipedia.org">Wikipedia</a></h2>
+<h2>See <a href="K8s.minikube-setup.sh"><code>K8s.minikube-setup.sh</code></a></h2>
 
-<ul>
-<li>Install Minikube ( <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.md" title="Minikube.Install.md">MD</a>  |  <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Minikube.Install.html" title="If @ browser">HTML</a>) for Development (single-node cluster)</li>
-<li><a href="https://github.com/kubernetes/minikube">Minikube @ GitHub</a></li>
-<li><a href="https://kubernetes.io/docs/setup/minikube/">Running Kubernetes Locally via Minikube</a> (Useful info.)</li>
-<li><a href="https://kubernetes.io/docs/tutorials/hello-minikube/">Hello Minikube :: QuickStart</a> | Local Reference ( <a href="li>
-<li><a href="https://kubernetes.io/docs/tutorials/">Interactive Tutorials</a></li>
-<li><a href="https://kubernetes.io/docs/setup/minikube/#managing-your-cluster" title="kubernetes.io/docs/setup/minikube/..."><code>minikube</code> commands</a></li>
-<li><a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands" title="kubernetes.io/docs/reference/..."><code>kubectl</code> commands</a></li>
+<pre><code class="language-bash"># API Server info @ minikube
+kubectl -n kube-system describe pod kube-apiserver-minikube 
+</code></pre>
 
-<li><p><a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/">Web UI (Dashboard)</a></p></li>
+<h2>WARNING : 2018 Notes</h2>
 
-<li><p><code>kops</code> (<a href="a>)<br>
-Production-grade cluster @ cloud provider.<br>
-An alternative to provider-managed K8s.</p></li>
-
-<li><p><a href="https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/" title="kubernetes.io"><code>kubadm</code> (manual Kubernetes install)</a><br>
-Bootstrap a minimum viable Kubernetes cluster<br>
-that conforms to best practices.</p></li>
-</ul>
-
-<h2><a href="https://kubernetes.io/docs/setup/minikube/#managing-your-cluster" title="'Managing Your Cluster' [Kubernetes.io]"><code>minikube</code> commands</a></h2>
-
-<p>Commands to this tool wrap <a href="https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/try-hyper-v-powershell">PowerShell (Hyper-V)</a> <a href="https://www.altaro.com/hyper-v/10-awesome-hyper-v-cmdlets/">commands</a>. Run it only from the PowerShell console. If run @ <code>cmd.exe</code> or <code>mintty</code> (Git-for-Windows), some commands/options fail. The tool sans <code>command</code> (argument) lists <em>all available commands</em>.</p>
+<h3><a href="https://minikube.sigs.k8s.io/docs/commands/">Commands</a></h3>
 
 <pre><code class="language-powershell">minikube update-check           # list installed v. available
 minikube addons list            # list all available addons
