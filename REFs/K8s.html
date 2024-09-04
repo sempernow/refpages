@@ -911,6 +911,29 @@ exposed by a single IP address.</li>
 </ul></li>
 </ul>
 
+<h3>CNI : Container Network Interface</h3>
+
+<p>The Pod network is created and managed by a CNI-compliant provider; Calico, Cilium, &hellip;</p>
+
+<p>This &quot;CNI&quot; create harnesses Linux Network Namespaces to dynamically create a virtual interface (e.g., <code>veth*</code>) per Pod. All Pod-to-Pod (Container-to-Container in effect) and Pod-to-Service intra-node traffic AKA <strong>east-west traffic</strong> is via these virtual adapters. To handle inter-node AKA cross-node traffic, an encapsulation scheme is implemented; IP-in-IP or VXLAN. Encapsulation provides for tunneling (L2 over L3) from Pod to Host nework. that is, allowing the otherwise-isolated traffic on the virtual adapter (<code>veth*</code>) to be routed through the node network (<code>eth*</code>).</p>
+
+<p>BGP is a more direct (lower overhead) alternative to encapsulation schemes such as IP-in-IP and VXLAN.</p>
+
+<p>Firewall considerations</p>
+
+<pre><code class="language-bash"># IP-in-IP is &quot;Protocol Number 4&quot;
+firewall-cmd --permanent --zone=k8s --add-protocol=ipip
+
+# VXLAN
+firewall-cmd --permanent --zone=k8s --add-port=4789/udp
+
+# BGP
+firewall-cmd --permanent --add-port=179/tcp
+
+# Apply 
+firewall-cmd --reload
+</code></pre>
+
 <h3>Object : Higer-level Abstractons</h3>
 
 <p>Typically spawn one or more Pods; typically create <strong><em>replica objects</em></strong>, which then create Pods.</p>
