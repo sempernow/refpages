@@ -28,28 +28,25 @@ verifiable deployment states.
 - Improved reliability with visibility and version control through Git.
 - Consistency across clusters and their environments.
 
-## Environments
+## Methods
 
-__Upon what infrastructure__ does the app AKA workload AKA service run?
-
-- __Cloud__ : 3rd-party vendor, typically virtual; SDNs, VMs, &hellip;
-- __On-prem__ : Self managed; physical and/or virtual
-- __Bare-metal__ : OS and app on physical machine, sans hypervisor/virtualization, 
-  _regardless_ of whether on-prem or in cloud.
-- __Edge__ : More than just a reference to gateway router(s); an environment and topology. 
-  Distributed architectures and practices for __processing data closer to where it is generated or consumed__.
-    - __Computing__: 
-        - Proximal to Data : Located close to the source of data, such as IoT devices, sensors, or users. This proximity allows for faster data processing and reduced latency.
-        - Distributed Architecture : Deploying smaller, localized data centers or computing resources that work together with centralized cloud services. This creates a distributed architecture where certain tasks are handled at the edge, while others are processed in the cloud or a central data center.
-        - Real-Time Processing : For applications that require real-time processing and quick decision-making, such as autonomous vehicles, industrial automation, and smart cities.
-        - Reduced Bandwidth Usage : Only the relevant or processed data needs sent to central data center/cloud, reducing amount of data egress.
-    - __Environment__:
-        - Edge Devices : Sensors, IoT devices, smart appliances, &hellip;
-            - To generate or consume data.
-        - Edge Servers or Mini Data Centers : small-scale computing resources in retail stores, factories, telecom towers, vehicles, &hellip; deployed close to edge devices 
-            - To process and analyze data locally.
-        - Edge Gateways : Routers and other devices.
-            - To aggregating data from various edge devices and sometimes perform initial processing before forwarding data to central servers or the cloud.
+- __Declarative Configuration__:  
+    Use declarative configurations (YAML files) for all resources and store them in a Git repository. 
+    This approach ensures that the desired state of your cluster is version-controlled and auditable.
+    - __Branching Strategies__:  
+        [Trunk-based](https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development) 
+        rather than [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) 
+        to manage different environments (development, staging, production) or to handle feature development and releases.
+- __Pull Request Workflow__:  
+    Use pull (merge) requests (PR/MR) to manage changes to the Kubernetes configuration. 
+    This allows for code review, approval processes, 
+    and automated testing before changes are merged and applied.
+- __Automated Deployment__:  
+    Implement CI/CD pipelines that automatically apply changes from Git to your Kubernetes cluster. 
+    This could involve testing changes in a staging environment before promoting them to production.
+- __Disaster Recovery__:  
+    Regularly back up your Git repository and Kubernetes cluster state. 
+    Ensure you have a process in place for restoring from backups in case of a disaster.
 
 ## Tools | [CNCF Landscape](https://landscape.cncf.io/)
 
@@ -217,7 +214,7 @@ __Upon what infrastructure__ does the app AKA workload AKA service run?
     - Komodor : Troubleshooting
     - Pixie : All in one
     - Groundcover : All in one
-- __Netowrking__
+- __Networking__
     - External Load Balancer
         - `kube-vip` ([GitHub](https://github.com/kube-vip/kube-vip "GitHub.com") | [Docs](https://kube-vip.io/ "kube-vip.io")): 
           K8s Virtual IP and Load Balancer (LB) for both control plane and services 
@@ -245,16 +242,11 @@ __Upon what infrastructure__ does the app AKA workload AKA service run?
     - Service Discovery
         - etcd : K8s cluster
         - Consul : Multi-cluster
-- __Database__
-    - Managed
-        - Aiven 
-    - KubeBlocks : K8s Operator : Supports many databases
-    - [TiKV](https://github.com/tikv/tikv) : distributed, and transactional key-value database. FOSS. CNCF Graduated project.
-    - [Cassandra](https://github.com/apache/cassandra) : NoSQL distributed database. Apache/CNCF project.
-    - [NiFi](https://github.com/apache/nifi) @ [GPTchat](https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce) : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.
-    - [CloudNativePG](https://cloudnative-pg.io/) (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a __primary/standby architecture__, using native __streaming replication__. A CNCF project.
-    - Atlas Operator : Schema
 - __Security__
+    - Distributed-Workload Identities
+        - [SPIFFE/SPIRE](https://spiffe.io/) : Successor to RBAC. Defining (SPIFFE) and implementing (SPIRE) a __workload identity platform__ and access controls rooted in Zero Trust (versus Perimeter Security) principles to mitigate risk of attack.
+            - __Secure Production Identity Framework for Everyone__ (SPIFFE) : An OSS framework specificition to provide attested, cryptographic identities to distributed workloads; capable of bootstrapping and issuing identity to services; defines short-lived cryptographic identity documents (SVID) via a simple API. Workloads use these SVIDs when authenticating to other workloads, for example by establishing a TLS connection or by signing and verifying a JWT token.
+            - __SPIFFE Runtime Environment__ ([SPIRE](https://spiffe.io/docs/latest/spire-about/spire-concepts/)) : a production-ready implementation of the SPIFFE APIs (pluggable multi-factor attestation and SPIFFE federation) that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.
     - Scanning
         - Trivy
         - [Kubescape.io](https://kubescape.io/)  
@@ -278,29 +270,42 @@ __Upon what infrastructure__ does the app AKA workload AKA service run?
         - Notary
     - Certificates
         - [cert-manager](https://cert-manager.io/ "cert-manager.io") : _&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry._
+- __Database__
+    - Managed
+        - Aiven 
+    - KubeBlocks : K8s Operator : Supports many databases
+    - [TiKV](https://github.com/tikv/tikv) : distributed, and transactional key-value database. FOSS. CNCF Graduated project.
+    - [Cassandra](https://github.com/apache/cassandra) : NoSQL distributed database. Apache/CNCF project.
+    - [NiFi](https://github.com/apache/nifi) @ [GPTchat](https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce) : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.
+    - [CloudNativePG](https://cloudnative-pg.io/) (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a __primary/standby architecture__, using native __streaming replication__. A CNCF project.
+    - Atlas Operator : Schema
 - __Misc__
     - Charm : Library and Tools
 
-## Methods
-
-- __Declarative Configuration__:  
-    Use declarative configurations (YAML files) for all resources and store them in a Git repository. 
-    This approach ensures that the desired state of your cluster is version-controlled and auditable.
-    - __Branching Strategies__:  
-        [Trunk-based](https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development) 
-        rather than [Gitflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) 
-        to manage different environments (development, staging, production) or to handle feature development and releases.
-- __Pull Request Workflow__:  
-    Use pull (merge) requests (PR/MR) to manage changes to the Kubernetes configuration. 
-    This allows for code review, approval processes, 
-    and automated testing before changes are merged and applied.
-- __Automated Deployment__:  
-    Implement CI/CD pipelines that automatically apply changes from Git to your Kubernetes cluster. 
-    This could involve testing changes in a staging environment before promoting them to production.
-- __Disaster Recovery__:  
-    Regularly back up your Git repository and Kubernetes cluster state. 
-    Ensure you have a process in place for restoring from backups in case of a disaster.
     
+## Environments
+
+__Upon what infrastructure__ does the app AKA workload AKA service run?
+
+- __Cloud__ : 3rd-party vendor, typically virtual; SDNs, VMs, &hellip;
+- __On-prem__ : Self managed; physical and/or virtual
+- __Bare-metal__ : OS and app on physical machine, sans hypervisor/virtualization, 
+  _regardless_ of whether on-prem or in cloud.
+- __Edge__ : More than just a reference to gateway router(s); an environment and topology. 
+  Distributed architectures and practices for __processing data closer to where it is generated or consumed__.
+    - __Computing__: 
+        - Proximal to Data : Located close to the source of data, such as IoT devices, sensors, or users. This proximity allows for faster data processing and reduced latency.
+        - Distributed Architecture : Deploying smaller, localized data centers or computing resources that work together with centralized cloud services. This creates a distributed architecture where certain tasks are handled at the edge, while others are processed in the cloud or a central data center.
+        - Real-Time Processing : For applications that require real-time processing and quick decision-making, such as autonomous vehicles, industrial automation, and smart cities.
+        - Reduced Bandwidth Usage : Only the relevant or processed data needs sent to central data center/cloud, reducing amount of data egress.
+    - __Environment__:
+        - Edge Devices : Sensors, IoT devices, smart appliances, &hellip;
+            - To generate or consume data.
+        - Edge Servers or Mini Data Centers : small-scale computing resources in retail stores, factories, telecom towers, vehicles, &hellip; deployed close to edge devices 
+            - To process and analyze data locally.
+        - Edge Gateways : Routers and other devices.
+            - To aggregating data from various edge devices and sometimes perform initial processing before forwarding data to central servers or the cloud.
+
 ## Configuration 
 
 - __Repository Structure__:  
