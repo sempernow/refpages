@@ -119,7 +119,8 @@ A comprehensive, versatile automation tool
 allowing for both declarative and imperative methods.</li>
 <li>Pulumi : IaC in any language</li>
 </ul></li>
-<li><strong>IaC</strong> : <strong>Workloads</strong>
+
+<li><p><strong>IaC</strong> : <strong>Workloads</strong></p>
 
 <ul>
 <li>Application Management (K8s Manifests)
@@ -147,7 +148,7 @@ Configuration that is Programmable, Scalable, and Safe</li>
 <li><a href="https://docs.dagger.io/quickstart/daggerize">Dagger</a> functions:
 Pipeline agnostic functions that run in CI/CD pipeline of any vendor.</li>
 <li>Tekton</li>
-<li>Argo Workflows</li>
+<li><strong>Argo Workflows</strong></li>
 <li>Jenkins</li>
 <li>GitHub Actions</li>
 <li>GitLab CI</li>
@@ -155,23 +156,44 @@ Pipeline agnostic functions that run in CI/CD pipeline of any vendor.</li>
 <li>CD : Application Lifecycle
 
 <ul>
-<li><a href="https://github.com/fluxcd/flux2"><strong>Flux</strong></a><br>
-A tool to automatically sync Kubernetes clusters/applications
-with their configuration sources, across their lifecycles.</li>
+<li><a href="https://github.com/fluxcd/flux2"><strong>Flux</strong> CD</a><br>
+
+<ul>
+<li>A tool to automatically sync K8s clusters/applications
+with their configuration sources (Git) across their lifecycles.</li>
+<li>Supports automated deployments, where changes to the Git repo trigger updates in the Kubernetes cluster.</li>
+<li>Handles secret management and multi-tenancy.</li>
+<li><strong>Flagger</strong> integration: Flux can be used together with Flagger for progressive delivery; advanced deployment strategies.</li>
+</ul></li>
+<li><strong>Flagger</strong>:
+
+<ul>
+<li>Automates the release process by gradually shifting traffic to the new version while measuring metrics and running conformance tests.
+If anomalies are detected, Flagger can automatically rollback.</li>
+<li>Designed for <strong>progressive delivery</strong> techniques like canary releases, A/B testing, and blue/green deployments.</li>
+<li>Service-Mesh Integration: Used with service meshes like Istio, Linkerd, and others,
+leveraging their features for traffic shifting and monitoring.</li>
+</ul></li>
 <li><a href="https://github.com/argoproj/argo-cd"><strong>Argo CD</strong></a>:<br>
-Visualize (Web UI) and manage the lifecycle of Kubernetes applications;
+
+<ul>
+<li>A declarative, GitOps continuous delivery tool for K8s.
+Visualize (Web UI) and manage the lifecycle of K8s applications;
 supports automated or manual syncing of changes.
 
 <ul>
-<li>Argo Workflows + Argo Events required = CD
+<li>For CD, also need <strong>Argo Workflows</strong> &amp; <strong>Argo Events</strong> (preferred over Tekton Events)</li>
+</ul></li>
+<li>Application Definitions, Configurations, and Environments: All these are declaratively managed and versioned in Git.</li>
+<li>Automated Deployment: Argo CD automatically applies changes made in the Git repository to the designated Kubernetes clusters.</li>
+<li>Visualizations and UI: Argo CD provides a rich UI and CLI for viewing the state and history of applications, aiding in troubleshooting and management.</li>
+<li>Rollbacks and Manual Syncs: Supports rollbacks and manual interventions for syncing with Git repositories.</li>
+</ul></li>
+<li><strong>Argo Rollouts</strong>: Advanced deployment strategies like canary and blue/green. Similar to Flagger</li>
+</ul></li>
+</ul></li>
 
-<ul>
-<li>Argo Events &gt; Tekton Events</li>
-</ul></li>
-</ul></li>
-</ul></li>
-</ul></li>
-<li><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a>
+<li><p><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a></p>
 
 <ul>
 <li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" title="Kubernetes.io"><strong>Authentication</strong></a> (Authn) :<br>
@@ -242,7 +264,8 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 </ul></li>
 </ol></li>
 </ul></li>
-<li><strong>Logging</strong> : Cluster-level logging, AKA <strong>Log Aggregation</strong> AKA <strong>Unified Loggging</strong>, so that logs survive their (ephemeral) generator, be that of any host or container process.
+
+<li><p><strong>Logging</strong> : Cluster-level logging, AKA <strong>Log Aggregation</strong> AKA <strong>Unified Loggging</strong>, so that logs survive their (ephemeral) generator, be that of any host or container process.</p>
 
 <ul>
 <li><strong>Elastic stack</strong> : to collect, store, query, and visualize log data. Composed of:
@@ -268,6 +291,8 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 <ul>
 <li>Requires separate installation of a log collector/forwarder</li>
 </ul></li>
+<li>EFK Stack | <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes" title="DigitalOcean.com">HowTo</a> | <a href="https://artifacthub.io/packages/helm/elastic/elasticsearch">Helm</a></li>
+<li>ELK stack : Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.</li>
 <li><a href="https://opensearch.org/docs/latest/about/" title="OpenSearch.org">OpenSearch</a> : FOSS fork of Elastic stack (Elasticsearch/Kibana)
 
 <ul>
@@ -281,7 +306,8 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 <li>No viable installation method is available (2024-08), contrary to project claims.</li>
 </ul></li>
 </ul></li>
-<li><strong>Observability</strong> : Distributed <strong>Tracing</strong> and <strong>Metrics</strong>
+
+<li><p><strong>Observability</strong> : Distributed <strong>Tracing</strong> and <strong>Metrics</strong></p>
 
 <ul>
 <li><a href="https://prometheus.io/" title="Prometheus.io">Prometheus</a> : TSDB and monitoring system optimized for telemetry (metrics and tracing).
@@ -368,7 +394,8 @@ kubectl gadget trace tcp -n $ns
 
 <li><p>Groundcover : All in one</p></li>
 </ul></li>
-<li><strong>Networking</strong>
+
+<li><p><strong>Networking</strong></p>
 
 <ul>
 <li>External Load Balancer
@@ -391,11 +418,7 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li>Ingress
 
 <ul>
-<li><a href="https://istio.io/">Istio</a>
-
-<ul>
-<li>Sidecar Proxy</li>
-</ul></li>
+<li><a href="https://istio.io/">Istio</a></li>
 <li><a href="https://traefik.io/traefik/">Traefik</a> : Automatically wires routes per Service discovery</li>
 <li><a href="https://kubernetes.github.io/ingress-nginx/deploy/baremetal/">Ingress-Nginx</a></li>
 <li><a href="https://cilium.io/">Cilium</a> : eBPF</li>
@@ -409,7 +432,11 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li>Service Mesh
 
 <ul>
-<li>Istio</li>
+<li><a href="https://istio.io/">Istio</a>
+
+<ul>
+<li><a href="https://www.envoyproxy.io/">Envoy</a> Service Proxy (Sidecar)</li>
+</ul></li>
 <li>Traefik : Automatically wires routes per Service discovery</li>
 <li><a href="https://linkerd.io/">Linkerd</a> : Service Mesh (East-West) : mTLS + Load Balancing between services<br>
 
@@ -426,7 +453,8 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li>Consul : Multi-cluster</li>
 </ul></li>
 </ul></li>
-<li><strong>Security</strong>
+
+<li><p><strong>Security</strong></p>
 
 <ul>
 <li>Distributed-Workload Identities
@@ -481,7 +509,8 @@ This ensures that sensitive information is securely managed.</li>
 <li><a href="https://cert-manager.io/" title="cert-manager.io">cert-manager</a> : <em>&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry.</em></li>
 </ul></li>
 </ul></li>
-<li><strong>Database</strong>
+
+<li><p><strong>Database</strong></p>
 
 <ul>
 <li>Managed
@@ -496,7 +525,8 @@ This ensures that sensitive information is securely managed.</li>
 <li><a href="https://cloudnative-pg.io/">CloudNativePG</a> (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a <strong>primary/standby architecture</strong>, using native <strong>streaming replication</strong>. A CNCF project.</li>
 <li>Atlas Operator : Schema</li>
 </ul></li>
-<li><strong>Misc</strong>
+
+<li><p><strong>Misc</strong></p>
 
 <ul>
 <li>Charm : Library and Tools

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>NFS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://chatgpt.com/share/6800c8c1-aa1c-4e94-9601-a022f240f7fa" title="ChatGPT">NFS</a> : ESXi / NetApp</h1>
+
+<h2>NetApp</h2>
+
+<p>Runs under ONTAP, a proprietary OS having a Unix-like CLI.</p>
+
+<p><strong>Use NFSv3</strong>, which abides client UID/GID permissions,
+requiring only minimal coupling of server-client configurations.</p>
+
+<p><strong><em>NFSv4 uses names</em></strong> of users and groups instead,
+and requires evermore coupling of server-client configurations.
+Moreover, if storage consumers include automated provisioners
+(e.g., for containerized workloads),
+the highly-coupled if not manual
+configuration requirements are worst fit.</p>
+
+<h3>@ Client machine(s)</h3>
+
+<pre><code class="language-bash">srv=192.168.0.216
+export=/remote/export
+mount=/local/path
+opts='nfsvers=3,sec=sys,proto=tcp,port=2049,noacl,nolock'
+# Prep mount point
+mkdir -p $mount
+chown $aUID:$aGID
+chmod g+s $mount
+
+# Mount now
+mount -t nfs -o &quot;$opts&quot; $srv:$export $mount
+
+# Mount persistently, and by `mount -a` : Append if mount not already declared
+cat /etc/fstab |grep $mount ||
+    echo &quot;$srv:$export    $mount    &quot;defaults,$opts&quot;    0 0&quot; |sudo tee -a /etc/fstab
+</code></pre>
+
+<ul>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#services-required-on-an-nfs-client_mounting-nfs-shares" title="docs.redhat.com">Required client services</a> (RHEL)</li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#enabling-client-side-caching-of-nfs-content_mounting-nfs-shares" title="docs.redhat.com">Enabling client-side caching of NFS content</a></li>
+<li><code>chmod g+s</code> : SetGID bit (<code>setgid</code>) on mount point so all created thereunder inherit parent <code>GID</code></li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#frequently-used-nfs-mount-options_mounting-nfs-shares" title="docs.redhat.com">Mount <strong>options</strong></a> : &quot;<code>defaults,...</code>&quot;
+
+<ul>
+<li>Use <code>nfsvers</code> parameter instead of <code>nfs</code> (to declare NFS version) if at RHEL 7+</li>
+<li><code>sec</code> (Security mode)
+
+<ul>
+<li>Use <code>sys</code> for authentication of NFS operations by local (client) UNIX UIDs/GIDs (<code>AUTH_SYS</code>)</li>
+<li>Use <code>krb5</code> for Kerberos V5 instead.</li>
+</ul></li>
+</ul></li>
+<li>Port <code>2049/TCP</code> is the default for NFS, both <code>NFSv3</code> and <code>NFSv4</code>,
+assigned by <def title="Internet Assigned Numbers Authority">IANA</def>.<br>
+Hence those parameter declarations are often omitted.</li>
+</ul>
+
+<p>@ <code>/etc/fstab</code></p>
+
+<pre><code class="language-ini">192.168.0.216:/remote/export    /local/path    nfs    defaults,nfsvers=3,sec=sys,proto=tcp,port=2049,noacl,nolock    0 0 
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
