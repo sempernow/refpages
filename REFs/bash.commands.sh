@@ -24,7 +24,7 @@ exit
 # TERMINAL COMMANDs
     CTRL+C           # terminate currently running process
     CTRL+D           # 'exit'
-    CTRL+Z           # PAUSE job
+    CTRL+Z           # PAUSE job and send it to background
 
     CTRL+L           # clear screen
     CTRL+A           # beginning of line
@@ -46,14 +46,13 @@ exit
  
 # VIRTUAL CONSOLEs
     CTRL+ALT F1|F2|F3|... # Open/switch
-
     # @ CentOS 6 ...
-    console keystrokes   contents 
-    1   CTRL+ALT+f1   graphical display [GUI]
-    2   CTRL+ALT+f2   shell prompt
-    3   CTRL+ALT+f3   install log (messages from installation program)
-    4   CTRL+ALT+f4   system-related messages
-    5   CTRL+ALT+f5   other messages
+    # console keystrokes   contents 
+    # 1   CTRL+ALT+f1   graphical display [GUI]
+    # 2   CTRL+ALT+f2   shell prompt
+    # 3   CTRL+ALT+f3   install log (messages from installation program)
+    # 4   CTRL+ALT+f4   system-related messages
+    # 5   CTRL+ALT+f5   other messages
 
     who # @ bash in tty1|tty4 after log in as root @ tty4
         root     tty4         2017-01-20 13:32
@@ -85,11 +84,10 @@ exit
         sudo -E su  # preserve environment (switching to root user)
 
         # invoke LOGIN-SHELL : clears all Env.Vars
-        su -            # login-shell, root user
         su - foo        # login-shell, user 'foo'
         su -l foo       # login-shell, user 'foo'
         su --login foo  # login-shell, user 'foo'
-
+        su -            # login-shell, root user
         # su... switching back to prior-user; use exit, else shell(s) nest
         exit
 
@@ -2435,8 +2433,6 @@ exit
             make         # build the libraries and applications. 
             make install # install the libraries and applications. 
 
-
-
 # ADMIN COMMANDS
 
     uptime      # info on this machine's server
@@ -2475,6 +2471,7 @@ exit
     jobs           # Show background processes
     fg    %$n      # Bring background process (job) to foreground
     kill  $pid     # Kill a process by its PID
+    kill -9 $pid   # Hard kill 
     kill  %$n      # Kill a background process by its job number (see jobs)
     pkill $command # Kill a process by its command name 
 

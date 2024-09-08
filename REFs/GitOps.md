@@ -96,19 +96,34 @@ verifiable deployment states.
         - [Dagger](https://docs.dagger.io/quickstart/daggerize) functions: 
         Pipeline agnostic functions that run in CI/CD pipeline of any vendor.
         - Tekton
-        - Argo Workflows
+        - __Argo Workflows__
         - Jenkins
         - GitHub Actions
         - GitLab CI
     - CD : Application Lifecycle
-        - [__Flux__](https://github.com/fluxcd/flux2)  
-            A tool to automatically sync Kubernetes clusters/applications
-            with their configuration sources, across their lifecycles.
+        - [__Flux__ CD](https://github.com/fluxcd/flux2)  
+            - A tool to automatically sync K8s clusters/applications
+            with their configuration sources (Git) across their lifecycles.
+            - Supports automated deployments, where changes to the Git repo trigger updates in the Kubernetes cluster. 
+            - Handles secret management and multi-tenancy.
+            - __Flagger__ integration: Flux can be used together with Flagger for progressive delivery; advanced deployment strategies.
+        - __Flagger__:
+            - Automates the release process by gradually shifting traffic to the new version while measuring metrics and running conformance tests. 
+              If anomalies are detected, Flagger can automatically rollback.
+            - Designed for **progressive delivery** techniques like canary releases, A/B testing, and blue/green deployments.
+            - Service-Mesh Integration: Used with service meshes like Istio, Linkerd, and others, 
+              leveraging their features for traffic shifting and monitoring.
         - [__Argo CD__](https://github.com/argoproj/argo-cd):   
-            Visualize (Web UI) and manage the lifecycle of Kubernetes applications;
+            - A declarative, GitOps continuous delivery tool for K8s. 
+            Visualize (Web UI) and manage the lifecycle of K8s applications;
             supports automated or manual syncing of changes.
-            - Argo Workflows + Argo Events required = CD 
-                - Argo Events > Tekton Events
+                - For CD, also need __Argo Workflows__ &amp; __Argo Events__ (preferred over Tekton Events)
+            - Application Definitions, Configurations, and Environments: All these are declaratively managed and versioned in Git.
+            - Automated Deployment: Argo CD automatically applies changes made in the Git repository to the designated Kubernetes clusters.
+            - Visualizations and UI: Argo CD provides a rich UI and CLI for viewing the state and history of applications, aiding in troubleshooting and management.
+            - Rollbacks and Manual Syncs: Supports rollbacks and manual interventions for syncing with Git repositories.
+        - __Argo Rollouts__: Advanced deployment strategies like canary and blue/green. Similar to Flagger
+
 - [__Authn__/__Authz__](https://kubernetes.io/docs/concepts/security/controlling-access/ "Kubernetes.io")
     - [__Authentication__](https://kubernetes.io/docs/reference/access-authn-authz/authentication/ "Kubernetes.io") (Authn) :  
         -  __Two types of subject__ : K8s provides for binding either type to roles for cluster access:
@@ -157,6 +172,8 @@ verifiable deployment states.
                     *Manage Fluent Bit and Fluentd the Kubernetes way*.
         - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co")  @ [Air-gap environment](https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba "ChatGPT.com") for Elasticsearch and Kibana. 
             - Requires separate installation of a log collector/forwarder
+        - EFK Stack | [HowTo](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes "DigitalOcean.com") | [Helm](https://artifacthub.io/packages/helm/elastic/elasticsearch)
+        - ELK stack : Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.
         - [OpenSearch](https://opensearch.org/docs/latest/about/ "OpenSearch.org") : FOSS fork of Elastic stack (Elasticsearch/Kibana)
             - [Data Prepper](https://opensearch.org/docs/latest/data-prepper/) : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces. 
     - [Grafana Loki](https://grafana.com/oss/loki/) | [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") ([Install](https://grafana.com/docs/loki/latest/setup/install/)) : "*Prometheus, but for logs*". A lightweight alternative to Elastic stack.
@@ -225,7 +242,6 @@ verifiable deployment states.
         - [Cilium](https://cilium.io/) : eBPF
     - Ingress
         - [Istio](https://istio.io/)
-            - Sidecar Proxy 
         - [Traefik](https://traefik.io/traefik/) : Automatically wires routes per Service discovery
         - [Ingress-Nginx](https://kubernetes.github.io/ingress-nginx/deploy/baremetal/)
         - [Cilium](https://cilium.io/) : eBPF
@@ -233,7 +249,8 @@ verifiable deployment states.
     - [K8s Gateway API](https://gateway-api.sigs.k8s.io/implementations/#gateways)
         - [Traefik](https://doc.traefik.io/traefik/routing/providers/kubernetes-gateway/)
     - Service Mesh
-        - Istio
+        - [Istio](https://istio.io/)
+            - [Envoy](https://www.envoyproxy.io/) Service Proxy (Sidecar)
         - Traefik : Automatically wires routes per Service discovery
         - [Linkerd](https://linkerd.io/) : Service Mesh (East-West) : mTLS + Load Balancing between services  
             - Sidecar Proxy (written in Rust).
