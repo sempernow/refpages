@@ -352,10 +352,29 @@ exit
     sudo mkdir /mnt/g
     sudo mount -t drvfs g: /g
 
-    # HD Parameters : get/set SATA/IDE device parameters
-    # https://man7.org/linux/man-pages/man8/hdparm.8.html
-        device=/dev/nvme0n1
-        hdparm -t --direct $device # Read speed (MB/sec)
+    # Monitor I/O    
+        sar # System activity info
+            type -t sar || sudo dnf install -y sysstat &&
+                sudo systemctl enable --now sysstat
+            sudo sar 
+        
+        iostat # CPU and I/O stats for DEVICEs and PARTITIONs
+            iostat -hm # -m for MB else KB 
+
+        iotop # I/O monitor 
+            sudo iotop -k  # KB/s, else B/s
+            sudo iotop -ko # I/O (actually) only
+ 
+        dstat # System resource stats : vmstat + iostat + ifstat
+            dstat -tdD total,sda,sdb,sdc,md1 60
+
+    # IOPS : IOPS / Bandwidth / Throughput 
+        fio # See iops-test.sh : https://cloud.google.com/compute/docs/disks/benchmarking-pd-performance-linux
+
+        hdparm  # HD Parameters : get/set SATA/IDE device parameters
+            # https://man7.org/linux/man-pages/man8/hdparm.8.html
+            device=/dev/nvme0n1
+            sudo hdparm -t --direct $device # Read speed (MB/sec)
 
     # COPY BLOCK DEVICES  https://wiki.archlinux.org/index.php/disk_cloning 
         dd  # The only standard command which can safely read EXACTLY ONE BYTE of input

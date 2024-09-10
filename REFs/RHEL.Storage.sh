@@ -335,15 +335,12 @@ exit
         /proc/partitions
 
     # BLOCK DEVICES
-        hdparm # HD Parameters : Get/Set device parameters
-            # https://man7.org/linux/man-pages/man8/hdparm.8.html
-            hdparm -t --direct /dev/nvme0n1 # Read speed (MB/sec)
 
         # List all block devices
             ls -l /dev /dev/mapper |grep ^b
 
         lsblk # list block devices
-            lsblk -o SIZE,LABEL,NAME,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID 
+            lsblk -o SIZE,LABEL,NAME,GROUP,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID 
             lsblk -I 8  # devices whose 'major number' is '8'; find @ '/dev' 
 
             # "MAJ:MIN" : device numbers that uniquely identify device to kernel.
@@ -365,6 +362,30 @@ exit
         fdisk -l [DEVICE]         # list info on block device(s) attached : all|DEVICE
         fdisk -s PARTITION        # size of PARTITION
         blockdev --getbsz DEVICE  # size of block (4096; typically)
+
+    # Monitor I/O    
+        sar # System activity info
+            type -t sar || sudo dnf install -y sysstat &&
+                sudo systemctl enable --now sysstat
+            sudo sar 
+        
+        iostat # CPU and I/O stats for DEVICEs and PARTITIONs
+            iostat -hm # -m for MB else KB 
+
+        iotop # I/O monitor 
+            sudo iotop -k  # KB/s, else B/s
+            sudo iotop -ko # I/O (actually) only
+ 
+        dstat # System resource stats : vmstat + iostat + ifstat
+            dstat -tdD total,sda,sdb,sdc,md1 60
+
+    # IOPS : IOPS / Bandwidth / Throughput 
+        fio # See iops-test.sh : https://cloud.google.com/compute/docs/disks/benchmarking-pd-performance-linux
+
+        hdparm  # HD Parameters : get/set SATA/IDE device parameters
+            # https://man7.org/linux/man-pages/man8/hdparm.8.html
+            device=/dev/nvme0n1
+            sudo hdparm -t --direct $device # Read speed (MB/sec)
 
     # FILESYSTEM REPAIR 
         debugfs # debug filesystem; make changes (writeable) (-w)
