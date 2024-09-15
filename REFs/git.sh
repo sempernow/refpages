@@ -54,29 +54,32 @@ git stash apply
     git pull --depth=1 origin master
 
 # INIT a PROJECT
-    mkdir $_REPONAME 
-    cd $_REPONAME
+    mkdir $prj 
+    cd $prj
     vim .gitignore      # Create/Edit 
     git config --list   # Get config
     # (Re)Set local config k-v
     git config init.defaultbranch=main
     # Add local config k-v
     git config user.project ${PWD##*/}
+    # Initialize
     git init --initial-branch=main
     git add -u
+    git add .
     git commit -C "Init @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     # Add origin : SSH mode 
-    git remote add origin git@gitlab.com:$(git config user.name)/gitlab-workflow.git
+    git_at_host=gitlab # If so conf'd @ ~/.ssh else, e.g., git@gitlab.com (*not* $USER@)
+    git remote add origin $git_at_host:$(git config user.account)/$prj.git
     # SSH login 
-    ssh -T -i ~/.ssh/gitlab_$(git config user.name) git@gitlab.com
+    ssh -T -i ~/.ssh/gitlab_$(git config user.account) $git_at_host
     # Push
     git push origin master
 
     # Set network params for SSH mode
     proto='git@'
     server='gitlab.com' # Domain name of the Git-server host
-    path="$(git config user.username)/$(git config user.project)"
-    keypath=~/.ssh/${server%.*}_$(git config user.username)
+    path="$(git config user.account)/$(git config user.project)"
+    keypath=~/.ssh/${server%.*}_$(git config user.account)
 
 # CLONE
     git clone git@gitlab.com:$account/$project.git

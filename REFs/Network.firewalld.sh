@@ -249,6 +249,18 @@ exit
         nft list ruleset 
     iptables-nft # Use iptables syntax to set rules on nftables
 
+        # FLUSH ALL RULES : DISABLE All Firewall Rules 
+            # Simply stopping firewalld.service does NOT stop underlying rules from applying.
+            # If you need to fully "turn off" the Linux firewall, 
+            # flushing all existing rules is the cleanest method. 
+            # This will remove all active rules and allow all traffic through 
+            # until the rules are re-applied:
+            sudo systemctl disable --now firewalld.service
+            sudo nft flush ruleset 
+            # Then, to reapply all rules, 
+            sudo systemctl enable --now firewalld.service
+
+
     iptables  # IP Tables; tool for PACKET FILTERING and NAT [IPv4/IPv6] : man iptables(8)
         #  Powerful, low-level FIREWALL implemented as Netfilter modules 
         # - DERICATED : Use nft or iptables-nft

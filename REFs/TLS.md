@@ -28,6 +28,7 @@ The OpenSSL utility, [`openssl`](https://www.openssl.org/), is a multi-purpose t
 - Manual (`man`) pages are available for each `openssl <command>` at `man openssl-<command>`. 
 - For the list of available `openssl` commands (by category), simply run: `openssl`.
 - [`TLS.openssl.sh`](TLS.openssl.sh)  
+- [RFC 6125](https://datatracker.ietf.org/doc/html/rfc6125) Identity (DNS names) regarding X.509 certificates.
 
 ## Glossary
 
