@@ -30,14 +30,14 @@ man ssh_config
                 #   Port 2222
                 #   IdentityFile ~/.ssh/abox
             ## Then simply:
-            ssh abox 
+            ssh abox
 
         # Generate elliptical key pair : Default type (-t) is 'rsa'.
             # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default); no passphrase.
-                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname # id_ed25519
+                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname  # id_ed25519
 
             # Re(Set) key's passphrase (local security)
-                ssh-keygen -p -P $old -P $new -f $_KEY_PATH
+                ssh-keygen -p -P $old -P $new -f $_KEY_PATH 
 
             # Re(Set) key's comment : user's email address or $(id -un)@$(hostname)
                 ssh-keygen -c -C "$(id -un)@$(hostname)" -f $_KEY_PATH
@@ -215,9 +215,13 @@ man ssh_config
                         ssh localhost -p 8822  # connects to REMOTE_IP_FOO
                         ssh localhost -p 9922  # connects to REMOTE_IP_BAR 
 
-        # Automate passphrase entry (private key may be protected by passphrase; see ssh-keygen.)
-            ssh-agent /bin/bash  # launch ssh-agent into subshell    
-            ssh-add              # prompts for pass phrase; caches for lifetime of (sub)shell.
+        # CACHE key PASSPHRASE for one-time entry 
+            # Use case is key (for human CLI user) created/secured with a passphrase.
+            # Add to bash shell config file:
+            if [ -z "$SSH_AUTH_SOCK" ]; then
+                eval $(ssh-agent -s) # Launch ssh-agent into background process
+                ssh-add $key # Prompt/Add key's passphrase; cache for lifetime of this shell. 
+            fi
 
         # ADD host's key to ~/.ssh/known_hosts file 
             # (Otherwise ADDED AUTOMATICALLY on first connect) 

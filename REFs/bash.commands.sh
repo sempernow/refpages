@@ -914,39 +914,6 @@ exit
         # append STRING to file(s)
         echo "STRING" |tee -a *.txt > /dev/null  # silently
 
-    xargs # Converts piped STDOUT of command1 to args ($@) of command2
-        command1 |xargs command2 # Use when command2 does NOT ACCEPT PIPEd stdin 
-        # (See "GNU FINDUTILS" section for more detail)
-
-        # Ex: Gzip each dot-file (fname: .*) at root of user's HOME directory.
-        find "$HOME" -maxdepth 1 -type f -name '.*' |xargs gzip 
-        # (See `find` at "GNU FINDUTILS" section below for more detail)
-
-        # REPEAT COMMANDs `$n` times : ignore arg(s); ignore $n
-        seq $n |xargs -Iz COMMAND static_ARG1 static_ARG2 ...
-
-        # LOOP (faster) : pass each index (1, 2, ..., $n) to COMMAND, as arg, once per.
-        seq $n |xargs -I {} sh -c "COMMAND {}" 
-            # Same, but SECURELY (mitigate command injection):
-                # - Allows for access to positional params and multiple useage
-                # - Allows for injecting a variable into subshell by replacing "_" with it.
-                seq $n |xargs -I {} sh -c 'COMMAND "$@"' _ {}  
-                    # Ex: AUTOMATE cloud-infra provisioning sans Ansible:
-                        # Provision all remote machines of the sequence (1, 2, ... $n), 
-                        # all configured with a common ssh identity file (key),
-                        # invoking a local script (do.sh) with local environment.
-                        echo '#!/usr/bin/env bash'      > do.sh
-                        echo "echo \"ARGs: '\$@'\""    >> do.sh
-                        key=~/.ssh/aws_cluster
-                        seq $n |xargs -I {} sh -c ' 
-                            echo "=== @ VM: a$1";ssh -i "$0" uzer@a$1 /bin/bash -s < do.sh $0
-                        ' "$key" {}
-                            # === @ VM: a1 
-                            # ARGs: '1' 
-                            # === @ VM: a2 
-                            # ARGs: '2' 
-                            ...
-
 # GNU FINDUTILS : FIND, LOCATE, XARGS
     # https://www.gnu.org/software/findutils/manual/html_mono/find.html#Introduction
     # ISSUEs @ find ... |xargs   http://www.etalabs.net/sh_tricks.html
@@ -982,8 +949,8 @@ exit
         find . -type l                # find symbolic links (symlinks); regular files (f); dirs (d)
 
         # Set depth of search 
-            find -mindepth 1 -maxdepth 1  # PWD; files & folders ONLY
-            find -mindepth 2 -maxdepth 2  # 1st-child; files and folders ONLY
+            find -mindepth 1 -maxdepth 1  # PWD only; files & folders
+            find -mindepth 2 -maxdepth 2  # 1st-child only; files and folders
 
         # Follow SYMLINKs, else not.
             find -L "$DIR" -iname 'foo*'  
@@ -991,21 +958,12 @@ exit
         # Exclude set of FNAMEs
             find . -type f ! -iname '*\[s\].7z' \( -iname '*.7z' -or -iname '*.zip' \) 
         
-        # Exclude set of specific PATHs : DO NOT MIX `-or` with `!`
-            find . -type f -not -path './.git/*' -not -path './.venv/*'
-            
-            find \( -name 'REF.*' ! -iname '*.lnk' ! -iname '*.xyz' \) ...
-            find \( -name 'REF.*' -or -iname '*.lnk' -or -iname '*.xyz' \) ...
+        # Exclude set of specific FNAMEs and/or PATHs : DO NOT MIX `-or` with `!`
+            find . -name 'REF.*' -or -iname '*.lnk' -or -iname '*.xyz' -not -path '*/.git/*' ... 
+            find . -name 'REF.*' ! -iname '*.lnk' ! -iname '*.xyz' ! -path '*/.git/*' ... # Equivalent
 
             # E.g., find all *.md OR *.txt larger than 100 KB 
             find . -type f  \( -iname '*.html' -or -iname '*.txt' \) -size +100k -printf "%k [%s] %p\n"
-
-        # EXCLUDE a DIR 
-            find  ! -path  '*/.git*'
-            find  -not -path '*/.git/*' 
-
-        # Exclude specific DIRs 
-            find . -type d \( -path dir1 -o -path dir2 -o -path dir3 \) -prune -o 
 
         # RUN COMMANDS against the resulting list
             #  DELIMITERs `;` or `+` : they must be either ESCAPED or QUOTED : `\;` OR `';'`
@@ -1111,7 +1069,7 @@ exit
                 find "$HOME" -maxdepth 1 -type f ! -name '*.???' -printf "%p\n"
                 
                 # print all 1st children of PWD; perms in octal, and fname 
-                find . - mindepth 1 -maxdepth 1 -printf "%f\n" |xargs stat --format=" %a  %n" 
+                find . -mindepth 1 -maxdepth 1 -printf "%f\n" |xargs stat --format=" %a  %n" 
                      775  .
                      770  foo.bar
                      775  scripts
@@ -1215,75 +1173,66 @@ exit
         # Prepend LINE_OF_TEXT in all files matching PATTERN
             find . -type f -name 'PATTERN' -exec sed -i '1s;^;LINE_OF_TEXT\n;' {} \;
 
-    xargs # xARGS as in "combine arguments"; pronounced EX-args
+    xargs [option...] [command [initial-arguments]]
+        # xARGS as in "combine arguments"; pronounced EX-args
+        # Converts piped STDOUT of command1 to args ($@) of command2
+        #  https://www.gnu.org/software/findutils/manual/html_mono/find.html#Common-Tasks
+        #  xargs builds and executes command lines by gathering  
+        #  arguments it reads from stdin; smartly filling a pipeline 
+        #  per options AND machine capacity.
+        xargs -n MAX-ARGS     # max args (#) per command line
+        xargs -I {}           # 1 arg per, regardless of -n; {} is arg; useable only once lest sh -c '...'
+        xargs -L MAX-LINES    # max lines (#) per command line 
+        xargs -d '\t'         # '\t'; TAB-delimited args
+        xargs -P 10           # run 10 processes max, CONCURRENTLY
+
         # Build and execute command lines from standard input
         # CONVERTS PIPED STDOUT of command1 TO STDIN (args) for command2
             command1 |xargs command2 # Use when command2 does NOT accept piped STDIN 
             # E.g., gzip all dot-file files at root of HOME dir:
             find "$HOME" -maxdepth 1 -type f -name '.*' |xargs gzip 
+            # (See `find` at "GNU FINDUTILS" section below for more detail)
 
-        xargs [option...] [command [initial-arguments]]
-            #  https://www.gnu.org/software/findutils/manual/html_mono/find.html#Common-Tasks
-            #  xargs builds and executes command lines by gathering  
-            #  arguments it reads from stdin; smartly filling a pipeline 
-            #  per options AND machine capacity.
-            xargs -n MAX-ARGS     # max args (#) per command line
-            xargs -I {}           # 1 arg per, regardless of -n; {} is arg; useable only once lest sh -c '...'
-            xargs -L MAX-LINES    # max lines (#) per command line 
-            xargs -d '\t'         # '\t'; TAB-delimited args
-            xargs -P 10           # run 10 processes max, CONCURRENTLY
-       
+        # LOOP (faster) : pass each index (1, 2, ..., $n) to COMMAND, as arg, once per.
+            seq $n |xargs -I {} COMMAND {} # {} is the canonical token; any unique CONTIGUOUS STR okay.
+        # LOOP SECURELY (mitigate command injection) by using SUBSHELL:
+            # - Use single quotes to prevent interpretation.
+            # - Allows for access to positional params (multiple useage); brace expansion
+            # - Allows for injecting variable(s) without affecting args order 
+            #   by replacing "_" (dummy for token $0) with it.
+            seq $n |xargs     /bin/bash -c 'command1 $2;command2 "$@";...' _  
+            seq $n |xargs -IX /bin/bash -c 'COMMAND "$@"' $v X
+            # PASS N args per line
+            seq 3  |xargs -n2 /bin/bash -c 'foo "$@"' _ 
+                # [1] [2]
+                # [3]
+   
         # Require arg(s)
             ...|xargs --no-run-if-empty command
 
-        # Handle WHITESPACE : implies ONE (first) ARG per command line
-            ...|xargs -I {} command {}       # If piped '\n' (newline) DELIMITED
-            ...|xargs -0 -I {} command _ {}  # If piped '\0' (null) DELIMITED
-            
-            # Ex: NULL-DELIMITed so HANDLEs WHITESPACE (file paths)
+        # Handle ...
+
+            # WHITESPACE : implies ONE (first) ARG per command line
+                ...|xargs -I {} command {}       # If piped '\n' (newline) DELIMITED
+                ...|xargs -0 -I {} command _ {}  # If piped '\0' (null) DELIMITED
+                
+            # NULL-DELIMITed : allows WHITESPACE args; process @ SUBSHELL; `-0 -I {} ...`; 
                 find . ... -print0 |xargs -0 command 
-            
-        # Handle STDIN or PIPELINE arg(s) : Test if FD 0 (STDIN) is open ...
-            [[ -t 0 ]] && { 
-                command "$@"            # Args per STDIN
-            } || { 
-                xargs -I {} command {}  # Args per PIPELINE
-            }
-
-        # SUBSHELL : Useful for brace-expansion, access to positional params, etc.
-            ... |xargs /bin/bash -c 'command1;command2;...' _  
-            # - Use single quotes to prevent interpretation.
-            # - The dummy "_" absorbs the subshell script-name param, "$0", which is null here.
-            #   - May replace "_" with whatever, injecting it into the subshell (as "$0").
-
-            # Configure xargs to fit any (user-defined) function(s)
-                # Function foo takes two args (per call)
-                foo(){ echo [$1] [$2]; }; export -f foo
-                # Using `-n N` option, config xargs to pass N params/args per command line.
-                seq 3 |xargs -n 2 /bin/bash -c 'foo "$@"' _ 
-                    # [1] [2]
-                    # [3]
-                seq 3 |xargs -n 1 /bin/bash -c 'foo "$@"' _
-                    # [1] []
-                    # [2] []
-                    # [3] []
-            # @ SINGLE ARG per execution : The `-I` option implies `-n 1` setting.
-                ...|xargs -I {} foo "{}" # {} is the canonical token; any contiguous str okay.
-
-                # To access POSITIONAL params OR MULTIPLE invocations of param(s):
-                ...|xargs -I {} /bin/bash -c 'foo "$3" "$2"' _ {}
-
+    
             # NULL-DELIMITed allows WHITESPACE args; process @ SUBSHELL; `-0 -I {} ...`; 
-                ...|xargs -0 -I {} /bin/bash -c 'command "$@"' _ {}
+                ...|xargs -0 -IX /bin/bash -c 'command "$@"' _ X
                 # LIMITATION: one (first) null-delimited arg per line; KILLS STREAMING
-                    
-                # STREAMING `$_N` args per subshell ...
+            # STREAMING `$_N` args per subshell ...
                 ...|xargs -0 -n $_N /bin/bash -c 'command "$@"' _ 
+    
+            # STDIN or PIPELINE arg(s) by test for FD 0 (STDIN) open:
+                [[ -t 0 ]] && command "$@"            # If FD 0 is open, then args are of STDIN 
+                [[ -t 0 ]] || xargs -I {} command {}  # If FD 0 is not open, then args are by PIPE
 
-            # CONCURRENTly, @ max 10, process \n-delimited paths (list)
-                cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}"'
+            # CONCURRENTly, @ max 10 per line to process \n delimited paths (list)
+                ... |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}"'
                 # concurrently/background fooProcess ...
-                cat "$_list" |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}" &'
+                ... |xargs -d '\n' -P 10 -I {} /bin/bash -c 'fooProcess "{}" &'
 
             # STREAM PROCESSor (generalized)
                 foo(){ echo "[$1] [$2] [$3]"; }
@@ -1304,20 +1253,6 @@ exit
 
                 # Stream process files
                 find . -execdir /bin/bash -c 'streamArgs "$@"' _ {} \+
-
-            # Process a FILE or HEREDOC
-                # Define the list of parameters
-                params_list='a b c'
-                # Pass the arguments to the script using xargs
-                # @ FILE
-                printf "%s\n" $params_list |xargs -I{} /bin/bash process_args.sh -s
-                # @ HEREDOC : 'EOH' prevents variable expansion; HEREDOC is a literal.
-				printf "%s\n" $params_list |xargs -I{} /bin/bash -s <<'EOH'
-				while read -r arg; do
-				echo "Processing argument: $arg"
-				#... Do things ...
-				done
-				EOH
 
 # TEXTUTILS (package); Process text streams using filters ...
 
@@ -1557,7 +1492,8 @@ exit
                 |jq -Rn '[inputs]'
 
         # MAP/REFACTOR object having array to flat list
-            echo '{"name": "abox", "tags": ["ubi","2.0.1","3"]}' |jq -Mr '.tags[] as $tag | "\(.name):\($tag)"'
+            echo '{"name": "abox", "tags": ["ubi","2.0.1","3"]}' \
+                |jq -Mr '.tags[] as $tag | "\(.name):\($tag)"'
                 # abox:ubi
                 # abox:2.0.1
                 # abox:3
@@ -1677,7 +1613,6 @@ exit
                 # ------  --
                 # George  12
                 # Jack    18
-
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command
@@ -2059,7 +1994,6 @@ exit
 
 # number format
     numfmt --to=iec 4123412312312 # 3.8T
-
 
 # I/O (IO)  http://www.etalabs.net/sh_tricks.html
 
