@@ -1,31 +1,38 @@
 exit
 # FIREWALL : firewalld, nftables/iptables
     # RHEL : Getting Started with nftables : https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/getting-started-with-nftables_configuring-and-managing-networking#doc-wrapper
+    # Red Hat recommends:
     # - firewalld : Use for simple firewall use cases. 
     # - nftables  : Use to set up complex and performance-critical firewalls, such as for a whole network.
+    #               nftrace, nft
     # - iptables  : RHEL's uses the nf_tables kernel API instead of the legacy back end. 
-    #               The nf_tables API provides backward compatibility; scripts of iptables commands still work on RHEL. 
-    #               For new firewall scripts, Red Hat recommends using nftables
+    #               The nf_tables API provides backward compatibility; 
+    #               scripts of iptables commands still work on RHEL. 
     # 
-    # firewalld @ K8s : https://chatgpt.com/c/d3822fbe-5c9d-4ec4-8844-964294985bb5
-    
-    # which is a systemd service and interface wrapping iptables/nftables 
-        systemctl status firewalld.service 
+    # firewalld @ K8s : https://chatgpt.com/c/d3822fbe-5c9d-4ec4-8844-964294985bb5 
+    systemctl enable --now firewalld.service  
+    systemctl status firewalld.service  
  
     firewall-cmd # CLI for firewalld.service
 
         # Policy targets:
-            default     # An unnamed, unlisted "default" behavior, which is CONTINUE (lest reset elsewhere).
-            CONTINUE    # Does not stop processing; continues to the next rule or policy.
-            ACCEPT      # Stops processing and allows the traffic.
-            DROP        # Stops processing and *silently* drops the traffic.
-            REJECT      # Stops processing and rejects the traffic, often sending an error response back.
+            #################################################################################################
+            # The DEFAULT BEHAVIOR of the Linux firewall is to 
+            # DENY all INCOMING traffic and ALLOW all OUTGOING traffic.
+            #
+            # - To override that default behavior, declare rule(s) using firewall-cmd.
+            # - A rule typically affects INCOMING traffic unless its param(s) indicate otherwise.
+            # - Underlying processes may (dynamically) override/reset firewalld behavior, per configuration.
+            #   See iptables, nftables (successor to iptables), and/or NetworkManager (nmcli).
+            #################################################################################################
+            default     # Process by rules of THIS ZONE ONLY, then by firewalld's default behavior. (See above.)
+            CONTINUE    # Continue processing by rules of OTHER ZONEs (order by zone priority) 
+                        # after processing rules of this zone, then by firewalld's default behavior.
+            ACCEPT      # Allow all (incoming/outgoing) traffic not explicitly denied.
+            DROP        # Deny all INCOMING traffic not explicitly allowed; source is not notified.
+            REJECT      # Deny all INCOMING traffic not explicitly allowed; source is notified.
 
             sudo firewall-cmd --list-all 
-                #...
-                # target: default # This policy (default) is implicit (not listed); 
-                # its target is CONTINUE *unless* modified by related processes, 
-                # e.g., NetworkManager, nftables, iptables (depricated).
 
         # List ALL settings of a zone
             z=k8s
@@ -130,6 +137,9 @@ exit
                 do='add' # add|remove
                 firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$vip'" accept'
 
+                # Deny (DROP) outgoing traffic on port 22
+                firewall-cmd $at --$do-rich-rule='rule family="ipv4" destination port="22" drop' 
+
                 ## Allow service (ssh) traffic only if source is of the declared CIDR
                 firewall-cmd $at --$do-rich-rule='rule family="ipv4" service name="ssh" reject'
                 firewall-cmd $at --$do-rich-rule='rule family="ipv4" source address="'$cidr'" service name="ssh" accept'
@@ -192,44 +202,85 @@ exit
             #    <port protocol="tcp" port="80"/>
             #  </service>
 
-    # NetworkManager CLI 
-    nmcli # firewalld works with or conflicts with NetworkManager
+    NetworkManager # Network management deameon @ RHEL 
+        # NetworkManager dynamically updates firewall rules, network routes, and other interface parameters.
+        # Works with, OR INTERFEREs with, firewalld : See "UNMANAGED DEVICEs" configuration (below).
+        man NetworkManager 
+        # The NetworkManager daemon attempts to make networking configuration and operation as painless and automatic as possible by managing the primary network connection and other network interfaces, like Ethernet, Wi-Fi, and Mobile Broadband devices. NetworkManager will connect any network device when a connection for that device becomes available, unless that behavior is disabled. Information about networking is exported via a D-Bus interface to any interested application, providing a rich API with which to inspect and control network settings and operation.
+        NetworkManager --print-config 
+        man NetworkManager.conf 
+        # UNMANAGED DEVICEs : Configuring NetworkManager to IGNORE some devices : manage them by nftables & firewall-cmd
+            # By default, NetworkManager manages all devices except the loopback (lo) device; 
+            # However, device(s) may be configured as "unmanaged",
+            # ALLOWING FOR more PRECISE CONTROL through nftables scripts, and WITHOUT INTERFERENCE.
+            # https://shorturl.at/Lk5zC ELSE https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/configuring-networkmanager-to-ignore-certain-devices_configuring-and-managing-networking#permanently-configuring-a-device-as-unmanaged-in-networkmanager_configuring-networkmanager-to-ignore-certain-devices
+            vi /etc/NetworkManager/conf.d/99-unmanaged-devices.conf
+                # To configure a specific interface as unmanaged, add:
+                    [keyfile]
+                    unmanaged-devices=interface-name:enp1s0 
+                    # @ multiple devices, use semicolon delimiter (";"):
+                    [keyfile]
+                    unmanaged-devices=interface-name:enp1s0;interface-name:enp7s0 
+                # To configure a device with a specific MAC address as unmanaged, add:
+                    [keyfile]
+                    unmanaged-devices=mac:52:54:00:74:79:56 
+                # To configure all devices of a specific type as unmanaged, add:
+                    [keyfile]
+                    unmanaged-devices=type:ethernet 
+            # Reload the NetworkManager service:
+            systemctl reload NetworkManager 
+            # Verify STATE is "unmanaged"; nominally is "connected". 
+            nmcli device status 
+
+    nmcli # NetworkManager CLI 
+        # firewalld works with, or conflicts with, NetworkManager
+        # See "REF.RHEL.RHCE.sh" 
         # Writes to NetworkManager service
         systemctl status NetworkManager
         # CLI : nmcli, nm-tool
         # GUI : right-click on network icon for menu ...
-        # See "REF.RHEL.RHCE.sh" 
 
-        nmcli dev status         # List devices (interfaces) + info
-        nmcli dev show $dev      # Network + Interface info
-        nmcli con show $dev  # Network + Interface info
+        nmcli dev status    # List devices (interfaces) + info
+        nmcli dev show $dev # Network/interface info
+        nmcli con show $dev # Network/interface info
 
-        # Get zone to which interface AKA device AKA connection is bound:
-        firewall-cmd --get-zone-of-interface=$dev
-        nmcli con show $dev |grep connection.zone
-
-        # Change firewalld zone to which interface (device) is bound
+        # CHANGE INTERFACE-ZONE BINDING : change firewalld zone (z) to which interface (dev) is bound
             firewall-cmd --zone=$z --change-interface=$dev --permanent
             firewall-cmd --reload
-            #... if "Warning ... controlled by NetworkManager", then ...
-            nmcli con modify "$dev" connection.zone $z
+            # DECONFLICT NetworkManager INTERFERENCE with firewalld:
+                # If "Warning ... controlled by NetworkManager",
+                # then synchronize the two configs (firewalld v. NetworkManager):
+                nmcli con modify "$dev" connection.zone $z 
+            # Verify/Get zone to which interface (AKA device AKA connection) is bound:
+            firewall-cmd --get-zone-of-interface=$dev # config @ firewalld
+            nmcli con show $dev |grep connection.zone # config @ NetworkManager
+            #... WANT match (firewalld v. NetworkManager). 
 
-        nmcli -f NAME,DEVICE,TYPE,UUID con show # =>
-            NAME    DEVICE  TYPE            UUID
-            LAN     enp1s0  802-3-ethernet  b9033960-b5c6-3f...
+        nmcli -f NAME,DEVICE,TYPE,UUID con show 
+            # NAME    DEVICE  TYPE            UUID
+            # LAN     enp1s0  802-3-ethernet  b9033960-b5c6-3f...
 
         nmcli dev wifi            # Show available WiFi networks; channel/strength/...
         nmcli -f ALL dev wifi     # Show available WiFi per SSID/BSSID/freq/...
         nmcli -m multiline -f ALL dev wifi  # @ multi-line view
         nmcli dev wifi rescan     # rescan 
 
-        nmcli con show                  # show connections; NAME UUID TYPE DEVICE 
-        # Toggle device : preferable to systemctl restart NetworkManager
-        nmcli con down $dev             # disable connection
-        nmcli con up   $dev             # enable connection
-        nmcli general # =>
-            STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN
-            connected  full          enabled  enabled  enabled  enabled
+        nmcli con show # show connections; NAME UUID TYPE DEVICE 
+        # Toggle device : preferable to restart: `systemctl restart NetworkManager`
+            nmcli con down $dev             # disable connection
+            nmcli con up   $dev             # enable connection
+            nmcli general  
+                # STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN
+                # connected  full          enabled  enabled  enabled  enabled
+
+        # Change hostname 
+            nmcli general hostname a0.local
+            reboot
+            # OR
+            hostnamectl set-hostname a0.local
+            reboot 
+            # Temporarily
+            hostnamectl set-hostname a0.local --transient
 
         # E.g., set permanent IP
         nmcli con mod "Ifupdown"
@@ -239,34 +290,148 @@ exit
             ipv4.dns-search "DOMAIN_NAME"
             ipv4.method "manual"
 
-        # RedHat 6 
+        # RHEL 6 
         service network status|stop|start|restart
 
-        # ... changes stored @ ...
-
     nftables # Successor to iptables, ip6tables, arptables, and ebtables
-    nft # CLI of nftables : Handles IPv4, IPv6, ARP, and Ethernet bridging .
-        nft list ruleset 
-    iptables-nft # Use iptables syntax to set rules on nftables
+        systemctl enable --now nftables.service
+        systemctl status nftables.service
+        # nftables CONFIGURATION files:
+            cat /usr/lib/systemd/system/nftables.service
+                # [Unit]
+                # Description=Netfilter Tables
+                # ...
+                # [Service]
+                # ...
+                # ExecStart=/sbin/nft -f /etc/sysconfig/nftables.conf
+                # ExecReload=/sbin/nft 'flush ruleset; include "/etc/sysconfig/nftables.conf";'
+                # ExecStop=/sbin/nft flush ruleset
+                # ...
+            cat /etc/sysconfig/nftables.conf
+                # ...
+                # #include "/etc/nftables/main.nft"
+                # ...
+            cat /etc/nftables/main.nft
+                # # Load this by calling 'nft -f /etc/nftables/main.nft'.
+                # ...
+                # # drop any existing nftables ruleset
+                # flush ruleset
+                # # a common table for both IPv4 and IPv6
+                # table inet nftables_svc {
+                #         # protocols to allow
+                #         set allowed_protocols {
+                #                 type inet_proto
+                #                 elements = { icmp, icmpv6 }
+                #         }
+                #         # interfaces to accept any traffic on
+                #         set allowed_interfaces {
+                #                 ...
+                #         }
+                #         # services to allow
+                #         set allowed_tcp_dports {
+                # ...
+                # }
+                # ...
+                # #include "/etc/nftables/router.nft"
+                # ...
 
-        # FLUSH ALL RULES : DISABLE All Firewall Rules 
-            # Simply stopping firewalld.service does NOT stop underlying rules from applying.
-            # If you need to fully "turn off" the Linux firewall, 
-            # flushing all existing rules is the cleanest method. 
-            # This will remove all active rules and allow all traffic through 
-            # until the rules are re-applied:
-            sudo systemctl disable --now firewalld.service
-            sudo nft flush ruleset 
-            # Then, to reapply all rules, 
-            sudo systemctl enable --now firewalld.service
+        iptables-nft # To set nftables rules using iptables syntax.
+        nft # nftables CLI of : Handles IPv4, IPv6, ARP, and Ethernet bridging.
+            nft list ruleset 
+            nft list tables
+            # Backup (save) the current ruleset to a file:
+            nft list ruleset > /etc/nftables/saved.conf
+            # Restore a saved ruleset:
+            nft -f /etc/nftables/saved.conf
 
+        # FLUSH all rules (ruleset) to "turn off" the Linux firewall; to actually remove all traffic restrictions.
+            # Merely stopping/disabling the firewalld.service does NOT stop underlying (nftables) rules from applying.
+            # That fact holds true even if NetworkManager is configured to not manage the relevant interface(s).
+            # Rather, the entire ruleset of nftables must be flushed.
+            # Doing so will remove all active rules, thereby allowing all traffic (until such rules are re-applied).
+            # FLUSH all Linux-firewall rules:
+            systemctl disable --now firewalld.service
+            nft flush ruleset 
+            # REAPPLY all Linux-firewall rules:
+            systemctl enable --now firewalld.service
+
+        # Create a table of the inet "address family" (used for both IPv4 and IPv6):
+        table=atable
+        chain=achain
+        # ADDRESS FAMILIES : Type of packets processed : A table and its rules/chains processes only one type.
+            ip      # IPv4 traffic packets
+            ip6     # IPv6 traffic packets
+            inet    # Internet (IPv4/IPv6) traffic packets
+            arp     # IPv4 ARP packets
+            bridge  # Packets traversing a bridge device
+            netdev  # Ingress and Egress traffic packets 
+        nft add table inet $table 
+        # Add a chain to a table
+            # Create a new chain in table $table, e.g., to filter traffic:
+            nft add chain inet $table $chain { type filter hook input priority 0 \; }
+                # - type filter : This chain will FILTER traffic.
+                # - hook input  : Specifies that this chain applies to INCOMING traffic.
+                # - priority 0  : Determines the ORDER in which this rule will be applied.
+        # List chains in a table
+            # View all chains in a specific table:
+            nft list chain inet $table $chain 
+        # Add a rule to accept traffic:
+            # Allow incoming traffic on port 22 (SSH) in the $chain:
+            nft add rule inet $table $chain tcp dport 22 accept 
+        # Add a rule to drop traffic:
+            # Drop traffic on port 80 (HTTP):
+            nft add rule inet $table $chain tcp dport 80 drop 
+        # Add a rule to log traffic:
+            # Log incoming traffic on port 443 (HTTPS):
+            nft add rule inet $table $chain tcp dport 443 log prefix "HTTPS request: " accept 
+        # Working with Sets (Efficient Management of Multiple IPs or Ports):
+            # Create a set of IP addresses:
+                # Create a set of allowed IP addresses:
+                nft add set inet $table allowed_ips { type ipv4_addr \; }
+            # Add IPs to a set:
+                # Add specific IP addresses to the allowed_ips set:
+                nft add element inet $table allowed_ips { 192.168.1.1, 10.0.0.5 }
+            # Use the set in a rule:
+                # Allow traffic from any IP in the allowed_ips set:
+                nft add rule inet $table $chain ip saddr @allowed_ips accept
+        # Handling Counters and Rate Limiting:
+            # Add a rule with a counter:
+                # Track the number of packets and bytes for traffic on port 80:
+                nft add rule inet $table $chain tcp dport 80 counter accept
+            # Rate limiting:
+                # Limit incoming traffic to 10 connections per second for SSH (port 22):
+                nft add rule inet $table $chain tcp dport 22 limit rate 10/second accept
+        # Deleting : Tables, Chains, and Rules:
+            # Delete a rule:
+                # Remove a specific rule (e.g., drop rule for port 80):
+                nft delete rule inet $table $chain tcp dport 80 drop
+            # Delete a chain:
+                # Remove the chain (must delete all rules in the chain first):
+                nft delete chain inet $table $chain
+            # Delete a table:
+                # Remove an entire table (which also removes all chains and rules inside it):
+                nft delete table inet $table
+        # Flushing and Saving Configuration:
+            # Flush a chain:
+                # Remove all rules from a chain but keep the chain:
+                nft flush chain inet $table $chain
+            # Flush a table:
+                # Remove all rules and chains from a table but keep the table:
+                nft flush table inet $table
+            # Backup/Restore configuration:
+                # To backup (save) the current ruleset to a file:
+                nft list ruleset > /etc/nftables/saved.conf
+                # To restore a saved ruleset:
+                nft -f /etc/nftables/saved.conf
+            # Flush EVERYTHING : Debug or entirely new configuration
+                nft flush ruleset 
 
     iptables  # IP Tables; tool for PACKET FILTERING and NAT [IPv4/IPv6] : man iptables(8)
-        #  Powerful, low-level FIREWALL implemented as Netfilter modules 
-        # - DERICATED : Use nft or iptables-nft
-        # - listing contents of the PACKET FILTER RULESET
-        # - adding/removing/modifying rules in PACKET FILTER RULESET
-        # - listing/zeroing per-rule counters of PACKET FILTER RULESET
+        # Powerful, low-level FIREWALL implemented as Netfilter modules 
+        # >>>  DEPRICATED  <<< : Use nftables (nft or iptables-nft) instead.
+        # - list contents of the PACKET FILTER RULESET
+        # - add/remove/modify rules in PACKET FILTER RULESET
+        # - list/reset per-rule counters of PACKET FILTER RULESET
         # http://www.netfilter.org/ 
         # https://wiki.centos.org/HowTos/Network/IPTables
         # https://www.digitalocean.com/community/tutorials/how-to-list-and-delete-iptables-firewall-rules 
@@ -306,3 +471,4 @@ exit
         # deny ... 
             ufw deny 53/udp  # deny UDP packets on port 53 
             ufw deny ssh     # deny all SSH connections
+

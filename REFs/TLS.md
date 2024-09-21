@@ -3,9 +3,11 @@
 
 ## Overview
 
-TLS/SSL is a trust-based PKI (Public Key Infrastructure) scheme of HTTPS protocol, extending HTTP to secure the internet. The server sends a single cryptographically-generated certificate if signed by a root CA, else a chain of them. The client application validates each server certificate against the Certificate Authority (CA) that supposedly signed it.
+TLS/SSL, "Transport Layer Security" FKA "Secure Socket Layer", is a trust-based PKI (Public Key Infrastructure) scheme of HTTPS protocol, extending HTTP to secure the internet. The server sends a single cryptographically-generated certificate if signed by a root CA, else a chain of them. The client application validates each server certificate against the Certificate Authority (CA) that supposedly signed it.
 
-Nominally, the client application has access to a **trust store** containing a list of trustworthy-CA certificates which it uses to verify the (supposedly) CA-signed server certificate or chain of certificates. CAs are hierarchical, with intermediate-CA certificates forming a chain of trust from end-entity (server) certificate to the root-CA certificate. A certificate's `Issuer` is the CA that signed that `Subject` certificate. 
+Nominally, the client application has access to a **trust store** containing a list of trustworthy-CA certificates, which it uses to verify the (supposedly) CA-signed server certificate or chain of certificates. CAs are hierarchical, with intermediate-CA certificates forming a chain of trust from end-entity (server) certificate to the [root (CA) certificate](https://en.wikipedia.org/wiki/Root_certificate). 
+
+>A certificate's `Issuer` is the CA that signed that `Subject` certificate, so the root (CA) is always self-signed. However, the term "_self-signed_" more often references an end-entity certificate created sans CA. These are somewhat useful, but only for test/dev purposes. Care must be taken even within that scope because browsers and other clients respond entirely differently when the end-entity (server) certificate sent during the TLS handshake does not validate against any client-trusted CA.
 
 **POSIX**-type operating systems have a directory of such certificate files. **Linux** stores them in the **`/etc/ssl/certs`** directory. The **`ca-certificates.crt`** file contains a concatenated list of such certificates. Other CA root-certificate files (`*.crt`) may exist in that directory as standalones, e.g., `root-ca-site.local.crt` .
 
@@ -13,7 +15,7 @@ Nominally, the client application has access to a **trust store** containing a l
 
 ### TLS Handshake 
 
-[HTTPS is an extention of HTTP](https://en.wikipedia.org/wiki/HTTPS). An HTTPS connection starts with a TLS client/server handshake whereof TLS parameters (cipher suite and such) are set (negotiated if allowed). Otherwise, the TLS-handshake fails and the connection is terminated. 
+[HTTPS is an extention of HTTP](https://en.wikipedia.org/wiki/HTTPS). An HTTPS connection starts with a TLS client/server handshake whereof the certificate is sent/validated and the TLS parameters (cipher suite and such) are set (negotiated if allowed). Otherwise, the TLS-handshake fails and the connection is terminated. 
 
 >**On TLS-handshake failure**, the server is likely to send a "handshake failure" alert. Such may occur if the certificate's CA cannot be validated by the client, or ***if client and server have no mutually supported TLS-ciphers suite***. The TLS handshake failure is not an HTTP-level response; it's part of the TLS protocol. The HTTP layer comes into play only after a secure TLS connection has been established. If the TLS handshake fails, the HTTP layer doesn't have an opportunity to send an HTTP response code because the connection hasn't been established.
 
