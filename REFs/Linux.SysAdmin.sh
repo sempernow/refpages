@@ -9,6 +9,9 @@ exit 0
 # Set default editor
     sudo update-alternatives --config editor
 
+# BOOT CONFIGURATION FILES
+    /etc/sysconfig/*
+
 # NETWORK 
 
     # Host
@@ -327,13 +330,16 @@ exit 0
     # Get MIN MAX values of UID:GID for REGULAR and SYSTEM accounts (users, groups)
         cat /etc/login.defs
 
-    # user, pass : ADD user, SET PW
-        adduser $user            # create new user
-        passwd $user             # (re)set user's password  
-
+    # user, pass
+        # Add user, and set password interactively
+            adduser $user            # create new user
+            passwd $user             # (re)set user's password  
+            # (Re)Set password non-interactively
+                echo  "$user:$pass" |sudo chpasswd
+            
         # Get username from uid
-            uname_of_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
-            uname_of_uid 1000
+            uname_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
+            uname_uid $uid
 
         # Add a secure SSH-users account (user:group) at target machines.
             # Add user:group foo:foo having no password, and so disabling password-based shell login.
@@ -341,13 +347,15 @@ exit 0
             # allowing only (ssh) key-based authtentication.
             # Each user would have to add their public key to this user's ~/.ssh/authorized_keys file,
             # and do so by some out-of-band (not ssh-copy-id) process requiring elevated privileges.
-            useradd -m -s /bin/bash foo
+            useradd -m -s /bin/bash $u
+            # Idempotent
+            id -un $u || sudo useradd -m -s /bin/bash $u
 
-        # Add user:group (foo:foo) of declared IDs
+        # Add user:group ($u:$u) of declared IDs
             # having UID:GID 1001:1001, 
             # having NO HOME DIRECTORY
-            groupadd --gid 1001 foo
-            adduser --uid 1001 --gid 1001 --gecos "" --disabled-password --no-create-home foo
+            groupadd --gid 1001 $u
+            adduser --uid 1001 --gid 1001 --gecos "" --disabled-password --no-create-home $u
 
         # Add a SYSTEM (-r) user:group $u:$u having home directory and no login shell
             groupadd -r $u
@@ -366,33 +374,39 @@ exit 0
 
         # Remove a user from a grop
             gpasswd -d $user $group
+        
+        # Lock user account
+            passwd -l $u
+        # Unlock user account
+            passwd -u $u 
 
         # List groups to which user has membership
         groups foo
 
-        # LIST : group / members 
+        # List : group / members 
         cat /etc/group 
         getent group NAME
 
-        # Change owner (UID:GID) of /mnt1, recursively
-        chown -R 1000:777 /path
+        # Change owner (UID:GID) recursively
+        chown -R $uid:$gid /top/path
         # Change owner to current user:group
-        chown -R $(id -u):$(id -g) /path
+        chown -R $(id -u):$(id -g) /top/path
 
-        # sudoers GROUP : ADD USER | sudoers(5) https://linux.die.net/man/5/sudoers   
+        # Sudoers GROUP : Add USER | sudoers(5) https://linux.die.net/man/5/sudoers   
         usermod -aG wheel $user  # RHEL/CentOS/Fedora (wheel group)
         usermod -aG sudo $user   # Ubuntu/Debian      (sudo group)
 
-        # CHANGE NAME : user
-            usermod -l <newname> -d /home/<newname> -m <oldname>
-        # CHANGE NAME : group
-            groupmod -n <newgroup> <oldgroup>
-        # CHANGE PASSWORD
+        # Change NAME : user
+            usermod -l $new -d /home/$new -m $old
+        # Change NAME : group
+            groupmod -n $new $old
+        # Change PASSWORD
             passwd $user 
             # Batch password change
-            chpasswd  # batch process cmd; must be root user 
-            # set the root acct pw to the ssh pw 
-            echo  "root:$SSH_USERPASS" | chpasswd
+            chpasswd  # non-interactive/batch; must be root user 
+            # E.g.,
+            echo  "$user:$pass" |sudo chpasswd
+    
         # Delete user's PASSWORD; may/not prevent login with no password
         sudo passwd -d $user
         # Lock user account from password-authenticated login
@@ -939,3 +953,75 @@ exit 0
              mtree -U -f /etc/mtree/BSD.include.dist
              mtree -U -f /etc/mtree/BSD.sendmail.dist
              mtree -U -f /etc/mtree/BSD.usr.dist
+
+# SECURITY PROFILE
+
+    auditd # Linux Audit Daemon
+        auditctl -l # List the active auditd rules
+
+    oscap # OpenSCAP CLI : OpenSCAP : SCAP Security Guide (SSG)
+        # SCAP is "Security Content Automation Protocol" 
+        # Install
+        dnf install scap-security-guide openscap-utils -y
+        # Evaluate OS against a profile:
+        ssg=/usr/share/xml/scap/ssg/content/ssg-rhel8-xccdf.xml # RHEL 8 uses separate *-xccdf.xml files (checklists) and other files for different types of security content (like *.xml for OVAL definitions).
+        ssg=/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml    # RHEL 9 consolidates these into *-ds.xml (Data Stream) files, which include XCCDF, OVAL, and other necessary components in a single package. This makes it easier to manage and apply security content.
+        id=cis
+        oscap xccdf eval --profile $id $ssg
+        # Remediate : Apply a profile's remediation script 
+        oscap xccdf eval --profile $id --remediate $ssg
+        
+        # Check compliance state by running scan against specific profile by "Id" :
+        oscap xccdf eval --profile $id $ssg
+        # List all available security profiles 
+        oscap info $ssg #... @ RHEL 9:
+            # Document type: Source Data Stream
+            # Imported: 2024-08-15T09:54:02
+
+            # Stream: scap_org.open-scap_datastream_from_xccdf_ssg-rhel9-xccdf.xml
+            # Generated: (null)
+            # Version: 1.3
+            # Checklists:
+            #         Ref-Id: scap_org.open-scap_cref_ssg-rhel9-xccdf.xml
+            #                 Status: draft
+            #                 Generated: 2024-08-15
+            #                 Resolved: true
+            #                 Profiles:
+            #                         Title: ANSSI-BP-028 (enhanced)
+            #                                 Id: xccdf_org.ssgproject.content_profile_anssi_bp28_enhanced
+            #                         ...
+            #                         Title: CIS Red Hat Enterprise Linux 9 Benchmark for Level 1 - Server
+            #                                 Id: xccdf_org.ssgproject.content_profile_cis_server_l1
+            #                         ...
+            #                         Title: DISA STIG for Red Hat Enterprise Linux 9
+            #                                 Id: xccdf_org.ssgproject.content_profile_stig
+            #                         Title: DISA STIG with GUI for Red Hat Enterprise Linux 9
+            #                                 Id: xccdf_org.ssgproject.content_profile_stig_gui
+            #                 Referenced check files:
+            #                         ssg-rhel9-oval.xml
+            #                                 system: http://oval.mitre.org/XMLSchema/oval-definitions-5
+            #                         ssg-rhel9-ocil.xml
+            #                                 system: http://scap.nist.gov/schema/ocil/2
+
+        # The most commonly used profiles:
+        # CIS (Center for Internet Security) Benchmarks:
+            # Overview: The CIS benchmarks are among the most widely recognized best practices for securing systems. They offer detailed guidance on securing operating systems, applications, and services.
+            # Purpose: Designed to reduce vulnerabilities and harden servers against attacks. They include recommendations for file permissions, network security, user management, patching, and more.
+            # Applicable Industries: General use across industries, but especially common in financial services, healthcare, and public sector.
+        # DISA STIG (Defense Information Systems Agency | Security Technical Implementation Guide):
+            # Overview: STIG is the official guidance from DoD for securing IT systems.
+            # Purpose: Provides highly detailed and prescriptive settings for securing systems, with an emphasis on reducing attack surfaces and meeting compliance requirements for government systems.
+            # Applicable Industries: Primarily used in government and defense, but also adopted by industries that require strong security postures.
+        # PCI-DSS (Payment Card Industry Data Security Standard):
+            # Overview: PCI-DSS is a set of security standards designed to ensure that all companies that accept, process, store, or transmit CREDIT CARD INFORMATION maintain a secure environment.
+            # Purpose: Focused on securing systems and applications that handle payment card data, including encryption, access control, logging, and vulnerability management.
+            # Applicable Industries: Retail, e-commerce, finance, or any organization handling payment data.
+        # NIST 800-53 and NIST 800-171 (National Institute of Standards and Technology):
+            # Overview: The NIST standards are U.S. federal guidelines for securing information systems and protecting the confidentiality, integrity, and availability of federal data.
+            # Purpose: Used to ensure systems meet federal security and privacy requirements. Provides controls for access management, logging, monitoring, and configuration management.
+            # Applicable Industries: Federal agencies, but increasingly adopted by regulated industries (e.g., healthcare, energy).
+        # ISO 27001:
+            # Overview: ISO 27001 is an international standard for managing information security. It includes requirements for establishing, implementing, maintaining, and improving an information security management system (ISMS).
+            # Purpose: Focused on managing risk to information assets by implementing security controls. It’s a widely recognized standard for compliance across industries.
+            # Applicable Industries: General purpose, adopted across industries like finance, healthcare, IT services, and manufacturing.
+

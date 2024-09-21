@@ -15,66 +15,71 @@ exit 0
         sestatus        # Status and info of SELinux 
 
     # Set mode temporarily : Toggle to troubleshoot : Does not survive reboot
-        sudo setenforce 0|1 # permissive|enforcing
+        setenforce 0|1 # permissive|enforcing
 
     # Set mode persistently : Survives and takes effect on reboot
-    sudo vi /etc/selinux/config 
+    vi /etc/selinux/config 
         # SELINUX=enforcing
         # SELINUXTYPE=targeted
 
-    # @ Audit daemon (auditd) : SELinux audit logs:
+    auditd # Linux Audit Daemon : SELinux audit logs
+        systemctl enable --now auditd.service
+
+    auditctl # CLI for auditd.service
+        # List the active auditd rules
+        auditctl -l 
         # AVC: ... denied 
-        sudo cat /var/log/audit/audit.log |grep avc
+        cat /var/log/audit/audit.log |grep avc
         # View denials after set/reboot to Enforcing 
-        sudo ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts today
+        ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts today
         # Otherwise by process:
-        sudo ausearch -m avc -c $process_name  
+        ausearch -m avc -c $process_name  
+
     # If audit daemon not running, then use dmesg:
-    dmesg | grep -i -e type=1300 -e type=1400
+        dmesg |grep -i -e type=1300 -e type=1400
 
     # If setroubleshoot-server pkg is installed:
-    grep "SELinux is preventing" /var/log/messages
-
-    sealert -l "*"
+        grep "SELinux is preventing" /var/log/messages
+        sealert -l "*"
     
     # Fix : See `man fixfiles`
-        sudo fixfiles -F onboot # Force reset of context for customizable files
-        sudo fixfiles -R $pkg check  # Check labels on $pkg
+        fixfiles -F onboot # Force reset of context for customizable files
+        fixfiles -R $pkg check  # Check labels on $pkg
 
 
     # Adjust policies : Allow Apache to use port 443
-    semanage port -a -t http_port_t -p tcp 443 
+        semanage port -a -t http_port_t -p tcp 443 
 
     # Recursively relabel a directory
-    restorecon -vR  FOLDER            # Update SELinux policies at affected folder
+        restorecon -vR  FOLDER            # Update SELinux policies at affected folder
 
-    systemctl restart SERVICE         # now see if it works sans SELinux 
-    systemctl status SERVICE          # shows LOG of ACTIVITY for that service
+        systemctl restart SERVICE         # now see if it works sans SELinux 
+        systemctl status SERVICE          # shows LOG of ACTIVITY for that service
 
-    ls -ZA                            # show SECURITY CONTEXT; LABEL per USER:ROLE:TYPE 
+        ls -ZA                            # show SECURITY CONTEXT; LABEL per USER:ROLE:TYPE 
 
-    # RESTORE a user's home dir 
-    cd /
-    sudo restorecon -RFv /home/$user
-    sudo restorecon -RFv /home/$user/*
-    sudo restorecon -RFv /home/$user/*.*
-    sudo restorecon -RFv /home/$user/.*
+    # RESTORE a user's home dir (SELinux objects)
+        cd /
+        sudo restorecon -RFv /home/$user
+        sudo restorecon -RFv /home/$user/*
+        sudo restorecon -RFv /home/$user/*.*
+        sudo restorecon -RFv /home/$user/.*
 
     # Examine http
-    semanage port -l |grep http
-    # Change the SELinux type of port 3131 to match port 80: 
-    semanage port -a -t http_port_t -p tcp 3131
+        semanage port -l |grep http
+        # Change the SELinux type of port 3131 to match port 80: 
+        semanage port -a -t http_port_t -p tcp 3131
 
     # Change SELinux type of /new content to that of /old
-    semanage fcontext -a -e /old /new
+        semanage fcontext -a -e /old /new
 
     # Identify SELinux booleans relevant for NFS, CIFS, and Apache:
-    semanage boolean -l |grep 'nfs\|cifs' |grep httpd
+        semanage boolean -l |grep 'nfs\|cifs' |grep httpd
     # Enable the identified booleans: 
-    setsebool httpd_use_nfs on
-    setsebool httpd_use_cifs on
+        setsebool httpd_use_nfs on
+        setsebool httpd_use_cifs on
     # Verify booleans are on
-    getsebool -a |grep 'nfs\|cifs' |grep httpd
+        getsebool -a |grep 'nfs\|cifs' |grep httpd
 
 
 # Enforces MAC [Mandatory Access Control] vs. Linux's DAC [Discretionary Access Control]
@@ -242,3 +247,4 @@ exit 0
         grep AVC /var/log/audit/audit.log
         
         less /var/log/messages
+
