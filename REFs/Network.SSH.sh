@@ -271,9 +271,16 @@ man ssh_config
         # TCP Forwarding  https://blog.fatedier.com/2015/07/22/ssh-port-forwarding/
         ssh -oPort=22 -CNfg -R 40000:localhost:22 root@11.11.11.11
 
-        # RUN SCRIPT per redirect 
+        # RUN LOCAL SCRIPT remotely
+        # - Using pipe
+        cat /path/to/script |ssh -T user@host /bin/bash -s - $local_arg \$remote_arg 
+        # - Using redirect : May err if args "$@", reporting "ambiguous redirect"
         ssh user@host /bin/bash -s < script $local_arg \$remote_arg 
-        # RUN SCRIPT in background process
+        # - As sudoer (lead space to prevent entry in history)
+        HISTCONTROL="ignoreboth"
+         echo 'PASSWORD' |ssh user@host sudo /bin/bash -s - < script $local_arg \$remote_arg 
+
+        # - In a background process
         ssh -n -f user@host /bin/bash -c 'nohup /where/what >/dev/null 2>&1 &'
 
     # CONFIG CLIENT MACHINE

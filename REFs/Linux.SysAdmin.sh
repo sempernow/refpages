@@ -401,18 +401,25 @@ exit 0
         # Change NAME : group
             groupmod -n $new $old
         # Change PASSWORD
+            # Set interactively
             passwd $user 
+            # Set non-interactively : 
+             echo "$pw" |sudo passwd $u --stdin
+            # Set to unknowable password :
+            openssl rand -base64 33 |sudo passwd $u --stdin
             # Batch password change
-            chpasswd  # non-interactive/batch; must be root user 
-            # E.g.,
-            echo  "$user:$pass" |sudo chpasswd
-    
+                chpasswd  # non-interactive/batch; must be root user 
+                # E.g.,
+                echo  "$user:$pass" |sudo chpasswd
+                # @ multiple users
+                echo -e "$user1:$pass1\n$user2:$pass2" |sudo chpasswd
+
         # Delete user's PASSWORD; may/not prevent login with no password
         sudo passwd -d $user
-        # Lock user account from password-authenticated login
+        # LOCK user ACCOUNT to prevent login by password (SSH by key okay).
         sudo passwd -l $user
         # CHANGE : HOME dir : default is /home/$USER
-            sudo vim /etc/passwd  # E.g., from `/home/uZer` to `/mnt/s/HOME`
+            sudo vim /etc/passwd  
             # sudo(8)  https://linux.die.net/man/8/sudo 
             # ... edit @ username, then reboot
                 sudo COMMAND # has very limited PATH; TERM, PATH, HOME, SHELL, LOGNAME, USER, USERNAME 
@@ -464,12 +471,12 @@ exit 0
                 ## Similar, but group declared by its GID
                 # %#2222 ALL=(ALL) GROUP_OPS_CMDS
             # Set timeout for sudo password entry
-                Defaults timestamp_timeout=-1 # Once per terminal session
-                Defaults timestamp_timeout=60 # 60 minutes 
-                # Scoped to user
-                Defaults:tom timestamp_timeout=-1
-                # Scoped to group
-                Defaults:%opstimestamp_timeout=-1
+                # Defaults timestamp_timeout=-1 # Once per terminal session
+                # Defaults timestamp_timeout=60 # 60 minutes 
+                ## Scoped to user
+                # Defaults:u1 timestamp_timeout=-1
+                ## Scoped to group
+                # Defaults:%ops timestamp_timeout=60
         # Set default editor
             sudo update-alternatives --config $editor
     
@@ -954,10 +961,41 @@ exit 0
              mtree -U -f /etc/mtree/BSD.sendmail.dist
              mtree -U -f /etc/mtree/BSD.usr.dist
 
-# SECURITY PROFILE
+# SECURITY/AUDIT 
 
-    auditd # Linux Audit Daemon
-        auditctl -l # List the active auditd rules
+    auditd # Linux Audit Daemon : CLIs : auditctl, ausearch, aureport
+        # Enable/start now 
+            systemctl enable --now auditd.service 
+        # Summary report
+            aureport # "Number of ..." : All the Things (itemized)
+            aureport --help
+                     --login
+                     --auth
+                     --failed
+                     --syscall
+                     --executable 
+        # View audit logs
+            cat /var/log/audit/audit.log
+        # List the active auditd rules
+            auditctl -l 
+        # Search for specified event
+            ausearch -k $id
+        # Create TEMPORARY audit rules (does not survive reboot)
+            # Monitor actions by specific user:
+                id=user-1001-watch
+                auditctl -a always,exit -F uid=1001 -S all -k $id
+            # Monitor a file : `-p rwxa` : read (r), write (w), execute (x), and attr changes 
+                id=file-etc.shadow-watch
+                auditctl -w /etc/shadow -p rwxa -k $id
+            # Monitor "execve" system calls 
+                auditctl -a exit,always -F arch=b64 -S execve -k syscall-execve-watch
+            # Monitor logins by specific user
+                auditctl -a always,exit -F uid=1000 -S execve -k user-1000-login-watch
+        # Create PERSISTENT audit rules (survives reboot)
+            vi /etc/audit/rules.d/audit.rules
+                -w /etc/shadow -p rwxa -k file-etc.shadow-watch
+
+# SECURITY PROFILE
 
     oscap # OpenSCAP CLI : OpenSCAP : SCAP Security Guide (SSG)
         # SCAP is "Security Content Automation Protocol" 
