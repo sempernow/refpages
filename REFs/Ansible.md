@@ -119,29 +119,34 @@ elevated privileges sans password entry.
         ```
 
 
-@ `~/.ansible.cfg`
+@ `~/.ansible.cfg` | [`ansible.cfg`](ansible.cfg)
 
 ```ini
 [defaults]
 action_warnings=False
 inventory=inventory.cfg
 deprecation_warnings=False
-remote_user=gitops
+remote_user  = u2
+;; become : This setting (True) works only for playbooks. 
+;; Whereas ad-hoc commands (-a COMMAND) REQUIRE flag --become regardless.
+become = True
+become_user = root
 [privilege_escalation]
-become_user=root
-[persistent_connection]
-[connection]
-[colors]
-[selinux]
-[diff]
-[galaxy]
-[inventory]
-[netconf_connection]
-ssh_config=${HOME}/.ssh/config
-[paramiko_connection]
-[jinja2]
-[tags]
-
+become_method = sudo
+become_ask_pass = True
+[ssh_connection]
+ssh_config = ${HOME}/.ssh/config
+;; TTY allocation may cause failure by infinite silent hang 
+;; depending on sudoers files configuration. 
+;; Sudoers config may require : "Defaults !requiretty"
+;ssh_args = -tt
+usetty = True
+ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+pipelining = True
+scp_if_ssh = smart
+;; Force scp
+;ssh_transfer_method = scp
+timeout = 10
 ```
 
 ## Use 
@@ -167,7 +172,7 @@ ansible $target -m ping
 # Ad-hoc : two commands
 ansible $target -a hostname -a id
 # Ad-hoc : Test is Ansible's ssh user (defaults to current user) has sudo sans password
-ansible $target -a 'sudo ls -hl /etc/sudoers.d/'
+ansible $target -a 'ls -hl /etc/sudoers.d/' --become
 # shell module
 ansible $target -m ansible.builtin.shell -a hostname
 # script module
@@ -175,6 +180,40 @@ ansible $target -m ansible.builtin.script -a foo.sh
 
 # playbook : script w/ args injected
 ansible-playbook foo.yaml -e a=foo -e b=bar 
+
+```
+
+### Privilege Escalation : `sudo` 
+
+```bash
+# Ad-hoc sudo commands REQUIRE flag "--become" REGARDLESS of its mirror setting at .cfg 
+ansible target -a 'cat /etc/sudoers.d/gitops' --become #=> "BECOME password: "
+```
+
+### `ansible-vault`
+
+```bash
+# Create vault and add become_password
+vault=become_pass.yaml
+ansible-vault create $vault
+    # Prompts for vault password,
+    # then opens in editor (vi). Add:
+    # ---
+    # ansible_become_password:·"PASSWORD"
+
+# View content
+ansible-vault view $vault
+# Edit content
+ansible-vault edit $vault --ask-vault-pass
+
+# Use : 
+# 1. Mod ansible.cfg
+# - vault_password_file = become_pass.yaml
+# - become_ask_pass = False
+# 2. Playbook
+ansible-playbook playbook.yaml --extra-vars "@$vault" --ask-vault-pass
+# Or Ad-hoc
+ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars "@$vault" --ask-vault-pass
 
 ```
 
