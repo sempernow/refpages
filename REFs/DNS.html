@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>DNS.servers</title>
+    <title>DNS</title>
     <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
@@ -20,9 +20,11 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://en.wikipedia.org/wiki/Domain_Name_System" title="Wikipedia.org">Domain Name System</a> (DNS) Servers</h1>
+        <h1><a href="https://en.wikipedia.org/wiki/Domain_Name_System" title="Wikipedia.org">Domain Name System</a> (DNS)</h1>
 
-<p>Popular solutions for subnets in RFC-1918 adress spaces</p>
+<h2>DNS Servers</h2>
+
+<p>Popular solutions for (sub)networks having <a href="https://datatracker.ietf.org/doc/html/rfc1918">RFC-1918</a> adress spaces:</p>
 
 <ol>
 <li>BIND (Berkeley Internet Name Domain)
@@ -62,6 +64,82 @@
 <p>When selecting a DNS server for an environment, consider factors like existing infrastructure, performance and scalability needs, security features, and ease of management. For example, environments heavily invested in Windows might prefer Microsoft DNS for its integration with Active Directory, while cloud-native or highly automated environments might lean towards CoreDNS or PowerDNS for their flexibility and API support.</p>
 
 <p>In VMware or other virtualized environments, the choice might also be influenced by the ease of automation and integration with virtual machine management, where solutions like PowerDNS or CoreDNS could offer advantages due to their APIs and flexibility in handling dynamic DNS updates.</p>
+
+<h2>DNS Records</h2>
+
+<h3><code>A</code> Record</h3>
+
+<p>The &quot;<code>A</code>&quot; stands for &quot;address&quot;, as in &quot;IP address&quot;.</p>
+
+<p>Primary use is <strong>to resolve a domain name to an IPv4 address</strong>.
+Resolving to an IPv6 address requires an &quot;<code>AAAA</code>&quot; record. Another use for DNS A records is for operating a Domain Name System-based Blackhole List (DNSBL). DNSBLs can help mail servers identify and block email messages from known spammer domains.</p>
+
+<p>Most websites have only one A record. The IPv4 address to which it resolves is often that of a highly-available (HA) load balancer. Some higher profile websites have several A records, with same domain name pointing to different IPv4 addresses, allowing DNS-based load balancing as well, AKA Round-robin DNS.</p>
+
+<p>Example <code>A</code> record:</p>
+
+<table>
+<thead>
+<tr>
+<th><code>example.com</code></th>
+<th>record type:</th>
+<th>value:</th>
+<th>TTL</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>@</code></td>
+<td><code>A</code></td>
+<td><code>192.0.2.1</code></td>
+<td><code>3600</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>&quot;<code>@</code>&quot; : Represents the domain <strong>root</strong> AKA <strong>apex</strong>, not just that of the current DNS record.
+Its value here indicates this record is for the root domain, <code>example.com</code>.</li>
+<li>&quot;<code>3600</code>&quot; : The <strong>TTL</strong> (time to live), listed in <strong>seconds</strong>. So, the setting there is to one hour. The TTL is the <strong>time required for a record update to take effect</strong>.  Common TTL for DNS records is between <code>300</code> (5 minutes) and <code>86400</code> (24 hours), with defaults varying by DNS providers. The shorter the time, the more responsive to changes, but the higher the load on DNS servers.</li>
+</ul>
+
+<blockquote>
+<p>Confusingly, the &quot;A record&quot; is that of the truely canonical name, whereas a CNAME record AKA &quot;canonical-name record&quot; is just an alias. All such aliases, e.g., those of all subdomains and domain aliases alike, should point to the one true canonical name. That is, to the &quot;A record&quot;.</p>
+</blockquote>
+
+<h3><code>CNAME</code> Record</h3>
+
+<p>A &quot;canonical name&quot; (CNAME) record is that of an alias domain (<code>blog.example.com</code>) that points to a root domain (<code>example.com</code>). That truely canonical root record, which resolves to an IPv4 address, is the &quot;A record&quot;.</p>
+
+<p>CNAME records <strong>must point to a domain, never to an IP address</strong>.</p>
+
+<p>Subdomains and alias domain names are typically configured with CNAME records pointing to a root domain (that has a DNS A record). <strong>Configured this way</strong>, if, as, and whenever the domain's host changes its IPv4 address, <strong>only one DNS record requires an update</strong>. That of the &quot;A record&quot; for the root domain. This single DNS-record update triggers a cascade of DNS server updates per TTL of each and every affected CNAME record.</p>
+
+<p>Example of a CNAME record:</p>
+
+<table>
+<thead>
+<tr>
+<th><code>blog.example.com</code></th>
+<th>record type:</th>
+<th>value:</th>
+<th>TTL</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>@</code></td>
+<td><code>CNAME</code></td>
+<td>is an alias of <code>example.com</code></td>
+<td><code>32400</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>This CNAME record for <code>blog.example.com</code> points to <code>example.com</code> with a TTL of 9 hours.
+From our example A record, we know this resolves to IPv4 address <code>192.0.2.1</code>.</p>
 
 <h3>&nbsp;</h3>
 

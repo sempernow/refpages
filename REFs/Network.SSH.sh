@@ -110,14 +110,14 @@ man ssh_config
         sfp ; scp2 
 
     # SSH : Scheme
-    # Authentication Token is generated and sent to server by client upon session login/connect; 
-    #   encrypted using the user's (client) private key (identity file; -i); 
-    #   if server can decrypt using user's public key, 
-    #   found @ ~/.ssh/authorized_keys/, then user is authentic[ated]. 
-    # Server validation is ASSUMED. So, ON FIRST CONNECT, 
-    # server's fingerprint (fpr) is displayed with a warning
-    # lest by `ssh -o StrictHostKeychecking=no ...`;
-    # if client accepts, then server fpr is ADDED to client's ~/.ssh/known_hosts (file). 
+        # Authentication Token is generated and sent to server by client upon session login/connect; 
+        #   encrypted using the user's (client) private key (identity file; -i); 
+        #   if server can decrypt using user's public key, 
+        #   found @ ~/.ssh/authorized_keys/, then user is authentic[ated]. 
+        # Server validation is ASSUMED. So, ON FIRST CONNECT, 
+        # server's fingerprint (fpr) is displayed with a warning
+        # lest by `ssh -o StrictHostKeychecking=no ...`;
+        # if client accepts, then server fpr is ADDED to client's ~/.ssh/known_hosts (file). 
 
     # CONFIGURATION paths
         /etc/ssh_config  # sshd; system-wide config
@@ -131,6 +131,9 @@ man ssh_config
         # I.e., @ $HOME dir, remove 'Inherited' perms, and all other SIDs,
         # and apply changes to '... all child objects ...'.
         # (Okay to include 'Administrators' SID too.)
+
+        # SELinux Contexts 
+        restorecon -Rv ~/.ssh 
 
     # KNOWN-HOSTS file : stores host fingerprints (FPRs)
         # FPR of the remote host (SSH server) is added per user input at user query on 1st connect,
@@ -169,6 +172,22 @@ man ssh_config
         # https://en.wikipedia.org/wiki/SSHFP_record
             ssh-keygen -r HOST # prints in ' ZONE FILE FORMAT' ... 
             <Name> [<TTL>] [<Class>] SSHFP <Algorithm> <Type> <HEX Fingerprint>
+
+        # DEBUG ... increasing verbosity [1-3x 'v']
+            ssh -v[vv] user@host.domain 2> ssh.log # info @ connet AND disconnect    
+            ssh -v[vv] user@host.domain -E ssh.log # info @ connet AND disconnect    
+            
+        # view authentication log msgs ...
+            /var/log/auth.log
+
+        # MONITOR ssh connections (tunnels)
+            lsof -i -n |grep ssh       # open files; internet-related (-i) 
+            netstat -tulpen |grep ssh  # connections per host:port and process 
+
+        # PREVENT QUERY on first connect (useful @ scripts)
+            ssh -o StrictHostKeyChecking=no ...
+        # CONNECT TIMEOUT
+            ssh -o ConnectTimeout=5 -o ...
 
     # CONNECT/login [local client to remote server]
 
@@ -258,10 +277,16 @@ man ssh_config
                 # Close
                 ssh -O exit $user@$host 
                     # Options
-                    -S  # ControlPath; SOCKET for connection sharing/reuse
-                        -o ControlMaster=auto # auto|yes|no 
-                            #... 'auto' FAILs @ WSL; 'yes' FAILs on 1st connect.
-                        -o ControlPersist=600
+                    # Socket sharing/reuse
+                    -S -o ControlPath ~/.ssh/sockets/%r@%h:%p # Socket path (created) 
+                                %r # gets set to remote username
+                                %h # gets set to host
+                                %p # gets set to port
+                        -o ControlMaster=auto  # auto|yes|no : 'auto' FAILs @ WSL : 'yes' FAILs on 1st connect.
+                        -o ControlPersist=600  # Max time between connections until connection closed.
+                    # Keep alive if no activity
+                    -o ServerAliveInterval 60  
+                    -o ServerAliveCountMax 3
                     -fNM
                         -f  # go to background just before command execution; implies (includes) -n ().
                         -N  # Do not execute a remote command; useful for forwarding ports.
@@ -286,7 +311,7 @@ man ssh_config
     # CONFIG CLIENT MACHINE
 
     # KNOWN HOSTS; ssh process validates server on first connect to ensure it's not a fake 
-    # on 1st connect, ssh [client-process] asks user to approve "...unknown...". 
+        # On 1st connect, ssh [client-process] asks user to approve "...unknown...". 
         # If answer 'yes', then ssh client saves
         #+ host [server] pub key FINGERPRINT to ...
         ~/etc/.ssh/known_hosts # fingerprints [approve per ssh logon] 
@@ -358,97 +383,123 @@ man ssh_config
         # unused/untested; does it override '~/.ssh/config' ???
             ~/.ssh/identity # okay if NOTHING but 'IdentityFile' entries 
                     
-        # AUTHENTICATION; KEY-BASED [passwordless] 
-            
-            # keys @ CLIENT [local machine]; public AND private keys of client (ssh user) 
-                ~/.ssh/id_rsa      # private key; "IDENTITY"; can protect with passphrase
-                ~/.ssh/id_rsa.pub  # public key    
-                # (Re)set ssh-REQUIRED PERMs
-                chmod 700 ~/.ssh
-                chmod 600 ~/.ssh/* 
-            # client RETRIEVE/SAVE PUBLIC KEY from a private key 
-                ssh-keygen -y -f ~/.ssh/${private_keyname} > ~/.ssh/${private_keyname}.pub
-            # client CREATEs key-pair; in "OpenSSH RSA format"
-                ssh-keygen  # default stores @ ~/.ssh/
-                # E.g., 
-                    ssh-keygen -t rsa -C "$(id -un)@GitHub" 
-                    ssh-keygen -t ed25519 -a 100
-                    ssh-keygen -t rsa -b 4096 -o -a 100
+    # AUTHENTICATION; KEY-BASED [passwordless] 
+        
+        # keys @ CLIENT [local machine]; public AND private keys of client (ssh user) 
+            ~/.ssh/id_rsa      # private key; "IDENTITY"; can protect with passphrase
+            ~/.ssh/id_rsa.pub  # public key    
+            # (Re)set ssh-REQUIRED PERMs
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/* 
+        # client RETRIEVE/SAVE PUBLIC KEY from a private key 
+            ssh-keygen -y -f ~/.ssh/${private_keyname} > ~/.ssh/${private_keyname}.pub
+        # client CREATEs key-pair; in "OpenSSH RSA format"
+            ssh-keygen  # default stores @ ~/.ssh/
+            # E.g., 
+                ssh-keygen -t rsa -C "$(id -un)@GitHub" 
+                ssh-keygen -t ed25519 -a 100
+                ssh-keygen -t rsa -b 4096 -o -a 100
 
-                # OPTIONs
-                -a rounds  # the number of KDF (key deriv. func.) rounds used
-                -t ecdsa   # type; rsa (default), dsa, ecdsa, ed25519, rsa1 
-                -C         # comment
-                -l         # show FINGERPRINT 
-                -P         # passphrase; optional
-                -o         # save private keys using the new OpenSSH format instead of PEM;
-                           # PEM is more compatible but less secure    
+            # OPTIONs
+            -a rounds  # the number of KDF (key deriv. func.) rounds used
+            -t ecdsa   # type; rsa (default), dsa, ecdsa, ed25519, rsa1 
+            -C         # comment
+            -l         # show FINGERPRINT 
+            -P         # passphrase; optional
+            -o         # save private keys using the new OpenSSH format instead of PEM;
+                        # PEM is more compatible but less secure    
 
-                # passphrase reset; on existing key
-                ssh-keygen -p -P 'old phrase' -N 'new phrase' -f privateKEYFILE 
-                ssh-keygen -p    # per prompts.
+            # passphrase reset; on existing key
+            ssh-keygen -p -P 'old phrase' -N 'new phrase' -f privateKEYFILE 
+            ssh-keygen -p    # per prompts.
 
-                # comment reset; on existing key
-                ssh-keygen -c -P 'pass phrase' -C 'new comment' -f privateKEYFILE
-                ssh-keygen -c    # per prompts.
+            # comment reset; on existing key
+            ssh-keygen -c -P 'pass phrase' -C 'new comment' -f privateKEYFILE
+            ssh-keygen -c    # per prompts.
 
-                # show fingerprints of KNOWN HOSTS; to validate host on 1st connect
-                -lf ~/.ssh/known_hosts     # fingerprint hash
-                -lBf ~/.ssh/known_hosts    # readable blather
-                -lvf ~/.ssh/known_hosts    # randomart image 
-                # (both keys of a pair have IDENTICAL FINGERPRINTS)
+            # show fingerprints of KNOWN HOSTS; to validate host on 1st connect
+            -lf ~/.ssh/known_hosts     # fingerprint hash
+            -lBf ~/.ssh/known_hosts    # readable blather
+            -lvf ~/.ssh/known_hosts    # randomart image 
+            # (both keys of a pair have IDENTICAL FINGERPRINTS)
 
-            # SEND public key to host [remote ssh server]
-                ssh-copy-id -i PUB_KEY_ID_FILE -p PORT_NUMBER USER@HOST.DOMAIN 
-                    # options, else defaults per ssh config 
-                    -p PORT_NUMBER
-                    -i PUB_KEY_ID_FILE 
-                # sends/inserts it into host file ...    
-                ~/.ssh/authorized_keys
-                # ... @ ssh server (host) 
-                # wherefrom hosts store/get public keys of clients, for authentication     
+        # SEND public key to host [remote ssh server]
+            ssh-copy-id -i PUB_KEY_ID_FILE -p PORT_NUMBER USER@HOST.DOMAIN 
+                # options, else defaults per ssh config 
+                -p PORT_NUMBER
+                -i PUB_KEY_ID_FILE 
+            # sends/inserts it into host file ...    
+            ~/.ssh/authorized_keys
+            # ... @ ssh server (host) 
+            # wherefrom hosts store/get public keys of clients, for authentication     
 
-                    # manually add new pub key ...
-                    cat id_rsa.pub >> ~/.ssh/authorized_keys
-                    chmod 600 ~/.ssh/authorized_keys    
-
-            # SELinux Contexts 
-            restorecon -Rv ~/.ssh 
+                # manually add new pub key ...
+                cat id_rsa.pub >> ~/.ssh/authorized_keys
+                chmod 600 ~/.ssh/authorized_keys    
 
         ssh-agent  # PASSPHRASE cache/auto-entry
-        # Automate pass phrase entry ...    
-        ssh-agent /bin/bash  # launch ssh-agent into subshell    
-        ssh-add              # prompts for pass phrase; caches it until (sub)shell exited    
-        # ... OR ...
-        # as background process @ current shell 
-            eval "$(ssh-agent -s)"
-                # load private key into it; login
-                ssh-add "$HOME/.ssh/$_private_key"
-                # then login/connect
-                ssh user@host.domain 
-                # kill all running ssh-agent processes; they don't die w/ mintty
-                ps |grep 'ssh-agent' |awk '{print $1;}' |xargs kill 2> /dev/null
+            # Automate pass phrase entry ...    
+            ssh-agent /bin/bash  # launch ssh-agent into subshell    
+            ssh-add              # prompts for pass phrase; caches it until (sub)shell exited    
+            # ... OR ...
+            # as background process @ current shell 
+                eval "$(ssh-agent -s)"
+                    # load private key into it; login
+                    ssh-add "$HOME/.ssh/$_private_key"
+                    # then login/connect
+                    ssh user@host.domain 
+                    # kill all running ssh-agent processes; they don't die w/ mintty
+                    ps |grep 'ssh-agent' |awk '{print $1;}' |xargs kill 2> /dev/null
 
-        # DEBUG ... increasing verbosity [1-3x 'v']
-            ssh -v[vv] user@host.domain 2> ssh.log # info @ connet AND disconnect    
-            ssh -v[vv] user@host.domain -E ssh.log # info @ connet AND disconnect    
-            
-            # NOTE: this references the line BELOW it ...
-                debug1: key_load_public: No such file or directory
-            
-        # view authentication log msgs ...
-            /var/log/auth.log
+        # SSH Certificates : https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/deployment_guide/sec-using_openssh_certificate_authentication#sec-Introduction_to_SSH_Certificates
+            # OpenSSH certificates contain a public key, identity information, and validity constraints. 
+            # They are signed with a standard SSH public key using the ssh-keygen utility. 
+            # Format: /usr/share/doc/openssh-version/PROTOCOL.certkeys.
+            ssh-keygen # supports two types of certificates: user and host. 
+                # - User certificates authenticate users to servers
+                # - Host certificates authenticate server hosts to users. 
+                # For certificates to be used for user or host authentication, 
+                # sshd must be configured to trust the CA public key. 
 
-        # MONITOR ssh connections (tunnels)
-            lsof -i -n |grep ssh       # open files; internet-related (-i) 
-            netstat -tulpen |grep ssh  # connections per host:port and process 
+                # Create CA Certificate SIGNING KEY
+                    algo=ed25519
+                    # Key to sign USER certs
+                        ca_user_key=~/.ssh/$(id -un)_${algo}_key
+                        ssh-keygen -t $algo -f $ca_user_key                                 # Private key
+                        ssh-keygen -s $ca_user_key -I $(id -un) -f $ca_user_key.pub         # Public key
+                    # Key to sign HOST certs
+                        ca_host_key=~/.ssh/$(hostname)_${algo}_key
+                        ssh-keygen -t $algo -f $ca_host_key                                 # Private key
+                        ssh-keygen -s $ca_host_key -I $(hostname) -h -f $ca_host_key.pub    # Public key
+                            -s ca_key # Certify (sign) a public key using the specified CA key.
+                            -I # Certificate identity (host or user name, depanding on type of cert)
+                            -h # When signing a key, create host cert instead of user cert.
 
-        # PREVENT QUERY on first connect (useful @ scripts)
-            ssh -o StrictHostKeyChecking=no ...
-        # CONNECT TIMEOUT
-            ssh -o ConnectTimeout=5 -o ...
+                        # Host keys (private-public pairs) are generated by default:
+                            ls -l /etc/ssh/ssh_host*
 
-        # SSH TUNNELING : Local Forwarding
+                # Create the CA server's own host certificate
+                    ca_cert=/etc/ssh/ssh_host_rsa.pub
+                    start=1w
+                    end=54w5d
+                    cipher=aes256-ctr # `ssh -Q cipher` 
+                    ssh-keygen -s $ca_host_key -I $(hostname) -V -$start:+$end -Z $cipher -z $(date +%s) -h -f $ca_cert
+
+                # To authenticate users' certificate, hosts must be configured to trust 
+                # the CA's public key ($ca_user_key.pub) that was used to sign that certificates.
+                    # 1. Hosts must have CA's public key: Push to:
+                        /etc/ssh/$ca_user_key.pub # At all target hosts.
+                    # 2. Hosts' sshd must be configured:
+                        vi /etc/ssh/sshd_config
+                            TrustedUserCAKeys /etc/ssh/ca_user_key.pub
+                            Ciphers aes256-gcm@openssh.com, aes256-ctr
+                        systemctl restart sshd
+                # To avoid the warning about an unknown host, users' systems must trust 
+                # the CA's public key ($ca_host_key.pub) that was used to sign the HOST certificate.
+
+                #...
+
+        # SSH Tunnel : Local Forwarding
             # Establish a local port (localhost:PORT) as a PROXY for a remote (IP:PORT) box
             # USE CASE: 
             #     local access to/from an otherwise inaccessible remote 
@@ -460,20 +511,17 @@ man ssh_config
             ip_pvt=10.0.1.71 # at remote (target) host
 
             # @ -L : Local-port forwarding 
-            # Establish a tunnel from localhost (2222) to pvt pox thru jump box
+            # Establish a tunnel from localhost (2222) to pvt pox thru jump box (3333)
                 -L    # Local forwarding (answer locally); multiple (hops) okay (comma delimited)
                 -f    # fork process to background
                 -N    # no commands sent once the tunnel is up
                 -T    # disable pseudo-tty allocation
                 -vvvE # Log all connection details to file; `... -vvvE /tmp/ssh_session_log`
 
-            ssh -fNTL 2222:$ip_pvt:3333 ${user}@$ip_jump 
-            #... access pvt box locally @ http://localhost:2222
+            ssh -fNTL 2222:$ip_pvt:22 ${user}@$ip_jump 
+            #... access pvt box ($ip_jump:22) locally @ http://localhost:2222
             ssh -fNTL 4444:want.com:80 user@jump.domain 
-            #... access want.com locally @ http://localhost:4444
-
-            # remote (less common) : connect INACCESSIBLE LOCAL port to an ACCESSIBLE REMOTE port 
-            ssh -p 2022 -R 80:localhost:8088 user@host2.domain
+            #... access want.com:80 locally @ http://localhost:4444
 
             # @ ProxyCommand (ssh -W) : all KEYS are LOCAL (pvt key NOT UPLOADED to jump box)
                 # per ProxyCommand : all KEYS are LOCAL
@@ -499,10 +547,10 @@ man ssh_config
                     ssh -tt $user@$ip_pvt -i $key_jump
         
         # SSH Tunnel : Remote Forwarding
-        # Provide access to any local host from (remote) SSH host 
-        # (and from others per GatewayPorts setting at sshd_config)
-        # Forward port (8080) on remote machine to local machine (80), initiating from local machine.
-        # https://www.ssh.com/academy/ssh/tunneling-example
+            # Provide access to any local host from (remote) SSH host 
+            # (and from others per GatewayPorts setting at sshd_config)
+            # Forward port (8080) on remote machine to local machine (80), initiating from local machine.
+            # https://www.ssh.com/academy/ssh/tunneling-example
             -R # Remote forwarding (answer remotely)
             ssh -R 8080:$local_host:80 $ssh_host 
             ssh -fNTR 8080:$local_host:80 $ssh_host 
@@ -520,6 +568,11 @@ man ssh_config
             # SSH Session : appearing to initiate from SSH host machine
             ssh -R 2222:localhost:22 $user@$ssh_host 
             ssh -p 2222 username@localhost
+
+            # Connect INACCESSIBLE LOCAL port (8088) to an ACCESSIBLE REMOTE port (2222)
+            ssh -p 2222 -R 80:localhost:8088 user@host2.domain
+            #... access host2.domain:80 locally @ http://localhost:8088
+
 
         # SOCKS[5] : local proxy server per SSH tunnel (dynamic port-forwarding).
             # SSH acts as a SOCKS5 server at a local port to dynamically route traffic 

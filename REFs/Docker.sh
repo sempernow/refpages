@@ -68,21 +68,32 @@ sudo systemctl restart docker
 
 # Docker Registry v2 API 
     # https://distribution.github.io/distribution/spec/api/
+    # Note regarding "digest" in documentation (across the web) : 
+    #     "the digest" may refer to the MANIFEST DIGEST,
+    #      any digest of any layer thereof,
+    #      OR to a REPO DIGEST, which is <registry>/<repo>@sha256:<manifest-digest>. 
+    #      - That reported by `docker image ls --digests ...` is the manifest digest.
+    #      - That required by registry v2 is the manifest digest.
+    #      - Neither are IMAGE ID, which is analog to manifest, but context is local cache.
+
     # Validate the registry abides /v2/
-    registry=index.docker.io
-    curl -I https://$registry/v2/
-        # HTTP/1.1 401 Unauthorized                       <<< REQUIRED of v2
-        # content-type: application/json
-        # docker-distribution-api-version: registry/2.0   <<< REQUIRED of v2
-        # www-authenticate: Bearer realm="https://auth.docker.io/token",service="registry.docker.io"
-        # ... The WWW-Authenticate header value provides token-request params, so ...
-    # GET token : scoped to target image (library/busybox)
-        # See WWW-Authenticate header for the actual auth endpoint, which may be other than "/v2/"
+        registry=index.docker.io
+        curl -I https://$registry/v2/ #=>
+            # HTTP/1.1 401 Unauthorized                       <<< REQUIRED of v2
+            # content-type: application/json
+            # docker-distribution-api-version: registry/2.0   <<< REQUIRED of v2
+            # www-authenticate: Bearer realm="https://auth.docker.io/token",service="registry.docker.io"
+            # ... The WWW-Authenticate header value provides token-request params, so ...
+
+    # GET token : scoped to app
+        # See WWW-Authenticate header for the actual auth endpoint, which may differ per registry"
         curl "https://$registry/token?service=registry.docker.io&scope=repository:$app:pull"
             # {"token":"...","access_token": "...", ...}
 
-    # GET manifest : The DIGEST is NOT in the JSON, but in the HEADER
-        ## @ v2.3+, with GET or HEAD request MUST include else bogus reponse:
+    # GET manifest : Response includes manifest digest in its "Docker-Content-Digest" HEADER.
+        ## E.g., "Docker-Content-Digest: sha256:c230832bd3b0b..."
+        ## @ v2.3+, with GET or HEAD request MUST include these headers 
+        ## else returns a bogus manifest in the docker-content-digest response header:
         auth="Authorization: Bearer $token"
         accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
         repo=''
@@ -111,7 +122,7 @@ sudo systemctl restart docker
                 # redhat/ubi8:8.7
 
     # GET all content of container registry, both repos and images lists, 
-    # in both JSON and flat-list formats.
+    # in BOTH formats : JSON and flat-list.
         curl -s http://$registry/v2/_catalog \
             |tee catalog.json \
             |jq -Mr .[][] \
@@ -123,8 +134,15 @@ sudo systemctl restart docker
             |tee all.images.log
 
     # DELETE an image from Registry v2 
-        # 1. HEAD : returns the digest required of any subsequent DELETE request.
-        # Digest is returned in HTTP response header: "Docker-Content-Digest: sha256:abc...123"
+        # 1. HEAD : returns the manifest digest required of any subsequent DELETE request.
+            # Digest is returned in HTTP response header: "Docker-Content-Digest: sha256:abc...123"
+            auth="Authorization: Bearer $token"
+            accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
+            registry=us-west1-docker.pkg.dev
+            repo=gd9h
+            app=prj3.aoa-amd64
+            name="$repo/$app"
+            tag='latest'
             digest="$(
                 curl -H "$accept" -H "$auth" -siSX HEAD \
                     https://$registry/v2/$name/manifests/$tag \
@@ -143,13 +161,12 @@ sudo systemctl restart docker
                     # The sole distinction between success and failure 
                     # is that the digest is real on success and bogus on failure.
                     # Attempting step 2 or other /manifest/ request with bogus digest will fail (HTTP 4xx or 5xx)
-
-        # 2. DELETE : /v2/<app>/manifests/<reference>
-        # HTTP 202 response on success
+        # 2. DELETE : /v2/<app>/manifests/<reference> : '<reference>' is REGISTRY DIGEST of step 1.
+            # HTTP 202 response on success
             curl -H "$auth" -H "$accept" -sSX DELETE \
                 https://$registry/v2/$name/manifests/$digest 
 
-    # Run a LOCAL Registry : Distribution Registry
+    # Run a PRIVATE (local) Registry : CNCF Distribution Registry
         # https://distribution.github.io/distribution/
         docker run --rm -d --restart always --name registry \
             -p 5000:5000 \
@@ -167,10 +184,8 @@ sudo systemctl restart docker
         docker push $registry/$app:tag
 
     # PUSH all in local docker cache to registry
-        dit ()
-        {
-            function d ()
-            {
+        dit (){
+            function d(){
                 docker image ls --format "table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}" $@
             }
             h="$( d |head -n1)"
@@ -210,6 +225,7 @@ sudo systemctl restart docker
         systemctl status docker.service	
     # Config listening address to other than default (tcp:0.0.0.0:2375)
         # This is WSL2 setup, which allows containerized Triy scans to function:
+        # UPDATE : docker-proxy handles this now. See docker.service of systemd 
         ip -4 -brief addr show dev eth0 #=> eth0    UP    172.25.164.157/20
         #>>>  PRESERVE TABs of heredoc  <<<
 		cat <<-EOH |sudo tee /etc/docker/daemon.json
@@ -274,19 +290,15 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
         # OR, login using one liner sans prompt; pipe password to prevent recording it.
          echo "PASSWORD_OR_TOKEN" |docker login -u "$_USER" --password-stdin 
             # On ANY repeated ERRORS at LOGIN (ANY SORT; even HTTP 502, 503, …), 
-            # FIX by:
+            # FIX by: 
                 # 1. Logout : docker logout
-                # 2. Stip keys @ ~/.docker/config.json, leaving only …
-                    {
-                    "auths": {},
-                        "HttpHeaders": {
-                            "User-Agent": "Docker-Client/19.03.11 (linux)"
-                        }
-                    }
+                # 2. Empty ~/.docker/config.json
+					echo -n > ~/.docker/config.json
+					# OR, at least empty teh 'auths' key : "auths": {}
                 # 3. Login again (above method)
-        docker logout # to remove creds from ~/.docker/config.json
+        docker logout # to remove creds (base64-encoded) from ~/.docker/config.json
     # (Travis-CI to Docker Hub logon FAILS if passwords have certain special chars)
-    # LABEL : key only OR k-v pair(s) on obects : image, container, volume, network, swarm node|service
+    # LABEL : key only, OR k-v pair(s), on obects : image, container, volume, network, swarm node|service
         # https://docs.docker.com/engine/reference/commandline/node_update/
         docker $OBJ update --label-add "$k1=$v1"  --label-rm "$k3" --label-add "$l1" $OBJ_NAME
         docker node inspect $NODE_NAME |jq .[].Spec.Labels
@@ -329,7 +341,7 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             docker image ls             # list all images
             docker images               # list al images; alias
             docker images -q            # list all images; ID only
-            docker image ls --digests   # show sha256:hhh...hhh
+            docker image ls --digests   # show manifest digest : sha256:hhh...hhh
             # Format  https://docs.docker.com/engine/reference/commandline/images/#format-the-output
             # JSON 
             docker image ls --digests --format '{{json .}}' |jq -Mr . --slurp 
@@ -339,17 +351,17 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
                 --format 'table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.Digest}}'
                 # OR
                 --format 'table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}\t{{.Size}}'  # default
-        # DELETE
-            docker image rm $_IMG  # delete an image 
-            docker rmi $_IMG       # delete an image per id (tag); effectively an untag command 
+        # DELETE image from local cache
+            docker image rm $id  # delete image by id
+            docker rmi $id       # delete image by id 
+            docker rmi $repo/$name:$tag # delete image by tag (if image has only one tag).
+            #... if image has other tags, then only that tag is deleted; image remains in local cache.
             docker rmi $(docker images -q)  # delete ALL images 
-            # E.g., remove tag (image listing), but not the image if others tagged to it
-            docker rmi 'foo/bar:1.2'  
-            # delete per FILTER 
-            docker images | grep "$_FILTER" | gawk '{print $3}' | xargs docker rmi;
-            drmi(){ [[ "$@" ]] && docker images | grep "$@" | gawk '{print $3}' | xargs docker rmi; }  
+            # Delete a FILTERed list of images 
+            docker images | grep "$_FILTER" |gawk '{print $3}' |xargs docker rmi
+            drmi(){ [[ "$@" ]] && docker images |grep "$@" |gawk '{print $3}' |xargs docker rmi; }  
         # LAYERs @ (ls -l …)
-            /var/lib/docker/$_STORAGE_DRIVER/diff  # Overlay2 storage-driver (currently @ Win10/Hyper-V)  
+            /var/lib/docker/$_STORAGE_DRIVER/diff  # Overlay2 (default) storage-driver 
             # Layer FS 
             ls -l /var/lib/docker/$_STORAGE_DRIVER/diff/$_SHA256
             docker history $_IMG
@@ -376,18 +388,16 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             ## BUILD + TAG (all at once)
             docker build -t $_IMG_NAME:$_TAG .              # --tag; name and optionally tag (name:tag) 
             docker build -t $_REPO_NAME/$_IMG_NAME:$_VER  . # Format (convention) 
-            docker build -t [$_REGISTRY_HOSTNAME:$_REGISTRY_PORT]/$_REPO_NAME/$_IMG_NAME:$_TAG  $_ABS_PATH
+            docker build -t [$_REGISTRY_HOSTNAME[:$_REGISTRY_PORT]]/$_REPO_NAME/$_IMG_NAME:$_TAG  $_ABS_PATH
             #... Format full 
             # Alternate syntax
             docker build - < Dockerfile
             cat Dockerfile |docker build -
-            # BUILD @ STDIN ("-") per HEREDOC : entirely from commandline (sans Dockerfile)
-                # $ docker build -t foo -f - . <<-EOH
-                # > FROM busybox:1.34.1-musl
-                # > CMD ls -ahl /
-                # > EOH
-                #… commented out else exceeds limits of text editor highligting.
-                docker run --rm foo #… runs the built image; spawns CTNR, runs CMD, terminates & removes CTNR.
+            # BUILD from stdin ("-") per HEREDOC (sans Dockerfile)
+				docker build -t foo -f - . <<-EOH
+				FROM busybox:1.34.1-musl
+				CMD ls -ahl /
+				EOH
             # MULTI-STAGE BUILDs  https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-build
                 # Build stage 
                 FROM golang:alpine AS builder
@@ -426,10 +436,9 @@ docker  # CLI tool a.k.a. Docker Engine; the Docker Client of Docker Server (doc
             # PRIVATE LOCAL Registry : Create/Use  https://rominirani.com/docker-tutorial-series-part-6-docker-private-registry-15d1fd899255
                 docker pull registry # A registry is itself a Docker image 
                 # Run the local registry 
-                docker run -d -p 5000:5000 --name localregistry registry # name it 'registry' (is empty)
+                docker run -d --rm --name registry -p 5000:5000 registry:latest
                 # Test: pull from local
-                docker pull localhost:5000/alpine           # reports error …
-                … localhost:5000/alpine:latest not found  # … because local registry is empty 
+                docker pull localhost:5000/alpine
                 # Tag an image 
                 docker tag $_IMG_NAME localhost:5000/$_IMG_NAME:$_TAG
                 # Push to local registry

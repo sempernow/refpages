@@ -29,7 +29,9 @@ exit
 
     y                # Yank (copy) whatever is SELECTED
     yy               # Yank (copy) current LINE
-    p                # Paste the copied text AFTER current cursor position
+    "ayy             # Yank (copy) current LINE into REGISTER "a"        "
+    p                # Paste the copied text AFTER current cursor position 
+    "ap              # Paste REGISTER "a" content AFTER current cursor position "
     P                # Paste the copied text BEFORE current cursor position
     dw               # Delete 1 WORD
     dd               # Delete 1 LINE
