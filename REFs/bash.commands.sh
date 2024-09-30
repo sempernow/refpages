@@ -1475,12 +1475,24 @@ exit
         -M # Monochrome; fix for aformentioned pipe fail: -Mr 
         -R # Raw (string) input
 
-        # Filter all selected keys-values at some layer of the hierarchy:
-            docker volume inspect $(docker volume ls -q)|jq -rM .[].CreatedAt 
-                # List both Name and CreatedAt
-                ...|jq -Mr '.[] | .Name, .CreatedAt'
+        ## Filter out all but (sub)keys, of/to valid JSON.
+            # Deletes ALL the STRING array els and key values, recursively.
+            ... |jq -Mr 'walk(
+                    if type == "object" then
+                        with_entries(.value |= if type == "object" or type == "array" then . else "" end)
+                    elif type == "array" then
+                        map(select(type != "string"))
+                    else
+                        .
+                    end
+                )'
 
-        # SLURP a flat list of JSON objects to valid JSON
+        # Filter all selected keys-values at some layer of the hierarchy:
+            docker volume inspect $(docker volume ls -q)|jq -Mr .[].CreatedAt 
+                # List both Name and CreatedAt
+                ...|jq '.[] | .Name, .CreatedAt'
+
+        # SLURP a flat list of JSON OBJECTS into a valid JSON struct (array).
             cat flat-list-of-json-objects.txt \
                 |jq -Mr . --slurp # -s
 
@@ -1492,11 +1504,19 @@ exit
                 |jq -Rn '[inputs]'
 
         # MAP/REFACTOR object having array to flat list
-            echo '{"name": "abox", "tags": ["ubi","2.0.1","3"]}' \
-                |jq -Mr '.tags[] as $tag | "\(.name):\($tag)"'
-                # abox:ubi
-                # abox:2.0.1
-                # abox:3
+            echo '[ 
+                {"name": "redhat/ubi8", "tags": ["8-8.9-1136", "8.8-1067-source"]},
+                {"name": "bbox", "tags": ["1.32.0-musl"]}
+            ]' |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"'
+                # redhat/ubi8:8-8.9-1136
+                # redhat/ubi8:8.8-1067-source
+                # bbox:1.32.0-musl
+
+        # Iterate over any array SAFELY (allow for possible null or empty)
+            ...|jq '.k1 | .[]?'
+            ...|jq '{"k1": .k2 | .[]? } | {...}'
+            ...|jq '{"k1": (.k2 // []) | map(.k3)}'
+            ...|jq '[.k1.k2[]? | select(. != null and .k3 != null) | {K3: .k3}]' 
 
         # Filter key names 
 
@@ -1521,20 +1541,20 @@ exit
 
             # GET all content of container registry, both repos and images lists, 
             # in both JSON and flat-list formats.
-            curl -s http://$registry/v2/_catalog \
-                |tee catalog.json \
-                |jq -Mr .[][] \
-                |tee catalog.repositories.log \
-                |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
-                |jq -Mr . --slurp \
-                |tee all.tags.list.json \
-                |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
-                |tee all.images.log
+                curl -s http://$registry/v2/_catalog \
+                    |tee catalog.json \
+                    |jq -Mr .[][] \
+                    |tee catalog.repositories.log \
+                    |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+                    |jq -Mr . --slurp \
+                    |tee all.tags.list.json \
+                    |jq -Mr '.[] | .tags[] as $tag | "\(.name):\($tag)"' \
+                    |tee all.images.log
 
-        # List selected keys of all Docker networks except "none", refactoring into another valid JSON obj:
-        docker network ls -q |xargs docker network inspect $1 \
-            |jq -Mr '.[] | select(.Name != "none") | {Name: .Name, Type: .Driver, Address: .IPAM.Config}' \
-            |jq --slurp .
+        # List selected keys and values, refactoring into another valid JSON obj:
+            docker network ls -q |xargs docker network inspect $1 \
+                |jq -Mr '.[] | select(.Name != "none") | {Name: .Name, Type: .Driver, Address: .IPAM.Config}' \
+                |jq --slurp .
 
         # Filter all selected keys-values at various layers of the hierarchy
             aws ec2 describe-volumes \
@@ -1613,6 +1633,11 @@ exit
                 # ------  --
                 # George  12
                 # Jack    18
+
+    yq   # jq for YAML : https://github.com/mikefarah/yq 
+
+        # Convert JSON to YAML
+            cat a.json |yq eval -P -o yam |tee a.yaml >/dev/null # Quietly lest error  
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command

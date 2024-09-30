@@ -53,6 +53,10 @@ verifiable deployment states.
 - Videos
     - [DevOps Toolkit](https://www.youtube.com/watch?v=tgwxMfIsLJY "YouTube")
     - [__eBPF__ Cilium](https://www.youtube.com/@eBPFCilium/videos "YouTube : eBPFCilium")
+- Cloud Wrappers
+    - [LocalStack](https://www.localstack.cloud/) : Mocks cloud-vendor services locally. *Develop and test your AWS applications locally to reduce development time and increase product velocity. Reduce unnecessary AWS spend and remove the complexity and risk of maintaining AWS dev accounts.*
+    - [CloudCraft](https://www.cloudcraft.co/) : 
+      3D graphic and resource/cost model of a cloud infra
 - __Service Catalog__ : UI of IDP : built/maintained 
   by GitOps/DevOps vendor/admin, not by end users.
     - Port : SasS only
@@ -65,6 +69,10 @@ verifiable deployment states.
     - [__Kubernetes__](https://kubernetes.io/docs/home/ "Kubernetes.io") : 
       Cluster API, Crossplane, &hellip;  
       K8s is a __universal Control Plane__
+    - [Pulumi](https://www.pulumi.com/product/infrastructure-as-code/) : 
+    IaC in any language, but pay per play platform interfacing to cloud vendors.
+        - [sst](https://sst.dev/) Pulumi wrapper : 
+          *Deploy everything your app needs with a single config.*
     - [__Terraform__](https://registry.terraform.io):  
         Declarative provisioning of cloud infrastructure 
         and policies (per-vendor modules), 
@@ -74,7 +82,6 @@ verifiable deployment states.
         and application software in any environment.
         A comprehensive, versatile automation tool 
         allowing for both declarative and imperative methods.
-    - Pulumi : IaC in any language
 - __IaC__ : __Workloads__
     - Application Management (K8s Manifests)
         - [__Timoni.sh__](timoni.sh) (Uses CUE)  

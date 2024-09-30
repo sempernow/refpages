@@ -1,6 +1,8 @@
-# [Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System "Wikipedia.org") (DNS) Servers
+# [Domain Name System](https://en.wikipedia.org/wiki/Domain_Name_System "Wikipedia.org") (DNS)
 
-Popular solutions for subnets in RFC-1918 adress spaces
+## DNS Servers
+
+Popular solutions for (sub)networks having [RFC-1918](https://datatracker.ietf.org/doc/html/rfc1918) adress spaces:
 
 1. BIND (Berkeley Internet Name Domain)
     - Overview: BIND is one of the most widely used DNS servers. It's highly configurable and supports a vast array of DNS features, making it suitable for everything from small networks to large, complex infrastructures.
@@ -24,8 +26,45 @@ When selecting a DNS server for an environment, consider factors like existing i
 
 In VMware or other virtualized environments, the choice might also be influenced by the ease of automation and integration with virtual machine management, where solutions like PowerDNS or CoreDNS could offer advantages due to their APIs and flexibility in handling dynamic DNS updates.
 
+## DNS Records
 
+### `A` Record
 
+The "`A`" stands for "address", as in "IP address".
+
+Primary use is __to resolve a domain name to an IPv4 address__. 
+Resolving to an IPv6 address requires an "`AAAA`" record. Another use for DNS A records is for operating a Domain Name System-based Blackhole List (DNSBL). DNSBLs can help mail servers identify and block email messages from known spammer domains.
+
+Most websites have only one A record. The IPv4 address to which it resolves is often that of a highly-available (HA) load balancer. Some higher profile websites have several A records, with same domain name pointing to different IPv4 addresses, allowing DNS-based load balancing as well, AKA Round-robin DNS.
+
+Example `A` record:
+
+|`example.com` | record type: | value:      |TTL   |
+|--------------|--------------|-------------|------|
+| `@`          | `A`          |`192.0.2.1`  |`3600`|
+
+- "`@`" : Represents the domain __root__ AKA __apex__, not just that of the current DNS record. 
+  Its value here indicates this record is for the root domain, `example.com`.
+- "`3600`" : The __TTL__ (time to live), listed in **seconds**. So, the setting there is to one hour. The TTL is the __time required for a record update to take effect__.  Common TTL for DNS records is between `300` (5 minutes) and `86400` (24 hours), with defaults varying by DNS providers. The shorter the time, the more responsive to changes, but the higher the load on DNS servers.
+
+>Confusingly, the "A record" is that of the truely canonical name, whereas a CNAME record AKA "canonical-name record" is just an alias. All such aliases, e.g., those of all subdomains and domain aliases alike, should point to the one true canonical name. That is, to the "A record".
+
+### `CNAME` Record
+
+A "canonical name" (CNAME) record is that of an alias domain (`blog.example.com`) that points to a root domain (`example.com`). That truely canonical root record, which resolves to an IPv4 address, is the "A record". 
+
+CNAME records __must point to a domain, never to an IP address__. 
+
+Subdomains and alias domain names are typically configured with CNAME records pointing to a root domain (that has a DNS A record). __Configured this way__, if, as, and whenever the domain's host changes its IPv4 address, __only one DNS record requires an update__. That of the "A record" for the root domain. This single DNS-record update triggers a cascade of DNS server updates per TTL of each and every affected CNAME record.
+
+Example of a CNAME record:
+
+|`blog.example.com` | record type: | value:                     |TTL    |
+|-------------------|--------------|----------------------------|-------|
+|`@`                |`CNAME`       |is an alias of `example.com`|`32400`|
+
+This CNAME record for `blog.example.com` points to `example.com` with a TTL of 9 hours. 
+From our example A record, we know this resolves to IPv4 address `192.0.2.1`.
 
 ### &nbsp;
 <!-- 
