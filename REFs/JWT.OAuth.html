@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JWT.OAuth</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://oauth.net/2/" title="OAuth.net">OAuth</a>/<a href="https://en.wikipedia.org/wiki/Single_sign-on/">SSO</a> | JWT (<a href="h1>
+
+<h3>RFC6749 <a href="https://tools.ietf.org/html/rfc6749" title="RFC6749 2012 @ tools.IETF.org">OAuth 2.0 Authorization Framework</a></h3>
+
+<blockquote>
+<p>&hellip; <a href="https://tools.ietf.org/html/rfc6749#section-1.7" title="RFC6747 Section 1.7">makes extensive use of HTTP redirections</a> &hellip; [per] <strong>HTTP 302</strong> status code, or any other method available via the user-agent &hellip;</p>
+</blockquote>
+
+<p>Authorization, <strong><em>not authentication</em></strong>.<br>
+<a href="#oidc">OpenID Connect (OIDC)</a> deals with authentication.</p>
+
+<h2>Grant Types</h2>
+
+<ul>
+<li><p><a href="https://oauth.net/2/grant-types/authorization-code/" title="Oauth.net">Authorization Code Grant</a> (<a href="https://developer.okta.com/blog/2017/06/21/what-the-heck-is-oauth#oauth-actors" title="2017 @ okta.com">Request/Response</a>)</p>
+
+<ol>
+<li><strong>Front Channel</strong> (App to Authorization Server) Flow
+
+<ul>
+<li><p><strong>Request</strong> Authorization <strong><em>Code</em></strong></p>
+
+<pre><code class="language-http">curl -X GET -s \
+    https://accounts.google.com/o/oauth2/auth?
+        scope=gmail.insert gmail.send
+        &amp;redirect_uri=https://app.example.com/oauth2/callback
+        &amp;response_type=code
+        &amp;client_id=812741506391
+        &amp;state=af0ifjsldkj
+</code></pre>
+
+<ul>
+<li>Params (shown per line):
+
+<ul>
+<li><code>scope</code> is, e.g., gmail.insert</li>
+<li><code>redirect_url</code> is that of the (HTTP 302) response header &hellip;
+
+<ul>
+<li><code>Location: &lt;Send_Authorization_Grant_Here&gt;</code></li>
+</ul></li>
+<li><code>response_type</code> code</li>
+<li><code>client_id</code> per prior registration with this Auth Server.
+
+<ul>
+<li>(Obtained per out-of-band process.)</li>
+</ul></li>
+<li><code>state</code> is a security flag; a'la CSRF (<a href="li>
+</ul></li>
+<li>Request is directly to Authorization Server, so if user is authenticated, it's a fast, no-stop redirection.</li>
+</ul></li>
+
+<li><p><strong>Response</strong></p>
+
+<pre><code class="language-http">HTTP/1.1 302 Found
+Location: https://app.example.com/oauth2/callback?
+    code=MsCeLvIaQm6bTrgtp7
+    &amp;state=af0ifjsldkj
+</code></pre>
+
+<ul>
+<li>Params (shown per line):
+
+<ul>
+<li><code>code</code> is the <strong><em>Authorization Code</em></strong></li>
+<li><code>state</code> must <strong><em>match that at request</em></strong>, else reject the <code>code</code>!</li>
+</ul></li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Back Channel</strong> (Authorization Server to App API service) Flow</p>
+
+<ul>
+<li><p><strong>Request</strong> Authorization <strong><em>Token</em></strong> (using Authorization <em>Code</em>); <em>Exchange</em></p>
+
+<pre><code class="language-http">POST /oauth2/v3/token HTTP/1.1
+Host: www.googleapis.com
+Content-Type: application/x-www-form-urlencoded
+
+    code=MsCeLvIaQm6bTrgtp7
+    &amp;client_id=812741506391
+    &amp;client_secret={client_secret}
+    &amp;redirect_uri=https://app.example.com/oauth2/callback
+    &amp;grant_type=authorization_code
+</code></pre>
+
+<ul>
+<li>Params (shown per line):
+
+<ul>
+<li><code>client_id</code>: app id</li>
+<li><code>client_secret</code>: app key</li>
+<li><code>grant_type</code> is <em>Authorization Code Grant</em> (type); OAuth has several Grant Types; is extensible/flexible.</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Response</strong></p>
+
+<pre><code class="language-json">{
+  &quot;access_token&quot;: &quot;2YotnFZFEjr1zCsicMWpAA&quot;,
+  &quot;token_type&quot;: &quot;Bearer&quot;,
+  &quot;expires_in&quot;: 3600,
+  &quot;refresh_token&quot;: &quot;tGzv3JOkF0XG5Qx2TlKWIA&quot;
+}
+</code></pre>
+
+<ul>
+<li><p>&hellip; exchanging the Authorization Code (granted) for the Access Token. <strong><em>Thence make authorized requests</em></strong> &hellip;</p>
+
+<pre><code class="language-bash">curl -I -X ${METHOD} -s \
+    -H &quot;Authorization: Bearer ${_TOKEN}&quot; \
+    http://${_RESOURCE_SERVER_ENDPOINT}
+
+# E.g., get email
+curl -X GET -s \
+    -H &quot;Authorization: Bearer 2YotnFZFEjr1zCsicMWpAA&quot; \
+    https://www.googleapis.com/gmail/v1/users/1444587525/messages
+</code></pre></li>
+</ul></li>
+</ul></li>
+</ol></li>
+
+<li><p><a href="https://tools.ietf.org/html/rfc6749#section-4.3">Resource Owner Credentials Grant</a></p>
+
+<ul>
+<li>&hellip; <em>suitable for clients (trusted first parties) capable of obtaining the resource owner's credentials (username and password, typically using an interactive form).</em></li>
+<li><em>Also used to migrate existing clients using direct authentication schemes such as HTTP Basic or Digest authentication to OAuth by</em> <strong><em>converting the stored credentials to an access token.</em></strong></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://oauth.net/code/go/">Golang OAuth Libraries</a></h2>
+
+<ol>
+<li><a href="https://github.com/ory/hydra" title="ory/hydra">ORY Hydra</a> [9K] | <a href="https://www.ory.sh/hydra/">ory.sh/hydra</a>
+
+<ul>
+<li>Server &hellip; <em>OAuth 2.0</em> Server <em>and OpenID Connect Provider optimized for low-latency, high throughput, and low resource consumption.</em> &hellip; <em>not an identity provider</em> &hellip; _, but connects to your existing identity provider through a login and consent app.</li>
+</ul></li>
+<li><a href="https://github.com/omniauth/omniauth" title="omniauth/omniauth">OmniAuth: Standardized Multi-Provider Authentication</a> [7K] | <a href="https://github.com/omniauth/omniauth/wiki/Auth-Hash-Schema">Wiki</a>
+
+<ul>
+<li>Client &hellip; <em>a black box that you can send your application's users into when you need authentication and then get information back.</em></li>
+<li><a href="https://github.com/omniauth/omniauth/wiki/List-of-Strategies#provider-strategies">Provider Strategies</a> (@ Ruby)</li>
+</ul></li>
+<li><a href="https://github.com/golang/oauth2#oauth2-for-go" title="golang/oauth2">OAuth2 for Go</a> [3K] | <a href="https://godoc.org/golang.org/x/oauth2">GoDoc</a>
+
+<ul>
+<li>Client &hellip; <em>implementation for OAuth 2.0 spec.</em></li>
+</ul></li>
+<li><a href="https://github.com/markbates/goth" title="markbates/goth">Goth: Multi-Provider Authentication for Go </a> [3K] | <a href="https://godoc.org/github.com/markbates/goth">GoDoc</a>
+
+<ul>
+<li>Client &hellip; <em>lets you write OAuth, OAuth2, or any other protocol providers, as long as they implement the Provider and Session interfaces.</em></li>
+</ul></li>
+</ol>
+
+<h2>Identity Providers</h2>
+
+<ul>
+<li><a href="https://login.amazon.com/">Amazon</a></li>
+
+<li><p><a href="https://developers.google.com/identity/protocols/oauth2">Google</a></p></li>
+
+<li><p><a href="https://oauth.net/2/scope/">Scopes</a></p>
+
+<ul>
+<li>&hellip; <em>a mechanism in OAuth 2.0 to limit an application's access to a user's account. An application can request one or more scopes, this information is then presented to the user in the consent screen, and the access token issued to the application will be limited to the scopes granted.</em></li>
+</ul></li>
+
+<li><p><a href="https://oauth.net/2/grant-types/">Grant Types</a></p>
+
+<ul>
+<li><a href="https://alexbilbie.com/guide-to-oauth-2-grants/">A Guide to OAuth2 Grants</a> | <a href="https://aaronparecki.com/oauth-2-simplified/#authorization">OAuth2 Simplified</a> | <a href="http://www.bubblecode.net/en/2016/01/22/understanding-oauth2/">Understanding OAuth2</a></li>
+<li>Use <a href="https://tools.ietf.org/html/rfc6749#section-4.1">Authorization Code Grant</a> type.
+
+<ul>
+<li>Redirect is to server-side handler, which appends its app creds (<code>ClientID</code> and secret)  to user's authorization code recieved from Identity Provider, and sends that back to the Identity Provider to obtain an Access Token (JWT).
+
+<ul>
+<li>Not sure if this last bit is necessary; authorization code from Identity Provider may be all we need. <strong><em>Do we want/need actual access to user account at Identity Provider?</em></strong></li>
+</ul></li>
+</ul></li>
+</ul></li>
+
+<li><p><a href="https://developer.okta.com/blog/2017/06/21/what-the-heck-is-oauth#oauth-actors">Actors</a></p>
+
+<ul>
+<li>Client:
+
+<ol>
+<li>Public (Frontend app; javascript); can't be trusted with secret key.</li>
+<li>Confidential; (API server) can be trusted with secret key.</li>
+</ol></li>
+<li>Resource Owner (RO): Owner and role of an app user; @ app frontend (browser).</li>
+<li>Resource Server (RS): Our API server.</li>
+<li>Authorization Server (AS): Identity Provider (Facebook, Twitter, Google, ...)</li>
+</ul></li>
+
+<li><p>[Tokens]</p></li>
+
+<li><p><a href="https://developer.okta.com/blog/2017/06/21/what-the-heck-is-oauth" title="2017 @ okta.com">What Is OAuth?</a></p>
+
+<ul>
+<li><em>OAuth is a delegated authorization framework for REST/APIs. ... enables apps to obtain limited access (scopes) to a user’s data sans password.  It</em> <strong><em>decouples authentication from authorization</em></strong> &hellip;</li>
+</ul></li>
+
+<li><p><a href="https://developers.google.com/identity/protocols/oauth2">Using OAuth 2.0 to Access Google APIs</a></p></li>
+
+<li><p><a href="https://www.sohamkamani.com/blog/golang/2018-06-24-oauth-with-golang/" title="SohamKamani.com 2018">Implementing OAuth 2.0 with Go</a></p></li>
+</ul>
+
+<p><img src="SSO-process.png" alt="graphic" title="SSO Process"></p>
+
+<p><a name="oidc"></a></p>
+
+<h2><a href="https://openid.net/specs/openid-connect-discovery-1_0.html">OpenID Connect (OIDC)</a> 1.0</h2>
+
+<blockquote>
+<p><em>OIDC</em> <a href="https://developer.okta.com/blog/2017/06/21/what-the-heck-is-oauth#enter-openid-connect" title="okta.com">extends OAuth 2.0</a> &hellip; <em>with a new signed <code>id_token</code> for the client and a <code>UserInfo</code> endpoint to fetch user attributes; is a simple identity layer on top of the OAuth 2.0 protocol. &hellip; a standard set of scopes and claims for identities.</em></p>
+
+<p><em>Examples include: profile, email, address, and phone. &hellip; built-in registration, discovery, and metadata for dynamic federations. You can type in your email address, then it dynamically discovers your OIDC provider, dynamically downloads the metadata, dynamically know what certs it’s going to use, and allows BYOI (Bring Your Own Identity). It supports high assurance levels and key SAML use cases for enterprises.</em></p>
+</blockquote>
+
+<h2>Misc/Other/Older References</h2>
+
+<ul>
+<li>Client ID and Secret
+
+<ul>
+<li>OAuth providers issue a client ID per application. The ClientID is public information, and is used to build login URLs, or included in Javascript source code on a page. The client secret must be kept confidential. If a deployed app cannot keep the secret confidential, such as single-page Javascript apps or native apps, then the secret is not used, and ideally the service shouldn't issue a secret to these types of apps in the first place._</li>
+</ul></li>
+</ul>
+
+<p>URL sent to GitHub (OAuth Identity Provider) from our application</p>
+
+<pre><code>https://github.com/login/oauth/authorize?client_id=&lt;APPs_GITHUB_OAUTH_ID&gt;&amp;redirect_uri=http://&lt;APPs_DOMAIN&gt;/oauth/redirect
+</code></pre>
+
+<p>Redirect URL is where we want Identity Provider (GitHub) to send this user upon SSO authentication per GitHub.</p>
+
+<pre><code>http://&lt;APPs_DOMAIN&gt;/oauth/redirect
+</code></pre>
+
+<p>After registering your app, you will receive a client ID and optionally a client secret. The client ID is considered public information, and is used to build login URLs, or included in Javascript source code on a page. The client secret must be kept confidential. If a deployed app cannot keep the secret confidential, such as single-page Javascript apps or native apps, then the secret is not used, and ideally the service shouldn't issue a secret to these types of apps in the first place.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([HTML](___ "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

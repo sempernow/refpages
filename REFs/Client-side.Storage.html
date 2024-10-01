@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Client-side.Storage</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Client-side_web_APIs/Client-side_storage" title="MDN :: Client-side storage">Client-side Storage</a></h1>
+
+<h2>tl;dr</h2>
+
+<ul>
+<li><p>Below <code>5MB</code>, an effective design pattern is to <code>fetch</code>/<code>XHR</code> docs per REST/JSON API, store the network payload as is (serialized JSON; string), yet parse and maintain the payload as the in-memory state store (object/array); repeating this parse-per-net when stale, which is observable per Etag or some such. This is <strong><em>buildable into a synch scheme</em></strong>.</p></li>
+
+<li><p>Note that JSON parses faster than POJO (Plain Old Javascript Obj). It is often less perfomant to parse JSON payload into POJO and then store/pull data to/from, per object key; a scheme relying much, much more on these flakey (browser-variant) storage APIs.</p></li>
+</ul>
+
+<h2>Document Stores</h2>
+
+<ul>
+<li>@ Browser &mdash; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Cache" title="Web/API @ MDN"><code>Cache</code></a>/<a href="https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage" title="Web/API @ MDN"><code>CacheStorage</code></a> <code>Interface</code> (a.k.a. <a href="https://developers.google.com/web/fundamentals/instant-and-offline/web-storage/cache-api" title="developers.google.com"><code>Cache</code> API</a>) is a document store; stores URL-addressable resources per Request/Response (<code>k/v</code>) pairs; a <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" title="MDN :: Web/API/"><code>ServiceWorker</code> API</a> interface; <a href="https://caniuse.com/#search=Cache%20API" title="CanIUse.com"><strong><em>not&nbsp;well&nbsp;supported</em></strong></a>. <strong><em>Hard limit on cache size</em></strong>, per browser, per origin.<br>
+
+<ul>
+<li><a href="https://developers.google.com/web/tools/workbox/guides/using-bundlers" title="developers.google.com">Workbox</a> is the latest/leanest way to <em>auto-generate</em> a Service Worker (<code>.js</code>) and its associated manifest (<code>.json</code>), and to handle the <code>Cache</code> <em>document store</em>, <a href="https://codelabs.developers.google.com/codelabs/workbox-indexeddb/index.html?index=..%2F..index#4" title="WorkBox + IndexedDB @ codelabs.developers.google.com">and <code>IndexedDB</code></a> as application <em>state store</em>.</li>
+<li><strong>Synch schemes</strong><br>
+
+<ul>
+<li><a href="https://developers.google.com/web/updates/2015/12/background-sync" title="developers.google.com 2015">Background Sync API</a> (Chrome only); a <code>ServiceWorker</code> API<br></li>
+</ul></li>
+</ul></li>
+<li>@ Android &mdash; <a href="https://www.zetetic.net/sqlcipher/open-source/" title="@ Zetetic.net">SQLcipher</a> (<a href="https://github.com/sqlcipher">@ GitHub</a>); an encrypted database; an extension of <a href="https://www.sqlite.org/index.html" title="www.sqlite.org">SQLite</a>. Used by WeChat app <a href="https://guardianproject.info/2013/12/10/sqlcipher-has-300-million-mobile-users-thanks-to-wechat/" title="'SQLcipher has 300M Mobile Users ... WeChat' @ GuardianProject.info">(<code>EnMicroMsg.db</code>)</a>. See&nbsp;<code>Tech.Stacks</code> (<a href="li>
+</ul>
+
+<blockquote>
+<p>Though not Document Stores per se, the Key-Value Stores (below) can be used quite effectively to store documents (per key).</p>
+</blockquote>
+
+<h2>Key-Value Stores</h2>
+
+<p><a name="localStorage"></a></p>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API">Web Storage API</a> includes <em>two</em> <code>k-v</code> stores; <strong><em>value must be string</em></strong>; per domain; insecure; <code>5MB</code> limit; <a href="https://caniuse.com/#search=Web%20Storage" title="browser compatibility"><strong><em>well supported</em></strong></a>, though <strong><em>not available at</em></strong> <strong><code>Web Worker</code></strong>; use for small amounts of data. Unlike Cookie API, this is readable by client only. Insecure. Do <em>not</em> store JWTs here.
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage" title="MDN :: Window/sessionStorage"><code>sessionStorage</code></a>; available for the duration of the page session.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage" title="MDN :: Window/localStorage"><code>localStorage</code></a>; same, but <strong>persists</strong> even when browser closed/reopened.<br></li>
+<li><a href="https://github.com/marcuswestin/store.js" title="GitHub :: MarcusWestin/store.js"><code>store.js</code> (<code>12KB</code>)</a> @ <a href="a><br>
+Wrapper/Polyfill for all the Web Storage APIs:<br>
+
+<ul>
+<li><code>localStorage</code>, <code>sessionStorage</code>,  <code>cookie</code>, <code>globalStorage</code> (legacy; Firefox 3+), and <code>userData</code> (legacy; IE6+).</li>
+</ul></li>
+</ul></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Basic_Concepts_Behind_IndexedDB" title="'Concepts Behind IndexedDB' @ MDN"><code>IndexedDB</code></a> (<a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API" title="MDN :: IndexedDB API">API</a>); <strong><em>value can be anything</em></strong> (JS object); a transactional, asynchronous <sup>&alpha;</sup>  store that returns notifications per DOM Events (<code>onsuccess</code>, <code>onerror</code>, <code>oncomplete</code>, &hellip;); <a href="https://caniuse.com/#search=indexeddb" title="browser compatibility"><strong><em>well&nbsp;supported</em></strong></a>; <a href="https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase" title="IDBDatabase @ MDN"><code>IDBDatabase</code> interface</a>; RDBM-type  <strong>key-indexed</strong> for <strong>high-performance</strong> <sup>&beta;</sup> ; accessible per same-origin policy; storage limited per browser scheme(s). <a href="https://medium.com/@sahalsajjad/introduction-to-indexeddb-storing-data-in-browsers-2f8e5d0fb22" title="'Introduction to IndexedDB ...' @ Medium.com 2018">Intro</a>. <a href="https://developers.google.com/web/fundamentals/instant-and-offline/web-storage/indexeddb-best-practices" title="@ developers.google.com">Best&nbsp;Practices</a>.</p>
+
+<ul>
+<li><code>5MB</code> - <code>10MB</code>, per browser vendor.</li>
+<li>Successor to <a href="https://en.wikipedia.org/wiki/Web_SQL_Database">Web SQL Database</a> API.</li>
+<li><strong><em>Available at <code>Web Workers</code></em></strong>.</li>
+<li><strong>Wrappers/Libraries</strong> (smallest to biggest): <a name="idb"></a>
+
+<ul>
+<li><a href="https://github.com/jakearchibald/idb" title="@ GitHub"><code>idb</code></a> <a href="get, transactions, async iterators, &hellip;
+
+<ul>
+<li><a href="https://www.npmjs.com/package/idb-keyval" title="@ NPMjs.com"><code>idb-keyval</code></a>; subset of <code>idb</code>.</li>
+</ul></li>
+<li><a href="https://github.com/localForage/localForage" title="GitHub :: localForage">LocalForage (<code>28KB</code>)</a>; fallback to <a href="https://en.wikipedia.org/wiki/Web_SQL_Database" title="Wikipedia :: WebSQL was Chrome/Opera precursor to IndexedDB"><code>WebSQL</code></a>, then to <a href="#localStorage"><code>localStorage</code></a>; simple but powerful API.<br></li>
+<li><a href="https://dexie.org/" title="dexie.org">Dexie.js</a> <a href="https://github.com/dfahlander/Dexie.js" title="@ GitHub">(<code>55KB</code>)</a>; <a href="https://dexie.org/docs/Syncable/Dexie.Syncable.js" title="Dexie.Syncable.js @ dexie.org">+ <strong>synch</strong> (beta)</a>.</li>
+<li><a href="https://pouchdb.com/" title="PouchDB.com">PouchDB (<code>121KB</code>)</a> / <a href="https://github.com/pubkey/rxdb" title="@ GitHub">RxDB (<code>500KB</code>)</a>; <strong>synch</strong> per CouchDB sync protocol; <a href="https://github.com/pouchdb/pouchdb" title="GitHub :: PouchDB">fallback to <code>WebSQL</code></a>.<br></li>
+<li><strong>Synch schemes</strong>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Apache_CouchDB" title="Apache :: CouchDB">CouchDB</a> / <a href="https://pouchdb.com/" title="PouchDB.com">PouchDB</a>; CouchDB is a JSON (document) store and (Erlang) server; has its own synch protocol; API (CRUD) is HTTP/<strong>REST</strong>; <a href="https://en.wikipedia.org/wiki/Apache_CouchDB#Main_features" title="CouchDB :: Main Features @ Wikipedia">distributed architecture</a>, with bi-direction <strong>replication</strong> and synchronization; designed to handle <em>off-line</em> app operations.<br></li>
+<li><a href="https://en.wikipedia.org/wiki/Firebase">Firebase</a>; Google's mobile web-app platform; vendor lock-in (superglued to GCP); messaging, OAuth, storage (RT database), and hosting.<br></li>
+</ul></li>
+</ul></li>
+<li>&alpha; &mdash; <strong>Do not store JSON payload as one big complex object (value) under one key</strong> <a href="https://developers.google.com/web/fundamentals/instant-and-offline/web-storage/indexeddb-best-practices#keeping_your_app_performant" title="'Best Practices ...' @ developers.google.com">because</a> &hellip; <em>The larger the object, the longer the blocking time</em> &hellip; <em>increase write errors</em> &hellip;  <em>cause the</em> <strong><em>browser tab to crash or become unresponsive</em></strong>.</li>
+<li>&beta; &mdash; <a href="https://nolanlawson.com/2015/09/29/indexeddb-websql-localstorage-what-blocks-the-dom/" title="NolanLawson.com 2015/2019">IndexedDB isn’t as performant as believed</a> &hellip; <strong><em>blocks the DOM significantly</em></strong> <em>in Firefox and Chrome</em> &hellip; <strong><em>slower than both LocalStorage and WebSQL</em></strong> <em>for basic key-value insertions.</em></li>
+</ul>
+
+<blockquote>
+<p>For performance comparison between the two key-value stores, see lab @ <code>DEV/front-end/js/storage/localStorage-vs-IndexedDB</code> .</p>
+</blockquote></li>
+
+<li><p><a href="https://github.com/gruns/ImmortalDB" title="GitHub :: gruns/ImortalDB">ImmortalDB (<code>50KB</code>)</a><br>
+A persistent <code>k-v</code> store; wraps all the browser's <code>k-v</code> stores, and <strong>stores redundantly</strong>; <code>cookie</code>, <code>IndexedDB</code>, <code>localStorage</code>, and at <code>sessionStorage</code>; self heals.</p>
+
+<ul>
+<li>Utilizes <a href="#idb"><code>idb-keyval</code></a> and <a href="#jscookie"><code>js-cookie</code></a>.</li>
+</ul></li>
+
+<li><p><a href="https://en.wikipedia.org/wiki/Web_SQL_Database">Web SQL Database</a> API.</p>
+
+<ul>
+<li>Precursor to <code>IndexedDB</code> API.</li>
+<li>No adoption beyond Google Chrome and Android Browser (2010)</li>
+</ul></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies" title="MDN :: HTTP cookies">HTTP cookies</a>  (<code>4KB</code>)</h2>
+
+<ul>
+<li>HTTP Headers
+
+<ul>
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie"><code>Cookie</code></a> @ Request</p>
+
+<pre><code class="language-http">Cookie: &lt;cookie-list&gt;
+Cookie: name=value
+Cookie: name=value; name2=value2; name3=value3
+</code></pre></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie"><code>Set-Cookie</code></a> @ Response</p>
+
+<pre><code class="language-http">Set-Cookie: &lt;cookie-name&gt;=&lt;cookie-value&gt; 
+Set-Cookie: &lt;cookie-name&gt;=&lt;cookie-value&gt;; Domain=&lt;domain-value&gt;; Secure; HttpOnly
+</code></pre></li>
+</ul></li>
+<li>For storing sensitive data; a small piece of data <strong>sent by server</strong>. Client may store and send it back with next request to same server.</li>
+<li>Browser automatically adds <code>Cookie</code> header per request containing all cookies existing/stored of that request's domain.</li>
+<li><a href="https://en.wikipedia.org/wiki/General_Data_Protection_Regulation#I_General_provisions" title="Wikepedia">GDPR</a> (General Data Protection Regulation; 2018) and Cookie Law (ePrivacy Directive; 2002/2009)
+
+<ul>
+<li><strong>Persistent Cookies</strong> require consent notice;</li>
+<li><strong>Session Cookies</strong> do not.</li>
+</ul></li>
+</ul>
+
+<h3>HTTP Request Header</h3>
+
+<ul>
+<li>See <code>Network.HTTP.Headers</code> (<a href="li>
+<li>App server should send via <code>HTTPS</code> only.<br></li>
+
+<li><p>Always <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Syntax">set <em>security flags</em></a>:</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>httpOnly</code></td>
+<td>Prevent <dfn title="Cross-Site Scripts">XSS</dfn>; forbid any JS access.</td>
+</tr>
+
+<tr>
+<td><code>SameSite=strict</code></td>
+<td>Prevent <dfn title="Cross-Site Request Forgery">CSRF</dfn>.</td>
+</tr>
+
+<tr>
+<td><code>secure=true</code></td>
+<td>Via <code>HTTPS</code> only.</td>
+</tr>
+</tbody>
+</table></li>
+</ul>
+
+<h3>Web API :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie" title="MDN"><code>document.cookie</code></a></h3>
+
+<p><strong><em>Cookies are domain specific</em></strong>; <em>sent by browser</em> only <em>to domain which wrote them</em>.</p>
+
+<p><strong><em>With every request</em></strong> to a specific domain, the client's web browser looks to see if there is a cookie from that domain on the client's machine. If found, the browser will send the cookie with every request to that domain.</p>
+
+<p>Cookie <strong><em>data limitations</em></strong>: if the data is hex (hash), okay to store raw, else <a href="https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa" title="JS @ MDN">base64</a>-encode the raw string data.</p>
+
+<pre><code class="language-js">window.btoa(raw)  
+// ... btoa() is scope to Window OR GlobalWorker
+</code></pre>
+
+<h3>Cookies :: Special Key Names</h3>
+
+<ul>
+<li><code>__Host-*</code> &mdash; Require HTTPS, <code>Secure</code>, sans <code>Domain</code></li>
+<li><code>__Secure-*</code> &mdash; Require HTTPS, <code>Secure</code>
+
+<ul>
+<li>Else cookie is not set.</li>
+</ul></li>
+</ul>
+
+<p><a name="jscookie"></a></p>
+
+<h3>JS Cookie Libraries</h3>
+
+<ul>
+<li><p><a href="https://github.com/js-cookie/js-cookie" title="@ GitHub"><code>js-cookie</code> (<code>1KB</code>)</a>; popular; simple API (<code>get</code>, <code>set</code>, <code>remove</code>).</p>
+
+<pre><code class="language-js">Cookies.set(key, val, { path: '/', sameSite: 'strict' }
+</code></pre></li>
+
+<li><p>Minimal :: Get / Set :: <code>document.cookie</code></p>
+
+<pre><code class="language-js">// Get 
+function cookieGet(name) {
+    var c = &quot;; &quot; + document.cookie;
+    var x = c.split(&quot;; &quot; + name + &quot;=&quot;);
+    if (x.length === 2) {
+        return x.pop().split(&quot;;&quot;).shift();
+    }
+}
+// Set
+function cookieSet(name, value) {
+    var expires = &quot;&quot;;
+    var date = new Date();
+    date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
+    expires = &quot;; expires=&quot; + date.toUTCString();
+
+    document.cookie = name + &quot;=&quot; + value + expires + &quot;; path=/&quot;;
+}
+</code></pre></li>
+</ul>
+
+<h2>HTTP Caching :: <code>ETag</code> / <code>If-Match</code> headers (<a href="h2>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](Tech.Stacks.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

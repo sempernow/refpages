@@ -1,0 +1,118 @@
+# Elastic Beanstalk (EB)  
+    PaaS for DevOps; app container; handles all underlying AWS infrastructure configuration, requirements, and deployment; (capacity provisioning, load balancing, auto-scaling, application health monitoring); can upload/update code; EB is sort of a GUI version of CloudFormation   
+
+    alt: Heroku  https://www.heroku.com/ ; BlueMix (IBM)   
+
+    - Precursor of ECS (Docker) and OpsWorks (Chef/Puppet).  
+    - Utilizes ECS if Environment is Docker 
+    
+    - Apps are updatable  
+    - Apps can be modularized into multiple EB apps  
+    - Apps can have multiple environments; Prod, Staging, Dev, V1, V2, ...
+    - Environments can be single instance or scalable  
+    - Environments can be web server or worker  
+        @ Worker environment: on-demand workloads or scheduled tasks; msg per SQS/POST   
+    - Apps are uploaded as .zip or .war file  
+
+    - PLATFORMS available:  
+        - Preconfigured    
+            Node.js (Nginx|Apache), PHP (Apache), Python (Apache), Ruby (Passenger|Puma), Tomcat (Java), .NET (IIS), Java, Go, Packer    
+        - Preconfigured - Docker    
+            GlassFish (Java EE App Server), Go, Python    
+        - Generic    
+            Docker  
+            Multi-container Docker  
+
+    - DEBUGGING 
+        @ EB Dashboard > Logs > Request Logs 
+            > "Last 100 lines" | "Full Logs"  (downloadable)  
+    
+    - SHUTDOWN 
+        @ EB > {appname} > Actions (menu) > Delete application > Delete (button)  
+        @ RDS > Instances > {name} > Delete (button)  
+        @ ElastiCache > Redis > {name} (select the CLUSTER) 
+            > Delete (button) > Backup: no > Delete  
+        @ VPC > Security Groups > ... delete ...
+        
+        - SECURE :: Prevent credentialed User, e.g., Travis-CI bot, 
+          from programmatic (automatic) access ...
+            @ IAM > User > Security credentials 
+                > Access Key > "Make inactive"
+
+    - @ EB > Create ...  
+        Application information  
+            Application name:  
+        Base configuration  
+            Platform (dropdown-menu)
+                - Preconfigured    
+                - Preconfigured - Docker    
+                - Generic    
+            Application code: 
+                - Sample application (check-box)  
+                - Upload your code   (check-box)  
+        > Configure more options | Create application  (buttons)  
+        > Configure more options  
+            Configuration presets  
+                - Low cost (Free Tier eligible)  (check-box)
+                - High availability  (check-box)
+                - Custom confguration  (check-box)
+
+            Change platform configuration 
+            (Also available @ EB Dashboard, post-creation)
+               Tags, Software, Capacity, Load balancer, Security, Monitoring, Instances, Rolling updates and deployments, Notifications
+
+    - @ EB > Configuration
+        > Security
+            - Service role
+            - Virtual machine permissions
+                EC2 key pair: (add key-pair for SSH access)
+                IAM instance profile: (default)
+
+        > Rolling updates and deployments: 
+            Deployment policy:   "all at once" | immutable  
+            Rolling update type: "all at once" | immutable  
+        
+        > Database  
+            AWS Recommendation: Provision separately (@ RDS), 
+            then connect to EB, else deleting EB app deletes database too.    
+
+    - SSH into per normal EC2 method 
+        ssh ec2-user@IP_ADDR -i ~/.ssh/KEYNAME.pem  
+
+    - AWS EB CLI  
+        DevGuide  https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html  
+        Ref       https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb3-cmd-commands.html  
+
+        - awsebcli; is NOT aws-cli (separate app)
+        - Requires Python 2.7/3.4
+            $ pip install awsebcli --upgrade --user
+
+            $ mkdir HelloWorld
+            $ cd HelloWorld
+            $ eb init -p PHP
+            $ echo "Hello World" > index.html
+            $ eb create dev-env
+            $ eb open
+            $ eb deploy ENVIRONMENT_NAME  # deploy
+
+# Docker @ EB 
+# ===========
+"11 Multi-Container Deployments to AWS"
+
+    @ AWS > EB > "Create New Application" (button)  
+        Application Name: multi-docker  
+             Description: 
+        > "Create one now" (button)  
+        > "Web server environment" (check-box)  
+            Create a web server environment  
+                Environment information  
+                    Application name: multi-docker     (auto-filled)  
+                    Environment name: MultiDocker-env  (auto-generated)  
+                              Domain: (leave-blank).us-east-1.elasticbeanstalk.com  
+                         Description:  
+                Base configuration  
+                            Platform: "Preconfigured platform" (check-box)  
+                                          "Multi-container Docker" (select; dropdown-menu)  
+                    Application Code: "Sample application" (check-box; default)  
+                
+                > Create environment (button)  

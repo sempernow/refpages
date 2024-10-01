@@ -1,0 +1,27 @@
+---
+# This minimal version satisfies Task of Lesson 9 Lab
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: netpol-lab9-final
+  namespace: restricted
+spec:
+  podSelector:
+    matchLabels:
+      run: lab9server
+#  policyTypes:
+#  - Ingress
+#  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: default
+      podSelector:
+        matchLabels:
+          run: sleepybox1
+#    ports:
+#    - protocol: TCP
+#      port: 80
+#  egress:
+#  - {}

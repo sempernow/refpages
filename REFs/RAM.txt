@@ -1,0 +1,59 @@
+LGA1151 socket CPU
+	6th-8th Gen; Skylake, Kaby Lake, Coffee Lake (DDR4-2666)
+
+Use Unbuffered, Non-ECC DDR4 DIMMs (E.g., DDR4-2133 MHz; PC4-17000)
+	is Synchronous DRAM; SDRAM
+	JEDEC standard DDR4 modules  (XMP is Intel, not JDEC, scheme)
+	https://en.wikipedia.org/wiki/DDR4_SDRAM#Modules
+
+Coffee Lake
+	Natively supports DDR4-2666 XMP  https://www.amazon.com/Corsair-Vengeance-2666MHz-Desktop-Memory/dp/B0123ZC44Y
+
+Maximize compatibility
+
+	All memory modules should have ...
+
+	1. same CAS Latency (CL)
+	2. same version or data code (D/C)
+	3. same vendor
+	
+	
+DDR4 SDRAM  288-pin https://en.wikipedia.org/wiki/DDR4_SDRAM#Modules
+
+	DDR4-xxxx denotes per-bit data transfer rate
+	PC4-xxxxx denotes overall transfer rate; 8 x transfers/sec
+	E.g., "PC-17000" is "DDR4-2133"; 8 x 2133 = 17064
+
+CAS Latency (CL)
+
+	Column Access Strobe (CAS) latency, or CL; the delay time between the moment a memory controller tells the memory module to access a particular memory column on a RAM module, and the moment the data from the given array location is available on the module's output pins.
+
+	In asynchronous DRAM, the interval is specified in nanoseconds (absolute time). In synchronous DRAM (SDRAM), the interval is specified in clock cycles. Because the latency is dependent upon a number of clock ticks instead of absolute time, the actual time for an SDRAM module to respond to a CAS event might vary between uses of the same module if the clock rate differs.
+	
+
+Timing Profiles 
+
+	JDEC Profile
+
+		CL-tRCD-tRP-tRAS-tRC @ frequency
+
+		Serial Presence Detect (SPD)  1.20v  
+		
+			The standard way of accessing information from a memory module.
+			The default memory operation frequency is dependent on SPD. 
+			Under the default state, some memory modules for overclocking may operate at a lower frequency than the vendor-marked value.
+
+	Intel XMP profile  1.35v  
+
+		CL-tRCD-tRP-tRAS-tRC-CR @ frequency (voltage) 
+		
+		Frequencies higher than 2133MHz and their corresponding timing or the loaded XMP profle is NOT the JEDEC memory standard. The stability and compatibility of the memory modules depend on the CPU’s capabilities and other installed devices.
+		
+		Load predefined and tested Intel XMP profiles through BIOS.
+		https://www.intel.com/content/www/us/en/gaming/extreme-memory-profile-xmp.html
+
+	
+Hyper DIMM support is subject to CPUs. 
+	Load X.M.P. or D.O.C.P. settings in BIOS for the hyper DIMM support.
+
+		

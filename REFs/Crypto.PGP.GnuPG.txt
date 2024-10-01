@@ -1,0 +1,525 @@
+GPG [GnuPG.org] 	REF: https://www.gnupg.org/gph/en/manual.html
+
+	A HYBRID cipher system; uses both symmetric key AND asymmetric key (a.k.a. public key, or public-private key-pair) ciphers. The subject data/message/file is encrypted using a symmetric cipher, i.e., with a random symmetric [session] key generated on-the-fly. Then, separately, that session key is encrypted using an asymmetric [public-private] key-pair cipher, i.e., sender's private key and recipient's public key. Both the encrypted data/message/file and the encrypted session key are then combined into one package, and sent across the untrusted network. The recipient uses their private key to decrypt the session key, then the session key is used to decrypt the data/message/file. A unique session key is used to send each data/message/file thereby.
+  
+  This scheme overcomes limitations of asymmetric key ciphers. Specifically, that the cipher generated thereby is much larger than its [secret] payload, and the cost/speed of encrypt/decrypt computation is much greater than that of symmetric key ciphers. Hence, the asymmetric cipher is used only to protect [encrypt] the session key, while the symmetric cypher protects [encrypts] the [often much larger] payload.
+  
+  The private key, stored locally, is protected [encrypted] using a symmetric cipher; changing its passphrase [symmetric key] has no effect outside the [local] keyring; allows one private-key pair to have different passphrases per device and/or location.
+	
+	ALWAYS store the public key's REVOCATION CERTIFICATE and a PRIVATE KEY BACKUP on write-protected media in a safe place.
+	https://www.gnupg.org/gph/en/manual.html#AEN513
+
+	Subkeys; like the normal keys, except they're bound to a master key pair. A subkey can be used for signing or for encryption. The really useful part of subkeys is that they can be revoked independently of the master keys, and also stored separately from them. GnuPG actually uses a signing-only key as the master key, and creates an encryption subkey automatically.
+	
+	Unattended passphrase	https://wiki.archlinux.org/index.php/GnuPG#Unattended_passphrase
+
+	Starting with GnuPG 2.1.0 the use of gpg-agent and pinentry is required, which may break backwards compatibility for passphrases piped in from STDIN using the --passphrase-fd 0 commandline option. See workaround.	
+		
+		
+GPG version @ Cygwin  https://cygwin.com/cgi-bin2/package-grep.cgi
+--------------------
+
+	Version 2 [2017]  
+	
+		gnupg2-2.1.22-1 - gnupg2: GNU tool for secure communication and data storage
+		https://cygwin.com/cgi-bin2/package-cat.cgi?file=x86_64%2Fgnupg2%2Fgnupg2-2.1.22-1&grep=gnupg
+
+	Version 1 [2015]
+
+	$ gpg --version
+
+		gpg (GnuPG) 1.4.20
+		Copyright (C) 2015 Free Software Foundation, Inc.
+		License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+		This is free software: you are free to change and redistribute it.
+		There is NO WARRANTY, to the extent permitted by law.
+
+		Home: ~/.gnupg
+		Supported algorithms:
+		Pubkey: RSA, RSA-E, RSA-S, ELG-E, DSA
+		Cipher: IDEA, 3DES, CAST5, BLOWFISH, AES, AES192, AES256, TWOFISH,
+				CAMELLIA128, CAMELLIA192, CAMELLIA256
+		Hash: MD5, SHA1, RIPEMD160, SHA256, SHA384, SHA512, SHA224
+		Compression: Uncompressed, ZIP, ZLIB, BZIP2
+
+		
+Flag/Fix
+--------
+	'gpg: WARNING: unsafe permissions on configuration file ".../.gnupg/gpg.conf"'
+
+	$ chmod 600 ~/.gnupg/gpg.conf
+
+	'gpg: WARNING: unsafe enclosing directory permissions on configuration file ".../.gnupg/gpg.conf"'
+
+	$ chmod 700 ~/.gnupg
+	
+	
+=======================
+METHODS PER KEYRING ...
+=======================
+	gpg.exe operates per its keyring [database] @ /home/$USERNAME/
+
+		.gnupg/pubring.gpg
+		.gnupg/secring.gpg
+
+	Default asymmetric cipher is CASE5; 
+	change by adding line @ config @ .gnupg/gpg.conf
+	
+		personal-cipher-preferences AES256
+		
+
+Generating a new keypair		https://www.gnupg.org/gph/en/manual.html#AEN26
+======================== 		https://wiki.debian.org/Keysigning
+
+gpg --gen-key
+gpg --gen-revoke <KEY_ID> > revocation-<KEY_ID>.crt
+gpg --send-key <fingerprint>
+
+Some public keyservers:
+
+	hkp://keys.gnupg.net	[GnuPG Plugin for PortableApps]
+	
+    http://p80.pool.sks-keyservers.net/
+
+    http://keys.gnupg.net:11371/
+
+    http://wwwkeys.pgp.net
+
+    http://pgp.surfnet.nl
+
+    http://pgp.mit.edu
+
+	
+Unattended key generation
+-------------------------	
+	
+	_pass="$@"
+	_pubring=foo.pubkey.gpg
+	_secring=foo.seckey.gpg
+	
+	$ cat > params.txt <<EOF
+	 %echo Generating a key
+	 Key-Type: RSA
+	 Key-Length: 2048
+	 Subkey-Type: RSA
+	 Subkey-Length: 2048
+	 Name-Real: Foo Bar
+	 Name-Comment: foo bar baz
+	 Name-Email: foo@bar.baz
+	 Expire-Date: 1y
+	 Passphrase: $_pass
+	 %pubring $_pubring
+	 %secring $_secring
+	 # -------------------------
+	 # -- %dry-run || %commit --
+	 # -------------------------
+	 %dry-run
+	 %echo done
+	EOF
+
+	$ gpg --batch --gen-key params.txt
+	$ gpg --no-default-keyring --secret-keyring ./$_secring --keyring ./$_pubring --list-secret-keys
+	
+	
+	# REF: https://www.gnupg.org/documentation/manuals/gnupg/Unattended-GPG-key-generation.html
+
+
+Create a PUBLIC/PRIVATE KEY PAIR		
+--------------------------------
+	$ gpg --gen-key
+
+	* 'kind' query ...
+		
+		Please select what kind of key you want:
+		   (1) RSA and RSA (default)
+		   (2) DSA and Elgamal
+		   (3) DSA (sign only)
+		   (4) RSA (sign only)
+		Your selection? 1
+	
+	* 'expires' query ...
+	
+			 0 = key does not expire
+		  <n>  = key expires in n days
+		  <n>w = key expires in n weeks
+		  <n>m = key expires in n months
+		  <n>y = key expires in n years
+
+	* 'passphrase' query ...
+		You need a Passphrase to protect your secret key.
+		Enter passphrase ...
+		passphrase not correctly repeated; try again.
+
+
+Generate a revocation certificate
+---------------------------------
+	$ gpg --output _USER_ID_.revoke.asc --gen-revoke _USER_ID_
+		
+	 If you forget your passphrase or if your private key is compromised or lost, this revocation certificate may be published to notify others that the public key should no longer be used. A revoked public key can still be used to verify signatures made by you in the past, but it cannot be used to encrypt future messages to you. It also does not affect your ability to decrypt messages sent to you in the past if you still do have access to the private key. 
+	
+	
+List PUBLIC KEYS 
+----------------
+	$ gpg --list-keys
+	
+	/home/$USERNAME/.gnupg/pubring.gpg
+	-----------------------------------
+	pub   4096R/61440BFC 2016-05-22 [expires: 2016-11-18]		<= Master Sign/Certify only key (Primary key)
+	uid                  _USER_ID_ <_USER_ID_@gmail.com>
+	sub   4096R/1193CDCE 2016-05-22 [expires: 2016-11-18] 		<= sub Encrypt/Decrypt key
+		  ----- --------
+		    |      |
+		 keylength last 8 digits of 40 digit FINGERPRINT of certificate.
+		  
+	$ gpg --fingerprint _USER_ID_
+	
+		  
+List PRIVATE KEYS 
+-----------------
+	$ gpg --list-secret-keys
+	
+	/home/$USERNAME/.gnupg/secring.gpg
+	-----------------------------------
+	sec   4096R/61440BFC 2016-05-22 [expires: 2016-11-18]
+	uid                  _USER_ID_ <_USER_ID_@gmail.com>
+	ssb   4096R/1193CDCE 2016-05-22
+
+
+Delete a PUBLIC KEY
+-------------------
+gpg --delete-key "User-ID"
+
+
+Delete a PRIVATE KEY
+--------------------
+gpg --delete-secret-key "User-ID"
+
+	
+Export a PUBLIC KEY to a text file
+----------------------------------
+To send your public key to a correspondent you must first export it.
+Without '--armor' option, output file is binary.
+
+	$ gpg --export --armor "_USER_ID_" > _USER_ID_.pubkey.asc
+
+	print to stdout ... 
+	
+	$ cat _USER_ID_.pubkey
+	
+	-----BEGIN PGP PUBLIC KEY BLOCK-----
+	Version: GnuPG v1
+
+	mQINBFdB8+4BEACyRDig0gf1gCPSQBUgA6QgJAm4ZV4EX5NyIcDhTPhTez28ury3
+	.
+	.
+	.
+	s9FWM1fOvQqt8QQknsZPwfZWU+yQAJjqE7FJJUXM926cWirbTc1MYGjQJ6Vi+JwY
+	9p3lZ9xDJnozxg==
+	=gSjM
+	-----END PGP PUBLIC KEY BLOCK-----
+
+	
+Export a PRIVATE KEY to a text file
+-----------------------------------	
+	$ gpg --export-secret-key --armor _USER_ID_ > _USER_ID_.privatekey.asc
+	
+	print to stdout ... 
+
+	$ cat _USER_ID_.privatekey.asc
+	-----BEGIN PGP PRIVATE KEY BLOCK-----
+	Version: GnuPG v1
+
+	4FiQlKVqv53Y28XY35i8tPnmR4wEQ2xF15hx1E88wt368WJ0Wa2Fs85QA36rS77V
+	.
+	.
+	.
+	cYh45C0u6etc62dRjrgq20x0wxn25v20IQgnN45JQV6ST4w1nc301361te4=
+	=qSH/
+	-----END PGP PRIVATE KEY BLOCK-----
+
+	
+Import KEY [PUBLIC|PRIVATE]
+---------------------------
+	$ gpg --import <path-to-key>
+	
+	... attaches [public|private] key to keyring [pubring.gpg|secring.gpg]
+
+	Once a key is imported it should be validated. 
+	
+
+Verify/Trust a [imported] key, ...
+----------------------------------
+A key is validated by verifying the key's fingerprint and then signing the key to certify it as a valid key. A key's fingerprint is verified with the key's owner. This may be done in person or over the phone or through any other means as long as you can guarantee that you are communicating with the key's true owner. Every user-ID on the key will have one or more self-signatures as well as a signature for each user that has validated the key.
+
+	$ gpg --edit-key _USER_ID_	
+	
+	... At the program prompt, 'gpg>', type ...
+	
+	trust'
+	
+	... and select ...
+	
+	5 = I trust ultimately. 
+	
+	other commands ...
+	fpr 		show fingerprint 
+	toggle 		pub/sec key
+	sign		sign the key to validate it.
+	check
+
+	gpg> check
+	uid  _USER_ID_ <_USER_ID_@gmail.com>
+	sig!3        61440BFC 2016-05-22  [self-signature]
+	
+	
+Encrypting and decrypting documents		https://www.gnupg.org/gph/en/manual.html#AEN111	
+===================================
+Documents are encrypted using public key of recipient, 
+and decrypted using the private key if the recipient. 
+			
+Encrypt a binary file
+---------------------
+REQUIRES recipient's PUBLIC KEY @ YOUR keyring
+
+	$ gpg -r <recipient-User-ID> -o <output-path> -e <target-path>
+	
+	or ...
+	
+	$ gpg -e <target-path>
+	
+	...queries for recipient's User-ID [which maps to recipient's public-key @ .gnupg/pubring.gpg]
+	
+	
+Encrypt a text file	
+-------------------
+	$ gpg -a -r <recipient-ID> -o <output-ciphertext-path.txt>.asc -e <target-path.txt>
+
+	$ cat /cygdrive/s/Newtxt.txt.asc	[the ciphertext]	
+	-----BEGIN PGP MESSAGE-----
+	Version: GnuPG v1
+
+	hQIMAwwTH8MRk83OAQ/9EkyAwPWF+WYsAS/NhdIaJkI1nVzg2tIrROQV7OsPlNin
+	/9tso ...
+	.
+	.
+	.
+	XGq6V24bbiXOuAFt6adsYO9rz/9swoDnlZdc9B0=
+	=D8F8
+	-----END PGP MESSAGE-----	
+	
+	... which can be copied/pasted into an e-mail, etc ...
+
+	
+Decrypt a binary file
+---------------------
+	$ gpg -u <user-@-private-key-ID> -o <output-path> -d <target-path>
+	
+	or ...
+	
+	$ gpg -o <output-path> -d <target-path>
+	
+
+Decrypt with different keyring ??? 	http://www.somacon.com/p107.php
+------------------------------	
+	$ gpg --secret-keyring KEYRING -o <output-path> --d <target-path>
+	
+	
+Decrypt a text file
+---------------------
+	$ gpg -u <user-@-private-key-ID> -o <output-text-path> -d <target-ciphertext-path>
+	
+	or just ...
+	
+	$ gpg -d <target-ciphertext-path>
+	
+	... prints decrypted text to stdout
+
+	... or with redirect ...
+	
+	$ gpg --passphrase-fd 0 -c <target-path> > <output-text-path>
+		
+Encrypt with SYMMETRIC-only cipher
+----------------------------------
+The key used to drive the symmetric cipher is derived from a passphrase supplied when the document is encrypted, and for good security, it should NOT be the same passphrase that you use to protect your private key. 
+
+	'-c' == '--symmetric'
+	
+	$ gpg -c <target-path> 
+	$ gpg -c <target-path> --cipher-algo TWOFISH 	[default is AES128]
+	
+	... queries for passphrase @ 'Enter passphrase:'
+	
+	... can do programmatically via file descriptor [fd] option [0=stdin]
+	
+	$ echo <passphrase> | gpg --passphrase-fd 0 -c <target-path>
+
+	
+Decrypt a SYMMETRIC-only cipher
+-------------------------------
+Same as Asymmetric decryption.
+
+	$ gpg -o out.zip -d /cygdrive/s/test.zip.gpg
+	
+	... queries for passphrase @ 'Enter passphrase:'
+	
+	... can do programmatically via file descriptor [fd] option [0=stdin]
+	
+	$ echo <passphrase> | gpg --passphrase-fd 0 -o <output-path> -c <target-path>
+	
+	... or with redirect ...
+	
+	$ echo <passphrase> | gpg --passphrase-fd 0 -c <target-path> > <output-path>
+
+	
+Making and verifying signatures		https://www.gnupg.org/gph/en/manual.html#AEN136	
+===============================
+Per the Digital Signature Standard (DSA); a signature of a document is an encrypted hash of the document. A signature is created -- a document is signed --using the private key of the signer/sender. The signature is verified using the corresponding public key of the signer/sender. A digital signature certifies and timestamps a document. If the document is subsequently modified in any way, a verification of the signature will fail.  A signer denying their digital signature implies their private key was compromised.
+
+
+Key Signing 	https://wiki.debian.org/Keysigning
+-----------
+
+	retrieve your key from the server 
+
+	gpg --recv-keys 00AA11BB
+
+	verify that the information is correct (the fingerprint) 
+
+	gpg --fingerprint 00AA11BB
+
+	sign it. 
+
+	gpg --sign-key 00AA11BB 
+
+	send it back to the key owner as an encrypted email (or send it directly to a server). Sending it encrypted is preferred as you can verify the person can decrypt the messages they receive. 
+
+	gpg --armor --output 00AA11BB-signedBy-1A2B3C4D.asc --export 00AA11BB
+
+	Send your signed key to the server
+
+	Some time after having participated in a keysigning, you will perhaps receive your signed key as an e-mail attachment. Import the signatures:
+
+	gpg --import 1A2B3C4D-signedBy-00AA11BB.asc
+
+	Afterwards you will have to send your updated key to the server:
+
+	gpg --send-key 1A2B3C4D
+
+	
+Sign a document 
+---------------
+	'-s' == '--sign'
+	
+	$ gpg -o <doc-path.sig> -s <doc-path>
+
+	... queries for passphrase @ 'Enter passphrase:'
+	
+	The document is compressed before being signed, and the output is in binary format.
+
+	 
+Verify a document
+-----------------
+	'-v' == '--verify'
+
+	$ gpg -v <doc-path.sig>
+	
+	Auto create/write original doc  [sans signature], e.g., doc.sig.asc => doc.sig
+	
+	$ gpg -v --armor <doc-path.sig>
+	
+	
+Verify & Decrypt
+----------------
+
+	$ gpg -o <doc-path> -d <doc-path.sig>
+	
+	
+Clearsigned documents
+---------------------
+The document is modified; wrapped in an ASCII-armored signature but otherwise is unmodified. ASCII armor is a binary-to-textual encoding converter; involves encasing encrypted messaging in ASCII.
+
+	$ gpg --clearsign <doc-path>
+	
+	$ 5muck testthis | gpg --passphrase-fd 0 --clearsign /cygdrive/s/doc.txt
+
+Detached signatures
+-------------------
+A signed document has limited usefulness. Other users must recover the original document from the signed version, and even with clearsigned documents, the signed document must be edited to recover the original. A third method for signing a document that creates a detached signature, which is a separate file
+
+	$ gpg -o <doc-path.sig> --detach-sig <doc-path>
+
+	... queries for passphrase @ 'Enter passphrase:'
+
+	Both the document and detached-signature [file] are needed to verify the signature. The --verify option is used to check the signature.
+	
+	$ gpg -v <doc-path.sig> <doc-path>
+
+
+Key Management		https://www.gnupg.org/gph/en/manual.html#MANAGEMENT	
+==============
+* CERTIFICATE; a public key that has self-signed user IDs bound to it
+* Do NOT distribute unsigned key[s]. A public key can be protected from tampering by using its corresponding private master key to sign the public key components and user IDs. 
+
+* Both new subkeys and new user IDs may be added to your keypair after it has been created. 
+
+
+	$ gpg --edit-key _USER_ID_
+
+	fpr 		show fingerprint 
+	toggle 		pub/sec key
+	sign		sign the key to validate it.
+	check
+	[add|del|rev]key
+	[add|del]uid
+	revsig
+	passwd		change passphrase; CHANGES private-key.
+	save
+
+CHANGE PASSPHRASE UNATTENDED
+----------------------------
+Can use '--passphrase-fd 0' to pipe for addkey etc, but NOT for 'passwd' ...
+
+	$ echo 'passphrase' | gpg --passphrase-fd 0 --edit-key <User-ID>
+
+	gpg>passwd .. fails [bypasses user input @ "Enter new ..."]
+	
+	BUT CAN 'addkey' etc if passphrase piped 
+	
+	So, to CHANGE PASSPHRASE UNATTENDED, strip @ export ... 
+	
+	'--export --export-options export-reset-subkey-passwd'
+
+	... then import and add/new passphrase.
+	
+
+Distributing keys	https://www.gnupg.org/gph/en/manual.html#AEN464
+-----------------
+
+	fingerprint/key-id		https://davesteele.github.io/gpg/2014/09/20/anatomy-of-a-gpg-key/
+	------------------
+	
+		in some contexts, the six-digit fingerprint value needs to have “0x” prepended (‘0x366150CE’) when referencing it.
+
+		The fingerprint/key-id is a hash of the entire key packet, and only the key packet. It is invalidated (changed) if any information in the key packet is changed, but is unaffected by any changes in any other packets.
+
+EXAMPLE
+-------
+
+
+# The Master Key
+
+	pub   4096R/D9AFBB99 2015-02-07
+		  Key fingerprint = ED72 7C30 6E76 6BC8 5E62  1AA6 5FA6 C3E4 D9AF BB99
+	uid                  Joanna Rutkowska (Master Signing Key)
+
+# Email encryption keys
+
+	pub  4096R/0DDC6718  created: 2015-02-07  expires: 2016-02-07  usage: SC  
+						 trust: ultimate      validity: ultimate
+	sub  4096R/0E467029  created: 2015-02-07  expires: 2016-02-07  usage: E   
+	[ultimate] (1). Joanna Rutkowska (ITL Email Key) <joanna@invisiblethingslab.com>
+
+	gpg> check
+	uid  Joanna Rutkowska (ITL Email Key) <joanna@invisiblethingslab.com>
+	sig!3        0DDC6718 2015-02-07  [self-signature]
+	sig!         D9AFBB99 2015-02-07  Joanna Rutkowska (Master Signing Key)

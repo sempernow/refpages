@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Crypto.Bitcoin</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Bitcoin" title="Wikipedia">Bitcoin</a>  Usage</h1>
+
+<h2>Exchanges / Wallets (Bootstrap)</h2>
+
+<ol>
+<li>Create an account at <strong><a href="https://www.coinbase.com/">Coinbase</a></strong> or <strong><a href="https://cash.app/">CashApp</a></strong> <strong>exchange</strong>
+
+<ul>
+<li><strong><em>links</em></strong> your <strong><em>identity</em></strong> &amp; <strong><em>bank account</em></strong>.</li>
+<li><strong><em>Use</em></strong> it <strong><em>only as</em></strong> an <strong><em>exchange</em></strong> ( crypto to/from cash).</li>
+<li><strong><em>Do not use</em></strong> this account <strong><em>as your wallet</em></strong>.</li>
+</ul></li>
+<li>Purchase some trivial amount of bitcoin at the exchange.</li>
+<li>Install <strong><a href="https://electrum.org/">Electrum</a> wallet</strong> on your desktop machine.
+
+<ul>
+<li>Generates the <strong><em>passphrase</em></strong>; a 12 word code (<em>seed</em>).</li>
+</ul></li>
+<li>Send the money from your exchange account to your Electrum wallet.</li>
+<li>Install <strong><a href="https://wallet.mycelium.com/">Mycelium</a> wallet</strong> on your phone.
+
+<ul>
+<li>Handles QR codes; info is amount &amp; address to send to.</li>
+</ul></li>
+<li>Send some of the money in your Electrum wallet to your Mycelium wallet.</li>
+</ol>
+
+<p>So, the offline wallet (Electrum) is like your savings account, holding the bulk of your crypto, and the online wallet (Mycelium) is like your checking account, holding only that which you need for routine, near-term transactions.</p>
+
+<p>A <em>wallet</em> maintains <strong><em>bitcoin address(es)</em></strong>; record(s) on the distributed blockchain; accessible from anywhere, and <strong><em>secured by the passphrase</em></strong>.</p>
+
+<h4><em>Do not use a crypto exchange as a wallet</em>:</h4>
+
+<p>A foundational idea of cryptocurrency is that it has no central (single) authority controlling it. Yet crypto exchanges are just that, when used as your crypto store (wallet).</p>
+
+<ul>
+<li>Crypto exchanges may converge with the other lawless financial institutions, which are notorious for engaging in blatant discrimination against customers in good standing, at the whims of depraved political commissars; <a href="https://www.breitbart.com/tech/2019/02/27/financial-blacklisting-chase-bank-withdraws-service-from-independent-and-conservative-figures/" title="2019 @ Breitbart">blacklisting customers</a>.</li>
+<li>Crypto exchanges are notorious for looting of customers' accounts, in <a href="https://www.cnbc.com/2019/05/08/binance-bitcoin-hack-over-40-million-of-cryptocurrency-stolen.html">example</a> after <a href="https://www.forbes.com/sites/francescoppola/2018/02/11/yet-another-theft-from-a-cryptocurrency-exchange-but-who-is-really-to-blame/#4e47df4af6dd">example</a>, after <a href="https://www.bbc.com/news/world-asia-42845505">example</a>; they, not you, hold the private key.</li>
+</ul>
+
+<p><strong><em>The private key</em></strong> (seed a.k.a. passphrase) <strong><em>should never be shared</em></strong>; only the bitcoin (account) owner should have access to it.</p>
+
+<blockquote>
+<p><em>&ldquo;Your bitcoins are only as safe as their private keys.&rdquo;</em></p>
+</blockquote>
+
+<p>This is fundamental to all such cryptography (PKE), not merely Bitcoin.</p>
+
+<h2>Gift Cards / Mobile Refills</h2>
+
+<p><a href="https://www.bitrefill.com/">Bitrefill</a> &mdash; Live on Crypto</p>
+
+<blockquote>
+<p>Purchase <strong><em>Gift Cards</em></strong> or <strong><em>Mobile Refills</em></strong> from more than 1650 businesses in 170 countries. Get eGifts &amp; pay mobile bills quickly, safely, &hellip; <strong><em>using cryptocurrencies</em></strong>.</p>
+</blockquote>
+
+<ol>
+<li>Enter (fake) <strong><em>email address</em></strong> to get QR code.</li>
+<li>Scan &amp; Send using your Mycelium wallet:
+
+<ul>
+<li>Click <code>send</code>, which opens the phone's camera.</li>
+<li>Scan the QR code, which loads the amount and the (crypto) address to send it to.</li>
+<li>Click <code>send</code>.</li>
+</ul></li>
+</ol>
+
+<p>Transaction time is 1-10 minutes. After which you will be given a code to enter at recipient to claim the Card/Refill amount.</p>
+
+<h2>Bitcoin ATMs</h2>
+
+<p><a href="https://www.coinstar.com/bitcoin">Coinstar</a> <a href="https://www.coinstar.com/findakiosk/?ProductId=100013" title="Find nearest">Kiosk</a> (Vending machine)</p>
+
+<ol>
+<li>Click &quot;Buy Bitcoin&quot;
+
+<ul>
+<li>Enter (fake) <strong><em>phone number</em></strong></li>
+<li>Enter cash; <strong><em>dollar bills</em></strong> (not coins)</li>
+</ul></li>
+<li>Receive voucher with a Bitcoin redemption code.</li>
+</ol>
+
+<h2>Technical Description</h2>
+
+<pre><code class="language-plaintext">Bitcoin: A Peer-to-Peer Electronic Cash System
+
+by Satoshi Nakamoto
+satoshin@gmx.com
+www.bitcoin.org
+</code></pre>
+
+<p>A blockchain is a cryptographically (<a href="https://en.wikipedia.org/wiki/Public-key_cryptography" title="Public-key Encryption @ Wikipedia">PKE</a>) secured append-only log; a <a href="https://en.wikipedia.org/wiki/Distributed_ledger" title="Wikipedia">distributed ledger</a> (addressed per <a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function" title="Wikipedia">hash</a>) whereof a new log entry (<em>chain mutation</em> a.k.a. <em>transaction</em> a.k.a. <em>block</em>) occurs only by some <a href="https://en.wikipedia.org/wiki/Consensus_%28computer_science%29" title="Wikipedia"><em>consensus algorithm</em></a> (work performed by a network of constituent nodes).</p>
+
+<p>A cryptocurrency is simply its blockchain and the code required for mutating it per some <a href="https://en.wikipedia.org/wiki/Peer-to-peer" title="'Peer-to-Peer' @ Wikipedia">P2P</a> network <a href="https://en.wikipedia.org/wiki/Application_programming_interface" title="'Applicaion Programming Interface' @ Wikipedia">API</a>. A bitcoin <em>account</em> is fundamentally nothing but a construct of the mind; as much so as any US financial account. A block of bitcoin (an entry in the ledger) is <em>owned</em> by whomever, or whatever, has access to the private key (pair) of the public key stored therein. Thus a private key is the proxy for its <em>bitcoin</em>; for that in its (quite public bitcoin) block.</p>
+
+<p>A <a href="https://en.bitcoin.it/wiki/Transaction" title="en.bitcoin.it/wiki">transaction</a> is an entry (a new block) appended to the log (blockchain). A transaction can have many recipients. Each entry requires both the sender's <strong><em>signature</em></strong> (per owner's private &amp; public key) and the public key(s) of the recipient(s). Note this <em>signing</em> is <strong><em>the one part of the transaction that must be secured</em></strong>.</p>
+
+<p>The transfer (of ownership) occurs by simply <em>changing</em> the private key locking the amount transacted upon, from that of the sender to that of the recipient(s). Yet instead of actually changing an <em>existing</em> block, a new block is appended to the blockchain. (Blocks are immutable.)</p>
+
+<p>Nothing is actually <em>sent</em> anywhere, and there is no <em>thing</em> other than the sum of all transaction records (the distributed ledger; blockchain). Each such record (block) includes its amount (₿), the new owner (their public key), and the (prior) transaction (hash address from whence it came). Thus forming a (growing) <em>chain</em> of such (immutable) <em>blocks</em>.</p>
+
+<p>A <em>wallet</em> (a.k.a. vault) is any application (some wed to hardware) &mdash; orthogonal to the blockchain &mdash;that stores both public and private key pair(s) to such block(s), and secures them (damn well better), providing a password-based user interace for initiating (signing for) a transaction. That is, a cryptocurrency wallet is a PKE key store/manager. It only <em>contains</em> bitcoins in the sense that it contains (and secures) their proxy, the private key(s) thereto.</p>
+
+<h3><a href="https://en.bitcoin.it/wiki/Transaction" title="en.bitcoin.it/wiki">Bitcoin Transaction</a></h3>
+
+<p><img src="Bitcoin_Transaction_Visual.svg" alt="Bitcoin_Transaction_Visual.png"></p>
+
+<blockquote>
+<p>Note the <strong><em>passphrase</em></strong> (seed) and the <a href="https://privatekeys.pw/bitcoin/keys/1"><strong><em>private key</em></strong></a> are two different things. The former is generated (by a wallet application) to secure the latter. They are often referenced synonymously to convey the underlying concepts sans clutter of technical minutia.</p>
+</blockquote>
+
+<h2>Unicode Glyph ₿</h2>
+
+<h3><a href="https://www.fileformat.info/info/unicode/char/20bf/index.htm" title="fileformat.info"><code>BITCOIN SIGN</code></a> (U+20BF)</h3>
+
+<h2>HTML Entity &#x20bf;</h2>
+
+<h3><code>&amp;#x20bf;</code></h3>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

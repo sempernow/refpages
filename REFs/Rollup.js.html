@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Rollup.js</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://rollupjs.org/guide/en#quick-start" title="Quick Start @ rollupjs.org">Rollup.js</a> | <a href="https://github.com/rollup">@ GitHub</a></h1>
+
+<p>The <code>rollup</code> CLI tool is the newest/simplest of all the module bundlers.</p>
+
+<h2>Bundle <strong>CommonJS</strong>  (<code>npm</code>) app for <strong>browser</strong></h2>
+
+<pre><code class="language-bash">npm init
+npm i 
+npm i -g rollup
+</code></pre>
+
+<pre><code class="language-bash"># For Browsers (IIFE)
+rollup 'main.js' --file 'bundle.js' --format 'iife'
+
+# For Node.js (CommonJS)
+rollup 'main.js' --file 'bundle.js' --format 'cjs'
+
+# For Browsers &amp; Node.js (UMD)
+rollup 'main.js' --file 'bundle.js' --format 'umd' --name 'appBundle'
+</code></pre>
+
+<h2>+ Convert modules from <strong>CommonJS</strong> to <strong>ES6</strong></h2>
+
+<h3>Rollup <strong><em>plugins</em></strong> to load <strong>CommonJS</strong> modules:</h3>
+
+<ul>
+<li><a href="https://github.com/rollup/rollup-plugin-node-resolve" title="@ GitHub"><code>rollup-plugin-node-resolve</code></a></li>
+
+<li><p><a href="https://github.com/rollup/rollup-plugin-commonjs" title="@ GitHub"><code>rollup-plugin-commonjs</code></a></p></li>
+
+<li><p>Install</p>
+
+<pre><code class="language-bash">npm i --save-dev 'rollup-plugin-commonjs'
+npm i --save-dev 'rollup-plugin-node-resolve' 
+</code></pre></li>
+
+<li><p>Use <a href="rollup.config.js">@ <code>rollup.config.js</code></a></p>
+
+<pre><code class="language-js">import resolve from 'rollup-plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+</code></pre>
+
+<ul>
+<li>Also, set &quot;<code>exports: 'named'</code>&quot; at <code>output.exports</code> to handle any <code>global</code> (Window object); Node.js has no such object.</li>
+</ul></li>
+</ul>
+
+<h3>Build <em>declaratively</em> <a href="rollup.config.js">(<code>rollup.config.js</code>)</a></h3>
+
+<pre><code class="language-bash">rollup -c
+</code></pre>
+
+<h2><code>Frontend.BuildTools</code> (<a href="h2>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

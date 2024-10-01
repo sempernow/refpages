@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SDcard</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Secure_Digital" title="Wikipedia :: Secure Digital card">SD Card</a></h1>
+
+<h2><a href="https://www.amazon.com/s/field-keywords=sd+u3+a2+uhs-1" title="Amazon.com :: U3 A2 UHS-1">SD Cards</a> (<code>microSD</code> FF)</h2>
+
+<ul>
+<li><p><a href="https://www.amazon.com/gp/product/B06XWN9Q99" title="R:95MB/s W:20MB/s">Samsung 32GB U1  ... (MB-ME32GA/AM)</a> (bought; $8)</p></li>
+
+<li><p><a href="https://www.amazon.com/dp/B06XX29S9Q" title="R:100MB/s W:60MB/s">Samsung 64GB U3 V10  ... (MB-ME64GA/AM)</a> ($14)</p></li>
+
+<li><p><a href="https://www.amazon.com/dp/B07FCMBLV6" title="R:160MB/s W:60MB/s">SanDisk 64GB U3 A2  (SDSQXA2-064G-GN6MA)</a> (Faster; $21)</p></li>
+
+<li><p><a href="https://www.amazon.com/dp/B07FCMBLV6" title="R:170MB/s W:90MB/s">SanDisk 64GB U3 A2  (Pro)</a> (Fastest; $40)</p></li>
+</ul>
+
+<h2>SD Card Flash Utility</h2>
+
+<ul>
+<li><p><a href="https://www.balena.io/etcher/" title="balena.io">Etcher</a> (<a href="https://github.com/balena-io/etcher" title="balena-io/etcher @ GitHub">GitHub</a>)  an <a href="https://github.com/electron/electron" title="GitHub">Electron</a> app.<br>
+Creates filesystem and copies (OS) image file (<code>.img</code>), byte-for-byte, onto target media.</p>
+
+<ul>
+<li>If <strong>USB stick</strong>, the burned filesystem is <em>oddly</em> <strong>accessible</strong> at both Win-10 and TV-box.<br>
+Win-10 reports filesystem as <code>FAT</code>, and can <code>r/w</code>, but also prompts to format it.<br>
+If <strong>SD card</strong>, the burned filesystem is entirely <strong>inaccessible</strong> at Win-10.</li>
+</ul></li>
+</ul>
+
+<h2>Firmware Mod Utilities</h2>
+
+<ul>
+<li><p><a href="http://www.mediafire.com/file/mzw8lwitz6d7lr4/CustomizationTool_setup_v2.0.10.zip">Amlogic Customization Tool</a><br>
+Modify image (<code>.img</code>) before burning it.</p></li>
+
+<li><p><a href="https://github.com/armbian/config" title="GitHub">Armbian Configuration Utility</a><br>
+Configure an Armbian distro at command line (SSH session):<br>
+<code>armbian-config</code></p></li>
+</ul>
+
+<h2>Firmware Mod Methods</h2>
+
+<ol>
+<li><p>Flash image onto SD card or USB stick using Etcher.</p>
+
+<ul>
+<li>Perform image mods, optionally, prior to burning.</li>
+<li>Bootloader must be setup to handle OS <strong>selection</strong>;<br>
+external (<code>SD</code>/<code>USB</code>) vs. internal  <a href="https://en.wikipedia.org/wiki/MultiMediaCard#eMMC" title="Wikipedia :: MultiMediaCard">(<code>eMMC</code>/<code>NAND</code>)</a>.</li>
+</ul></li>
+
+<li><p>Flash image using device's internal <strong>pre-boot menu</strong>.<br>
+With source <em>image file</em> (<code>.img</code>) copied to an SD card or USB stick.</p></li>
+</ol>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

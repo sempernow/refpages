@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Network.localhost.DNS.domain.name</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><code>localhost</code> (<code>127.0.0.1</code>) @ OS</h1>
+
+<h2>Bind any domain name(s) to this loopback per <code>hosts</code> file declaration(s).</h2>
+
+<pre><code class="language-plaintext">127.0.0.1       foo.com
+#::1            foo.com
+
+127.0.0.1       google.com
+#::1            google.com
+
+127.0.0.1       big.bar.yo
+#::1            big.bar.yo
+
+.
+.
+.
+</code></pre>
+
+<p>Redirects any domain name, whether real (existing IP per public DNS) or not.</p>
+
+<h3><code>hosts</code> File location:</h3>
+
+<ul>
+<li>Win10 :: <a href="file:///c:/Windows/System32/drivers/etc/hosts"><code>C:\Windows\System32\drivers\etc\hosts</code></a>
+
+<ul>
+<li>Edit per <code>hosts.bat</code> (@ CMD terminal).</li>
+</ul></li>
+<li>Linux :: <code>/etc/hosts</code></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

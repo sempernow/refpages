@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>RegEx</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Regular_expression" title="Wikipedia">Regular Expression</a></h1>
+
+<h2><a href="https://regex101.com/r/wzEUei/2" title="regex101.com">RegularExpressions101</a></h2>
+
+<h2><a href="https://regex-golang.appspot.com/assets/html/index.html" title="regex-golang.appspot.com">Regex Tester - Golang</a></h2>
+
+<h2><a href="https://www.regextester.com/" title="www.regextester.com">Regex Tester</a></h2>
+
+<pre><code>    [abc]       A single character of: a, b or c
+    [^abc]      Any single character except: a, b, or c
+    [a-z]       Any single character in the range a-z
+    [a-zA-Z]    Any single character in the range a-z or A-Z
+    ^   Start of line
+    $   End of line
+    \A  Start of string
+    \z  End of string
+    .   Any single character
+    \.      One &quot;.&quot; (literal)
+    \s  Any whitespace character
+    \S  Any non-whitespace character
+    \d  Any digit
+    \D  Any non-digit
+    \w  Any word character (letter, number, underscore)
+    \W  Any non-word character
+    \b  Any word boundary
+    (...)   Capture everything enclosed
+    (a|b)   a or b
+    a?  Zero or one of a
+    a*  Zero or more of a
+    a+  One or more of a
+    a{3}    Exactly 3 of a
+    a{3,}   3 or more of a
+    a{3,6}  Between 3 and 6 of a
+</code></pre>
+
+<p>&nbsp;</p>
+
+<pre><code class="language-golang">patternApp := regexp.MustCompile(`^/?([-\w]*)$`)
+patternAPI := regexp.MustCompile(`^/api/?([-\w]*)/?[Z0-9]*/?[z0-9]*$`)
+patternAsset := regexp.MustCompile(`^/(scripts/([-\w]+).*\.[js]|styles/([-\w]+).*\.[css]|images/)([-\w]+).*$`)
+</code></pre>
+
+<pre><code class="language-php">// ^([a-zA-Z0-9]){20}(\.){1}([a-zA-Z0-9]){60}$  &lt;=&gt;  NAME(20).VALUE(60)
+preg_match( &quot;/^([a-zA-Z0-9]){20}(\.){1}([a-zA-Z0-9]){60}$/&quot;, $input )
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

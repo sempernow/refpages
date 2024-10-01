@@ -1,0 +1,48 @@
+# Make bootable DVD-CD-ISO
+
+2010 method 
+-----------
+Emulation Type 	> 	None (Custom)
+
+Boot Image 		>  	etfsboot.com	
+
+					Find the path, e.g., .\ISO\boot\etfsboot.com
+					from a Windows PE build folder
+					[Win7 & Vista use different files.]
+
+Developer ID 	>  	Microsoft Corporation
+
+Load Segment 	>  	07C0
+
+Sectors To Load > 	4
+
+					Use 2x filesize of etfsboot.com
+
+					1 Sector = 512 bytes; 
+					
+					Vista -- use '4', since etfsboot.com file is 2KB. 
+					Windows 7 -- use '8', since etfsboot.com file is 4KB.
+	
+	
+2014 method
+------------
+ImgBurn > Advanced > Bootable Disc 
+
+	* Select "Make Image Bootable"
+	
+	* Select "Extract Boot Image"
+
+	- Choose source, e.g., Windows Install Disk [iso or DVD].
+	
+	- Select SAVE [icon/button].
+	
+	- Select a [temp/working] destination for boot-image file [BootImage.ima ~ 4 KB].
+	
+		This extracts the appropriate "boot image" file.
+		
+	- Select "yes" to "use" it in this "project" [new pop-up @ v.2.5.8.0].
+	
+		This will capture/auto-set all those mysterious parameters [above the "Extract Boot Image" button] required to make the target [CD/DVD] bootable.  
+
+	
+This is how the Win7Ult.SP1.64-bit install DVD was created. Boot-image source was the downloaded Win7...-install iso file, mounted using Virtual CloneDrive. 

@@ -1,0 +1,92 @@
+Progressive Web App [PWA]
+
+App Shell Model 
+
+	THREE ESSENTIALs:
+
+	1. Secure Site        HTTPS (HTTP2)
+	2. Service Worker     javascript; network proxy; bkgrnd tasks
+	3. Web App Manifest   JSON; image sizes info, etc.           
+
+	(Jeff Burtoft, @boyofgreen, PWAbuilder.com) 
+
+Microsoft Store supports PWAs now. @ Win10, installs to Start Menu & Task Bar.	
+
+Android - Add to Home Screen (Install)
+	https://developers.google.com/web/fundamentals/app-install-banners/ 
+
+
+Collection of technologies allowing Web applications to be installed to device homescreen WITHOUT APP STORE process. Other superpowers; available offline; push notifications. EXPERIMENTAL technology; subject to change in future versions of browsers as the specification changes.
+	
+	Progressive		all browsers; progressive enhancement
+	Responsive		Fits any form factor: desktop, mobile, tablet, ...
+	Conn indep		works offline per service workers [SW]
+	App-like			built on App Shell model; feels like an app
+	Fresh				Always up-to-date per service worker process.
+	Safe				Served via HTTPS
+	Discoverable	search engines see "application" 
+						per manifest and SW registration scope.
+	Re-engageable	push notifications.
+	Installable		on homescreen without using app store.
+	Linkable			Easily share via URL, no user install process.
+		
+	Google  https://developers.google.com/web/fundamentals/getting-started/codelabs/your-first-pwapp/ 
+	MDN     https://developer.mozilla.org/en-US/Apps/Progressive 
+	MS      https://docs.microsoft.com/en-us/microsoft-edge/progressive-web-apps/get-started 
+	
+	Discovery + Monetization [@ Web-Fundamentals]
+	https://developers.google.com/web/fundamentals/
+	
+Web App Manifest [manifest.json] 
+
+	Part of PWA; installs web application to the homescreen of a device, providing users with quicker access and a richer experience; provides app info [name, author, icon, and description] in a JSON text file.
+  
+  It ALONE enables the "Add to Homepage" method @ Android !!!
+   Manifest "display" property must be set to "standalone" or "fullscreen"
+
+  <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <link rel="manifest" href="manifest.json" />
+  </head>
+	
+	https://developer.mozilla.org/en-US/docs/Web/Manifest#Browser_compatibility
+
+
+Web Workers [HTML5] https://html.spec.whatwg.org/multipage/workers.html
+
+Service Worker [SW] [EXPERIMENTAL]
+
+	A scriptable network proxy in the web browser to intercept and handle web/HTTP requests programmatically, especially responses' cache management, allowing app to function offline; runs in the background, independent of web page or user interaction, though scoped to the web page; currently enables push notifications and background sync. 
+	
+	Service Workers Intro
+	https://developers.google.com/web/fundamentals/getting-started/primers/service-workers
+	Caching with Service Workers 
+		https://developers.google.com/web/ilt/pwa/caching-files-with-service-worker
+	Progressive Web Apps Training >>> HAS IT ALL <<<
+		https://developers.google.com/web/ilt/pwa/                           (2017)
+		https://codelabs.developers.google.com/codelabs/your-first-pwapp/#0  (2018)
+	Service workers explained
+		https://github.com/w3c/ServiceWorker/blob/master/explainer.md
+	SW-Toolbobx [Google-Chrome]
+		https://github.com/GoogleChrome/sw-toolbox/tree/6e8242dc328d1f1cfba624269653724b26fa94f1
+	
+	Cache API
+		https://developer.mozilla.org/en-US/docs/Web/API/Cache
+		https://davidwalsh.name/cache
+		https://medium.com/dev-channel/offline-storage-for-progressive-web-apps-70d52695513c
+		
+	Designed to replace AppCache API https://www.html5rocks.com/en/tutorials/appcache/beginner/
+
+	Interfaces and functions: 
+	 
+		SW is a JavaScript Worker [concurrency, multi-threaded JS], but access to DOM only thru postMessage API.
+
+		SW is a programmable network proxy, can control how to handle network requests from web page.
+
+		SW terminates when not in use, and restarts when it's next needed, so IndexedDB API required to maintain [global] state; cannot rely on SW's onfetch and onmessage handlers.
+
+		SWs use promises.
+
+	SWs essentially act as proxy servers that sit between web applications, and the browser and network (when available). They are intended to (amongst other things) enable the creation of effective offline experiences, intercepting network requests and taking appropriate action based on whether the network is available and updated assets reside on the server. They will also allow access to push notifications and background sync APIs.
+	https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+

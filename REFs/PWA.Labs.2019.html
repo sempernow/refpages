@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PWA.Labs.2019</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps" title="MDN">PWAs</a> 2019 | <a href="https://serviceworke.rs/caching-strategies.html" title="MDN">Service Worker Cookbook</a> (<a href="[Service Worker Cookbook (code)](https://github.com/mozilla/serviceworker-cookbook" title="MDN @ GitHub">@GitHub</a>)</h1>
+
+<h2>Make Installable :: <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Installable_PWAs">Web App Manifest (JSON)</a> | <a href="https://www.w3.org/TR/appmanifest/">w3.org</a></h2>
+
+<pre><code class="language-html">&lt;!-- Startup configuration --&gt;
+&lt;link rel=&quot;manifest&quot; href=&quot;manifest.webmanifest&quot;&gt;
+
+&lt;!-- Fallback application metadata for legacy browsers --&gt;
+&lt;meta name=&quot;application-name&quot; content=&quot;AppNameShort&quot;&gt;
+&lt;link rel=&quot;icon&quot; sizes=&quot;16x16 32x32 48x48&quot; href=&quot;lo_def.ico&quot;&gt;
+&lt;link rel=&quot;icon&quot; sizes=&quot;512x512&quot; href=&quot;hi_def.png&quot;&gt;
+</code></pre>
+
+<ul>
+<li><p>HTTP Header: <code>Content-Type: application/manifest+json</code></p></li>
+
+<li><p>@ <a href="manifest.webmanifest"><code>manifest.webmanifest</code></a></p>
+
+<pre><code class="language-json">{
+&quot;name&quot;: &quot;App Name Full&quot;,
+&quot;short_name&quot;: &quot;AppNameShort&quot;,
+&quot;description&quot;: &quot;Derp derp ...&quot;,
+&quot;icons&quot;: [
+    {
+        &quot;src&quot;: &quot;icons/icon-32.png&quot;,
+        &quot;sizes&quot;: &quot;32x32&quot;,
+        &quot;type&quot;: &quot;image/png&quot;,
+        &quot;purpose&quot;: &quot;maskable&quot; // maskable (20% padding)
+    },
+    // ...
+    {
+        &quot;src&quot;: &quot;icons/icon-512.png&quot;,
+        &quot;sizes&quot;: &quot;512x512&quot;,
+        &quot;type&quot;: &quot;image/png&quot;
+        &quot;purpose&quot;: &quot;any&quot; // transparent
+    }
+],
+&quot;start_url&quot;: &quot;index.html&quot;,
+&quot;display&quot;: &quot;fullscreen&quot;,
+&quot;theme_color&quot;: &quot;#ff0066&quot;,
+&quot;background_color&quot;: &quot;#ff0066&quot;
+}
+</code></pre></li>
+
+<li><p><a href="https://www.w3.org/TR/appmanifest/#icons-member" title="www.w3.org"><code>icons</code></a> | <a href="https://www.w3.org/TR/appmanifest/#dom-imageresource" title="www.w3.org"><code>ImageResource</code></a></p>
+
+<ul>
+<li><a href="https://css-tricks.com/maskable-icons-android-adaptive-icons-for-your-pwa/" title="css-tricks.com">Maskable, adaptive icons</a> | <a href="https://www.w3.org/TR/appmanifest/#icon-masks" title="w3.org">Web App Manifest :: Icon Masks</a></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://developers.google.com/web/updates/2015/11/app-shell" title="developers.google.com">App Shell Model</a></h2>
+
+<ul>
+<li><p>Segregate application (and its caches); <code>shell</code> (static/assets) vs. <code>data</code> (dynamic/content).</p>
+
+<pre><code class="language-js">const appCaches = [ 
+    {
+        name: `&quot;${etag.shell}&quot;`,
+        type: &quot;shell&quot;,
+        urls: [
+            &quot;/&quot;,
+            &quot;offline.html&quot;,
+            &quot;404.html&quot;,
+            &quot;index.html&quot;,
+            &quot;scripts/main.js&quot;,
+            &quot;styles/base.css&quot;,
+            &quot;images/favicon.ico&quot;
+        ]
+    },
+    {
+        name: `&quot;${etag.data}&quot;`,
+        type: &quot;data&quot;, 
+        urls: [
+            &quot;/&quot;,
+            &quot;data/file1&quot;,
+            &quot;data/file1.1.png&quot;,
+            &quot;data/file2&quot;,
+            &quot;data/file2.1.png&quot;,
+            &quot;data/huge&quot;
+        ]
+    },
+]
+</code></pre></li>
+
+<li><p>Obsolete cache is purged per change of <code>etag</code> value(s), per &quot;<a href="#activate" title="below"><code>activate</code></a>&quot; event.</p></li>
+
+<li><p>May add other named/Etagged caches, e.g., to  <strong><em>prefetch</em></strong> popular content (<code>name:</code> <code>popular</code>).</p></li>
+
+<li><p><a href="https://github.com/mozilla/serviceworker-cookbook/tree/master/json-cache#json-cache" title="MDN @ GitHub">JSON Cache</a> &mdash; segregate the cache declaration (JSON), placing it in a separate file (<code>.json</code>) instead of as a variable in the service worker (<code>.js</code>); cache its references upon service worker install.</p></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" title="MDN">Service Worker API</a></h2>
+
+<h3><a href="https://blog.logrocket.com/every-website-deserves-a-service-worker/" title="2019 @ LogRocket.com">Service worker lifecycle</a></h3>
+
+<blockquote>
+<p>To make sure service workers don’t break websites, they go through a strictly defined lifecycle. This makes sure that there is <strong><em>only one service worker controlling your website</em></strong> (and therefore only one version of your site exists).</p>
+</blockquote>
+
+<h4>1. Register :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register" title="MDN"><code>navigator.serviceWorker.register</code></a></h4>
+
+<ul>
+<li><p>@ <code>app.js</code></p>
+
+<pre><code class="language-js">const sw = 'sw1.js'
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () =&gt; {
+        navigator.serviceWorker.register(sw)
+            .then(onResolved, onRejected)
+    })
+</code></pre>
+
+<ul>
+<li><p>Accepts params:</p>
+
+<pre><code class="language-js">navigator.serviceWorker.register('/sw.js', {scope: './limit-per-here'})
+</code></pre></li>
+</ul>
+
+<blockquote>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register" title="MDN">&hellip; a service worker can't have a scope broader than its own location</a>, only <em>use the scope option when you need a scope that is narrower</em> than the default.</p>
+</blockquote></li>
+</ul>
+
+<h4>2. Install :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/CacheStorage" title="MDN"><code>CacheStorage</code> Interface</a></h4>
+
+<ul>
+<li><p>@ <code>sw1.js</code></p>
+
+<pre><code class="language-js">self.addEventListener('install', (event) =&gt; {
+    event.waitUntil(caches.keys()
+        .then((keyList) =&gt; {
+            return Promise.all(
+                appCaches.map((ac) =&gt; {
+                    // ...
+                    caches.open(ac.name)
+                        .then((cn) =&gt; {
+                            // ...
+                           cn.addAll(ac.urls)
+                            // ...
+                        })
+                })
+            })
+        // ...
+</code></pre>
+
+<ul>
+<li>Note &quot;<code>caches</code>&quot;, @ <code>caches.keys()</code>, is a <strong><em>global read-only variable</em></strong> (<a href="https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/caches"><code>WindowOrWorkerGlobalScope.caches</code></a>); an instance of <code>CacheStorage</code>, which is <code>undefined</code> unless by HTTPS  (@ Chrome/Safari).</li>
+<li>Service Worker file (<code>sw1.js</code>) location sets its <a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/scope" title="MDN"><strong><em>scope</em></strong></a>; <strong><em>place in webroot along with its parent</em></strong>, e.g., <code>index.html</code> .</li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>If anything goes wrong during this phase, the promise returned from <code>navigator.serviceWorker.register</code> (@ <code>app.js</code>) is <strong><em>rejected</em></strong>.</p>
+</blockquote>
+
+<h4>Force Activation upon Install :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope/skipWaiting" title="MDN"><code>self.skipWaiting()</code></a></h4>
+
+<pre><code class="language-js">self.addEventListener('install', (event) =&gt; {
+    event.waitUntil(/* ... */)
+        .then(() =&gt; self.skipWaiting())
+</code></pre>
+
+<p><a name="activate"></a></p>
+
+<h4>3. Activate :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/ExtendableEvent/waitUntil" title="MDN"><code>waitUntil()</code></a></h4>
+
+<ul>
+<li><p>@ <code>sw1.js</code></p>
+
+<pre><code class="language-js">self.addEventListener('activate', (event) =&gt; {
+const whiteList = appCaches.map((thisCache) =&gt; thisCache.name)
+event.waitUntil(caches.keys()
+    .then((keysList) =&gt; {
+        return Promise.all(
+            keysList.map((key) =&gt; {
+                if (whiteList.indexOf(key) === -1) {
+                // ...
+                return caches.delete(key)
+                }
+            })
+        )
+    })
+}
+</code></pre></li>
+</ul>
+
+<blockquote>
+<p>When you successfully install the new service worker, the activate event will be fired. The service worker is now ready to control your website –– but it won’t control it yet. The service worker will only control your website when you <strong><em>refresh the page after it’s activated</em></strong>. Again, this is to assure that nothing is broken.</p>
+
+<p>The window(s) of a website that a service worker controls are called its <code>clients</code>. Inside the event handler for the <code>install</code> event, it’s possible to take control of uncontrolled clients by calling <code>self.clients.claim()</code>.</p>
+
+<p><code>self.addEventListener('activate', e =&gt; self.clients.claim())</code></p>
+</blockquote>
+
+<h3>Intercepting Requests :: <a href="https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook/#cache-falling-back-to-network" title="developers.google.com">per Strategy</a> | <a href="https://developers.google.com/web/tools/workbox/reference-docs/latest/workbox.strategies">@ WorkBox</a></h3>
+
+<pre><code class="language-js">self.addEventListener('fetch', (event) =&gt; {
+    event.respondWith( 
+        caches.match(event.request)
+            .then((response) =&gt; {
+                // Per STRATEGY: Network First, Cache Falling Back to Network, ...  
+</code></pre>
+
+<h3><a href="https://github.com/mozilla/serviceworker-cookbook/tree/master/request-deferrer" title="MDN @ GitHub">Save/Cache <code>POST</code> @ offline</a></h3>
+
+<ul>
+<li><p><a href="https://blog.logrocket.com/every-website-deserves-a-service-worker/">Cache <code>POST</code> data if offline</a></p>
+
+<pre><code class="language-js">.catch(err =&gt; {
+// ...
+if(method === 'POST') {
+    cacheApiRequest(requestClone)
+    return new Response(JSON.stringify({
+        message: 'POST request was cached'
+    }))
+}
+})
+</code></pre></li>
+</ul>
+
+<h3><a href="https://developers.google.com/web/tools/workbox/modules/workbox-background-sync" title="pwa-workshop.js.org"><code>BackgroundSynch</code> API</a> (<a href="https://caniuse.com/#search=background%20sync" title="CanIUse.com">Not well supported</a>)</h3>
+
+<pre><code class="language-js">self.addEventListener('sync', (event) =&gt; {
+    if (event.tag === 'syncAttendees') {
+        event.waitUntil(doSynch())
+    }
+})
+</code></pre>
+
+<blockquote>
+<p>&hellip; a sync event will be emitted when the system decides to trigger a synchronization. This decision is based on various parameters: connectivity, battery status, power source, etc. ; so we can not be sure when synchronization will be triggered.</p>
+</blockquote>
+
+<h3><a href="https://developers.google.com/web/fundamentals/app-install-banners/#listen_for_beforeinstallprompt" title="developers.google.com">Add to Home Screen :: <code>beforeinstallprompt</code> event (@ Chrome)</a></h3>
+
+<pre><code class="language-js">window.addEventListener('beforeinstallprompt', (e) =&gt; {
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e
+    // Update UI notify the user they can add to home screen
+    showInstallPromotion()
+})
+</code></pre>
+
+<ul>
+<li><a href="https://pwa-workshop.js.org/6-pwa-setup/" title="pwa-workshop.js.org">Show the Install Button</a></li>
+</ul>
+
+<h2><a href="https://developers.google.com/web/tools/workbox/reference-docs/latest">WorkBox</a></h2>
+
+<ul>
+<li><a href="https://codelabs.developers.google.com/codelabs/workbox-indexeddb/index.html?index=..%2F..index#0">WorkBox + IndexedDB Lab</a></li>
+<li></li>
+</ul>
+
+<h2>Other </h2>
+
+<ul>
+<li><a href="https://www.w3.org/TR/appmanifest/" title="www.w3.org">Web App Manifest</a></li>
+<li><a href="https://github.com/FiloSottile/mkcert#installation" title="FiloSottile/mkcert @ GitHub"><code>mkcert</code> :: HTTPS @ <code>localhost</code></a></li>
+<li><a href="https://pwa-workshop.js.org/" title="pwa-workshop.js.org">PWA Workshop</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers" title="MDN">Using Service Workers</a></li>
+<li><a href="https://github.com/mozilla/serviceworker-cookbook" title="MDN @ GitHub">Service Worker Cookbook (code)</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API" title="MDN">Service Worker API</a></li>
+<li><a href="https://www.w3.org/TR/service-workers/" title="www.w3.org">Service Workers API</a></li>
+<li><a href="https://web.dev/discover-installable/">web.dev</a></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

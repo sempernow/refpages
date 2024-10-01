@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>psql</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.postgresql.org/docs/10/app-psql.html"><code>psql</code> :: client CLI utility</a></h1>
+
+<h2>tl;dr</h2>
+
+<h4>Run a <a href="https://hub.docker.com/_/postgres/" title="@ Docker Hub">postgres</a> server in a container</h4>
+
+<pre><code class="language-bash">docker volume create pg_vol
+
+# per run 
+docker run -d --rm --name 'dbp' -p 5432:5432 \
+    -v pg_vol:/var/lib/postgresql/data \
+    -v &quot;$(pwd)/assets/sql&quot;:/home \
+    -e POSTGRES_DB='db1' \
+    -e POSTGRES_PASSWORD='pw1234' \
+    -e POSTGRES_USER='uzr1' \
+    'postgres:12.6-alpine'
+
+# per service @ swarm mode 
+docker swarm init 
+
+docker service create --name 'dbp' -p 5432:5432 \
+    --mount source=pg_vol,target=/var/lib/postgresql/data \
+    --mount type=bind,source=&quot;$(pwd)/assets/sql&quot;,target=/home \
+    -e POSTGRES_DB='db1' \
+    -e POSTGRES_PASSWORD='pw1234' \
+    -e POSTGRES_USER='uzr1' \
+    'postgres:12.6-alpine'
+
+</code></pre>
+
+<ul>
+<li>Persist db data per Docker volume (<code>VOL_NAME:CTNR_PATH</code>)
+
+<ul>
+<li><code>pg_vol</code> &lt;=&gt; <code>/var/lib/postgresql/data</code></li>
+</ul></li>
+<li>Access local dir per Docker bind-mount (<code>LOCAL_PATH:CTNR_PATH</code>)
+
+<ul>
+<li><code>./assets/sql</code> &lt;=&gt; <code>/home</code></li>
+</ul></li>
+</ul>
+
+<h4>Execute an Interactive bash shell @ running <code>dbp</code> container</h4>
+
+<pre><code class="language-bash"># If Postgres server running per `docker run ...` 
+docker exec -it dbp sh -c 'ls -ahl /home'
+
+# If Posgres server running per `docker service create ...`
+docker exec -it $(docker ps -q -f name=dbp -f status=running | head -n 1) sh -c 'ls -ahl /home'
+</code></pre>
+
+<p>... either way, same action ...</p>
+
+<pre><code class="language-plaintext">total 165K
+...
+drwxrwxrwx    1 root     root        4.0K Sep 23 13:44 dump
+-rwxr-xr-x    1 root     root         248 Feb 16 16:55 init.sql
+drwxrwxrwx    1 root     root           0 Sep 24 21:49 migrate
+-rwxr-xr-x    1 root     root         541 Aug  8  2020 models.sh
+...
+</code></pre>
+
+<h4>Launch <code>psql</code> (Postgres-client session) from <code>bash</code>|<code>sh</code> (host shell)</h4>
+
+<pre><code class="language-bash"># Launch session (as root user; at Alpine)
+psql -U uzr1 db1  
+</code></pre>
+
+<pre><code class="language-bash"># Run any SQL or psql command
+psql -U uzr1 db1 -c '\l'
+psql -U uzr1 db1 -c 'SELECT * FROM foo;'
+</code></pre>
+
+<p>If server is started sans custom user/pass, then defaults to <code>postgres</code>/<code>postgres</code>, so &hellip;</p>
+
+<pre><code class="language-bash">su postgres       #... @ Alpine
+sudo postgres -i  #... @ Ubuntu
+# Change to dir containing our 'init.sql'
+cd /home
+# Load SQL per file; 
+psql -U postgres -d postgres -f init.sql
+
+</code></pre>
+
+<ul>
+<li>Postgres images are <em>built to start shell as root user</em> (from <code>docker exec -it ...</code>).</li>
+</ul>
+
+<h4><code>psql</code> : to/from remote host (<code>-h</code>)</h4>
+
+<p>Password @ <code>~/.pgpass</code> of current shell, else prompts. Unnecessary to use option <code>-w</code> to suppress prompt, and connection fails if <code>psql</code> is unable to acquire credentials.</p>
+
+<pre><code class="language-bash"># Declare connection params
+h='pg2';u='svcs';db='db1'
+
+# Connect
+psql -U $u -d $db -h $h
+</code></pre>
+
+<p>Per <a href="https://www.postgresql.org/docs/12/libpq-connect.html#LIBPQ-PARAMKEYWORDS"><code>conninfo</code></a> string.</p>
+
+<pre><code class="language-bash"># Declare connection params
+h='pg2';u='svcs';db='db1'
+
+# Connect
+psql &quot;postgresql://${h}/${db}?user=${u}&quot;
+# Or
+psql &quot;postgresql:///${db}?host=${h}&amp;user=${u}&quot;
+</code></pre>
+
+<ul>
+<li><p>SSL may be required for certain users and/or databases</p>
+
+<pre><code class="language-bash">psql -U replicator -d replication -h pg1 -w
+</code></pre>
+
+<pre><code class="language-plaintext">psql: error: FATAL:  no pg_hba.conf entry for host &quot;10.0.200.4&quot;, user &quot;replicator&quot;, database &quot;replication&quot;, SSL off
+</code></pre></li>
+</ul>
+
+<h5><code>init.sql</code></h5>
+
+<p>Create custom user (<code>uzr1</code>) and db (<code>db1</code>) per SQL file:</p>
+
+<pre><code class="language-sql">-- create a db
+CREATE DATABASE db1;
+-- create user
+CREATE USER uzr1 WITH PASSWORD 'pw1234';
+-- auth as superuser
+ALTER USER uzr1 WITH SUPERUSER;
+-- grant privileges
+GRANT ALL PRIVILEGES ON DATABASE db1 to uzr1;
+-- connect to db as user 
+\c db1 uzr1
+</code></pre>
+
+<h4>@ psql shell (client session)</h4>
+
+<pre><code class="language-psql">db1=# \c
+You are now connected to database &quot;db1&quot; as user &quot;uzr1&quot;.
+db1=# \i migrate.sql
+...
+db1=# SELECT * FROM users;
+...
+\q
+</code></pre>
+
+<p>... exits back to bash shell.</p>
+
+<h4>Backup <code>db1</code> from bash shell</h4>
+
+<pre><code class="language-bash"># Backup entire db1
+pg_dump -U uzr1 -d db1 &gt; db1.dump.sql
+</code></pre>
+
+<h4>Restore per <code>db1.dump.sql</code></h4>
+
+<pre><code class="language-bash"># Recreate usr1, db1 (if new ctnr/shell)
+psql -U postgres -d postgres -f config.sql
+# Restore db1
+psql -U uzr1 db1 &lt; db1.dump.sql
+</code></pre>
+
+<h3><a href="https://www.postgresqltutorial.com/psql-commands/">Start <em>interactive session</em></a></h3>
+
+<h5>PostgreSQL server @ Docker (<a href="postgres.docker.sh"><code>postgres.docker.sh</code></a>)</h5>
+
+<pre><code class="language-bash"># Launch DBMS server
+docker run -d --rm --name db -p 5432:5432 -v &quot;$(pwd)&quot;:/home $image
+# Launch session @ DBMS server 
+docker exec -it db bash -c &quot;cd /home &amp;&amp; psql -U postgres&quot; 
+</code></pre>
+
+<p>@ Host machine, after creating a database and user per above &hellip;</p>
+
+<pre><code class="language-bash">psql -h localhost -p 5432 -U userfoo -d dbfoo
+</code></pre>
+
+<h4>@ PostgreSQL server host</h4>
+
+<pre><code class="language-bash">psql -h 'localhost' -p 5432 -U 'uzr1' -d 'db1'
+# Prompt for password; server @ localhost
+psql -U 'uzr1' -W  
+</code></pre>
+
+<ul>
+<li>Note the password requirement is <em>disabled</em> @ <code>localhost</code>
+
+<ul>
+<li>@ Docker Hub's <code>postgres</code> image(s)</li>
+<li>Default creds:
+
+<ul>
+<li>Port: 5432</li>
+<li>User: postgres</li>
+<li>Password: postgres</li>
+<li>Database: postgres</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>@ Docker container (<a href="postgres.docker.sh"><code>postgres.docker.sh</code></a>)</h4>
+
+<pre><code class="language-bash">psql -U postgres -d DBNAME
+</code></pre>
+
+<p>or</p>
+
+<pre><code class="language-bash">su - postgres 
+</code></pre>
+
+<pre><code class="language-bash">psql -d DBNAME
+</code></pre>
+
+<h3><code>psql</code> Meta Commands</h3>
+
+<p>Tricky syntax; mutliple, case dependent, type dependent syntaxes !</p>
+
+<blockquote>
+<p>PostgreSQL documentation incorrectly claims that unquoted always resolves to the value, but not so if string type <em>unless</em> its a PostgreSQL object name.</p>
+</blockquote>
+
+<pre><code class="language-sql">\set tbl 'foo'
+SELECT * FROM :tbl;     -- Requires UNQUOTED or DOUBLE QUOTES : Returns table content
+SELECT * FROM :&quot;tbl&quot;;   -- Requires UNQUOTED or DOUBLE QUOTES : Returns table content
+
+ idx |             ctime
+-----+-------------------------------
+   1 | 2022-01-02 14:53:23.921686+00
+(1 row)
+
+db1=&gt; SELECT :'tbl';    -- Requires QUOTED IF value is string : Returns value
+
+ ?column?
+----------
+ foo
+(1 row)
+
+\set x 22
+db1=&gt; SELECT :x;    -- May be QUOTED or UNQUOTED IF value is integer : Returns value
+
+ ?column?
+----------
+       22
+(1 row)
+</code></pre>
+
+<h4>@ Interactive <code>psql</code> Session</h4>
+
+<p>Prompt &hellip;</p>
+
+<pre><code>&lt;DBNAME&gt;=#
+</code></pre>
+
+<p>Commands (<em>sans semicolon!</em>) &hellip;</p>
+
+<pre><code class="language-plaintext">\?                  # Help
+\h &lt;COMMAND&gt;        # Info on &lt;COMMAND&gt;   
+\set &lt;NAME&gt; &lt;VAL&gt;   # Set a global variable; USAGE: `... = :&lt;NAME&gt;`
+\l                  # Databases  
+\c &lt;DB&gt; [&lt;USER&gt;]    # Connect to &lt;DB&gt; @ &lt;USER&gt; (default to current)
+\d                  # Relations
+\dn                 # Schemas
+\dt                 # Tables 
+\d+ &lt;TABLE&gt;         # Table schema
+\dn+                # Access Privileges
+\dv                 # Views
+\du                 # Users
+\g                  # Previous Command 
+\s                  # History of commands
+\s &lt;FILE&gt;           # Save History to &lt;FILE&gt;
+\i &lt;FILE&gt;           # Execute SQL in &lt;FILE&gt;
+\e                  # Editor; execute on save/exit (per $EDITOR).
+\ef &lt;FUNCNAME&gt;      # Edit function &lt;FUNCNAME&gt;
+\timing             # Execution Time (toggle)
+\a                  # Align output per column (toggle)
+\H                  # HTML output
+\x                  # Expanded display (toggle)
+\q                  # Quit (end session)
+</code></pre>
+
+<p>Also accepts any <code>SQL</code> (<code>pSQL</code>) statement, of course &hellip;</p>
+
+<pre><code>SELECT version();
+</code></pre>
+
+<p>@ E.g., &hellip;</p>
+
+<pre><code class="language-client">foo=# SELECT owner_id AS id, slug AS path FROM channels;
+   id  |  path
+-------+--------
+ 45b5f | slug-1
+ 5cf37 | slug-2
+ 45b5f | slug-3
+</code></pre>
+
+<h3><code>psql</code> @ host</h3>
+
+<pre><code class="language-bash">su - postgres  # switch to 'postgres' user (@ alpine)
+</code></pre>
+
+<pre><code class="language-bash"># @ Docker container shell (bash) ...
+pushd home 
+
+# Config file Location 
+psql -c 'SHOW config_file'
+# Version of SERVER (postgres daemon)
+psql -c 'SELECT version();'     
+# Version of CLIENT (psql) 
+psql --version                  
+
+# Create a database 
+psql -c 'CREATE DATABASE foo;'
+psql -c 'CREATE TABLE bar (id INT);' foo
+#... sans db name, creates table @ default db (postgres)
+
+psql -f ./sql/migrate.sql
+psql -c 'SELECT * from topics'
+psql -c 'SELECT owner_id as id, slug as path FROM channels'
+</code></pre>
+
+<h3><a href="https://www.postgresql.org/docs/current/config-setting.html">Config Settings : Files / Params</a></h3>
+
+<p>Located @ data directory; nominally <code>/var/lib/postgresql/data/</code></p>
+
+<ul>
+<li><p><code>postgresql.conf</code></p>
+
+<pre><code class="language-conf"># This is a comment
+log_connections = yes
+log_destination = 'syslog'
+search_path = '&quot;$user&quot;, public'
+shared_buffers = 128MB
+# References to other, additional configs ...
+include_dir 'conf.d'
+#... relative to current dir.
+include '00shared.conf'
+include '01memory-8GB.conf'
+include '02server-foo.conf'
+#... such naming assures load order.
+#    Last setting overrides prior(s).
+</code></pre></li>
+
+<li><p><code>postgresql.auto.conf</code></p>
+
+<ul>
+<li><p>Auto-generated/modified</p>
+
+<pre><code class="language-sql">-- scope : global (cluster wide)
+ALTER SYSTEM ...
+</code></pre>
+
+<pre><code class="language-sql">-- scope : per database
+ALTER DATABASE
+ALTER ROLE
+</code></pre>
+
+<pre><code class="language-sql">-- scope : session 
+SHOW ...
+current_setting(setting_name text)
+SET ...
+set_config(setting_name, new_value, is_local)
+</code></pre></li>
+
+<li><p>SQL command and its equivalent function.</p></li>
+</ul></li>
+
+<li><p>On startup (<code>-c</code> option)</p>
+
+<pre><code class="language-bash">postgres -c log_connections=yes -c log_destination='syslog'
+</code></pre></li>
+
+<li><p>Relaod config</p>
+
+<pre><code class="language-sql">-- @ SQL (psql session)
+pg_reload_conf();
+</code></pre>
+
+<pre><code class="language-bash"># @ bash
+pg_ctl reload
+</code></pre></li>
+</ul>
+
+<h2><a href="https://www.postgresql.org/docs/8.2/ssh-tunnels.html" title="postgresql.org/docs">SSH tunnel</a></h2>
+
+<p>Secure TCP/IP Connections with SSH Tunnels</p>
+
+<pre><code class="language-bash">ssh -L 3333:foo.com:5432 joe@foo.com
+
+psql -h localhost -p 3333 postgres
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

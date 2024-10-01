@@ -1,0 +1,75 @@
+Wares Release Types
+http://en.wikipedia.org/wiki/Pirated_movie_release_types
+https://en.wikipedia.org/wiki/Warez
+
+HARDCODED SUBTITLES
+===================
+HC, KORSUB
+
+RELEASE TYPES [ordered by QUALITY] [best-to-worst]
+=============
+
+1080p
+
+BDRip [directly from Blu Ray disc]
+BRRip
+Blu-Ray / BluRay / BLURAY
+BDR[15]
+BD5/BD9 (also known as BD25/BD50)
+
+720p
+x264/H264
+WEBDL
+WEB DL
+WEB-DL
+
+WEB-Rip
+WEBRIP
+WEB Rip
+
+DVDR
+DVD-Full
+Full-Rip
+ISO rip
+lossless rip
+untouched rip
+DVD-5
+DVD-9
+
+DVDRip
+
+R5
+R5.AC3.5.1.HQ
+R5.LINE
+
+VODRip
+VODR
+
+DDC
+
+DSR
+DSRip
+DTHRip
+DVBRip
+HDTV
+PDTV
+TVRip
+HDTVRip
+TC
+
+SCR
+SCREENER
+DVDSCR
+DVDSCREENER
+BDSCR
+
+PPV
+PPVRip
+
+TS
+TELESYNCH
+PDVD
+
+CAMRip
+CAM
+

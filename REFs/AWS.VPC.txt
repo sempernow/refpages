@@ -1,0 +1,661 @@
+VPC    
+===
+    Virtual Private Cloud; isolated section of AWS, per account; within 1 Region, but can span AZs therein; created and managed therein may be virtual networks and subnets, including IP address ranges routing tables and network gateways; whereof [EC2-based] web stacks are built; some account resources lie OUTSIDE the VPC, e.g., S3, EFS, Glacier, ... (access thereto requires ROLE or VPC Endpoint); Accounts created after 2013-12-04 support EC2-VPC; EC2-Classic was the original scheme --no longer used or advised --a single, flat network that's shared with other customers  
+    OSI Model    https://en.wikipedia.org/wiki/OSI_model  
+
+    - AWS VPC supports sizes (masks) between /28 (16 IP Addresses) and /16 (65,536 IP Addresses)
+    - AWS VPC size is immutable; to change, must terminate and create anew.  
+
+    # VPC Restrictions  http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Appendix_Limits.htm    
+
+        per VPC    
+            -     1 Internet Gateway (IGW)
+            -     5 Elasitc IP addresses    
+            - 200 subnets    
+            - 200 (N)ACLs    
+            - 200 Route Tables (RT)    
+                - 50 routes per RT    
+            - 100 Security Groups (SG)    
+                - 50 rules per Security Group    
+
+        per Region    
+            -   5 VPCs (can request increase)    
+            -  50 VPN connections    
+            -   5 Internet Gateways    (IGW)    
+            -  50 Customer Gateways    
+                 - 200 RTs    
+            - 500 SGs        
+            - 350 Network Interfaces     
+
+        SG Restrictions [summary]    
+            - 500 per region     
+            - 100 per VPC    
+            -  50 rules per SG    
+            -   5 per Network Interface    
+
+        RT Restrictions [summary]    
+            - 200 per VPC    
+                - 50 routes per RT    
+                - 100 BGP-advertised routes per RT
+            - 5 per Network Interface    
+
+        Subnets are MAPPED to ONE AZ    
+
+    # Default VPC  (DO NOT DELETE it)  
+
+        - VPC spans AZs
+        - Each subnet is in 1 AZ; can be many per Region; 
+            e.g., 6 AZs in us-east-1; 6 DEFAULT SUBNETS therein
+        - 1 IGW per VPC 
+        - Main RT of DEFAULT SUBNET is PUBLIC by default; allows traffic to/from IGW
+        - Main RT of CREATED SUBNET is PRIVATE by default; allows local traffic (btwn subnets) only   
+        - 5 IP addresses are RESERVED by AWS per subnet (1st 4 & last 1; x.0, x.1, x.2, x.3, x.255)  
+        - default SG (stateful), ACL (stateless), NACL, and DHCP options    
+        - additional/customizable CAPABILITIES: 
+            router, VPC Endpoints, Virtual Private Gateway, NAT Gateway, Egress-only Internet Gateway [IPv6-out-only];  
+        - has it's own private IP Address; IPv4 CIDR blocks; 
+
+        @ us-east-1 (6 subnets)  
+            Default VPC:          172.31.0.0/16    65,531  (65,536)  256x256
+            Subnet @ us-east-1d:  172.31.0.0/20     4,091   (4,096)   16x256
+            Subnet @ us-east-1b:  172.31.16.0/20    4,091   (4,096)
+            Subnet @ us-east-1c:  172.31.32.0/20    4,091   (4,096)  
+                ...
+            Subnet @ us-east-1a:  172.31.80.0/20    4,091   (4,096)  
+
+        > Create subnet ...
+            Subnet @ us-east-1a:  172.31.96.0/24      251   (256)   
+        # given NO public IP, by default, so fix that ...  
+        > Actions > "Modify auto-assign IP settings"  (to make it public)
+
+    # Custom VPC (per VPC Wizard); typical user-created IP Addressing ...
+
+        VPN:                   10.0.0.0/16    65,531  (65,536)
+        Public Subnet:         10.0.1.0/24       251     (256)
+        Private Subnet:        10.0.2.0/24       251     (256) 
+
+        - Auto-creates defaults: Route Table, Network ACL, Security Group 
+        - private subnet connects to WAN per NAT Instance (EC2) or NAT Gateway service; 
+          (NAT Gateway is NOT free; ~$36/mo/connection)
+    
+        Service endpoints (button @ VPC Creation menu)
+            Optionally add S3 or DynamoDB service endpoints to a VPC; allows access by all resources in the created VPC; sort of like adding a Role, per instance, but for all therein.  
+
+    # Subnets  https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html  
+
+        @ Default VPC 
+            1 public and several private subnets (one per AZ; several per region)
+        @ Custom VPC
+            0 by default; creating subnet auto-creates RT, NACLs, & SG
+            Created subnets are PRIVATE by DEFAULT, per auto-associated RT, 
+            yet ALLOW all LOCAL traffic (btwn subnets of same VPC)
+
+        - All subnets are auto-associated with the VPC's main RT, by default.
+        - A subnet is in an AZ.
+
+        - Typical multi-tier architecture; Web DMZ, App Tier, DB Tier        
+            VPC 10.0.0.0/16
+            WebServer    (10.0.1.0/24),    # Public Subnet     
+            AppServer    (10.0.2.0/24),    # Private Subnet    
+            DBServer     (10.0.3.0/24)     # Private Subnet   
+
+        CIDR block calc helper @ http://www.tuxgraphics.org/toolbox/network_address_calculator_add.html  | http://cidr.xyz/  |  https://www.ipaddressguide.com/cidr  
+
+    # VPC Networking Components    
+
+        (Elastic) Network Interface (ENI)    
+            Each EC2 instance has a default (primary) ENI; assigned a private IPv4 address within the VPC's CIDR block; can NOT detach a primary ENI; CAN create/attach additional ENIs to instances (allowable number varies per instance type).    
+
+        Route Table (RT)  
+            SUBNET ROUTING rules; a SET of RULES (ROUTES) directing network traffic BETWEEN SUBNETS;  
+            (Not same as industry def of Routing Table; https://en.wikipedia.org/wiki/Routing_table)  
+            https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Route_Tables.html  
+
+            - 1 RT active (associated) PER subnet  
+            - Each subnet must be ASSOCIATED with a RT  
+            - Multiple subnets may use same RT  
+            - IPv4 and IPv6 are treated separately; must create route(s) per  
+
+            - Main RT auto-created on VPC creation  
+            - Main RT and Custom RT auto-created if VPC created per VPC Wizard  
+            - All subnets are auto-associated with the VPC's main RT, by default  
+            - Subnets not EXPLICITLY associated with a RT  
+              are IMPLICITLY associated with the VPC's (default) "Main" RT  
+
+            - Main RT of DEFAULT subnet is PUBLIC by default; allows traffic to/from IGW  
+            - Main RT of CREATED subnet is PRIVATE by default;  
+              allows local traffic (btwn subnets) only   
+
+            - To make a subnet public, edit its RT:  
+                > VPC > Route Tables  
+                > Routes > Edit > Destination: 0.0.0.0/0; Target: igw-...  
+                > Subnet Associations > Edit > (select the subnet)   
+
+            - Best practice is leave main RT (of created subnet) private,  
+              and create 2nd (custom) RT that's public.  
+
+            Example Route Table: 
+                All local-bound IPv4 traffic, CIDR block 10.0.0.0/16, remains local, while pointing all internet-bound IPv4 traffic to an internet gateway.  
+
+                Destination    Target  
+                -----------    ------  
+                10.0.0.0/16    local         (local subnet)  
+                0.0.0.0/0      igw-b82...    (IGW)
+
+                'Destination': CIDR block (range) of traffic so bound (destined).   
+                'Target': Named-reference for where to send such specified traffic.   
+
+        Internet Gateway (IGW) 
+            - Auto-scaling, highly available, redundant VPC component; supports IPv4 and IPv6 traffic;  
+            - Performs TWO purposes:  
+                - provide a target in VPC Route Tables for internet-routable traffic;  
+                - perform NAT for Public EC2 instances (those assigned public IPv4 addresses);  
+            - Default IGW is attached to VPC by default,  
+              with default RT 'Destination' of 0.0.0.0/0 (All)  
+            - Created IGW is DETACHED by default;    
+                    
+        NAT Gateway OR (legacy) Instance   https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat.html  
+           Allows PRIVATE subnets to initiate outbound INTERNET ACCESS (thru IGW) per a NAT, either Gateway (nat) or Instance (eni); forwards traffic from instances in private subnet to Internet or other AWS services, and then sends the response back to the instances; e.g., map several Private IP Addresses to 1 (public) EIP; IPv4 ONLY (for IPv6, use "Egress-Only Internet Gateway")    
+
+            - Blocks INBOUND (initiated) internet traffic TO private subnet  
+            - Allows OUTBOUND (initiated) internet traffic FROM private subnet, unlike Bastion Host  
+
+            1. NAT Gateway service  ($36/mo/connect; $0.05 per VPN Connection-hour)  
+                - 1 per AZ; failover handled automatically  
+                - Scales automatically to 10 Gbps  
+                - Update RT on create; no other config required  
+                - Auto IP  
+                - more secure; no instance access; no maintenance  
+
+            2. NAT Instance; Elastic Network Interface (eni); client created and managed  
+                - requires an EC2 instance in PUBLIC subnet; private subnet's RT maps all IPs to NAT target
+                - Disable source/dest check on NAT instance creation  
+                - Must be route from PRIVATE subnet to NAT instance  
+                - Capacity depends on instance size; 
+                    can create autoscaling groups, etc, to automate failover  
+                - behind a SG 
+
+        Bastion Host (Jump Box)  https://en.wikipedia.org/wiki/Bastion_host  
+            hardened proxy server for admin; SSH, RDP from internet; e.g, 
+            INSTEAD OF (an expensive) NAT (Instance|Gateway)   
+           
+            - Blocks ALL internet traffic TO/FROM private subnet (unlike NAT),  
+                except secure admin, e.g., per SSH|RDP   
+
+        Egress-only Internet Gateway  
+             allows outbound communication over IPv6 (ONLY); prevents inbound traffic from initiating an IPv6 connection; can NOT associate any SG with this gateway; protects instances    
+
+    # Internet Connectivity
+
+        - Connecting VPC to Internet; 2 ways     
+
+            1. Internet Gateway (IGW) 
+            2. VPN    
+                a dual tunnel, each using a unique Public IP; Virtual Private Gateway @ AWS, and Customer Gateway (physical device or SW app) @ customer premesis    
+
+        - Connecting (EC2 instances) to internet REQUIREs:    
+
+            1. (Elastic) Public IP (EIP)  
+            2. Internet Gateway (IGW)    
+            3. Route table (TR) to IGW explicitly associated to subnet containing the instance;  
+                                Destination     Target   
+                                -----------     ------  
+                @ Main VPC      10.0.0.0/16     local     
+                @ Custom VPC    10.1.0.0/16     local    
+                                 0.0.0.0/0      igw    (regardless; required for internet connectivity)  
+                                    
+            - IGW and (Main/default) Route Table are both AUTOMATICALLY CREATED if using the VPC Wizard    
+
+    # VPC Security  https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Security.html  
+
+        - Security Groups (SG)  https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html
+
+            FIREWALL RULEs controlling traffic; per EC2 Instance; default SG exists per VPC;  
+            Rules per Type, Protocol, Port Range, and Source   
+
+            - STATEFUL; Outbound mirrors Inbound Rules; unlike (N)ACLs  
+            - Allow-rule(s) ONLY; no Deny-rule(s)  
+            - ALL Inbound traffic is BLOCKED by default  
+            - ALL Outbound traffic is ALLOWED by default  
+            - Multiple EC2s under one SG  
+            - Multiple SG can apply to one EC2; rules are ADDITIVE; most permissive applies  
+            - Rule changes apply INSTANTLY, even whilst running   
+            - CANNOT block specific IP addresses; use (N)ACLs for that   
+
+            To ADD Security Group to an EC2 Instance:
+                @ EC2 Dashboard > Instances > (select instance) 
+                > Actions (button) > Networking > Change Security Groups
+        
+                E.g., Inbound Rules (tab) ...
+                Type            Protocol   Port Range   Source              Description  
+
+                SSH             TCP        22           69.143.188.12/32    from 1 remote node  
+                HTTPS           TCP        443          10.0.0.0/24         from Public subnet  
+                HTTP            TCP        80           0.0.0.0/0           from ANYWHERE  
+                MYSQL/Aurora    TCP        3306         sg-07c7e...         from WebDMZ SG  
+
+        - (N)ACLs  https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html 
+
+            (Network) Access Control List; FIREWALL for one or more SUBNETs; 
+            RULEs per SUBNET ASSOCIATION(s); per NUMBERed (ORDERed) LIST of ALLOW|DENY rules;  
+             
+            - 1 ACL per subnet    
+            - Default ACL ALLOW all inbound/outbound traffic; auto-attached to a VPC 
+            - Custom ACL DENY all inbound/outbound traffic, by default; "closed"     
+            - each subnet MUST be associated with an ACL;   
+            - associating a subnet any other ACL automatically REMOVES the existing/prior ACL assoc.      
+            - ELB needs ACL to allow traffic from 0.0.0.0/0 or subnet's CIDR,   
+              else can't carry out health checks on the instances.    
+            - Ephemeral Ports; range is (typically) 1024-65535 (NAT Gateway), 32768-61000 (Linux),
+              32768-65535 (ELB), 1025-5000 (WinServer 2003), 49152-65535 (WinServer 2008); 
+              typically OUTBOUND, e.g., handle web clients; see port ranges 
+              @ https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html#nacl-ephemeral-ports     
+            - ACLs for Load Balancers  
+              @ https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-security-groups.html#elb-vpc-nacl  
+
+            - Recommended NACLs (4 Scenarios)  
+              https://docs.aws.amazon.com/vpc/latest/userguide/vpc-recommended-nacl-rules.html  
+
+            NACL Rules:  
+
+            - STATELESS; Inbound traffic (response) subject to rules for Outbound traffic (vice versa)  
+            - ALLOW|DENY  
+            - EVALUATED in ORDER, BY RULE NUMBER, lowest number first; lower overrides higher   
+            - Overrules SG; evaluated before SG.    
+            - HIGHEST rule NUMBER is 32,766   
+            - convention is to NUMBER the Rules INCREMENTing BY 100   
+              IPv4/6 pairs, e.g. Rule #100 (IPv4), #101 (IPv6)  
+            - Each network ACL includes a rule whose number is '*';   
+              ensures any packet not matching any other (numbered) rule is denied.  
+            - Modifying DEFAULT ACL IPv4 does NOT add its associated IPv6  
+
+            @ VPC > Security > Network ACLs > (select a Network ACL) > Edit ...
+
+                > Inbound (tab)
+                    Rule  Type          Protocol   Port Range  Source      Allow/Deny
+                    100   HTTP (80)     TCP (6)    80          0.0.0.0/0   Allow  
+                    200   HTTPS (443)   TCP (6)    443         0.0.0.0/0   Allow  
+                    300   SSH (22)      TCP (6)    22          0.0.0.0/0   Allow  
+
+                > Outbound (tab) 
+                    Rule  Type          Protocol   Port Range  Source      Allow/Deny
+                    100   HTTP (80)     TCP (6)    80          0.0.0.0/0   Allow  
+                    200   HTTPS (443)   TCP (6)    443         0.0.0.0/0   Allow  
+                    300   Custom TCP    TCP (6)    1024-65535  0.0.0.0/0   Allow   (Ephemeral Ports)  
+
+                > Subnet Associations (tab)  (select)
+                    Subnet              IPv4 CIDR           IPv6 CIDR   
+                    subnet-ec31b58b	    172.31.0.0/20       -  
+                    subnet-2e386f64	    172.31.16.0/20      -  
+
+        - Flow Logs  https://docs.aws.amazon.com/vpc/latest/userguide/flow-logs.html  
+
+            - Captures IP traffic flow info of network interface (ENI) resources  
+            - Created flow logs store @ CloudWatch Logs  
+            - 3 Levels; flow logs can be created at ...  
+                VPC  
+                Subnet  
+                Network Interface  
+
+            VPC > Actions > Create Flow Log  
+                Resources (shows vpc)  
+                    Filter: Accept | Reject | All 
+                    Destination: (check-box) "Send to CloudWatch Logs" | "Send to S3 bucket"  
+                    Destination log group: (select; create @ CloudWatch > Logs > Action > Create log group)  
+                    IAM role: (select; create per 'Set Up Permissions' link)  
+
+            CloudWatch > (select log) > Actions ...  
+                - Create log group  
+                - Delete log group  
+                - Export data to Amazon S3  
+                - Stream to AWS Lambda  
+                - Stream to Amazon Elastic Search Service  
+
+            Exam Tips:  
+                - Cannot enable @ Peered VPC unless all VPCs in same account  
+                - Cannot tag  
+                - Cannot change config, once flow log created  
+                - Not all IP is monitored  
+                    - Amazon DNS service; only 3rd party DNS are logged  
+                    - Windows license activation   
+                    - Traffic to/from 169.254.169.254 (instance metadata) 
+                    - DHCP traffic  
+                    - reserved IP for default VPC router  
+
+    # VPC Endpoint  https://docs.aws.amazon.com/vpc/latest/userguide/vpc-endpoints.html  
+        Privately connect VPC to AWS service; an Internal gateway (an ENI) between VPC and other AWS Service; as with NAT, either Instance or Gateway (service) available; 
+        Gateway VPC Endpoints; NO CHARGE  https://docs.aws.amazon.com/vpc/latest/userguide/vpce-gateway.html  
+
+        @ VPC > Endponts > Create Endpoint
+            Service category: AWS services (check-box)  
+            Service Name: (select, e.g., S3 Gateway; 'com.amazonaws.us-east-1.s3')  
+            VPC: (select)
+            Configure route tables: (select; assoc. endpoint with private (default/main) RT)
+                "
+                A rule with destination pl-63a5400a (com.amazonaws.us-east-1.s3) and a target with this endpoints' ID (e.g. vpce-12345678) will be added to the route tables you select below. 
+                
+                Subnets associated with selected route tables will be able to access this endpoint.
+                "  
+            Policy: (default)
+
+        TEST: Sans endpoint, attach Role to the private instance, e.g., 'S3-Admin-Access'
+            ssh into it from public instance, and try `aws s3 ls`; should fail (hang), since there is no Internet access (to AWS S3 service); Post endpoint, do the same, and it should succeed. (SUCCESS; both scenarios functioned as expected (fail/success!)
+
+    # Placement Group (EC2) 
+        a logical grouping of instances within 1 AZ; recommended for apps needing low network latency, high network throughput, or both; 10Gbps network; CHOOSE an EC2 instance TYPE that supports ENHANCED NETWORKING; a placement group is created first, then EC2 instances are launched into it; recommended to use one type for all instances therein, and launch all per 1 launch request, else "insufficient capacity error"; no added fees  http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html    
+
+    # ENA 
+        Elastic Network Adapter (ENA) based ENHANCED NETWORKING; Sep 2017; provides EC2 instances max bandwidth of 25 Gbps @ types: M4, X1, P2, R4, I3, F1, and G3; a custom networking interface; ENA driver is installed in the AMIs @ Amazon Linux, Ubuntu 14.04 and 16.04, RHEL 7.4, SLES 12, Windows Server 2008R2, 2012, 2012R2 and 2016  http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enhanced-networking-ena.html    
+
+    # VPC Peering     
+        Connect subnet(s) in one VPC to subnet(s) in another VPC via DIRECT ROUTE; PRIVATE IP(s); within one or between several AWS accounts; STAR CONFIGURATION (1-to-1; NO TRANSITIVE PEERING); must NOT have overlapping CIDR blocks; can configure which resources are accessible at each endpoint; "Local VPC" <=> "VPC Peering" <=> "Peer VPC"; peer VPC requests, NOT local (requester) VPC; request expires in 7 days    
+
+    # Hardware VPN     
+        Direct Connect; "Box" connecting AWS VPC to On-premises VPN; uses IPSec + BGP; is actually a managed network of such; high availability; "Virtual Private Gateway"  <=>  "HW VPN"  <=> "Customer Gateway"    
+    
+        VPN CloudHub    
+            Hub and spoke model to connect many customer sites to one VPN using perhaps both HW VPNs and Direct Connect.     
+
+    # Sofware VPN     
+        Software designed implementation, customer designed, of the HW VPN.    
+
+    # Software Remote-Access VPN    
+        Set up an EC2 instance as a "Remote Access Server"; 
+        EC2 runing SW such as OpenVPN, Microsoft RAS, Checkpoiont, Sophos, Vyatta    
+
+
+VPC Security per ACLs
+=====================
+    Secure a VPN per subnet, by ACLs; more finely controlled than by Security Groups.  
+
+    VPC > Security > Network ACLs > (select a Network ACL) > Edit ...
+        > Inbound (tab)
+        > Outbound (tab) 
+        > Subnet Associations (tab)  
+          (select)
+
+    # TEST:
+        - Browser to Public IP of WebServer of Public subnet to which this ACL is attached  
+            - Change ACL; add a rule denying (my) remote IP 
+                #101 HTTP ... 69.143.188.12/32  DENY
+            - Browse to Public IP again. Still works. 
+            - Change Rule # to that PRIOR to HTTP ALLOW ; ...
+                #99  HTTP ... 69.143.188.12/32  DENY
+            - Browse to Public IP again. FAILs to serve page, as it should.   
+
+CREATING VPCs 
+=============
+    @ "AWS Cert.SysOps.Admin Assoc. [2017] [CBT.Nuggets] Anthony.Sequeira"  
+        > "09. Creating Virtual Private Clouds [VPCs] in AWS.mp4  
+
+BUILD CUSTOM VPC 
+================
+    VPC > "Start VPC Wizard" (button) ... can use, but not used @ this tutorial ...    
+
+    # Create Custom VPC    
+        - having public & private subnets 
+
+        VPC > "Your VPCs" > "Create VPC"    
+            > Name tag: 'test-vpc'    
+            > CIDR block: 10.0.0.0/16     # most common    
+            > Tenancy: Dedicated/Default  # Dedicated applies to all created therin too; is expensive;    
+            > Create (button)    
+        
+        > VPC (select target) > Actions > Edit DNS Hostnames > YES   (else EC2s therein not given DNS Hostname)
+
+        VPC creation auto-creates DEFAULT: RT, NACLs, SG (PRIVATE traffic only)...
+
+            Route Table > Routes   
+                Destination  Target  Status  Propagated  
+                -----------  ------  ------  ----------
+                10.0.0.0/16  local   Active  No         (private, yet all subnets can communicate)
+
+            Network ACLs > Inbound Rules  
+                Rule #    Type          Protocol  Port Range   Source      Allow/Deny   
+                ------    ----          --------  ----------   ------      ----------  
+                100       ALL Traffic   ALL       ALL          0.0.0.0/0   ALLOW  
+                *         ALL Traffic   ALL       ALL          0.0.0.0/0   DENY  
+
+            Security Group > Inbound Rules  
+                Type          Protocol     Port Range   Source  
+                ----          --------     ----------   ------  
+                ALL Traffic   ALL          ALL          sg-0c275cbb817f1ba3b  
+
+    # Create Subnets    
+
+       VPC > Subnets > "Create Subnet"     
+            > Name tag: '10.0.1.0-us-east-1a'     # namespace example    
+            > VPC: 'test-vpc'    
+            > Availability Zone: (select an AZ)   # Subnets are MAPPED to ONE AZ    
+            > CIDR block: 10.0.1.0/24     
+            "Yes, Create"    
+
+        - create other subnets as apropos (each in different AZ), e.g.,     
+            10.0.2.0/24    
+            10.0.3.0/24    
+
+    # Create Internet Gateway  (IGW; 1 per VPC)    
+
+        VPC > "Internet Gateways" > "Create Internet Gateway" (button)    
+            Name tag > 'test-vpc-IGW'    
+            "Yes, Create" (button)    
+
+        VPC > "Internet Gateways" > "Attach to VPC" (detached by default)    
+
+    # Create Route Table
+        - Keep main route table local access only; create custom RT(s) for internet access
+        - Make one subnet public; connect IGW to EC2 instances launched therein; 'WebDMZ'  
+
+        VPC > "Route Tables" > Create Route Table
+            > Name tag: 'public'       
+            > VPC: 'test-vpc'    
+            "Yes, Create" (button)    
+
+    # Edit Route Table 
+
+        VPC > "Route Tables"
+
+            > Routes (tab) > Edit ...
+                Destination     Target    
+                -----------     ------    
+                0.0.0.0/16      local     (Network ID: 10.0.X.X; all subnets @ test-vpc) 
+                0.0.0.0/0       igw-...   (public; ADD this one; the IGW)
+
+                > Save
+
+                if IPv6, additional RT Routes ...
+
+                 2600:1f18:204f:d800::/56     local
+                 ::/0                         igw-...
+
+            > "Subnet Associations" (tab) > Edit 
+                (check-box; select subnet to associate, i.e., to make public per IGW)    
+
+            > Save
+
+        > Subnets > Actions > "Modify auto-assign IP settings"    
+            (Enables auto-assign public IPv4 @ EC2 launch)  
+            > "Auto-assign IPv4" (check-box)               
+
+        > Actions > Edit DNS Hostnames > YES                      
+            (Enables auto-assign DNS Hostname @ EC2 launch)  
+
+    # Security Group (SG) of Instances   
+
+        @ CIDR of Public subnet:  10.0.0.0/28
+        @ CIDR of Private subnet: 10.0.0.16/28
+
+        - Source for main (default) SG of PRIVATE subnet must be PUBLIC subnet:
+
+            Type            Protocol    Port Range  Source          Description
+
+            All traffic     All         All         10.0.0.0/28     from Public subnet 
+
+        - add SG for RDS management; access to private (RDS) subnet from public subnet  
+
+        > Create Security Group
+            Name: RDS 
+            Description: for RDS management
+            VPC: (select)
+
+            Add/Edit Rule(s)
+            
+            Type            Protocol    Port Range  Source          Description  
+
+            SSH             TCP         22          10.0.0.0/28     from Public subnet  
+            MYSQL/Aurora    TCP         3306        10.0.0.0/28     from Public subnet  
+            HTTPS           TCP         443         10.0.0.0/28     from Public subnet  
+            HTTP            TCP         80          10.0.0.0/28     from Public subnet  
+            All ICMP - IPv4 All         N/A         10.0.0.0/28     from Public subnet  
+
+        Alt. @ CLI ... 
+            # create-security-group  https://docs.aws.amazon.com/cli/latest/reference/ec2/create-security-group.html
+                aws ec2 create-security-group --group-name "RDS-sg" --vpc-id "$_VPC" --description "for RDS mgmnt"  
+
+            # authorize-security-group-ingress; add MYSQL/Aurora access from Public subnet 10.0.0.0/28  
+            # https://docs.aws.amazon.com/cli/latest/reference/ec2/authorize-security-group-ingress.html  
+                aws ec2 authorize-security-group-ingress --group-id 'sg-01addb4967c063e94' \
+                    --ip-permissions IpProtocol=tcp,FromPort=3306,ToPort=3306,IpRanges=' [{CidrIp=10.0.0.0/28,Description="from Public subnet"}]'  
+
+        > Instances > (select RDS server) > Actions > Networking 
+            > Change Security Groups > RDS-sg (check-box; deselect all others)
+
+    # TEST:
+        - SSH into Public server from remote, and ping Private server 
+            ssh temp  # per ~/.ssh/config
+            ping 10.0.0.21 -c 3  # SUCCESS @ WebServer! (EC2 @ WebDMZ; Public subnet)
+            # SSH into Private server from Public server (WebServer). 
+            # (should use Bastion Server, but here embedding key @ WebServer; BAD PRACTICE)
+            vim pvk.pem                        # copy/paste private key 
+            chmod 400 pvk.pem
+            ssh ec2-user@10.0.0.21 -i pvk.pem  # SUCCESS! 
+                                               # if 'Permission denied (publickey).' check USERNAME@HOST
+            sudo su                            # @ Private server 
+            yum update                         # SHOULD FAIL/timeout; no public access; 
+
+            ... Next: NAT; for public access to private subnet 
+
+CREATE NAT Server    
+=================
+    - To allow certain public (SSH) access to Private Subnet(s); DB servers etal.
+    - Weak/legacy method; whether single or multiple w/ failover; fragile or complicated.
+    - NAT Gateway, an AWS service, replaces this BOTTLENECK. 
+
+    ... but this is how to create a single NAT Server (EC2 Instance) ...  
+
+    # Create NAT EC2 Instance    
+
+        EC2 > "Launch Instance" [button]    
+            Community AMIs > 'nat'    
+            ... list ... 
+            > Select
+                amzn-ami-vpc-nat-hvm-2014.09.1.x86_64-gp2 - ami-184dc970
+                    Amazon Linux AMI 2014.09.1 x86_64 VPC NAT HVM GP2
+            
+            t2.micro (check-box)  # less network throughput than larger AMI    
+            
+            > Step 3. Configure Instance    
+                > Network: 'test-vpc'    
+                > Subnet: (select the PUBLIC subnet)    
+                > Auto-assign Public IP > (enable or manually assign it later)    
+
+            > Tags
+                Name: 'NAT'
+
+            > Step 6. Configure Security Group    
+                WebDMZ (check-box; select SG allowing public internet access; HTTP/HTTPS/SSH)
+
+    # Disable source/dest check for the NAT instance
+        - NAT is NEITHER source nor destination, so, must DISABLE source/dest check.    
+        - This is a peculiarity of NAT instances
+
+        EC2 > Instances > (select NAT) > Actions 
+            > Networking > "Change source/dest check" 
+            > "Are you sure that you would like to disable"
+            > Yes, Disable
+
+    # Now assign NAT an Elastic IP    
+        EC2 > NETWORK & SECURITY    
+            > Elastic OPs > "Allocate New Address"   # fees for manually created addresses    
+            > Elastic OPs > "Associate New Address"    
+            > Instance > test-vpc    
+            "Associate"    
+
+     Now add route for private subnets to access NAT    
+
+        VPC > "Route Tables" > (select Main RT; not the IGW one)   
+            > Routes (tab) 
+            > Edit > "Add another route"    
+
+                Destination     Target    
+                -----------     ------    
+                10.0.0.0/16     local     # or whatever VPC; existing already
+                 0.0.0.0        (NAT)     # <<< add NAT instance (Target); select from dropdown menu  
+
+                                # e.g., "eni-00cc868547debf845 / i-02495991c0649e9b6"
+            
+            > Subnet Associations > Edit > (select main subnet, i.e., private subnet) 
+
+    # Resulting architecture
+
+        internet  ==> IGW-VPC ==>  public subnet  |==>  private subnet  
+                                     NAT =========|       RDS server
+                                     WebServer ===|
+
+    # TEST: 
+        - SSH into Public server from remote, and ping Private server 
+            ssh temp  # per ~/.ssh/config
+            # @ WebServer (EC2 @ WebDMZ; Public subnet)
+            # SSH into Private server from Public server. (Again, bad practice)
+            ssh ec2-user@10.0.0.21 -i pvk.pem  # SUCCESS, again (see earlier test, sans NAT! 
+            yum update -y                      # SUCCESS; has public access!
+
+            # stop NAT instance; WebDMZ should still have SSH access, 
+            # but this RDS server should no longer have public access; test:
+            yum install mysql -y  # good, it fails; no access
+
+    # NAT Gateway 
+        - replaces NAT instance  
+
+        VPC > "NAT Gateway (IPv4) | "Egress Only Internet Gateways" (IPv6)  
+        VPC > NAT Gateway  
+        > Create NAT Gateway (button)  
+            Subnet: (select the Public subnet)  
+            Elastic IP Allocation ID: > Create New IP (button)  # an EIP is REQUIRED by NAT Gateway   
+            > Create a NAT Gateway (button)  
+            > Edit route tables  # provisioning takes ~ 15 minutes, so don't do here/yet.  
+            > Close              # Wait until NAT Gateway is "Available"  
+            > Route Tables > Edit 
+                (remove "Black Hole"; NAT instance terminated earlier)  
+                > Remove (check-box @, e.g.,"eni-00cc868547debf845 / i-02495991c0649e9b6")  
+                > Add another router (button)  
+
+                Destination     Target    
+                -----------     ------    
+                10.0.0.0/16     local     # or whatever, per VPC; existing already  
+                 0.0.0.0        nat-...   # <<< add NAT Gateway (Target); select from dropdown menu  
+
+                                # e.g., "nat-0421c1bb8c8d5254c"  
+
+    # TEST: 
+        - SSH into Public server from remote, and ping Private server 
+            ssh temp  # per ~/.ssh/config
+            # @ WebServer (EC2 @ WebDMZ; Public subnet)
+            # SSH into Private server from Public server. (Again, bad practice)
+            ssh ec2-user@10.0.0.21 -i pvk.pem  # SUCCESS, again (see earlier test, sans NAT! 
+            yum update -y                      # SUCCESS; has public access!
+
+        # Delete NAT Gateway ...
+
+        VPC > NAT Gateways > (select it) > Actions > Delete 
+            # WebDMZ should still have SSH access,
+            # but this RDS server should no longer have public access; 
+            # test:
+                # ssh access good; ...
+                yum install mysql -y  # fails, as it should; no public access
+
+
+
+
+
+

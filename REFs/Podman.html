@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Podman</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://chatgpt.com/share/66fb4da2-017c-8009-9aa7-645e0640605b" title="ChatGPT.com">Podman : Rootless Containers</a></h1>
+
+<h2>Q:</h2>
+
+<p>Rootless podman containers stop when user logs out?</p>
+
+<h2>A:</h2>
+
+<p>Yes, rootless Podman containers will stop when the user logs out by default. This is because <strong>they are tied to the user's session</strong> and their processes terminate when the session ends.</p>
+
+<p><strong>To prevent rootless Podman containers from stopping upon logout</strong>,
+you can use the Podman service or systemd integration:</p>
+
+<pre><code class="language-bash">app=bbox
+
+# Configure to always restart
+podman run -d --restart=always --name $app busybox sleep 1d
+
+# Generate user-scoped systemd service file : DEPRICATED : use Quadlets
+podman generate systemd --new --name $app --files
+
+# Move the systemd service file:
+mkdir -p ~/.config/systemd/user 
+mv container-$app.service ~/.config/systemd/user/
+
+# Enable/Start the service on user login
+systemctl --user enable --now container-$app.service
+
+# Enable lingering
+loginctl enable-linger $(whoami)
+
+# Teardown
+podman container stop $app
+podman container rm $app 
+</code></pre>
+
+<ul>
+<li>The <code>loginctl enable-linger</code> command allows user-specific services (including systemd units managed by the <code>--user</code> flag) to keep running even when the user is not logged in. <strong>Without enabling lingering, systemd will stop all user services when you log out</strong>, which includes your Podman containers.</li>
+</ul>
+
+<p>This approach ensures that your rootless Podman containers
+remain running even when you log out.</p>
+
+<h3>UPDATE : Use Quadlets</h3>
+
+<p><strong>Quadlets are essentially a systemd unit generator specifically for containers</strong>. Instead of manually writing complex <code>.service</code> files, you can use <code>.container</code> files (a simplified format) to define container behaviors, such as the image to use, environment variables, volumes, and restart policies.</p>
+
+<p>These <code>.container</code> files are easier to write and maintain compared to traditional <code>.service</code> files that might call podman run commands. <strong>Systemd then reads these Quadlet <code>.container</code> files and generates the appropriate <code>.service</code> units behind the scenes.</strong></p>
+
+<p>Setup:</p>
+
+<pre><code class="language-bash">mkdir -p ~/.config/systemd/user 
+vi ~/.config/systemd/user/$app.container
+
+</code></pre>
+
+<pre><code class="language-ini">[Container]
+Image=docker.io/library/busybox:latest
+Name=bbox
+Restart=always
+</code></pre>
+
+<pre><code class="language-bash"># Enable/Start the service on user login
+systemctl --user enable --now container-$app.service
+
+</code></pre>
+
+<p>This approach is cleaner and recommended if you are seeing warnings about Quadlets. Quadlets simplify the management of containers using systemd while retaining the flexibility of systemd service management.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

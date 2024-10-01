@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hadoop.HDFS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://hadoop.apache.org/" title="Hadoop.Apache.org">Apache Hadoop</a></h1>
+
+<h2>Hadoop ecosystem:</h2>
+
+<ul>
+<li>Hadoop Distributed File System (<strong>HDFS</strong>): This is the primary storage system used by Hadoop applications. It is a distributed file system designed to run on commodity hardware. HDFS provides high throughput access to application data and is designed to be highly fault-tolerant.</li>
+<li><strong>MapReduce</strong>: This is a programming model and processing technique for distributed computing. It allows for massive scalability across hundreds or thousands of servers in a Hadoop cluster. MapReduce processes large data sets by breaking the work into a set of independent tasks, making it an essential part of data processing in the Hadoop ecosystem.</li>
+<li><strong>YARN</strong> (Yet Another Resource Negotiator): YARN is a <strong>resource management layer</strong> for the Hadoop ecosystem. It manages computing resources in clusters and uses them for scheduling users' applications. YARN provides a more flexible and efficient framework than the original MapReduce for cluster resource management.
+
+<ul>
+<li><a href="https://spark.apache.org/">Spark</a> and/or <a href="https://flink.apache.org/">Flink</a> may run on YARN, all working together to process the same data set.</li>
+</ul></li>
+<li>Hadoop Common: These are the common utilities and libraries that support other Hadoop modules. Hadoop Common provides the essential services and support needed by other Hadoop components, including the filesystem and network access to Hadoop clusters.</li>
+<li>Other:
+
+<ul>
+<li>Hive: A data warehousing and SQL-like query language that allows for data summarization, query, and analysis.</li>
+<li>HBase: A scalable, distributed database that supports structured data storage for large tables.</li>
+<li>Pig: A high-level platform for creating MapReduce programs used with Hadoop.</li>
+<li>Sqoop: A tool designed for efficiently transferring data between Hadoop and relational databases.</li>
+<li>Flume: A service for efficiently collecting, aggregating, and moving large amounts of log data to HDFS.</li>
+<li>Oozie: A workflow scheduler system to manage Hadoop jobs.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

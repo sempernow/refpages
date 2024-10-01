@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Docker.Security</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Docker : Security</h1>
+
+<h2>Login to Docker Hub</h2>
+
+<p>If login repeatedly FAIL/ERROR (even HTTP <code>502</code>, <code>503</code>, ...) &hellip;</p>
+
+<pre><code class="language-bash">Error response from daemon: Get https://registry-1.docker.io/v2/: received unexpected HTTP status: 503 Service Unavailable
+</code></pre>
+
+<p>FIX: DELETE all <code>&quot;credStore&quot;: ...</code> key(s) @ <a href="file:///c:/HOME/.docker/config.json"><code>config.json</code></a></p>
+
+<p>@ Logout, want &hellip;</p>
+
+<pre><code class="language-json">    {
+        &quot;auths&quot;: {
+            &quot;https://index.docker.io/v1/&quot;: {
+                &quot;auth&quot;: &quot;Z3n...cHM=&quot;
+            }
+        },
+        &quot;HttpHeaders&quot;: {
+            &quot;User-Agent&quot;: &quot;Docker-Client/19.03.11 (linux)&quot;
+        }
+    }
+</code></pre>
+
+<pre><code class="language-bash">docker logout #... ALWAYS DO THIS FIRST.
+# Login:
+docker login
+# OR
+docker login --u $username 
+# ... either prompt for password(|token)
+Password: &lt;PASTE password or token&gt;
+
+# OR, use this one liner sans prompt ...
+echo $pw_or_token |docker login -u $username --password-stdin
+</code></pre>
+
+<ul>
+<li>Create access token from Docker Hub account &gt; Security &gt; ...</li>
+<li>Login URL is <code>https://index.docker.io/v2/</code></li>
+</ul>
+
+<h3><a href="file:///c:/HOME/.docker/config.json"><code>~/.docker/config.json</code></a></h3>
+
+<p>@ Logout, want &hellip;</p>
+
+<pre><code class="language-json">    {
+        &quot;auths&quot;: {},
+        &quot;HttpHeaders&quot;: {
+            &quot;User-Agent&quot;: &quot;Docker-Client/19.03.11 (linux)&quot;
+        }
+    }
+</code></pre>
+
+<p>@ Login, want &hellip;</p>
+
+<pre><code class="language-json">    {
+        &quot;auths&quot;: {
+            &quot;https://index.docker.io/v1/&quot;: {
+                &quot;auth&quot;: &quot;Z3n...cHM=&quot;
+            }
+        },
+        &quot;HttpHeaders&quot;: {
+            &quot;User-Agent&quot;: &quot;Docker-Client/19.03.11 (linux)&quot;
+        }
+    }
+</code></pre>
+
+<ul>
+<li><p>Note credentials,  <code>&quot;auths&quot;: ...</code>, are UNENCRYPTED, Base64 encoded.</p>
+
+<pre><code class="language-bash">echo 'Z3n...cHM=' |base64 -d -
+#... returns ...
+&lt;USERNAME&gt;:&lt;PW_OR_TOKEN&gt;
+</code></pre></li>
+</ul>
+
+<h1><a href="https://www.youtube.com/watch?v=JE2PJbbpjsM" title="YouTube 2020">Docker Container Security</a> | <a href="https://github.com/sidpalas/devops-directive" title="GitHub"><code>devops-directive</code></a></h1>
+
+<h2>Best Practices</h2>
+
+<ol>
+<li><p>Do not run container as root</p>
+
+<ul>
+<li><p>@ Dockerfile: <code>USER uzer</code></p>
+
+<pre><code class="language-bash"># Set/Add User and Group
+ARG UNAME=tor
+ARG UID=100
+ARG GID=65533
+RUN groupadd -g $GID $UNAME &amp;&amp; useradd -m -u $UID -g $GID -s /bin/bash -c &quot;Docker-image user&quot; $UNAME
+#... else ... &amp;&amp; useradd -m -u $UID -g $GID -s /sbin/nologin -c &quot;Docker-image user&quot; $UNAME
+#... forbid login by all but for root.
+USER root
+
+# Install software etal
+RUN dnf install -y vim
+
+# Run as unprivileged user
+USER $UNAME
+...
+</code></pre></li>
+</ul></li>
+
+<li><p>Multi-stage build producing a distro-less image.</p></li>
+
+<li><p>Secure the VM/Host OS</p>
+
+<ul>
+<li>Goolge COS</li>
+<li>AppArmor</li>
+</ul></li>
+
+<li><p>Container Image Scanner</p></li>
+</ol>
+
+<h2><a href="http://redhatgov.io/workshops/security_containers/exercise1.1/">Secure Containers @ RedHatGov.io</a></h2>
+
+<h3><a href="http://redhatgov.io/workshops/security_containers/exercise1.3/" title="RedHatGov.io">Remove <code>setuid</code>/<code>setgid</code> binaries</a></h3>
+
+<p>Or just defang the image, as shown below.</p>
+
+<p>SETUID/SETGID Overview</p>
+
+<p>There are two special permissions that can be set on executable files: Set User ID (setuid) and Set Group ID (sgid). These permissions allow the file being executed to be executed with the privileges of the owner or the group. For example, if a file was owned by the root user and has the setuid bit set, no matter who executed the file it would always run with root user privileges.</p>
+
+<p>Chances are that your application does not need any elevated privileges. setuid or setgid binaries. If you can disable or remove such binaries, you stop any chance of them being used for buffer overruns, path traversal/injection and privilege escalation attacks.</p>
+
+<p>Defang the image</p>
+
+<pre><code class="language-bash">RUN find / -xdev -perm +6000 -type f -exec chmod a-s {} \; || true
+</code></pre>
+
+<ul>
+<li><a href="https://linux.die.net/man/1/chmod"><code>chmod(1)</code> man page</a></li>
+</ul>
+
+<h2>Firewalls : Security Groups etal</h2>
+
+<p>The issues below (Docker mucking with <code>iptables</code>) are all in the context of deploying sans VPC-based firewalls. That is, they rely upon node-based protections (the node is that hosting the Docker server).</p>
+
+<h3><a href="https://www.techrepublic.com/article/how-to-fix-the-docker-and-ufw-security-flaw/" title="techrepublic.com 2018">Docker / UFW security flaw</a></h3>
+
+<blockquote>
+<p><em>UFW is a popular iptables front end on Ubuntu that makes it easy to manage firewall rules. But when Docker is installed, Docker bypass the UFW rules and the published ports can be accessed from outside.</em></p>
+</blockquote>
+
+<p>&mdash; <a href="https://github.com/chaifeng/ufw-docker"><code>github.com/chaifeng</code></a></p>
+
+<h4>Bad &quot;Fix&quot;:</h4>
+
+<pre><code class="language-bash"># Open Docker server config:
+vi /etc/default/docker 
+# Add k/v:
+DOCKER_OPTS=&quot;--iptables=false&quot;
+# Restart Docker server
+sudo systemctl restart docker
+</code></pre>
+
+<ul>
+<li>But this spwans a new nest of problems</li>
+</ul>
+
+<h3><a href="https://github.com/chaifeng/ufw-docker#solving-ufw-and-docker-issues">Solving UFW-Docker issues</a></h3>
+
+<p><a href="https://www.qualityology.com/tech/let-docker-and-ufw-firewall-work-together/">... more ...</a></p>
+
+<h3>/h3>
+
+<ul>
+<li><p><a href="https://linux.die.net/man/8/iptables" title="man page @ linux.die.net"><code>iptables</code></a></p>
+
+<pre><code class="language-bash">sudo iptables -L
+</code></pre>
+
+<ul>
+<li>The Linux firewall utility; setup, maintain firewall rules; for node-based protection. Okay, but better to handle upstream at the subnet level.</li>
+</ul></li>
+
+<li><p><a href="https://help.ubuntu.com/community/UFW" title="help.ubuntu.com">UFW</a> (Uncomplicated Firewall)</p></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

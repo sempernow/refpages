@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Git-for-Windows</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://gitforwindows.org/" title="GitForWindows.org">Git-for-Windows</a></h1>
+
+<h2>Versioning/Module Incompatibilities of <code>git</code>/<code>go</code></h2>
+
+<p>Deleting cache (@ <code>GOPATH</code>) does nothing for versioning. Git tags (versions) are immutable; entirely orthogonal to, and override, commits. For example, even if an old tag (version) is deleted from its commit (both locally and at origin) and then added back to a newer commit, the old commit remains hard welded thereto regardless. The only way to update its imported Golang package (@ <code>/vendor</code>) to the new commit is to either update the version number (@ <code>git</code>) and manually change to it at <code>go.mod</code>, not use <code>git</code> versioning (tags) at all, or &quot;version&quot; per repo name, e.g., <code>repo/v3</code>. That last method gets declared at <code>go.mod</code> as <code>v0.0.0-...-&lt;SVN-reference&gt;</code>. Note also that <code>go get ...</code> behavior changes per <code>GO111MODULE</code> setting; to include that it may or may not download to <code>GOPATH</code> if <code>on</code>, and that declaring the version (per <code>path@version</code> syntax) is forbidden if <code>off</code>.</p>
+
+<h2><a href="https://chocolatey.org/packages?q=git&amp;moderatorQueue=&amp;moderationStatus=all-statuses&amp;prerelease=false&amp;sortOrder=package-download-count" title="Chocolatey.org/packages">Install</a></h2>
+
+<pre><code class="language-bat">choco install git.install
+</code></pre>
+
+<h2>Usage</h2>
+
+<h3><a href="https://gitforwindows.org/">Git for Windows</a></h3>
+
+<pre><code class="language-bat">rem -- MINGW64 @ cmd [/bin/bash.exe] --
+bash.exe --init-file &quot;%USERPROFILE%\.bash_profile&quot; 
+
+rem --MINGW64 @ mintty [git-bash.exe] --
+start git-bash.exe 
+
+rem -- git @ sub-shell [git-cmd.exe] --
+&quot;%ProgramFiles%\Git\git-cmd.exe&quot; 
+
+rem -- git GUI --
+&quot;%ProgramFiles%\Git\cmd\git-gui.exe&quot;
+</code></pre>
+
+<h4><a href="https://github.com/rprichard/winpty" title="GitHub"><code>winpty</code> @</a> <code>mintty</code></h4>
+
+<pre><code class="language-bash">winpty bash  # Launches TTY emulator @ sub-shell
+</code></pre>
+
+<h3><a href="https://github.com/git-for-windows/build-extra/" title="GitHub">Git-for-Windows SDK</a> (<code>GitSDK.bat</code>)</h3>
+
+<blockquote>
+<p>... files and scripts to help build Git for Windows on MSYS2</p>
+
+<pre><code class="language-bat">rem TYPE: msys|msys2|mingw32|mingw64
+msys2_shell.cmd -%_TYPE% -where %_FOLDER%
+</code></pre>
+</blockquote>
+
+<h3><a href="https://desktop.github.com/">GitHub Desktop</a> (<code>GitHub.bat</code>)</h3>
+
+<h2>Install</h2>
+
+<h3>2018</h3>
+
+<pre><code>Installed per downloaded installer  https://gitforwindows.org/
+Try choco tool next time.
+</code></pre>
+
+<h3>2017</h3>
+
+<pre><code>See git.bat for the various Git launch commands/configs 
+Integrates fairly well with Cygwin and cmdlib environments, 
+though some namespace collisions; adjust per configs @ git.bat
+
+ssh config @ `/Git/etc/ssh` folder; 
+replaced it with symlink to Cygwin's 
+ssh config @ `/home/$USERNAME/.ssh` 
+sucessfully tested by tunneling into router 
+</code></pre>
+
+<p>
+    Git for Windows is git-scm
+    <a href="https://github.com/git-for-windows">https://github.com/git-for-windows</a></p>
+
+<pre><code>Includes MinGW64 &amp; MSYS2 (projects) binaries; 
+runs @ Window Env., @ cmd or mintty terminals
+
+    mintty Wiki [GitHub]  https://github.com/mintty/mintty/wiki/Tips
+
+    mintty app, @ /usr/bin, launches GUI 
+    select/menu for MSYS2/MINGW32/MINGW64. 
+    launches terminal per selection; includes @ $PATH ...
+
+    binaries [@ '/c/Program Files/Git']
+
+        /usr/local/bin        non-existent 
+        /usr/bin              MAIN REPOSITORY  
+        /bin                  3 files; bash, git, sh
+
+    + MSYS2 specific binaries 
+
+        /opt/bin              non-existent
+
+    + MINGW64 specific binaries 
+
+        /mingw64/bin          MINGW64 specific (git) + overlapping (openssl)
+</code></pre>
+
+<h3>2016</h3>
+
+<p>Git for Windows SDK <a href="https://github.com/git-for-windows/build-extra/">https://github.com/git-for-windows/build-extra/</a></p>
+
+<pre><code>MinGW + Msys + Git forms the build 
+environment for Git development [GCC + make + Git]
+</code></pre>
+
+<p>Git for Windows</p>
+
+<pre><code>Installed 2016-11-09
+
+Use 'Git.bat B' from commandline [Git for Windows] [MinGW64] [mintty]
+
+Cygwin's version was uninstalled after SSL/cert
+failure errors on 'git clone &lt;repository&gt;', and
+don't care to muck w/ every little utility @ Cygwin ...
+http://codinggorilla.domemtech.com/?p=1416
+
+    (See Git.bat @ UzerX cmd-library)
+
+    'git add ...' is NOT reversible, even after removing per 'git rm ...'
+    I.e., .git retains massive size, including that of what was 'removed'.
+
+    Do NOT use Git-for-Windows [MinGW64] @ Cygwin Env.
+    Use mintty launched per git-bash.exe --cd-to-home [Git.bat B]
+
+    git-bash.exe [Git-for-Windows] CONFIGs per '.bash_profile' @ %USERPROFILE% 
+
+        '.bash_profile' mod ...
+
+            HOME='/c/Cygwin/home/USERNAME'
+            source &quot;${HOME}/etc/_UzerX.cfg&quot;
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
