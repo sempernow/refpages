@@ -48,19 +48,22 @@ These `.container` files are easier to write and maintain compared to traditiona
 Setup:
 
 ```bash
-mkdir -p ~/.config/systemd/user 
-vi ~/.config/systemd/user/$app.container
+app=bbox
 
-```
-```ini
+# Create the systemd .container file
+mkdir -p ~/.config/systemd/user 
+cat <<-EOH |tee ~/.config/systemd/user/$app.container
 [Container]
 Image=docker.io/library/busybox:latest
-Name=bbox
+Name=$app
 Restart=always
-```
-```bash
+EOH
+
 # Enable/Start the service on user login
-systemctl --user enable --now container-$app.service
+systemctl --user enable --now $app.container
+
+# Enable lingering
+loginctl enable-linger $(whoami)
 
 ```
 
