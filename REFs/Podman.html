@@ -71,19 +71,22 @@ remain running even when you log out.</p>
 
 <p>Setup:</p>
 
-<pre><code class="language-bash">mkdir -p ~/.config/systemd/user 
-vi ~/.config/systemd/user/$app.container
+<pre><code class="language-bash">app=bbox
 
-</code></pre>
-
-<pre><code class="language-ini">[Container]
+# Create the systemd .container file
+mkdir -p ~/.config/systemd/user 
+cat &lt;&lt;-EOH |tee ~/.config/systemd/user/$app.container
+[Container]
 Image=docker.io/library/busybox:latest
-Name=bbox
+Name=$app
 Restart=always
-</code></pre>
+EOH
 
-<pre><code class="language-bash"># Enable/Start the service on user login
-systemctl --user enable --now container-$app.service
+# Enable/Start the service on user login
+systemctl --user enable --now $app.container
+
+# Enable lingering
+loginctl enable-linger $(whoami)
 
 </code></pre>
 
