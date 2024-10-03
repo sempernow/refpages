@@ -48,13 +48,13 @@ trivy image --download-db-only
 trivy image --reset
 
 # Scan container (ctnr) image and log results
-trivy image $image -o log
+trivy image -o log $image
 
 # Scan ctnr image for CVEs, create its SPDX-compliant SBOM, out to JSON
-sbom='spdx.json'
-trivy image --scanners vuln $image -f spdx-json -o $sbom
+sbom=sbom.spdx
+trivy image --scanners vuln --format spdx-json -o $sbom.json $image
 # Scan/Audit SBOM file for vulnerabilities (CVEs) of declared severities
-trivy sbom --severity CRITICAL,HIGH $sbom -f json -o spdx.audit.json
+trivy sbom --severity CRITICAL,HIGH --format json -o $sbom.audit.json $sbom.json
 
 # Scan K8s cluster (experimental)
 trivy k8s --report summary $cluster_name
@@ -86,10 +86,10 @@ Regarding SBOMs and CVE audits of OCI-compliant (AKA container) images, not all 
 
 1. **SPDX** (Software Package Data Exchange) :  
     SPDX is an open standard for sharing information about software package **licenses, copyrights and such <def title="Open Source Software">OSS</def> tracking**. It is widely used for creating and sharing SBOMs. Originally developed by the Linux Foundation. 
-    - `trivy image -f spdx-json ...`
+    - `trivy image --format spdx-json ...`
 2. **CycloneDX** :  
     CycloneDX is another SBOM standard focused on **security and software component and supply chain audit**. Created by the [OWASP Foundation](https://owasp.org/www-project-cyclonedx/ "OWASP.org").
-    - `trivy image -f cyclonedx ...`
+    - `trivy image --format cyclonedx ...`
     ```json
         ...
         "description": "The grafana plugin SDK bundles build metadata into ... including said credentials.",
@@ -119,7 +119,7 @@ Other SBOM standards:
     - `trivy sbom ...` parse/analyze Syft SBOMs
 - [GitHub's Dependency Snapshot](https://github.blog/enterprise-software/governance-and-compliance/introducing-self-service-sboms/) :  
   Purely an SBOM generator; widely-adopted, NTIA-compliant standard.
-    - `trivy image -f github ...` generates SBOM of that format
+    - `trivy image --format github ...` generates SBOM of that format
 
 
 ### SBOMs : Trivy v. [Syft](https://github.com/anchore/syft) 
@@ -131,18 +131,18 @@ Syft appears to capture more components, yet less dependencies than Trivy:
 # Install Syft
 ☩ curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
 # Syft scan
-☩ syft scan $image -o cyclonedx-json=$name.syft.cdx.json
+☩ syft scan $image -o cyclonedx-json=$sbom.syft.cdx.json
 
 # @ Syft 
-☩ cat $name.syft.cdx.json |jq .components |wc -l
+☩ cat $sbom.syft.cdx.json |jq .components |wc -l
 28132
-☩ cat $name.syft.cdx.json |jq .dependencies |wc -l
+☩ cat $sbom.syft.cdx.json |jq .dependencies |wc -l
 641
 
 # @ Trivy
-☩ cat $name.cdx.json |jq .components |wc -l
+☩ cat $sbom.cdx.json |jq .components |wc -l
 9143
-☩ cat $name.cdx.json |jq .dependencies |wc -l
+☩ cat $sbom.cdx.json |jq .dependencies |wc -l
 2505
 
 ```
@@ -167,7 +167,7 @@ For `FILE`s of a **container-image scan** :
 
 ```bash
 # trivy image ... -o FILE ... IMAGE 
-[$registry[_$port].][.$repo.]${app}_${tag}.$sbom_spec.$ext`
+[$registry[_$port].][.$repo.]${app}_${tag}.sbom.$spec.$ext`
 ```
 - These files contain (among other sections) an SBOM of either  
 a declared specification 
@@ -178,7 +178,7 @@ For `FILE`s of a **CVEs audit of an SBOM file** :
 
 ```bash
 # trivy sbom ... -o FILE ... SBOM_FILE
-[$registry[_$port].][.$repo.]${app}_${tag}.$sbom_spec.audit.$ext`
+[$registry[_$port].][.$repo.]${app}_${tag}.sbom.$spec.audit.$ext`
 ```
 - These files contain both the format-compliant SBOM  
 and a detailed vulnerability audit based on that.
@@ -186,35 +186,35 @@ and a detailed vulnerability audit based on that.
 ```bash
 image=docker.io/grafana/grafana:11.2.0
 image=python:3.12.6
-name=${image////.};name=${name//:/_}
+sbom=${image////.};sbom=${sbom//:/_}.sbom
 severity='--severity CRITICAL,HIGH'
 tpl_keys=_trivy.image.template.json
 tpl=_trivy.image.template_to_table.tpl
 
 # Scan for CVEs of $severity, and log resulting (non-standard) SBOM in (default) table format
-trivy image --scanners vuln $severity $image -o $name.trivy.log 
+trivy image --scanners vuln $severity --format table -o $sbom.trivy.log $image 
 
 # Scan for same, but SBOM in JSON format
-trivy image --scanners vuln $severity $image -f json -o $name.trivy.json 
+trivy image --scanners vuln $severity --format json -o $sbom.trivy.json $image 
 
 # Scan for same, but SBOM in SPDX (table) format 
-trivy image --scanners vuln $severity $image -f spdx -o $name.spdx.log 
+trivy image --scanners vuln $severity --format spdx -o $sbom.spdx.log $image 
 
 # Scan for same, but SBOM in SPDX-JSON (JSON) format
-trivy image --scanners vuln $severity $image -f spdx-json -o $name.spdx.json 
+trivy image --scanners vuln $severity --format spdx-json -o $sbom.spdx.json $image 
 
 # Scan for same, but SBOM in CycloneDX (JSON) format
-trivy image --scanners vuln $severity $image -f cyclonedx -o $name.cdx.json 
+trivy image --scanners vuln $severity --format cyclonedx -o $sbom.cdx.json $image 
 ## Convert to YAML
-cat $name.cdx.json |yq eval -P -o yaml |tee ${name}.cdx.yaml >/dev/null
+cat $sbom.cdx.json |yq -P -o=yaml eval |tee $sbom.cdx.yaml >/dev/null
 
 # Scan for same, but SBOM in github (JSON) format
-trivy image --scanners vuln $severity $image -f github -o $name.github.json 
+trivy image --scanners vuln $severity --format github -o $sbom.github.json $image 
 
 # Scan for same, but into custom template
-## 1. Muster/Discover all keys of `-f template` into JSON.
+## 1. Muster/Discover all keys of `--format template` into JSON.
 ##    Using jq here to filter out all key values and array elements of type: string, allowing only all (sub)keys.
-trivy image --scanners vuln $image -f template --template '{{ toJson . }}' |jq -Mr 'walk(
+trivy image --scanners vuln --format template --template '{{ toJson . }}' $image |jq -Mr 'walk(
     if type == "object" then
         with_entries(.value |= if type == "object" or type == "array" then . else "" end)
     elif type == "array" then
@@ -223,23 +223,23 @@ trivy image --scanners vuln $image -f template --template '{{ toJson . }}' |jq -
         .
     end
 )' |tee $tpl_keys
-## For same of `-f json` struct (Trivy's default, non-standard SBOM) :
-trivy image --scanners vuln $image -f json |jq -Mr 'walk(...)' |tee _trivy.image.trivy.json
+## For same of `--format json` struct (Trivy's default, non-standard SBOM) :
+trivy image --scanners vuln $image --format json |jq -Mr 'walk(...)' |tee _trivy.image.trivy.json
 ## 2. Create template (Golang syntax) based on discovered keys of all available. (See $template of step 1.)
 vi $tpl
 ## 3. Scan into custom template
-trivy image --scanners vuln $severity $image -f template --template "@$tpl" -o $name.trivy.template.log
+trivy image --scanners vuln $severity $image --format template --template "@$tpl" -o $sbom.trivy.template.log
 ```
 - SBOM : image scan results include SBOM 
-    - Non-standard `trivy image -f json ...` **has remediation-related info**;  
+    - Non-standard `trivy image --format json ...` **has remediation-related info**;  
       `"Title": "..."`, `"Description": "..."`, `"References": ["url": "...", ...]`.  
-        - JSON keys of `-f template` **differ** from those of `-f json`.  
+        - JSON keys of `--format template` **differ** from those of `--format json`.  
     - SPDX  
-        - `trivy image -f spdx-json ...`;  
+        - `trivy image --format spdx-json ...`;  
           **no remediation-related info** whatsoever.  
           That standard is strictly about capturing OSS-related info and security vulnerabilies.  
     - CycloneDX
-        - `trivy image -f cyclonedx ...` **has remidiation-related info**;
+        - `trivy image --format cyclonedx ...` **has remidiation-related info**;
             ```json
                 ...
                 "vulnerabilities": [
@@ -273,16 +273,16 @@ Output of Trivy's `sbom` command includes the input SBOM by default.
 
 ```bash
 # Analyze non-standard (trivy) SBOM file : FAILing
-trivy sbom $severity $name.trivy.json -o $name.trivy.audit.log
-trivy sbom $severity $name.trivy.json -f json -o $name.trivy.audit.json
+trivy sbom $severity $sbom.trivy.json -o $sbom.trivy.audit.log
+trivy sbom $severity $sbom.trivy.json --format json -o $sbom.trivy.audit.json
 
 # Analyze SBOM of SPDX file 
-trivy sbom $severity $name.spdx.json -o $name.spdx.audit.log
-trivy sbom $severity $name.spdx.json -f json -o $name.spdx.audit.json
+trivy sbom $severity $sbom.spdx.json -o $sbom.spdx.audit.log
+trivy sbom $severity $sbom.spdx.json --format json -o $sbom.spdx.audit.json
 
 # Analyze SBOM of CycloneDX file 
-trivy sbom $severity $name.cdx.json -o $name.cdx.audit.log 
-trivy sbom $severity $name.cdx.json -f json -o $name.cdx.audit.json
+trivy sbom $severity $sbom.cdx.json -o $sbom.cdx.audit.log 
+trivy sbom $severity $sbom.cdx.json --format json -o $sbom.cdx.audit.json
 
 ```
 - Vulnerability audit of SPDX and CycloneDX compliant SBOMs are **identical**, 
@@ -308,25 +308,25 @@ Filter out all keys not required for remediation AKA mitigation :
 ```bash
 image=docker.io/grafana/grafana:11.2.0
 #image=python:3.12.6
-name=${image////.};name=${name//:/_}
+sbom=${image////.};sbom=${sbom//:/_}
 severity='--severity CRITICAL,HIGH'
 
 ## Create SBOM 
-sbom=$name.cdx.json
-trivy image --scanners vuln $severity $image -f cyclonedx -o $sbom
+sbom=$sbom.cdx.json
+trivy image --scanners vuln $severity $image --format cyclonedx -o $sbom
 
 ## Filter SBOM 
-# out=$name.cdx.filtered
-# cat $sbom |jq -Mr '{
+# out=$sbom.cdx.filtered
+# cat $sbom.cdx.json |jq -Mr '{
 #     About: "Filtered CycloneDX-compliant SBOM created by Trivy scan of a container image.",
 #     Image: .metadata.component.name,
-#     Scan: "'"trivy image --scanners vuln $severity $image -f cyclonedx -o $sbom"'",
+#     Scan: "'"trivy image --scanners vuln $severity $image --format cyclonedx -o $sbom"'",
 #     Source: "'$sbom'",
 #     Date: "'$(date -u --iso-8601=seconds)'",
 #     CVEs: [
 #         .vulnerabilities[]? | {
 #             "ID": .id,
-#             "Severity": (.ratings | map({"source":.source.name,"severity":.severity}) // []),
+#             "Severity": (.ratings | map({"source":.source.sbom,"severity":.severity}) // []),
 #             "Description": .description,
 #             "Recommendation": (.recommendation // "See Advisories."),
 #             "Advisories": (.advisories // []) | map(.url)
@@ -335,17 +335,17 @@ trivy image --scanners vuln $severity $image -f cyclonedx -o $sbom
 # }' |tee $out.json
 
 ## Audit SBOM and filter the audit.
-audit=$name.cdx.audit.json
-out=$name.cdx.audit.filtered
-# trivy sbom $severity $sbom -f json -o $audit
-trivy sbom $severity $sbom -f json |jq -Mr '{
+audit=$sbom.cdx.audit.json
+out=$sbom.cdx.audit.filtered
+# trivy sbom $severity $sbom --format json -o $audit
+trivy sbom $severity --format json $sbom.cdx.json |jq -Mr '{
     Image: .ArtifactName,
     CVEs: .Results | .[]?
 } | {
     About: "Filtered CVEs audit of a CycloneDX-compliant SBOM file.",
-    SBOM: .Image,
-    Scan: "'"trivy sbom $severity $sbom -f json -o $audit"'",
-    Source: "'$audit'",
+    Image: "'$image'", 
+    SBOM: "'$sbom.cdx.json'",
+    Audit: "trivy sbom '"--scanners vuln $severity --format json <SBOM>"'",
     Date: "'$(date -u --iso-8601=seconds)'",
     CVEs: {
         Vulnerabilities: [
@@ -365,11 +365,11 @@ trivy sbom $severity $sbom -f json |jq -Mr '{
     }
 } | select(.CVEs.Vulnerabilities | length > 0)' \
     |tee $out.json \
-    |yq eval -P -o yaml \
+    |yq -P -o=yaml eval \
     |tee $out.yaml \
     >/dev/null
 
-rm $sbom
+rm $sbom.cdx.json
 
 ```
 
@@ -390,7 +390,7 @@ docker run --rm \
     -v $(pwd):/tmp \
     $trivy image -q \
         --scanners vuln \
-        -f cyclonedx \
+        --format cyclonedx \
         -o /tmp/$sbom\
         $subject
 
@@ -402,7 +402,7 @@ docker run --rm \
 Summary of all scans
 
 ```bash
-find . -type f -iname '*.spdx.log' -exec /bin/bash -c '
+find . -type f -isbom '*.spdx.log' -exec /bin/bash -c '
     cat $1 |grep -B1 -A2 ===
 ' _ {} \; |tee summaries.spdx.log
 
@@ -496,7 +496,7 @@ docker run --rm \
     $trivy image \
         --scanners vuln \
         --docker-host tcp://$ifc:2375 \
-        -f cyclonedx \
+        --format cyclonedx \
         -o $ctnr_work/$sbom \
         $subject
 
