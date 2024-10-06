@@ -90,13 +90,13 @@ f: !!str Yes               # string disambiguated by explicit type
 g: Yes                     # boolean True (yaml1.1), string "Yes" (yaml1.2)
 h: Yes we have No bananas  # string, "Yes" and "No" disambiguated by context.
 --- 
-# YAML Literal Block Scalar 
-## Preserve (|) : Indentation of 1+ whitespace (relative to key) required. 
+# YAML Literal Block Scalar : Indentation of 1+ whitespace (relative to key) required. 
+## Preserve (|) : Preserves newlines
 preserve_newlines: |
   These three lines
   will appear exactly
   as you see them here.
-same_but_remove_final_linebreak: |-
+same_but_remove_final_newline: |-
   foo
 ## Fold (>) : All LINES OF SAME INDENTATION are interpreted as one line.
 fold_newlines: >
@@ -104,12 +104,12 @@ fold_newlines: >
         will appear as one.
         Split here for legibility 
         or whatever.
-preserve: |
+reference_preserve: |
   a b
   c d
     e
   f
-## At fold (>), force newline using either indentation or empty line.
+## Using fold (>), a newline is forced by adding either indentation or empty line.
 equivalent_to_above_1: > 
     a b
 

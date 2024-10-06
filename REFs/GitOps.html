@@ -20,17 +20,24 @@
 </head>
 <body>
     <main>
-        <h1>DevOps/<a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code></h1>
+        <h1>DevOps/<a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code> | <a href="https://landscape.cncf.io/" title="Landscape.CNCF.io">CNCF Landscape</a></h1>
 
 <h2>Overview</h2>
 
-<p>GitOps is <strong>an operational framework</strong> that takes DevOps best practices used for application development such as version control, collaboration, compliance, and <strong>CI/CD</strong>, and applies them to infrastructure automation. GitOps consists of <strong>Infrastructure as Code</strong> (IaC), configuration management (<strong>CM</strong>) by Git, <def title="Provide everything below microservices"><strong>platform engineering</strong></def>, and continuous integration and continuous delivery (CI/CD).</p>
-
 <p>DevOps is about automation across the lifecycle of an application.
-GitOps extends that with disciplined methods &mdash;Git as the Source of Truth (SoT)
+GitOps extends that with disciplined methods
+&mdash;<strong>Git</strong> as the single <strong>Source of Truth</strong> (SoT)
 &mdash;across all layers of all components,
 from infra to services, with the goal of repeatable,
 verifiable deployment states.</p>
+
+<p>GitOps is <strong>an operational framework</strong> that takes DevOps best practices
+used for application development such as version control, collaboration, compliance and such,
+and applies them to <strong>infrastructure automation</strong>.
+GitOps consists of Infrastructure as Code (<strong>IaC</strong>), configuration management (<strong>CM</strong>) by Git,
+<dfn title="Provide everything below microservices; build an Internal Developer Platform (IDP) to assist your developers in their daily operations.">Platform Engineering</dfn>,
+and <dfn title="A development practice of pipelining an automated merge, build and test of incremental code changes that are recorded and otherwise controlled by immutable versioning">Continuous Integration</dfn>
+and <dfn title="A development practice of pipelining and automated release and deployment such that the process has visibility and feedback by all team members"><a href="Continuous-Delivery-process-diagram.png">Continuous Delivery</a></dfn> (<strong>CI/CD</strong>).</p>
 
 <h3>Principles</h3>
 
@@ -132,8 +139,7 @@ and application software in any environment.
 A comprehensive, versatile automation tool
 allowing for both declarative and imperative methods.</li>
 </ul></li>
-
-<li><p><strong>IaC</strong> : <strong>Workloads</strong></p>
+<li><strong>IaC</strong> : <strong>Workloads</strong>
 
 <ul>
 <li>Application Management (K8s Manifests)
@@ -205,8 +211,7 @@ supports automated or manual syncing of changes.
 <li><strong>Argo Rollouts</strong>: Advanced deployment strategies like canary and blue/green. Similar to Flagger</li>
 </ul></li>
 </ul></li>
-
-<li><p><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a></p>
+<li><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a>
 
 <ul>
 <li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" title="Kubernetes.io"><strong>Authentication</strong></a> (Authn) :<br>
@@ -277,8 +282,7 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 </ul></li>
 </ol></li>
 </ul></li>
-
-<li><p><strong>Logging</strong> : Cluster-level logging, AKA <strong>Log Aggregation</strong> AKA <strong>Unified Loggging</strong>, so that logs survive their (ephemeral) generator, be that of any host or container process.</p>
+<li><strong>Logging</strong> : Cluster-level logging, AKA <strong>Log Aggregation</strong> AKA <strong>Unified Loggging</strong>, so that logs survive their (ephemeral) generator, be that of any host or container process.
 
 <ul>
 <li><strong>Elastic stack</strong> : to collect, store, query, and visualize log data. Composed of:
@@ -319,8 +323,7 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 <li>No viable installation method is available (2024-08), contrary to project claims.</li>
 </ul></li>
 </ul></li>
-
-<li><p><strong>Observability</strong> : Distributed <strong>Tracing</strong> and <strong>Metrics</strong></p>
+<li><strong>Observability</strong> : Distributed <strong>Tracing</strong> and <strong>Metrics</strong>
 
 <ul>
 <li><a href="https://prometheus.io/" title="Prometheus.io">Prometheus</a> : TSDB and monitoring system optimized for telemetry (metrics and tracing).
@@ -407,8 +410,18 @@ kubectl gadget trace tcp -n $ns
 
 <li><p>Groundcover : All in one</p></li>
 </ul></li>
+<li><strong>Streaming</strong>/<strong>Messaging</strong>
 
-<li><p><strong>Networking</strong></p>
+<ul>
+<li><a href="https://github.com/rabbitmq/rabbitmq-server">RabbitMQ</a> : <a href="https://mqtt.org/">MQTT</a> Broker for IoT messaging.</li>
+<li><a href="https://strimzi.io/" title="Strimzi.io">Strimzi</a> : Kafka on K8s : <a href="https://github.com/strimzi/strimzi-kafka-operator" title="GitHub"><code>strimzi-kafka-operator</code></a> : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications.
+
+<ul>
+<li>Kafka operators to deploy and configure an Apache Kafka cluster on K8s.</li>
+<li>Kafka Bridge provides a RESTful interface for your HTTP clients.</li>
+</ul></li>
+</ul></li>
+<li><strong>Networking</strong>
 
 <ul>
 <li>External Load Balancer
@@ -466,8 +479,7 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li>Consul : Multi-cluster</li>
 </ul></li>
 </ul></li>
-
-<li><p><strong>Security</strong></p>
+<li><strong>Security</strong>
 
 <ul>
 <li>Distributed-Workload Identities
@@ -480,16 +492,24 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li><strong>SPIFFE Runtime Environment</strong> (<a href="https://spiffe.io/docs/latest/spire-about/spire-concepts/">SPIRE</a>) : a production-ready implementation of the SPIFFE APIs (pluggable multi-factor attestation and SPIFFE federation) that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.</li>
 </ul></li>
 </ul></li>
-<li>Scanning
+<li>Scan for CVEs (Common Vulnerabilities and Exposures)
 
 <ul>
-<li>Trivy</li>
+<li><a href="https://aquasecurity.github.io/trivy/v0.56/" title="aquasecurity.github.io">Trivy</a> : Scan OCI-container images, OS folders, Kubernetes clusters, Git repos, virtual machines, and more. And can create SBOM and CVE-vulnerabilities audits of them.
+
+<ul>
+<li><a href="https://aquasecurity.github.io/trivy-operator/latest/" title="aquasecurity.github.io">K8s : <code>trivy-operator</code></a> by Helm chart :<br>
+The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as <code>VulnerabilityReport</code> (CRD) resources, which are owned by a Kubernetes controller.</li>
+</ul></li>
 <li><a href="https://kubescape.io/">Kubescape.io</a><br>
 Risk analysis, security compliance, and misconfiguration scanning.</li>
+<li><a href="https://pypi.org/project/cve-bin-tool/#finding-known-vulnerabilities-using-the-binary-scanner" title="PyPI.org"><code>cve-bin-tool</code></a> :<br>
+FOSS tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl</li>
 </ul></li>
 <li>Threat Detection and Remediation
 
 <ul>
+<li><a href="https://kubescape.io/">Kubescape</a> : Runtime Detection</li>
 <li>Falco</li>
 <li>KubeArmor</li>
 </ul></li>
@@ -502,13 +522,36 @@ Risk analysis, security compliance, and misconfiguration scanning.</li>
 <li>Secrets
 
 <ul>
-<li><a href="https://external-secrets.io/latest/">External Secrets Operator</a><br>
-Pull/Push secrets to/from K8s</li>
-<li><a href="https://github.com/tellerops/teller">Teller</a> : Secret manager for developers</li>
-<li><a href="https://github.com/bitnami-labs/sealed-secrets">Bitnami Sealed Secrets</a>,</li>
-<li><a href="https://github.com/getsops/sops">SOPS</a>,</li>
-<li><a href="https://github.com/hashicorp/vault">Vault</a> for encrypting secrets that are stored in Git.
-This ensures that sensitive information is securely managed.</li>
+<li><a href="https://github.com/hashicorp/vault">Vault</a> :
+<a href="https://github.com/hashicorp/vault-secrets-operator" title="GitHub"><code>vault-secrets-operator</code></a>
+provides for <a href="https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79" title="ChatGPT">various implementations</a>:
+
+<ul>
+<li>Vault Agent Sidecar Injection : Most secure (rest/transit) :
+Transparent encrypt/decrypt of K8s <code>Secret</code> objects (<code>data</code>)</li>
+<li>Vault CSI Driver :  Fetch secrets on container init and mount as files in the container.</li>
+<li>External Secrets Operator : Integrates with external secret stores (Vault, AWS Secrets Manager, Google Cloud Secret Manager); syncs secrets from Vault into K8s <code>Secret</code> objects.</li>
+<li>Direct API Calls to Vault : Configured per app.</li>
+</ul></li>
+<li><a href="https://external-secrets.io/latest/">External Secrets Operator</a> :
+Pull/Push secrets; sync K8s <code>Secret</code> objects (decrypted) with external store (encrypted).</li>
+<li><a href="https://github.com/tellerops/teller">Teller</a> : Like External Secretes Operator; local CLI secrets manager for developers.</li>
+<li><a href="https://github.com/bitnami-labs/sealed-secrets">Bitnami <code>SealedSecret</code>s</a> :
+
+<ul>
+<li>Asymmetric crypto allows developers to encrypt secrets as &quot;<code>SealedSecret</code>&quot; K8s object (CRD) <strong>to store outside the cluster</strong> in (public) Git repo or other untrusted environment.</li>
+<li>Automatically decrypts it and creates a regular Kubernetes Secret object, accessible to your applications.</li>
+<li>Once in the cluster, it is <strong>stored unencrypted in K8s</strong> <code>Secret</code> object.</li>
+<li>Components
+
+<ul>
+<li>A cluster-side <code>controller</code> / operator</li>
+<li>A client-side utility: <code>kubeseal</code> : Utility encrypts secrets that only the controller can decrypt.</li>
+</ul></li>
+<li>Transit Engine : works entirely within Vault and does not require a sidecar or agent within your Pods. It is used by the K8s control plane (e.g., API server) to perform encryption operations, ensuring data is encrypted when stored (e.g., in etcd) and decrypted when needed.</li>
+</ul></li>
+<li><a href="https://github.com/getsops/sops">SOPS</a> (Secrets OPerationS) :
+Secrets management; editor that interfaces with Vault etal.</li>
 </ul></li>
 <li>Signing
 
@@ -522,8 +565,17 @@ This ensures that sensitive information is securely managed.</li>
 <li><a href="https://cert-manager.io/" title="cert-manager.io">cert-manager</a> : <em>&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry.</em></li>
 </ul></li>
 </ul></li>
+<li><strong>Storage</strong>
 
-<li><p><strong>Database</strong></p>
+<ul>
+<li><a href="https://github.com/minio/minio">MinIO</a> : S3 compatible object store<br>
+K8s <a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html#minio-operator-installation" title="min.io">`minio-operator</a></li>
+<li>Ceph : Unified storage; object, block, and file interfaces to cluster built from commodity hardware.</li>
+<li>JuiceFS : Distributed POSIX file system built on top of Redis and S3 (MinIO).</li>
+<li>Gluster</li>
+<li>Longhorn</li>
+<li>KubeFS</li>
+<li><strong>Database</strong>
 
 <ul>
 <li>Managed
@@ -538,11 +590,12 @@ This ensures that sensitive information is securely managed.</li>
 <li><a href="https://cloudnative-pg.io/">CloudNativePG</a> (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a <strong>primary/standby architecture</strong>, using native <strong>streaming replication</strong>. A CNCF project.</li>
 <li>Atlas Operator : Schema</li>
 </ul></li>
-
-<li><p><strong>Misc</strong></p>
+</ul></li>
+<li><strong>Misc</strong>
 
 <ul>
-<li>Charm : Library and Tools
+<li>Charm : Library and Tools</li>
+<li>Velero : Backup K8s cluster and <code>PersistentVolume</code>s
 
 <br></li>
 </ul></li>

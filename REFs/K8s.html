@@ -28,6 +28,11 @@
 
 <h2><a href="https://kubernetes.io/docs/home/?path=users&amp;persona=app-developer&amp;level=foundational">Overview</a> | <a href="https://kubernetes.io/docs/reference/tools/" title="kubernetes.io/docs/...">Tools</a> | <a href="https://github.com/kubernetes" title="Kubernetes repo">GitHub</a> | <a href="https://en.wikipedia.org/wiki/Kubernetes">Wikipedia</a></h2>
 
+<ul>
+<li>Admin: <a href="K8s.kubeadm.sh"><code>K8s.kubeadm.sh</code></a></li>
+<li>Client: <a href="K8s.kubectl.sh"><code>K8s.kubectl.sh</code></a></li>
+</ul>
+
 <h2>Vanilla Cluster</h2>
 
 <p><a href="https://kubernetes.io/docs/setup/production-environment/">Install a production-environment cluster using <code>kubeadm</code>.</a></p>
@@ -45,6 +50,179 @@
 <p>See <a href="K8s.provision-kubernetes.sh"><code>K8s.provision-kubernetes.sh</code></a></p>
 
 <h2>Topics of Interest</h2>
+
+<h3><a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">Labels</a> v. <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/">Annotations</a></h3>
+
+<pre><code class="language-yaml">...
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: &quot;1&quot;
+    objectset.rio.cattle.io/applied: H4s...(very long)...AAA
+    objectset.rio.cattle.io/owner-gvk: /v1, Kind=Service
+    objectset.rio.cattle.io/owner-name: traefik
+    objectset.rio.cattle.io/owner-namespace: kube-system
+  labels:
+    objectset.rio.cattle.io/hash: 836fcbce022d5dae5b36694fe1eaf389c93af7dc
+    svccontroller.k3s.cattle.io/nodeselector: &quot;false&quot;
+    svccontroller.k3s.cattle.io/svcname: traefik
+    svccontroller.k3s.cattle.io/svcnamespace: kube-system
+  ...
+...
+</code></pre>
+
+<p>Both are k-v maps <code>[PX/]NAME[=VALUE]</code> used to attach metadata to K8s objects.
+Any K8s object may have both, either, or neither.</p>
+
+<ul>
+<li><code>PX</code> : <code>0-253</code></li>
+<li><code>NAME</code> : <code>1-63</code></li>
+<li><code>VALUE</code> : <code>&lt;ANY&gt;</code></li>
+</ul>
+
+<p>Both segments must begin and end with an alphanumeric character, <code>[a-zA-Z0-9]</code>,
+and may include &quot;<code>-</code>&quot;, &quot;<code>_</code>&quot;, and &quot;<code>.</code>&quot; in between.</p>
+
+<blockquote>
+<p>Labels can be <strong>used to select objects</strong> and to find collections of objects that satisfy certain conditions. In contrast, <strong>annotations are not used to identify and select objects</strong>.</p>
+</blockquote>
+
+<p>Labels are fixed k-v identifiers utilized by <em>Selectors</em> AKA <em>Label Selectors</em>. For example, (new) Pods of a Service are dynamically discovered and selected by <code>svc.selector.KEY=VALUE</code> (Selector) match with <code>pod.metadata.labels.KEY=VALUE</code> (Label).
+Labels are not unique. It is common for a label to be declared at all objects (<code>kind</code>) of an application, e.g., for selection by client:</p>
+
+<pre><code class="language-bash">kubectl get all -l app=cache
+</code></pre>
+
+<ul>
+<li><code>-l</code>, <code>--selector</code></li>
+</ul>
+
+<blockquote>
+<p>Mutating the value of an object's label may affect that object and its coupling with other objects, and its relationship with Operators, clients and such. Labels are not immutable, but analogous to the follow-on effects of rebasing a Git project, take care with such mutations.</p>
+</blockquote>
+
+<p>Annotations are non-identifying metadata for any and all other information; small or large, structured or unstructured, and <strong>allows characters not permitted by labels</strong>.</p>
+
+<h4>Key patterns</h4>
+
+<p>See &quot;<a href="https://kubernetes.io/docs/reference/labels-annotations-taints/">Well-known Labels, Annotations and Taints</a>&quot; for those <strong>declared dynamically</strong> by IaC methods, e.g., Helm, Operators, Argo CD pipelines, &hellip;.</p>
+
+<ul>
+<li><p>Key patterns for apps that are deeply integrated with <code>kubernetes.io</code>:</p>
+
+<pre><code class="language-yaml">annotations:
+deployment.kubernetes.io/revision: &quot;1&quot;
+meta.helm.sh/release-name: vault
+meta.helm.sh/release-namespace: vault  
+labels:
+app.kubernetes.io/component: store
+app.kubernetes.io/instance: vault
+app.kubernetes.io/managed-by: helm
+app.kubernetes.io/name: vault-agent-injector
+</code></pre></li>
+
+<li><p>Key patterns for apps that are scoped to an organizationl unit:</p>
+
+<pre><code class="language-yaml">annotations:
+devops.local/owner: team-devordie
+devops.local/poc: all@developers.local
+devops.local/repo: git.local/devordie/fast-cache
+devops.local/description: &quot;Cache for devordie applications.&quot;
+labels:
+app: fast-cache
+ver: v1.0.0
+tier: backend
+role: cache
+env: production
+managed-by: argocd.local/devordie/fast-cache
+</code></pre>
+
+<pre><code class="language-bash"># Labels : Add as k=v pair : common keys: app, environment, stage, 
+kubectl label $kind $name k1=v1
+# Labels : Modify
+kubectl label $kind $name k1=vZ --overwrite
+# Labels : Delete
+kubectl label $kind $name k1-
+</code></pre>
+
+<pre><code class="language-bash"># Annotation : Add as k=v pair
+kubectl annotate $kind $name a/b=c
+# Annotation : Modify as k=v pair
+kubectl annotate $kind $name a/b=x --overwrite
+# View : labels||annotations (either)
+kubectl get $kind $name -o jsonpath=&quot;'{.metadata.$either}'&quot;
+kubectl get $kind $name -o jsonpath=&quot;'{.metadata.$either.&quot;a/b&quot;}'&quot; #=&gt; 'x'
+</code></pre></li>
+</ul>
+
+<h4>Q:</h4>
+
+<p>This pattern of an annotation containing the manifest it is annotating is common.
+How is such redundancy useful?</p>
+
+<pre><code class="language-bash">☩ k get ds -n kube-system svclb-traefik-fbfbd908 -o yaml \
+    |yq '.metadata.annotations.&quot;objectset.rio.cattle.io/applied&quot;' |base64 -d |gzip -d
+base64: invalid input
+{&quot;apiVersion&quot;:&quot;apps/v1&quot;,&quot;kind&quot;:&quot;DaemonSet&quot;,&quot;metadata&quot;:{&quot;annotations&quot;:{&quot;objectset.rio.cattle.io/id&quot;:&quot;&quot;,&quot;objectset.rio.cattle.io/owner-gvk&quot;:&quot;/v1, ...,&quot;numberReady&quot;:0}}
+</code></pre>
+
+<h4>A:</h4>
+
+<p>The pattern of storing a resource's manifest (or a portion of it) inside an annotation on the same resource is indeed common in Kubernetes, especially with tools like <strong>Helm</strong>, <strong>Argo CD</strong>, <strong>K3s</strong>, and <strong>Rancher</strong>. While this may seem redundant, <a href="https://chatgpt.com/share/6700260b-b0f8-8009-8a9c-c29f4e56b9d0" title="ChatGPT.com">it serves several important purposes</a>:</p>
+
+<ol>
+<li><strong>Tracking State for Reconciliation</strong>
+
+<ul>
+<li><strong>Purpose</strong>: Kubernetes operators, controllers, and tools (such as Helm, K3s, and Rio) use this annotation to track the &quot;applied&quot; or &quot;desired&quot; state of a resource. This is important for ensuring that the actual state of the resource matches the intended state.</li>
+<li><strong>How It Helps</strong>: By embedding the resource's manifest in the annotation, the tool can always refer back to the exact configuration it applied, without needing to reference an external source (e.g., a Git repository or Helm chart). This allows for automatic reconciliation if the resource drifts from its intended state.</li>
+<li><strong>Example</strong>: If a DaemonSet or Deployment is modified manually (outside of the tool's control), the controller can compare the current state to the state stored in the annotation and roll back the changes to maintain the intended configuration.</li>
+</ul></li>
+<li><strong>Facilitating Rollbacks</strong>
+
+<ul>
+<li><strong>Purpose</strong>: The stored manifest serves as a point-in-time snapshot of the resource’s configuration, which can be useful for rollback operations.</li>
+<li><strong>How It Helps</strong>: If a change is applied to the resource and causes an issue, the tool can refer back to the manifest in the annotation and restore the resource to that previous known-good state.</li>
+<li><strong>Example</strong>: If a deployment is updated but fails to start properly, the system can revert to the previous configuration stored in the annotation.</li>
+</ul></li>
+<li><strong>Supporting Declarative Systems</strong>
+
+<ul>
+<li><strong>Purpose</strong>: Tools like <strong>Helm</strong> and <strong>Argo CD</strong> operate in a declarative manner. They apply a desired state to the cluster and continuously monitor it. By storing the manifest in the annotation, the controller has a reference point for what the desired state should look like.</li>
+<li><strong>How It Helps</strong>: The redundancy ensures that the controller doesn't need to consult an external source (like a Git repository or Helm release history) for every reconciliation loop. Instead, it can use the locally stored manifest to reapply the intended state.</li>
+</ul></li>
+<li><strong>Resource Versioning and Drift Detection</strong>
+
+<ul>
+<li><strong>Purpose</strong>: These annotations can store a snapshot of the resource's configuration as it was when last applied, allowing tools to detect if there’s been any drift between the stored configuration and the current live configuration.</li>
+<li><strong>How It Helps</strong>: If the live configuration of a resource changes (perhaps due to a manual change or external system), the tool can detect that the live state no longer matches the stored state (i.e., drift has occurred) and can trigger a reconciliation to bring the resource back to its desired state.</li>
+<li><strong>Example</strong>: If someone modifies a deployment or service in the cluster directly via <code>kubectl</code>, the system can compare the stored manifest in the annotation and automatically reconcile the difference, effectively self-healing the resource.</li>
+</ul></li>
+<li><strong>Efficient Local Comparison</strong>
+
+<ul>
+<li><strong>Purpose</strong>: Instead of always querying external systems like Helm repositories, Git, or even APIs, storing the manifest locally in the annotation allows tools to operate faster and more efficiently by keeping everything they need locally in the resource metadata.</li>
+<li><strong>How It Helps</strong>: For large clusters with many resources, querying an external system for every reconciliation loop could be inefficient. By embedding the manifest, the controller can perform comparisons directly within the cluster's API server, improving performance.</li>
+<li><strong>Example</strong>: When Helm performs an upgrade, it can compare the stored manifest in the annotations with the new manifest locally without querying remote resources.</li>
+</ul></li>
+<li><strong>Audit and Debugging</strong>
+
+<ul>
+<li><strong>Purpose</strong>: The stored manifest in the annotation can serve as a historical reference for auditing and debugging purposes, providing a snapshot of the resource at a specific point in time.</li>
+<li><strong>How It Helps</strong>: If an issue arises in a cluster, admins can inspect the annotations to understand what configuration was applied last, even if the external state (e.g., in Git or Helm) has been updated or changed.</li>
+<li><strong>Example</strong>: In the event of an outage or misconfiguration, an engineer could check the resource's annotations to verify the configuration at the time of failure.</li>
+</ul></li>
+<li><strong>Consistency in Distributed Systems</strong>
+
+<ul>
+<li><strong>Purpose</strong>: In a distributed system like Kubernetes, resources may be managed by multiple components or tools. By storing the applied manifest in the resource’s annotation, every component interacting with the resource can have a consistent view of its configuration.</li>
+<li><strong>How It Helps</strong>: This ensures that even if there are multiple controllers or administrators interacting with the resource, everyone can see the same configuration and state, preventing inconsistencies.</li>
+</ul></li>
+</ol>
+
+<h5>Conclusion:</h5>
+
+<p>Although storing the manifest in an annotation can appear redundant, it provides significant benefits in terms of reconciliation, rollback, drift detection, and auditing. This pattern allows Kubernetes controllers and tools like Helm, K3s, and Argo CD to manage resources in a declarative, self-healing manner, ensuring that the actual state of resources always matches their desired state without requiring constant reference to external sources.</p>
 
 <h3><a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#local-ephemeral-storage">Local ephemeral storage</a> | <a href="https://chatgpt.com/share/2846e45f-b59f-4911-be09-09cd1e4f903c">ChatGPT</a></h3>
 
@@ -136,138 +314,7 @@ spec:
 <p>With Operators an application is treated as a single object, and exposes only that
 which makes sense for the application to work.</p>
 
-<h3><a href="https://kubernetes.io/docs/tasks/administer-cluster/certificates/">Cluster Control-plane TLS</a> | <a href="https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/">Managing TLS</a></h3>
-
-<h3><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a></h3>
-
-<p>Regarding identity, Kubernetes has
-<a href="https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#user-accounts-versus-service-accounts">two categories</a>)
-of subject:</p>
-
-<ol>
-<li><p><a href="https://kubernetes.io/docs/concepts/security/service-accounts/"><strong><code>ServiceAccount</code></strong></a> :  K8s object for non-human subjects AKA <em>entities</em>; Pod, DaemonSet, CronJob,
-Job, CRD, controllers, operators, &hellip;, and <strong>external services</strong> (CI/CD pipelines for example). Upon creation of a Pod, K8s generates/attaches to it a common ServiceAccount named <code>default</code> in Pod's namespace (). This has neither <code>Role</code> nor <code>RoleBinding</code> objects and so its permissions are very limited (depending on cluster policies). Authentication is typically by Bearer Token.</p>
-
-<pre><code class="language-bash">sa=$(k get -n kube-system pod coredns-576bfc4dc7-f9kkh -o jsonpath='{.spec.serviceAccount}')
-tkn=$(k create -n kube-system token $sa --duration 10m)
-ip=$(k -n kube-system get svc traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}')
-# Send GET request to the protected API server
-curl -ikH &quot;Authorization: Bearer $tkn&quot; https://$ip:6443/version # JSON response body
-</code></pre></li>
-
-<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#users-in-kubernetes"><strong>user</strong> or <strong>group</strong></a> : K8s concepts of human subjects. Neither are objects of the K8s API; however, both are searched for, and can be authenticated against, by K8s API from client's TLS certificate fields, and mapped to <code>kind</code> of <code>[Cluster]RoleBinding</code> :</p>
-
-<pre><code class="language-bash">$ k explain clusterrolebinding.subjects.kind
-GROUP:      rbac.authorization.k8s.io
-KIND:       ClusterRoleBinding
-VERSION:    v1
-
-FIELD: kind &lt;string&gt;
-
-
-DESCRIPTION:
-    Kind of object being referenced. Values defined by this API group are
-    &quot;User&quot;, &quot;Group&quot;, and &quot;ServiceAccount&quot;. If the Authorizer does not recognized
-    the kind value, the Authorizer should report an error.
-</code></pre>
-
-<ul>
-<li><p>Organization (<code>O</code>) maps to <code>Group</code> and Common Name (<code>CN</code>) fields of client's TLS certificate.
-For example, &quot;<code>Subject: O = team-x1-devs + O = system:basic-user, CN = fred</code>.
-To see that of <code>default</code> user of a default kubeconfig:</p>
-
-<pre><code class="language-bash"># View certificate text
-kubectl config view --raw -o jsonpath='{.users[].user.client-certificate-data}' \
-|base64 -d \
-|openssl x509 -text -noout
-
-# Send GET request to the protected API server using TLS certificate and key
-curl -k \
---cert &lt;(k config view --raw -o jsonpath='{.users[0].user.client-certificate-data}' |base64 -d) \
---key &lt;(k config view --raw -o jsonpath='{.users[0].user.client-key-data}' |base64 -d) \
-https://$(k -n kube-system get svc traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}'):6443/version
-</code></pre></li>
-
-<li><p>The build-in <strong><code>system:masters</code></strong> group is the break-glass <em>uber admin</em> having unrestricted access to K8s API;
-this subject is typically bound to the <code>cluster-admin</code> ClusterRole, <strong>allowing any action</strong> (<code>* verb</code>)
-on <strong>any resource</strong> (<code>* resource</code>) in <strong>any API group</strong> across <strong>all namespaces</strong>.</p>
-
-<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-...
-name: cluster-admin
-...
-subjects:
-- apiGroup: rbac.authorization.k8s.io
-kind: Group
-name: system:masters
-</code></pre></li>
-
-<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user">Create TLS certificate</a> for a <strong>user</strong> or <strong>group</strong> : See <a href="K8s.users.and.groups.sh"><code>K8s.users.and.groups.sh</code></a> .</p></li>
-</ul></li>
-
-<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" title="Kubernetes.io"><strong>Authentication</strong></a> (Authn)</p>
-
-<ul>
-<li>Two (Data-plane) scenarios
-
-<ol>
-<li>Clients authenticating against the K8s API server
-
-<ul>
-<li>The two most common methods:
-
-<ul>
-<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user" title="Kubernetes.io">X.509 certificate issued by K8s CA</a></li>
-<li>Token (JWTs) generated by an OIDC provider, e.g., <strong>Dex</strong> or <strong>Keycloak</strong>, that acts as proxy of upstream Identity Provider (<strong>IdP</strong>), such as AD/LDAP, against which it authenticates a subject, which is <a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">presumably recognizable to K8s</a>, i.e., a user/group or <code>ServiceAccount</code> having K8s <code>cluster.user</code> and (<code>Cluster</code>)<code>RoleBinding</code>.</li>
-</ul></li>
-</ul></li>
-<li>Users authenticating at web UI against an application running on the cluster.
-
-<ul>
-<li>Token (JWTs) generated by an OIDC provider (same as above method).</li>
-</ul></li>
-</ol></li>
-<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#authentication-strategies" title="Kubernetes.io">Authentication Plugins</a>
-
-<ul>
-<li>Static Token file
-
-<ul>
-<li>Bearer token</li>
-<li>Service Account token</li>
-</ul></li>
-<li>X.509 certificates</li>
-<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">Open ID Connect (OIDC) token</a></li>
-<li>Authentication proxy</li>
-<li>Webhook</li>
-</ul></li>
-</ul></li>
-
-<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/" title="Kubernetes.io"><strong>Authorization</strong></a> (Authz) | Modules/<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#authorization-modules" title="Kubernetes.io">Modes</a><br>
-Regardless of authentication method,
-K8s can implement Role-based Access Control (<a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">RBAC</a>) model
-against subjects (<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">known by request attribute(s)</a>)
-using a pair of K8s objects for each of the two scopes of K8s API resources (<code>api-resources</code>):</p>
-
-<ol>
-<li>Namespaced (<code>Deployment</code>, <code>Pod</code>, <code>Service</code>, &hellip;)
-
-<ul>
-<li><code>Role</code> : Rules declaring the allowed actions (<code>verbs</code>) upon <code>resources</code> scoped to APIs (<code>apiGroup</code>).</li>
-<li><code>RoleBinding</code> : Binding a subject (authenticated user or ServiceAccount) to a role.</li>
-</ul></li>
-<li>Cluster-wide (<code>PersistentVolume</code>, <code>StorageClass</code>, &hellip;)
-
-<ul>
-<li><code>ClusterRole</code></li>
-<li><code>ClusterRoleBinding</code></li>
-</ul></li>
-</ol></li>
-</ol>
-
-<h3><a href="https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/">Manage TLS Certificates</a></h3>
+<h3><a href="https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/">Manage TLS Certificates</a> | <a href="https://kubernetes.io/docs/tasks/administer-cluster/certificates/">mTLS of Control Plane</a> |</h3>
 
 <pre><code>Organization         K8s Workloads              K8s Control Plane
 ------------         ---------------------      ------------------------------------------
@@ -426,6 +473,135 @@ authorityInfoAccess = caIssuers;URI:http://ca.example.com/rootCA.crt
 </ol>
 
 <p>The intermediary CA’s validity period should be scoped appropriately. Typically, it has a shorter validity period than the root CA, ensuring that if compromised, the intermediary CA’s certificates will expire sooner.</p>
+
+<h3><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>Authn</strong>/<strong>Authz</strong></a></h3>
+
+<p>Regarding identity, Kubernetes has
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/#user-accounts-versus-service-accounts">two categories</a>)
+of subject:</p>
+
+<ol>
+<li><p><a href="https://kubernetes.io/docs/concepts/security/service-accounts/"><strong><code>ServiceAccount</code></strong></a> :  K8s object for non-human subjects AKA <em>entities</em>; Pod, DaemonSet, CronJob,
+Job, CRD, controllers, operators, &hellip;, and <strong>external services</strong> (CI/CD pipelines for example). Upon creation of a Pod, K8s generates/attaches to it a common ServiceAccount named <code>default</code> in Pod's namespace (). This has neither <code>Role</code> nor <code>RoleBinding</code> objects and so its permissions are very limited (depending on cluster policies). Authentication is typically by Bearer Token.</p>
+
+<pre><code class="language-bash">sa=$(k get -n kube-system pod coredns-576bfc4dc7-f9kkh -o jsonpath='{.spec.serviceAccount}')
+tkn=$(k create -n kube-system token $sa --duration 10m)
+ip=$(k -n kube-system get svc traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}')
+# Send GET request to the protected API server
+curl -ikH &quot;Authorization: Bearer $tkn&quot; https://$ip:6443/version # JSON response body
+</code></pre></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#users-in-kubernetes"><strong>user</strong> or <strong>group</strong></a> : K8s concepts of human subjects. Neither are objects of the K8s API; however, both are searched for, and can be authenticated against, by K8s API from client's TLS certificate fields, and mapped to <code>kind</code> of <code>[Cluster]RoleBinding</code> :</p>
+
+<pre><code class="language-bash">$ k explain clusterrolebinding.subjects.kind
+GROUP:      rbac.authorization.k8s.io
+KIND:       ClusterRoleBinding
+VERSION:    v1
+
+FIELD: kind &lt;string&gt;
+
+
+DESCRIPTION:
+    Kind of object being referenced. Values defined by this API group are
+    &quot;User&quot;, &quot;Group&quot;, and &quot;ServiceAccount&quot;. If the Authorizer does not recognized
+    the kind value, the Authorizer should report an error.
+</code></pre>
+
+<ul>
+<li><p>Organization (<code>O</code>) maps to <code>Group</code> and Common Name (<code>CN</code>) fields of client's TLS certificate.
+For example, &quot;<code>Subject: O = team-x1-devs + O = system:basic-user, CN = fred</code>.
+To see that of <code>default</code> user of a default kubeconfig:</p>
+
+<pre><code class="language-bash"># View certificate text
+kubectl config view --raw -o jsonpath='{.users[].user.client-certificate-data}' \
+|base64 -d \
+|openssl x509 -text -noout
+
+# Send GET request to the protected API server using TLS certificate and key
+curl -k \
+--cert &lt;(k config view --raw -o jsonpath='{.users[0].user.client-certificate-data}' |base64 -d) \
+--key &lt;(k config view --raw -o jsonpath='{.users[0].user.client-key-data}' |base64 -d) \
+https://$(k -n kube-system get svc traefik -o jsonpath='{.status.loadBalancer.ingress[].ip}'):6443/version
+</code></pre></li>
+
+<li><p>The build-in <strong><code>system:masters</code></strong> group is the break-glass <em>uber admin</em> having unrestricted access to K8s API;
+this subject is typically bound to the <code>cluster-admin</code> ClusterRole, <strong>allowing any action</strong> (<code>* verb</code>)
+on <strong>any resource</strong> (<code>* resource</code>) in <strong>any API group</strong> across <strong>all namespaces</strong>.</p>
+
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+...
+name: cluster-admin
+...
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+kind: Group
+name: system:masters
+</code></pre></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user">Create TLS certificate</a> for a <strong>user</strong> or <strong>group</strong> : See <a href="K8s.users.and.groups.sh"><code>K8s.users.and.groups.sh</code></a> .</p></li>
+</ul></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" title="Kubernetes.io"><strong>Authentication</strong></a> (Authn)</p>
+
+<ul>
+<li>Two (Data-plane) scenarios
+
+<ol>
+<li>Clients authenticating against the K8s API server
+
+<ul>
+<li>The two most common methods:
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user" title="Kubernetes.io">X.509 certificate issued by K8s CA</a></li>
+<li>Token (JWTs) generated by an OIDC provider, e.g., <strong>Dex</strong> or <strong>Keycloak</strong>, that acts as proxy of upstream Identity Provider (<strong>IdP</strong>), such as AD/LDAP, against which it authenticates a subject, which is <a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">presumably recognizable to K8s</a>, i.e., a user/group or <code>ServiceAccount</code> having K8s <code>cluster.user</code> and (<code>Cluster</code>)<code>RoleBinding</code>.</li>
+</ul></li>
+</ul></li>
+<li>Users authenticating at web UI against an application running on the cluster.
+
+<ul>
+<li>Token (JWTs) generated by an OIDC provider (same as above method).</li>
+</ul></li>
+</ol></li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#authentication-strategies" title="Kubernetes.io">Authentication Plugins</a>
+
+<ul>
+<li>Static Token file
+
+<ul>
+<li>Bearer token</li>
+<li>Service Account token</li>
+</ul></li>
+<li>X.509 certificates</li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">Open ID Connect (OIDC) token</a></li>
+<li>Authentication proxy</li>
+<li>Webhook</li>
+</ul></li>
+</ul></li>
+
+<li><p><a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/" title="Kubernetes.io"><strong>Authorization</strong></a> (Authz) | Modules/<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#authorization-modules" title="Kubernetes.io">Modes</a><br>
+Regardless of authentication method,
+K8s can implement Role-based Access Control (<a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">RBAC</a>) model
+against subjects (<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">known by request attribute(s)</a>)
+using a pair of K8s objects for each of the two scopes of K8s API resources (<code>api-resources</code>):</p>
+
+<ol>
+<li>Namespaced (<code>Deployment</code>, <code>Pod</code>, <code>Service</code>, &hellip;)
+
+<ul>
+<li><code>Role</code> : Rules declaring the allowed actions (<code>verbs</code>) upon <code>resources</code> scoped to APIs (<code>apiGroup</code>).</li>
+<li><code>RoleBinding</code> : Binding a subject (authenticated user or ServiceAccount) to a role.</li>
+</ul></li>
+<li>Cluster-wide (<code>PersistentVolume</code>, <code>StorageClass</code>, &hellip;)
+
+<ul>
+<li><code>ClusterRole</code></li>
+<li><code>ClusterRoleBinding</code></li>
+</ul></li>
+</ol></li>
+</ol>
 
 <h3><code>kubectl</code></h3>
 

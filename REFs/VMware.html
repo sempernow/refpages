@@ -22,6 +22,12 @@
     <main>
         <h1><a href="https://www.vmware.com/" title="VMware.com">VMware</a></h1>
 
+<h2><a href="https://chatgpt.com/share/f5522c3c-a597-42ac-adee-4d445b0836f6" title="ChatGPT.com">Proxmox v. ESXi v. OpenStack</a></h2>
+
+<blockquote>
+<p>VMware is now owned by Broadcom, which has <strong>discontinued the Free ESXi Hypervisor</strong> : <a href="https://knowledge.broadcom.com/external/article?legacyId=2107518" title="knowledge.broadcom.com">End Of General Availability of the free vSphere Hypervisor</a>&quot;</p>
+</blockquote>
+
 <h2>vSphere ESXi</h2>
 
 <ul>
@@ -39,7 +45,7 @@
 <li><code>.vmdk</code> : Proprietary virtualization format only,
 whereas Proxmox supports that and others; <code>.qcow2</code> and <code>.vdi</code></li>
 <li>Remote access only; per Web console</li>
-<li><a href="https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6">Free version</a> per registered user</li>
+<li><del><a href="https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6">Free version</a> for registered users</del></li>
 </ul>
 
 <h2>vCenter</h2>
@@ -129,6 +135,18 @@ This approach provides several advantages:</p>
 <p>Each of these subnets would be isolated on different vSwitches or port groups with appropriate VLANs and firewall rules to control the traffic flow between them, ensuring that development servers cannot directly access production databases, for instance.</p>
 
 <p>This segmentation and isolation strategy is a key part of a robust network security posture in a virtualized environment like ESXi.</p>
+
+<h2><a href="https://chatgpt.com/share/6701397c-d940-8009-b7f7-6d103934228a">Create VMs via IaC method</a></h2>
+
+<h3>1. Terraform / vSphere Provider</h3>
+
+<h3>2. Ansible : <code>community.vmware.vmware_guest</code></h3>
+
+<p>Module to create and manage VMs on vSphere.</p>
+
+<h3>3. vSphere Automation SDK</h3>
+
+<p>VMware provides SDKs for Python, Go, and other languages to automate VM creation and management via API calls.</p>
  
     </main>
 
