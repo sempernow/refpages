@@ -1,5 +1,9 @@
 # [VMware](https://www.vmware.com/ "VMware.com")
 
+## [Proxmox v. ESXi v. OpenStack](https://chatgpt.com/share/f5522c3c-a597-42ac-adee-4d445b0836f6 "ChatGPT.com")
+
+>VMware is now owned by Broadcom, which has __discontinued the Free ESXi Hypervisor__ : [End Of General Availability of the free vSphere Hypervisor](https://knowledge.broadcom.com/external/article?legacyId=2107518 "knowledge.broadcom.com")"
+
 ## vSphere ESXi 
 
 - Type-1 Hypervisor
@@ -10,7 +14,7 @@
 -  `.vmdk` : Proprietary virtualization format only, 
    whereas Proxmox supports that and others; `.qcow2` and `.vdi`
 - Remote access only; per Web console
-- [Free version](https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6) per registered user
+- ~~[Free version](https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6) for registered users~~
 
 ## vCenter 
 
@@ -78,4 +82,19 @@ This approach provides several advantages:
 Each of these subnets would be isolated on different vSwitches or port groups with appropriate VLANs and firewall rules to control the traffic flow between them, ensuring that development servers cannot directly access production databases, for instance.
 
 This segmentation and isolation strategy is a key part of a robust network security posture in a virtualized environment like ESXi.
+
+
+## [Create VMs via IaC method](https://chatgpt.com/share/6701397c-d940-8009-b7f7-6d103934228a)
+
+### 1. Terraform / vSphere Provider
+
+
+
+### 2. Ansible : `community.vmware.vmware_guest`
+
+Module to create and manage VMs on vSphere.
+
+### 3. vSphere Automation SDK
+
+VMware provides SDKs for Python, Go, and other languages to automate VM creation and management via API calls.
 

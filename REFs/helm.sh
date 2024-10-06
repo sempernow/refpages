@@ -29,56 +29,73 @@ ok #|| exit $?
 helm repo add hub $url
 ## Update repos list (cache)
 helm repo update
+# List Helm's environment variables/settings
+helm env
 ## List installed repos
 helm repo list 
-
-# Charts : Search
+## List releases (installed charts) of all namespaces
+helm list -A # --all-namespaces
+# Repos/Charts : Search
+repo=bitnami
+chart=nginx
 ## Search for a chart @ ArtifactHub.io (hub)
-helm search hub $app |grep $repo
-## Search for chart locally (against all repos of `helm list`)
-helm search repo $app_or_keyword # All versions : --versions, -l
-## Or
-chart=$repo/$app #=> bitnami/nginx
-docker image ls |grep $chart_or_keyword
-## Or, if apropos
-minikube ssh docker image ls |grep $chart_or_keyword
-## List installed chart(s) : k8s resources created per chart(s)
-helm list 
+helm search hub $repo 
+helm search hub $repo |grep $chart
+## Search for chart locally : against all repos of `helm repo list`
+helm search repo $chart 
+# Charts : Install/Upgrade : Methods (*)
+## * Pull and install a chart : Creating a release (Helm lingo)
+release=a$chart
+helm update $release $repo/$chart --install
+## * Pull and install a chart : Override chart settings using LOCAL values.yaml file
+helm show values $repo/$chart --version $ver |tee $values    # 1. Pull (values.yaml only) then edit.
+helm update $release $repo/$chart --install --values $values # 2. Install chart.
+## * Pull and install a chart : Override chart settings using REMOTE values.yaml file
+helm update $release $repo/$chart --install --values https://$domain/path/$values
+## * Pull and install a chart : OFFLINE-INSTALL method
+values=values.yaml
+## 1. Pull chart for subsequent local install
+helm pull $repo/$chart --version $ver 
+tar -xaf ${chart}-${ver}.tgz # Charts *should* extract to a folder named "$chart"
+## 2. Copy and edit chart's values.yaml file
+cp $chart/values.yaml .
+vi values.yaml
+## OR Copy by pull
+helm show values $repo/$chart --version $ver |tee $values
+## 3. Modify values to fit your environment
+vim $values
+## 4. Install/Upgrade the local chart, overriding default values with those of $values file.
+helm upgrade $release $chart --install --values $values 
+    ## Some (other) flags : not all are compatible with --values flag.
+    --values, -f        # Specify values in a YAML file or URL.
+    --timeout 20s       # Set max install time beyond which fail.
+    --atomic            # Teardown on fail; some objects require out-of-band deletion, e.g., pv.
+    --debug             # Report progress during install/upgrade
+    --dry-run           # YAML(ish) report; use to test viability; catches some fail modes.
+    --generate-name     # Auto-generate a release name
+    --create-namespace  # Creates ns if necessary
+    --namespace $ns     # Declare ns, so `helm -n $ns ...`
+    # When upgrading:
+    --reset-values      # Reset values to those of chart (default).
+    --reuse-values      # Reuse installed values and merge in overrides via --set and -f
+                        #... This is *ignored* if '--reset-values' is declared too.
+    --set k1=v1,k2=v2   # Set the declared values
+ 
+## Alternate (bad) install method : Don't use; subsequent update requires teardown.
+helm install $release $repo/$chart $flags
 
-# Charts : Install (A chart version is a RELEASE)
-## Install a chart : $release is any name (Service name).
-values='values.yaml'
-helm install $release $chart 
-## OR auto-generate a release name : mysql-169074637
-helm install $chart --generate-name
-## OR, using a modified values manifest. (See method below).
-helm install -f $values $release $chart
-## OR from an extracted (and perhaps modified) package
-helm pull $chart
-tar -xaf $pulled.tgz # Extracts to $extract_dir
-pushd $extract_dir
-vim $extract_dir/$values #... edit
-helm install -f $extract_dir/$values $release $extract_dir/
-##... NOT ALL PARAMs are allowed to be modified; see /VALUES_SUMMARY.md
-## Options useful on chart install
-    --version $ver \
-    --create-namespace \
-    --namespace $ns \
-    --atomic \
-    --timeout 20s \
-    --dry-run #... YAML(ish) report. 
-    ## So, redirect dry run to generate values.yaml and mod before install.
-    ## 
-    ## Also, may DOWNLOAD PLUGINS BEFOREHAND,  
-    ## and disable downloads on install:
-    ## Set `installPlugins: false` @ values.yaml .
-    ## (Each repo/chart has its own way of handling HTTP_PROXY.)
+# Status of deployment (release) : a repeat of that reported on install.
+helm status $release
+
+# Test and get useful info on an installed chart (release)
+helm test $release
+
+# Render chart templates locally and display resulting manifests
+helm template $chart 
 
 # Show ... {chart,values} are YAML(ish)
 helm show {chart,readme,crds,values,all} $chart
 
-# Status (+usage details) of chart's deployed service (from list)
-helm status $release
-
-# Teardown : uninstall|un|delete|del
+# Teardown : Aliases: uninstall, del, delete, un
 helm uninstall $release
+

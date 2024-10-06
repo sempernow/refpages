@@ -291,7 +291,6 @@
 ## [TLS.self-signed-cert.sh](./REFs/TLS.self-signed-cert.sh)
 ## [tmux.md](./REFs/tmux.md)
 ## [tor.md](./REFs/tor.md)
-## [Trivy.md](./REFs/Trivy.md)
 ## [TSDoc.js](./REFs/TSDoc.js)
 ## [Typography.md](./REFs/Typography.md)
 ## [Ubuntu.Install.md](./REFs/Ubuntu.Install.md)

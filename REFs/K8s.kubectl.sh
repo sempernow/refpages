@@ -55,12 +55,22 @@ kubectl create job hello --image=busybox:1.28 -- echo "Hello World"
 kubectl create cronjob hello --image=busybox:1.28   --schedule="*/1 * * * *" -- echo "Hello World"
 # Scale
 kubectl scale deploy $any --replicas=3 
-# Labels : Add as k=v pair
+# Labels : Key pattern : the.subject.domain.name/{instance,name,managed-by}
+
+# Labels : Add as k=v pair : common keys: app, environment, stage, 
 kubectl label $kind $name k1=v1
 # Labels : Modify
-kubectl label deploy foo k1=vZ --overwrite=true
+kubectl label $kind $name k1=vZ --overwrite
 # Labels : Delete
-kubectl label deploy foo k1-
+kubectl label $kind $name k1-
+# Annotations : Key pattern : the.subject.domain.name/{owner,team,poc,repo,expiry,description}
+# Annotation : Add as k=v pair
+kubectl annotate $kind $name a/b=c
+# Annotation : Modify as k=v pair
+kubectl annotate $kind $name a/b=x --overwrite
+# View : labels||annotations (either)
+kubectl get $kind $name -o jsonpath="'{.metadata.$either}'"
+kubectl get $kind $name -o jsonpath="'{.metadata.$either."a/b"}'" #=> 'x'
 # Execute an interactive shell (bash, sh, ...) into a container 
 kubectl exec -it $pod -- /bin/bash    # If single-container Pod
 kubectl exec -it $pod -c $ctnr -- sh  # If multi-container Pod : Use TAB completion
@@ -166,7 +176,7 @@ kubectl get all -A # All namespaces; --all-namespaces
 all='po,deploy,ds,sts,ep,svc,ingress,pvc,pv'
 kubectl get $all # Larger subset of all K8s objects
 
-# Authz : Access the protected K8s API endpoints using a ServiceAccount (sa) token
+# Authz : Access protected K8s API endpoints using a ServiceAccount (sa) token
 # - GET /healthz
 # Set cluster server URL : See `k config view` else `k get node -o wide` else `k get svc -A`
 name=default # config.clusters[].cluster.name

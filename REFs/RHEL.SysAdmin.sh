@@ -136,6 +136,21 @@ exit 0
             # Create ISO file
             genisoimage -o $id.iso -R -J -joliet-long $id
 
+    # Test if a specific Linux kernel (RHEL version) is vulnerable to a declared CVE
+        cve=CVE-2017-12190
+        kernel_rpm=kernel-3.10.0-862.11.6.el7.x86_64.rpm
+        rpm -qp $kernel_rpm --changelog | grep $cve
+        # List available kernel patches
+            kernel=kernel.x86_64
+            yum list --cve $cve | grep $kernel
+    
+    # Scan RPMs for CVEs : cve-bin-tool (python) : https://github.com/intel/cve-bin-tool
+        pip install cve-bin-tool
+        # Scan a folder or file containing RPMs 
+        cve-bin-tool $path # -f csv,json,json2,html -o out
+        # Scan an SBOM file
+        cve-bin-tool --sbom ${spec:-cyclonedx} --sbom-file $sbom 
+
 # SELinux
     ## Show status
     getenforce  # Enforcing || Permissive

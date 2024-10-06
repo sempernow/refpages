@@ -1492,6 +1492,17 @@ exit
                 # List both Name and CreatedAt
                 ...|jq '.[] | .Name, .CreatedAt'
 
+        # Access key having slash or other problematic characthers
+            echo '{"a/b": 1}' |jq '."a/b"'                   #=> 1
+            echo '{"a/b": 1,"c": {"a/b": 2}}' |jq '.c."a/b"' #=> 2
+            echo '{"a/b": 1,"c": {"a/b": 2}}' |jq '{A|B: ."a/b", C: .c}'
+                # {
+                #      "A|B": 1,
+                #      "C": {
+                #          "a/b": 2
+                #      }
+                # }
+
         # SLURP a flat list of JSON OBJECTS into a valid JSON struct (array).
             cat flat-list-of-json-objects.txt \
                 |jq -Mr . --slurp # -s

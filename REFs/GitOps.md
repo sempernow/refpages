@@ -1,14 +1,21 @@
-# DevOps/[GitOps](https://opengitops.dev/ "OpenGitOps.dev") `v1.0.0`
+# DevOps/[GitOps](https://opengitops.dev/ "OpenGitOps.dev") `v1.0.0` | [CNCF Landscape](https://landscape.cncf.io/ "Landscape.CNCF.io")
 
 ## Overview
 
-GitOps is __an operational framework__ that takes DevOps best practices used for application development such as version control, collaboration, compliance, and __CI/CD__, and applies them to infrastructure automation. GitOps consists of __Infrastructure as Code__ (IaC), configuration management (__CM__) by Git, <def title="Provide everything below microservices">__platform engineering__</def>, and continuous integration and continuous delivery (CI/CD).  
-
 DevOps is about automation across the lifecycle of an application.
-GitOps extends that with disciplined methods &mdash;Git as the Source of Truth (SoT) 
+GitOps extends that with disciplined methods 
+&mdash;__Git__ as the single __Source of Truth__ (SoT) 
 &mdash;across all layers of all components, 
 from infra to services, with the goal of repeatable, 
 verifiable deployment states.
+
+GitOps is __an operational framework__ that takes DevOps best practices 
+used for application development such as version control, collaboration, compliance and such, 
+and applies them to __infrastructure automation__. 
+GitOps consists of Infrastructure as Code (__IaC__), configuration management (__CM__) by Git, 
+<dfn title="Provide everything below microservices; build an Internal Developer Platform (IDP) to assist your developers in their daily operations.">Platform Engineering</dfn>, 
+and <dfn title="A development practice of pipelining an automated merge, build and test of incremental code changes that are recorded and otherwise controlled by immutable versioning">Continuous Integration</dfn> 
+and <dfn title="A development practice of pipelining and automated release and deployment such that the process has visibility and feedback by all team members">[Continuous Delivery](Continuous-Delivery-process-diagram.png)</dfn> (__CI/CD__).  
 
 ### Principles
 
@@ -130,7 +137,6 @@ verifiable deployment states.
             - Visualizations and UI: Argo CD provides a rich UI and CLI for viewing the state and history of applications, aiding in troubleshooting and management.
             - Rollbacks and Manual Syncs: Supports rollbacks and manual interventions for syncing with Git repositories.
         - __Argo Rollouts__: Advanced deployment strategies like canary and blue/green. Similar to Flagger
-
 - [__Authn__/__Authz__](https://kubernetes.io/docs/concepts/security/controlling-access/ "Kubernetes.io")
     - [__Authentication__](https://kubernetes.io/docs/reference/access-authn-authz/authentication/ "Kubernetes.io") (Authn) :  
         -  __Two types of subject__ : K8s provides for binding either type to roles for cluster access:
@@ -238,6 +244,11 @@ verifiable deployment states.
     - Komodor : Troubleshooting
     - Pixie : All in one
     - Groundcover : All in one
+- __Streaming__/__Messaging__
+    - [RabbitMQ](https://github.com/rabbitmq/rabbitmq-server) : [MQTT](https://mqtt.org/) Broker for IoT messaging.
+    - [Strimzi](https://strimzi.io/ "Strimzi.io") : Kafka on K8s : [`strimzi-kafka-operator`](https://github.com/strimzi/strimzi-kafka-operator "GitHub") : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications. 
+        - Kafka operators to deploy and configure an Apache Kafka cluster on K8s. 
+        - Kafka Bridge provides a RESTful interface for your HTTP clients.
 - __Networking__
     - External Load Balancer
         - `kube-vip` ([GitHub](https://github.com/kube-vip/kube-vip "GitHub.com") | [Docs](https://kube-vip.io/ "kube-vip.io")): 
@@ -271,40 +282,68 @@ verifiable deployment states.
         - [SPIFFE/SPIRE](https://spiffe.io/) : Successor to RBAC. Defining (SPIFFE) and implementing (SPIRE) a __workload identity platform__ and access controls rooted in Zero Trust (versus Perimeter Security) principles to mitigate risk of attack.
             - __Secure Production Identity Framework for Everyone__ (SPIFFE) : An OSS framework specificition to provide attested, cryptographic identities to distributed workloads; capable of bootstrapping and issuing identity to services; defines short-lived cryptographic identity documents (SVID) via a simple API. Workloads use these SVIDs when authenticating to other workloads, for example by establishing a TLS connection or by signing and verifying a JWT token.
             - __SPIFFE Runtime Environment__ ([SPIRE](https://spiffe.io/docs/latest/spire-about/spire-concepts/)) : a production-ready implementation of the SPIFFE APIs (pluggable multi-factor attestation and SPIFFE federation) that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.
-    - Scanning
-        - Trivy
+    - Scan for CVEs (Common Vulnerabilities and Exposures)
+        - [Trivy](https://aquasecurity.github.io/trivy/v0.56/ "aquasecurity.github.io") : Scan OCI-container images, OS folders, Kubernetes clusters, Git repos, virtual machines, and more. And can create SBOM and CVE-vulnerabilities audits of them.
+            - [K8s : `trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/ "aquasecurity.github.io") by Helm chart :  
+            The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as `VulnerabilityReport` (CRD) resources, which are owned by a Kubernetes controller.
         - [Kubescape.io](https://kubescape.io/)  
           Risk analysis, security compliance, and misconfiguration scanning.
+        - [`cve-bin-tool`](https://pypi.org/project/cve-bin-tool/#finding-known-vulnerabilities-using-the-binary-scanner "PyPI.org") :  
+            FOSS tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl
     - Threat Detection and Remediation
+        - [Kubescape](https://kubescape.io/) : Runtime Detection
         - Falco 
         - KubeArmor
     - Policies
         - Kyverno
         - Kubernetes Validating/Admission Policy
     - Secrets
-        - [External Secrets Operator](https://external-secrets.io/latest/)  
-          Pull/Push secrets to/from K8s
-        - [Teller](https://github.com/tellerops/teller) : Secret manager for developers
-        - [Bitnami Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets), 
-        - [SOPS](https://github.com/getsops/sops), 
-        - [Vault](https://github.com/hashicorp/vault) for encrypting secrets that are stored in Git. 
-        This ensures that sensitive information is securely managed.
+        - [Vault](https://github.com/hashicorp/vault) : 
+          [`vault-secrets-operator`](https://github.com/hashicorp/vault-secrets-operator "GitHub")
+          provides for [various implementations](https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79 "ChatGPT"):
+            - Vault Agent Sidecar Injection : Most secure (rest/transit) : 
+              Transparent encrypt/decrypt of K8s `Secret` objects (`data`)
+            - Vault CSI Driver :  Fetch secrets on container init and mount as files in the container.
+            - External Secrets Operator : Integrates with external secret stores (Vault, AWS Secrets Manager, Google Cloud Secret Manager); syncs secrets from Vault into K8s `Secret` objects.
+            - Direct API Calls to Vault : Configured per app.
+        - [External Secrets Operator](https://external-secrets.io/latest/) : 
+          Pull/Push secrets; sync K8s `Secret` objects (decrypted) with external store (encrypted).
+        - [Teller](https://github.com/tellerops/teller) : Like External Secretes Operator; local CLI secrets manager for developers.
+        - [Bitnami `SealedSecret`s](https://github.com/bitnami-labs/sealed-secrets) : 
+            - Asymmetric crypto allows developers to encrypt secrets as "`SealedSecret`" K8s object (CRD) __to store outside the cluster__ in (public) Git repo or other untrusted environment. 
+            - Automatically decrypts it and creates a regular Kubernetes Secret object, accessible to your applications. 
+            - Once in the cluster, it is __stored unencrypted in K8s__ `Secret` object.
+            - Components
+                - A cluster-side `controller` / operator
+                - A client-side utility: `kubeseal` : Utility encrypts secrets that only the controller can decrypt.
+            - Transit Engine : works entirely within Vault and does not require a sidecar or agent within your Pods. It is used by the K8s control plane (e.g., API server) to perform encryption operations, ensuring data is encrypted when stored (e.g., in etcd) and decrypted when needed.
+        - [SOPS](https://github.com/getsops/sops) (Secrets OPerationS) : 
+          Secrets management; editor that interfaces with Vault etal.
     - Signing
         - Sigstore Cosign
         - Notary
     - Certificates
         - [cert-manager](https://cert-manager.io/ "cert-manager.io") : _&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry._
-- __Database__
-    - Managed
-        - Aiven 
-    - KubeBlocks : K8s Operator : Supports many databases
-    - [TiKV](https://github.com/tikv/tikv) : distributed, and transactional key-value database. FOSS. CNCF Graduated project.
-    - [Cassandra](https://github.com/apache/cassandra) : NoSQL distributed database. Apache/CNCF project.
-    - [NiFi](https://github.com/apache/nifi) @ [GPTchat](https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce) : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.
-    - [CloudNativePG](https://cloudnative-pg.io/) (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a __primary/standby architecture__, using native __streaming replication__. A CNCF project.
-    - Atlas Operator : Schema
+- __Storage__
+    - [MinIO](https://github.com/minio/minio) : S3 compatible object store  
+      K8s [`minio-operator](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html#minio-operator-installation "min.io")
+    - Ceph : Unified storage; object, block, and file interfaces to cluster built from commodity hardware.
+    - JuiceFS : Distributed POSIX file system built on top of Redis and S3 (MinIO).
+    - Gluster
+    - Longhorn
+    - KubeFS
+    - __Database__
+        - Managed
+            - Aiven 
+        - KubeBlocks : K8s Operator : Supports many databases
+        - [TiKV](https://github.com/tikv/tikv) : distributed, and transactional key-value database. FOSS. CNCF Graduated project.
+        - [Cassandra](https://github.com/apache/cassandra) : NoSQL distributed database. Apache/CNCF project.
+        - [NiFi](https://github.com/apache/nifi) @ [GPTchat](https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce) : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.
+        - [CloudNativePG](https://cloudnative-pg.io/) (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a __primary/standby architecture__, using native __streaming replication__. A CNCF project.
+        - Atlas Operator : Schema
 - __Misc__
     - Charm : Library and Tools
+    - Velero : Backup K8s cluster and `PersistentVolume`s
 
     
 ## Environments

@@ -1,9 +1,6 @@
 # Ansible [Documentation](https://docs.ansible.com/ansible/latest/ "docs.ansible.com") | [Getting Started](https://docs.ansible.com/ansible/latest/getting_started/index.html)
 
-Agentless Push Automation
-
-![ansible-topology.png](ansible-topology.png)
-
+Agentless Push Automation : [`ansible-topology.png`](ansible-topology.png)
 
 ```bash
 ansible-playbook \
@@ -15,16 +12,24 @@ ansible-playbook \
 
 ## Summary
 
-Ansible is a highly versatile tool for provisioning and confuguring user-declared sets of target machines. Though referred to as "agentless", Ansible uses the SSH server running on its target as the agent. It's default behavior, however, is to ignore the user's SSH configurations. Ansible is written in Python, with an ecosystem of modules for a vast range of tasks and target types. Ansible is the property of RedHat, Inc. 
+Ansible is the property of RedHat, Inc. 
 
-Each target environment and task has its own set of (Python) modules and its own set of configuration (YAML) requirements (k-v pairs). Ansible makes no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. Discovering and learning to use and configure the array of Ansible modules required to perform even the typical provision/configure tasks upon a set of Linux VMs consumes a significant amount of manhours. Ansible's popularity suggests it either offers significant benefits beyond bash scripting, or the project is well marketed. 
+Ansible is a highly versatile tool for remotely provisioning and confuguring declared sets of target machines. It is designed for targets well beyond Linux; network appliances of many vendors. That is its strong point, and explains its lack of sensible defaults for Linux.
+
+Referred to as "agentless" because the app itself has no process running on targets, unlike other provisioning tools. Ansible connects to targets via their SSH server (`sshd`), though its default behavior is to ignore the user's SSH configurations (on the control node). 
+
+Ansible is written in Python, with an ecosystem of modules for a vast range of tasks and target types. Python must also be installed on all targets for all but the most trivial use cases; a version compatible with that of Ansible (installed only on the control node). 
+
+Each target environment and task has its own set of Python modules and its own set of configuration (YAML or INI) requirements. 
+
+Ansible makes no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. So, manhours consumed in declaring IaC of any real-world environment is significant. If all targets are Linux, however, that cost may be significantly lowered by using Ansible only as a bash-script runner; avoiding its labyrinth of per-module syntax and configurations. 
 
 Running ansible in verbose mode (`-vvv`) prints its (attempted) SSH connection statement:
 
 ```bash
-ssh -C -o ControlMaster=auto -o ControlPersist=60s -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o 'User="u1"' -o ConnectTimeout=10 -o 'ControlPath="/c/HOME/.ansible/cp/975de6127e"' 192.168.0.80 '/bin/sh -c '"'"'echo ~u1 && sleep 0'"'"''
+ssh -C -o ControlMaster=auto -o ControlPersist=60s -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o 'User="u1"' -o ConnectTimeout=10 -o 'ControlPath="/c/HOME/.ansible/cp/975de6127e"' $ip '/bin/sh -c '"'"'hostname'"'"''
 ```
-- That fails on WSL2, for example.
+- This fails on WSL2 due to Ansible's default `ControlMaster` (connection sharing) option to reuse an already-established connection, which requires a socket.
 
 ## Install 
 
@@ -53,7 +58,15 @@ ansible --version
 ```
 - [`pip install`](https://pip.pypa.io/en/stable/cli/pip_install/ "pip.pypa.io")
 
-## [Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html) | [`ansible.cfg`](ansible.cfg)
+## [`ansible.cfg`](ansible.cfg) | [Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html "docs.ansible.com")
+
+Format is a particular `INI` variant: 
+
+```ini
+# Comment
+; Comment
+foo = bar ; Comment inline
+```
 
 Search order:
 
@@ -64,7 +77,7 @@ Search order:
 
 (None are created upon installation.)
 
-### Create a local configuration 
+### Create
 
 The `ansible-config` command provides all the configuration settings available, 
 their defaults, how to set them and where their current value comes from.
@@ -77,18 +90,106 @@ ansible-config init --disabled > ansible.cfg
 # Include those of all "existing" plugins
 ansible-config init -t all > ansible.cfg
 ```
-- [`ansible-config init`](ansible-config.init.cfg)
-- [`ansible-config init -t all`](ansible-config.init-t.all.cfg)
+- [`ansible-config.init.cfg`](ansible-config.init.cfg)
+- [`ansible-config.init-t.all.cfg`](ansible-config.init-t.all.cfg)
 
-### Inventory | [`inventory.cfg`](inventory.cfg)
+### [Magic variables](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#magic-variables)
 
-The set(s) of target hosts upon which `ansible` operates.
+Ansible-controlled; overrides any set by user.
 
-Set location of `inventory.cfg` at `inventory` key of [`ansible.cfg`](ansible.cfg).
+### Common [Connection variables](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#connection-variables)
+
+Connection variables are normally used to set the specifics on how to execute actions on a target. Some are (required) per module. Here are common ones:
+
+
+- `ansible_become_user`  
+  The user Ansible ‘becomes’ after using privilege escalation. This must be available to the ‘login user’.
+
+- `ansible_connection`  
+  The connection plugin actually used for the task on the target host.
+
+- `ansible_host`  
+  The ip/name of the target host to use instead of inventory_hostname.
+
+- `ansible_python_interpreter`  
+  The path to the Python executable Ansible should use _on the target host_.
+
+- `ansible_user`  
+  The user Ansible ‘logs in’ as.
+
+##  [`inventory.yaml`](./inventory.yaml) | [Ansible Inventories](https://docs.ansible.com/ansible/latest/inventory_guide/index.html  "docs.ansible.com")
+
+Ansible inventories are set(s) of target hosts upon which `ansible` operates. 
+These are declared. Default is `inventory.cfg` file.
+
+Format is YAML or proprietary "Ansible Inventory Format". 
+Regardless, all must abide Ansible-specified (sub)keys.
+
+Location of this file is declared in Ansible configuration 
+(e.g., [`ansible.cfg`](ansible.cfg)) at "`inventory`" key.
 
 ```ini
 [defaults]
 inventory=inventory.cfg
+```
+
+@ [`inventory.yaml`](./inventory.yaml)
+
+```yaml
+# Ansible inventory file in YAML format
+# https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html 
+all:
+  children:
+    local:
+      hosts:
+        localhost:
+          ansible_connection: local
+
+    hyperv:
+      hosts:
+        a0.local: {}
+        a1.local: {}
+        a2.local: {}
+
+    subnet:
+      hosts:
+        10.0.100.249:
+          comment: "r249 - RKE2"
+        10.10.10.100:
+          comment: "Tutorial"
+        10.0.100.252:
+      vars:
+          comment: "r252 - Docker CE + Python 3"
+          # Connection
+          ansible_host: 10.0.100.252
+          ansible_user: gitops
+          ansible_port: 2222
+          ansible_connection: The connection type, such as ssh (default) or local (for local execution).
+          ansible_shell_type: The shell type to use (e.g., bash, sh).
+          ansible_shell_executable: Path to a specific shell binary (e.g., /bin/bash).
+          # SSH
+          ansible_ssh_user: u1
+          ansible_ssh_private_key_file: /home/gitops/.ssh/id_rsa
+          ansible_ssh_pass: The SSH password (not recommended for production due to security reasons).
+          ansible_ssh_common_args: Additional SSH arguments to pass, such as specific options for tunneling or agent forwarding.
+          ansible_ssh_extra_args: '-o ControlMaster=no -i ~/.ssh/vm_common'
+          # Privilege-escalation
+          ansible_become: true
+          ansible_become_user: root
+          # OS and Package Management
+          ansible_distribution: Ubuntu
+          ansible_pkg_mgr: apt
+          ansible_python_interpreter: /usr/bin/python3
+          # Host-specific 
+          app_version: "1.2.3"
+          db_host: "10.0.100.252"
+          # Environment
+          environment:
+            ENV_VAR_NAME: "value"
+
+    target:
+      hosts:
+        a0.local: {}
 ```
 
 Default inventory file: `/etc/ansible/hosts` 
@@ -105,19 +206,7 @@ elevated privileges sans password entry.
 - Install Ansible on admin node (not a cluster node)
 - Prepare all target machines by running this script on each one. 
   It requires `root` privileges.
-    - [`create_provisioner_target_node.sh`](create_provisioner_target_node.sh)  
-      Manually at a target machine:
-        ```bash
-        sudo vim /etc/sudoers.d/u1
-        ```
-        ```text
-        u1 ALL=(ALL) NOPASSWD:ALL
-        ```
-        Alternately: 
-        ```bash
-        echo "$USER ALL=(ALL) NOPASSWD:ALL" |sudo tee /etc/sudoers.d/$USER
-        ```
-
+    - [`create_provisioner.sh`](create_provisioner.sh)  
 
 @ `~/.ansible.cfg` | [`ansible.cfg`](ansible.cfg)
 
