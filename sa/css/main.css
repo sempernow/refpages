@@ -1,4 +1,4 @@
-/* ===  main.css  === */
+/* ===  main.css v0.1.1  === */
 
 :root {
     /* ===  theme  === */
@@ -51,6 +51,10 @@ blockquote {
     margin-left: .3rem;
     color: var(--color-blockquote);
     border-left: 20px solid var(--color-bkgnd-blockquote);
+}
+abbr,
+dfn {
+    text-decoration: underline dotted;
 }
 pre {
     /* word wrap */
