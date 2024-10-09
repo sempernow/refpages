@@ -6,7 +6,7 @@
 exit 0
 ######
 
-# RHEL 9 spams systemd journal (logs) with RedHat corporation marketing messages
+# DISABLE SPAM : RHEL 9 spams systemd journal (logs) with RedHat corporation marketing messages
     sudo chmod -x /etc/update-motd.d/* # DISABLE
     sudo chmod +x /etc/update-motd.d/* # ENABLE
     # Disable per user
@@ -39,15 +39,9 @@ exit 0
 
     # See REF.RHEL.STORAGE.sh
 
-    # SELinux :: RESTORE USER's HOME DIR to default rules
-        # restore all context, template files, etc.
-        cd /
-        sudo restorecon -RFv /home/u1
-        sudo restorecon -RFv /home/u1/*
-        sudo restorecon -RFv /home/u1/*.*
-        sudo restorecon -RFv /home/u1/.*
+    # SELinux : See REF.RHEL.SELinux.sh
 
-    # HOME PARTITION :: SHRINK 
+    # HOME PARTITION : SHRINK 
         # give space to root partition; save and restore home; 
         # all @ lv '/dev/mapper/c7'
         # run as root in SINGLE USER MODE, '/sbin/init 1'
@@ -61,28 +55,104 @@ exit 0
         # Check for valid UUIDs @ /etc/fstab ...
         cat /etc/fstab
 
-# PKG MANAGER : yum
+# PKG MANAGERs : yum @ RHEL8- : dnf @ RHEL 8+
 
-    # Update kernel
-    yum -y update kernel
+    # Update
+        yum -y update
+        dnf -y update
 
     # Upgrade ALL pkgs 
-    for p in $(rpm -qa); do yum -y upgrade $p; done 
-    # or simply 
-    yum -y upgrade
+        yum -y upgrade
+        dnf -y upgrade
+        # Per package
+        for p in $(rpm -qa); do dnf -y upgrade $p; done 
+
+    # Update kernel 
+        yum -y update kernel
+        dnf -y update kernel
 
     # repo-based info; 'Installed' & 'Available' Packages
-    yum info PKG
+        yum info PKG
+        dnf info PKG
     # Download and install ...
-    yum install PKG
+        yum install PKG
+        dnf install PKG
 
-    # auto-reboot when required ...
-    yum install -y yum-utils 
-    needs-restarting -r # returns 0 if reboot is not needed, else 1
-    needs-restarting -s # what services need restarting
+    # List all packages
+        rpm -qa 
+        #... rpm is a low-level utility; does not catch/manage conflicts/dependencies
+        # Useful to access repo/pkg meta
+
+    # CVEs / PATCHes 
+        # Test if a specific Linux kernel (RHEL version) is vulnerable to a declared CVE
+            cve=CVE-2017-12190
+            kernel=$(rpm -q --last kernel |head -1 |cut -d' ' -f1) 
+            #=> kernel-5.14.0-427.37.1.el9_4.x86_64 
+            dnf download $kernel # Download the kernel as an *.rpm
+            rpm -qp $kernel.rpm --changelog |grep $cve
+
+        # List available patches to the declared CVE
+            dnf list --cve $cve | grep kernel.x86_64
+
+        # Scan RPMs for CVEs : cve-bin-tool (python) : https://github.com/intel/cve-bin-tool
+            pip install cve-bin-tool
+            # Scan a folder or file containing RPMs 
+            cve-bin-tool $path # -f csv,json,json2,html -o out
+            # Scan an SBOM file
+            cve-bin-tool --sbom ${spec:-cyclonedx} --sbom-file $sbom 
+
+    # Add repo
+        sudo dnf install dnf-plugins-core
+        sudo dnf config-manager --add-repo $url 
+        # E.g., EPEL repo of RHEL8
+        sudo dnf config-manager --add-repo https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64
+        # Import GPG key
+        sudo rpm --import http://arepo.example.com/repo/RPM-GPG-KEY-arepo
+
+    # AIR GAP 
+        # 1. DOWNLOAD all packages (RPM) *and* all their dependencies (recurse). 
+            ARCH="amd64"
+            # Not all packages declare arch, esp. for those built *only* for x86_64 AKA amd64, hence "noarch" required.
+            opts='--archlist x86_64,noarch --alldeps --resolve' # Both flags required to capture all necessary packages.
+            # Not all packages are compatible with those (default) existing.
+            try='--nobest --allowerasing'
+            log="_dnf.download.opts.all.$(date '+%Y-%m-%d').log"
+            # Example set of packages
+            all='yum-utils dnf-plugins-core gcc make createrepo createrepo_c mkisofs iproute-tc bash-completion bind-utils unbound tar nc socat rsync lsof wget curl tcpdump traceroute nmap arp-scan iotop htop hdparm fio git httpd httpd-tools jq vim  ansible-core tree'
+            # Prep
+            sudo dnf -y $try update |& tee $log  
+            sudo dnf -y makecache   |& tee -a $log  
+            # Download
+            sudo dnf -y download $opts $all |& tee -a $log
+        # 2. INSTALL : Two methods 
+            # 2.a. Quick and Dirty™ : Install packages, but not ordered by deps, so some fail, so multiple runs required.  
+                sudo dnf -y install --nobest --allowerasing --disablerepo=* *.rpm |& tee -a $log
+                # Else use rpm : even messier : doesn't resolve dependencies and it's a lower-level method.
+                rpm -ihv *.rpm # Expect silent fails and such.
+            # 2.b : PROPERly install : CREATE A LOCAL REPOsitory, so all deps managed as normally.
+                # This method requires createrepo package, and so must be handled out-of-band
+                sudo dnf install createrepo # Implies RHEL repo access  
+                # Create the local repo
+                localrepo=localrepo
+                mkdir -p /tmp/$localrepo
+                mv *.rpm /tmp/$localrepo/
+                createrepo /tmp/$localrepo
+				cat <<-EOH |sudo tee /etc/yum.repos.d/$localrepo.repo
+				[$localrepo]
+				name=Local RPM Repository
+				baseurl=file:///tmp/$localrepo
+				enabled=1
+				gpgcheck=0
+				EOH
+                sudo dnf -y install --disablerepo=* --enablerepo=$localrepo $all
+
+    # Auto-reboot when required ...
+        yum install -y yum-utils 
+        needs-restarting -r # returns 0 if reboot is not needed, else 1
+        needs-restarting -s # what services need restarting
 
         #!/bin/bash
-        LAST_KERNEL=$(rpm -q --last kernel | perl -pe 's/^kernel-(\S+).*/$1/' | head -1)
+        LAST_KERNEL=$(rpm -q --last kernel |perl -pe 's/^kernel-(\S+).*/$1/' |head -1)
         CURRENT_KERNEL=$(uname -r)
         [[ $LAST_KERNEL == $CURRENT_KERNEL ]] || printf "\n  %s\n\n" 'REBOOT NOW to complete kernel update'
 
@@ -135,39 +205,6 @@ exit 0
             sudo createrepo_c $id
             # Create ISO file
             genisoimage -o $id.iso -R -J -joliet-long $id
-
-    # Test if a specific Linux kernel (RHEL version) is vulnerable to a declared CVE
-        cve=CVE-2017-12190
-        kernel_rpm=kernel-3.10.0-862.11.6.el7.x86_64.rpm
-        rpm -qp $kernel_rpm --changelog | grep $cve
-        # List available kernel patches
-            kernel=kernel.x86_64
-            yum list --cve $cve | grep $kernel
-    
-    # Scan RPMs for CVEs : cve-bin-tool (python) : https://github.com/intel/cve-bin-tool
-        pip install cve-bin-tool
-        # Scan a folder or file containing RPMs 
-        cve-bin-tool $path # -f csv,json,json2,html -o out
-        # Scan an SBOM file
-        cve-bin-tool --sbom ${spec:-cyclonedx} --sbom-file $sbom 
-
-# SELinux
-    ## Show status
-    getenforce  # Enforcing || Permissive
-    sestatus    # All meta
-    ## Disable temporarily 
-    sudo setenforce 0
-    ## Disable persistently
-        ## Automate (idempotent)
-        sudo sed -i -e 's/^SELINUX=permissive/SELINUX=disabled/' /etc/selinux/config
-        sudo sed -i -e 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
-        ## Manual
-        sudo vim /etc/selinux/config
-            # SELINUX=disabled
-        ## Reboot to take effect
-        sudo shutdown -r now
-
-    ## See "STORAGE / FILESYSTEM" section below
 
 # PROCESS MANAGEMENT [create/monitor/kill]
     # See REF.Linux.SysAdmin.sh

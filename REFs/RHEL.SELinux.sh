@@ -17,10 +17,22 @@ exit 0
     # Set mode temporarily : Toggle to troubleshoot : Does not survive reboot
         setenforce 0|1 # permissive|enforcing
 
+
     # Set mode persistently : Survives and takes effect on reboot
     vi /etc/selinux/config 
         # SELINUX=enforcing
         # SELINUXTYPE=targeted
+
+        ## Automate (idempotent)
+        sudo sed -i -e 's/^SELINUX=permissive/SELINUX=disabled/' /etc/selinux/config
+        sudo sed -i -e 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+
+        ## Manual
+        sudo vim /etc/selinux/config
+            # SELINUX=disabled
+        
+        ## Reboot to take effect
+        sudo shutdown -r now
 
     auditd # Linux Audit Daemon : SELinux audit logs
         systemctl enable --now auditd.service
@@ -28,12 +40,20 @@ exit 0
     auditctl # CLI for auditd.service
         # List the active auditd rules
         auditctl -l 
-        # AVC: ... denied 
+        # List DENIALs : "AVC: ... denied"
         cat /var/log/audit/audit.log |grep avc
         # View denials after set/reboot to Enforcing 
         ausearch -m AVC,USER_AVC,SELINUX_ERR,USER_SELINUX_ERR -ts today
         # Otherwise by process:
         ausearch -m avc -c $process_name  
+        # Fix unknown Application : When app behavior isn't covered by default policy
+            audit2allow
+            semodule
+            # If DENIALS in SELinux due to restrictive policies, 
+            # review the logs (/var/log/audit/audit.log) and, 
+            # if needed, GENERATE a POLICY MODULE that allows the behavior:
+            ausearch -m avc -ts recent | audit2allow -M this_app_module
+            semodule -i this_app_module.pp
 
     # If audit daemon not running, then use dmesg:
         dmesg |grep -i -e type=1300 -e type=1400
@@ -47,7 +67,8 @@ exit 0
         fixfiles -R $pkg check  # Check labels on $pkg
 
 
-    # Adjust policies : Allow Apache to use port 443
+    # KNOWN Applications
+        # Adjust policies : Allow Apache to use port 443
         semanage port -a -t http_port_t -p tcp 443 
 
     # Recursively relabel a directory
@@ -58,12 +79,19 @@ exit 0
 
         ls -ZA                            # show SECURITY CONTEXT; LABEL per USER:ROLE:TYPE 
 
-    # RESTORE a user's home dir (SELinux objects)
-        cd /
-        sudo restorecon -RFv /home/$user
-        sudo restorecon -RFv /home/$user/*
-        sudo restorecon -RFv /home/$user/*.*
-        sudo restorecon -RFv /home/$user/.*
+    # RESTORE security contexts
+        restorecon # restore security contexts
+        # E.g., fix all files under a folder, e.g., /home/$USER .
+        # Optionally reset all regardless (-F), else only those SELinux thinks are in error.
+        _restorecon(){
+            [[ -d $1 ]] || return 99
+            [[ $2 ]] && regardless=F || unset regardless
+            restorecon -Rv$regardless $1
+            restorecon -Rv$regardless $1/*
+            restorecon -Rv$regardless $1/*.*
+            restorecon -Rv$regardless $1/.*
+        }
+        sudo _restorcon 
 
     # Examine http
         semanage port -l |grep http
