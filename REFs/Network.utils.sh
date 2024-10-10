@@ -662,61 +662,6 @@ exit
         # TCP listener : Listen for (Proxy-forwarded) request; dump it to stdout
             socat -v TCP-LISTEN:30080,fork -  # Create new process (fork) per request
 
-        # HTTP file server
-            #!/bin/bash
-            FILE="$1"
-            PORT=${PORT:-9999}
-
-            MIME_TYPE=$(file --mime-type -b "$FILE")
-            SIZE_BYTES=$(du -b "$FILE" | cut -f1)
-            #FILE_NAME=$(basename "$FILE")
-            HEADER="HTTP/1.1 200 OK
-            Content-Type: $MIME_TYPE
-            Content-Length: $SIZE_BYTES
-            "
-            socat -d -d - tcp-l:"$PORT",reuseaddr,fork < <(printf "$HEADER"; cat "$FILE")
-
-        # File tranfer
-            # Listener (@ destination)
-            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat  # Yes, "creat" NOT "create"
-            # Connect and send 
-            socat -dd TCP-CONNECT:$listener_machine_ip:1234 FILE:/path/to/source/file
-
-        # HTTP Echo server : Response container IP:PORT of both client and server
-            socat -v TCP-LISTEN:30080,fork SYSTEM:'(echo -ne "HTTP/1.1 200 OK\nDocumentType: text/plain\n\nserver: \$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\nclient: \$SOCAT_PEERADDR:\$SOCAT_PEERPORT\n";hostname;date --rfc-3339=s)'
-            #... ignores Proxy Protocol (headers), and so will not preserve client IP address.
-
-            # @ JSON format response
-            socat -v TCP-LISTEN:30080,fork,bind=192.168.28.200 SYSTEM:'(echo -ne "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\\"server\\": \\"\$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\\", \\"client\\": \\"\$SOCAT_PEERADDR:\$SOCAT_PEERPORT\\", \\"hostname\\": \\"$(hostname)\\", \\"date\\": \\"$(date --rfc-3339=s)\\"}")'
-
-        # HTTP reverse-proxy server @ http://example.com : upstream @ http://localhost:8080
-            socat TCP-LISTEN:8080,fork TCP:example.com:80
-            # Daemonize it:
-            nohup socat TCP-LISTEN:8080,fork TCP:example.com:80 & 
-            # Add TLS (via openssl):
-            socat TCP-LISTEN:8443,fork,reuseaddr OPENSSL:example.com:443,verify=0
-            # Bind to a target interface, e.g., eth0 (vs lo)
-                # 1. Get IPv4 address of that interface AKA device:
-                ip -4 -brief addr show dev eth0
-                # 2. Bind the listener to it
-                socat TCP-LISTEN:8443,fork,bind=192.168.28.200 ...
-
-        # Chat client/server : Bidirectional 
-
-            # @ machine 1 
-            socat TCP4-LISTEN:1234 STDOUT
-            # or
-            nc -l -p 1234
-
-            # @ machine 2 
-            socat  STDIN TCP4:$machine1_ip:1234
-            #... does same ...
-            socat TCP4:$machine1_ip:1234 STDOUT
-            #... type anything; transmits per newline.
-
-        # Get time from time server : "-" or "STDOUT"
-            socat TCP:time.nist.gov:13 STDOUT
-
         # Forward port, changing the protocol
             socal TCP-LISTEN:1234 UDP-LISTEN:4321
         
@@ -759,6 +704,77 @@ exit
             socat -dd STDIN OPENSSL-LISTEN:1234,cert=sslkey.pem,verify=0 # many need to adjust tty params
             # @ Remote : Connector : execute the shell and forward it, encrypted
             socat -dd OPENSSL-CONNECT:$client_ip_or_hostname:1234,verify=0 EXEC:/bin/bash
+
+        # File tranfer
+            # Listener (@ destination)
+            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat  # Yes, "creat" NOT "create"
+            # Connect and send 
+            socat -dd TCP-CONNECT:$listener_machine_ip:1234 FILE:/path/to/source/file
+
+        # HTTP file server
+            #!/bin/bash
+            FILE="$1"
+            PORT=${PORT:-5555}
+
+            MIME_TYPE=$(file --mime-type -b "$FILE")
+            SIZE_BYTES=$(du -b "$FILE" | cut -f1)
+            #FILE_NAME=$(basename "$FILE")
+            HEADER="HTTP/1.1 200 OK
+            Content-Type: $MIME_TYPE
+            Content-Length: $SIZE_BYTES
+            "
+
+            # Single-request server
+            socat -dd - TCP-LISTEN:$PORT,reuseaddr,fork < <(printf "$HEADER"; cat "$FILE")
+            # Else
+            printf "$(printf "%s\n\n" "$HEADER";cat $FILE)" |socat -dd TCP-LISTEN:$PORT,reuseaddr -
+
+            # Persistent server
+            while true;do echo "$(printf "%s\n\n" "$HEADER";cat $FILE)" |socat -dd TCP-LISTEN:$PORT,reuseaddr -;done
+            # Else
+			cat <<-EOH |tee header
+			HTTP/1.1 200 OK
+			Content-Type: $MIME_TYPE
+			Content-Length: $SIZE_BYTES
+
+			EOH
+            while true;do cat header $FILE |socat -dd TCP-LISTEN:$PORT,reuseaddr -;done
+
+        # HTTP Echo server : Response container IP:PORT of both client and server
+            socat -v TCP-LISTEN:30080,fork SYSTEM:'(echo -ne "HTTP/1.1 200 OK\nDocumentType: text/plain\n\nserver: \$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\nclient: \$SOCAT_PEERADDR:\$SOCAT_PEERPORT\n";hostname;date --rfc-3339=s)'
+            #... ignores Proxy Protocol (headers), and so will not preserve client IP address.
+
+            # @ JSON format response
+            socat -v TCP-LISTEN:30080,fork,bind=192.168.28.200 SYSTEM:'(echo -ne "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\\"server\\": \\"\$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\\", \\"client\\": \\"\$SOCAT_PEERADDR:\$SOCAT_PEERPORT\\", \\"hostname\\": \\"$(hostname)\\", \\"date\\": \\"$(date --rfc-3339=s)\\"}")'
+
+        # HTTP reverse-proxy server @ http://example.com : upstream @ http://localhost:8080
+            socat TCP-LISTEN:8080,fork TCP:example.com:80
+            # Daemonize it:
+            nohup socat TCP-LISTEN:8080,fork TCP:example.com:80 & 
+            # Add TLS (via openssl):
+            socat TCP-LISTEN:8443,fork,reuseaddr OPENSSL:example.com:443,verify=0
+            # Bind to a target interface, e.g., eth0 (vs lo)
+                # 1. Get IPv4 address of that interface AKA device:
+                ip -4 -brief addr show dev eth0
+                # 2. Bind the listener to it
+                socat TCP-LISTEN:8443,fork,bind=192.168.28.200 ...
+
+        # Chat client/server : Bidirectional 
+
+            # @ machine 1 
+            socat TCP4-LISTEN:1234 STDOUT
+            # or
+            nc -l -p 1234
+
+            # @ machine 2 
+            socat  STDIN TCP4:$machine1_ip:1234
+            #... does same ...
+            socat TCP4:$machine1_ip:1234 STDOUT
+            #... type anything; transmits per newline.
+
+        # Get time from time server : "-" or "STDOUT"
+            socat TCP:time.nist.gov:13 STDOUT
+
 
     # CAPTURE/INSPECT per PROTOCOL  
         wireshark  # gui
