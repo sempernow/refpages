@@ -662,7 +662,27 @@ exit
         # TCP listener : Listen for (Proxy-forwarded) request; dump it to stdout
             socat -v TCP-LISTEN:30080,fork -  # Create new process (fork) per request
 
-        # HTTP server : Echo server : Response container IP:PORT of both client and server
+        # HTTP file server
+            #!/bin/bash
+            FILE="$1"
+            PORT=${PORT:-9999}
+
+            MIME_TYPE=$(file --mime-type -b "$FILE")
+            SIZE_BYTES=$(du -b "$FILE" | cut -f1)
+            #FILE_NAME=$(basename "$FILE")
+            HEADER="HTTP/1.1 200 OK
+            Content-Type: $MIME_TYPE
+            Content-Length: $SIZE_BYTES
+            "
+            socat -d -d - tcp-l:"$PORT",reuseaddr,fork < <(printf "$HEADER"; cat "$FILE")
+
+        # File tranfer
+            # Listener (@ destination)
+            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat  # Yes, "creat" NOT "create"
+            # Connect and send 
+            socat -dd TCP-CONNECT:$listener_machine_ip:1234 FILE:/path/to/source/file
+
+        # HTTP Echo server : Response container IP:PORT of both client and server
             socat -v TCP-LISTEN:30080,fork SYSTEM:'(echo -ne "HTTP/1.1 200 OK\nDocumentType: text/plain\n\nserver: \$SOCAT_SOCKADDR:\$SOCAT_SOCKPORT\nclient: \$SOCAT_PEERADDR:\$SOCAT_PEERPORT\n";hostname;date --rfc-3339=s)'
             #... ignores Proxy Protocol (headers), and so will not preserve client IP address.
 
@@ -695,13 +715,13 @@ exit
             #... type anything; transmits per newline.
 
         # Get time from time server : "-" or "STDOUT"
-        socat TCP:time.nist.gov:13 STDOUT
+            socat TCP:time.nist.gov:13 STDOUT
 
         # Forward port, changing the protocol
-        socal TCP-LISTEN:1234 UDP-LISTEN:4321
+            socal TCP-LISTEN:1234 UDP-LISTEN:4321
         
         # Forward local port to remote
-        socat TCP4-LISTEN:80,fork TCP4:host.example.com:80
+            socat TCP4-LISTEN:80,fork TCP4:host.example.com:80
         
         # Docker Socket Proxy : Monitor docker commands of Terminal 2 from Terminal 1
             # @ Terminal 1
@@ -713,20 +733,14 @@ exit
             docker pull alpine
 
         # Forward all local traffic of a port to a remote server (at its port)
-        socat TCP4-LISTEN:$portLocal,fork TCP4:$server_ip_addr_or_domain_name:$portRemote
+            socat TCP4-LISTEN:$portLocal,fork TCP4:$server_ip_addr_or_domain_name:$portRemote
         # Forward all local docker pull requests to other Docker registry
-        socat TCP4-LISTEN:5000,fork TCP4:$other:5000
+            socat TCP4-LISTEN:5000,fork TCP4:$other:5000
 
         # Forward terminal to the serial port COM1 :
-        socat READLINE,history=$HOME/.cmd_history /dev/ttyS0,raw,echo=0,crnl 
+            socat READLINE,history=$HOME/.cmd_history /dev/ttyS0,raw,echo=0,crnl 
 
-        # File tranfer
-            # Listener (@ destination)
-            socat -dd TCP-LISTEN:1234 OPEN:/path/to/target/file,creat  # Yes, "creat" NOT "create"
-            # Connect and send 
-            socat -dd TCP-CONNECT:$listener_machine_ip:1234 FILE:/path/to/source/file
-
-        # mTLS : Securing Traffic Between two Socat Instances Using SSL
+        # mTLS : Securing Traffic Between two Socat Instances Using TLS 
             # http://www.dest-unreach.org/socat/doc/socat-openssltunnel.html
             socat OPENSSL-LISTEN:4443,reuseaddr,pf=ip4,fork,cert=server.pem,cafile=client.crt PIPE
 
