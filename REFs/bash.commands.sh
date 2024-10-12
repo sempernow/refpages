@@ -1645,10 +1645,12 @@ exit
                 # George  12
                 # Jack    18
 
-    yq   # jq for YAML : https://github.com/mikefarah/yq 
+    yq  # jq for YAML : https://github.com/mikefarah/yq 
 
         # Convert JSON to YAML
-            cat a.json |yq eval -P -o yam |tee a.yaml >/dev/null # Quietly lest error  
+            cat a.json |yq eval -P -o yaml |tee a.yaml >/dev/null # Quietly lest error  
+        # Keys having space(s) and such
+            lscpu |yq  '.["Vulnerability Spec rstack overflow"]'
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command

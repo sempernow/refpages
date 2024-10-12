@@ -116,11 +116,12 @@ Content-Length: 363
 
 <h2>Dockerfile</h2>
 
-<pre><code class="language-bash"># syntax=docker/dockerfile:1
+<pre><code class="language-Dockerfile"># syntax=docker/dockerfile:1
 ##... Docker BuildKit 
+ARG SOURCE=python:3.7.15
 
 ## Stage 1
-FROM python:3.7.15 AS builder
+FROM ${SOURCE} AS builder
 
 WORKDIR /app
 
@@ -137,7 +138,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
 ## Stage 2
-FROM bitnami/python:3.7.15
+FROM bitnami/${SOURCE}
 
 ## Run as unprivileged user
 RUN addgroup --system app &amp;&amp; adduser --system --group app

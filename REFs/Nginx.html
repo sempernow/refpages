@@ -39,6 +39,20 @@ nginx -s SIGNAL
 
 <h2><a href="https://www.nginx.com/blog/avoiding-top-10-nginx-configuration-mistakes/#keepalive" title="nginx.com">Top 10 Mistakes</a></h2>
 
+<h2>Dockerfile</h2>
+
+<p>The entrypoint for a containerized NGINX server should be:</p>
+
+<pre><code class="language-bash">nginx -g daemon off
+</code></pre>
+
+<p>This is required for nginx to run in the foreground,
+else the container stops immediately after starting!</p>
+
+<pre><code class="language-Dockerfile">CMD [&quot;nginx&quot;, &quot;-g&quot;, &quot;daemon off;&quot;]
+
+</code></pre>
+
 <h2><a href="https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/" title="nginx.com">Reverse Proxy</a></h2>
 
 <p>Expose a service running at <code>127.0.0.1:3000</code> (<code>localhost</code>)</p>
