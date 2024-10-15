@@ -33,8 +33,11 @@ man ssh_config
             ssh abox
 
         # Generate elliptical key pair : Default type (-t) is 'rsa'.
-            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default); no passphrase.
+            # Use only ed25519 variant of elliptical; best though not yet FIPS-compliant
                 ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname  # id_ed25519
+            # NIST-approved & FIPS compliant, though not as good a choice in practice
+                ssh-keygen -t ecdsa -b 384 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname  # id_ecdsa
+            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default)
 
             # Re(Set) key's passphrase (local security)
                 ssh-keygen -p -P $old -P $new -f $_KEY_PATH 

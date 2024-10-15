@@ -4,9 +4,29 @@
 
 >VMware is now owned by Broadcom, which has __discontinued the Free ESXi Hypervisor__ : [End Of General Availability of the free vSphere Hypervisor](https://knowledge.broadcom.com/external/article?legacyId=2107518 "knowledge.broadcom.com")"
 
+
 ## vSphere ESXi 
 
-- Type-1 Hypervisor
+- Type:  
+    Bare-metal, Type-1 hypervisor.
+- Purpose:  
+    ESXi is installed directly on server hardware to allow it to run 
+    multiple VMs efficiently by virtualizing the hardware resources of the physical server.
+- Use Case: 
+    ESXi is for server-level deployments. 
+    It's widely used in data centers and enterprise environments 
+    where organizations need to run multiple VMs on a server. 
+    ESXi is the foundation of VMware's enterprise-level virtualization stack.
+- Key Features:  
+    Resource management, high availability, support for clustering, 
+    performance tuning, and security for running multiple VMs.
+- Relation to VMware Workstation and vCenter:   
+    Unlike VMware Workstation, ESXi is for server-level deployments. 
+    It can be managed either directly via its web interface 
+    or through vCenter for larger environments.
+
+Components/Features:
+
 - NSX : Networking and Security Virtualization SDN
     - Requires [VMware Cloud Foundation](https://www.vmware.com/products/cloud-infrastructure/vmware-cloud-foundation) (VCF) : Private Cloud Platform
 - vMotion : live migration of a VM to another physical machine without any downtime
@@ -16,7 +36,46 @@
 - Remote access only; per Web console
 - ~~[Free version](https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6) for registered users~~
 
+## Workstation
+
+- Type:  
+    Desktop virtualization software.
+- Purpose:  
+    It allows users to run multiple virtual machines (VMs) on a single desktop or laptop computer. 
+    It's primarily used for personal or small-scale development, testing, and learning.
+- Use Case:  
+    Ideal for developers, IT professionals, and hobbyists 
+    who want to create and run VMs on their personal machine without the need for dedicated server hardware.
+- Key Features:  
+    Supports a variety of guest operating systems, snapshots, virtual networking, 
+    and resource sharing (like CPU, memory, disk, etc.) between VMs.
+- Relation to ESXi and vCenter:  
+    VMware Workstation __can connect to and manage ESXi hosts__, 
+    but it’s generally not part of a larger enterprise-grade data center solution.
+
+- VMware Workstation Pro 17.5.2 
+    - https://1337x.to/torrent/6098934/VMware-Workstation-Pro-17-5-2-23775571-Lifetime-Activation-Serials-AppDoze/
+
 ## vCenter 
+
+- Type:  
+    Centralized management platform for VMware environments.
+- Purpose:  
+    vCenter allows administrators to manage multiple ESXi hosts 
+    and the VMs running on them from a single console. 
+    It provides advanced features like __VM migration__ (__vMotion__), 
+    high availability (HA), distributed resource scheduling (DRS), and more.
+- Use Case:   
+    vCenter is used in enterprise environments where many ESXi hosts and VMs 
+    need to be centrally managed for efficiency, scalability, and high availability.
+- Key Features:   
+    Centralized management of multiple ESXi hosts, resource pooling, 
+    load balancing, VM migration, and performance monitoring.
+- Relation to ESXi and VMware Workstation:  
+    vCenter is used to manage multiple ESXi hosts, 
+    providing features and functionalities that individual ESXi hosts or VMware Workstation cannot offer on their own. It is not directly related to VMware Workstation, but some users use VMware Workstation for testing and then move to ESXi and vCenter for production.
+
+Components/Features:
 
 - Manage/Access multiple ESXi hosts, all from one console. 
 - Deployed on VM, on vSphere ESXi host, as either:

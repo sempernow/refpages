@@ -68,6 +68,7 @@ exit 0
             sudo timedatectl set-ntp true  # disable per `false`
 
 # MACHINE RESOURCES
+
     # Storage 
         lsblk 
         df -hT      # Per device    
@@ -75,29 +76,70 @@ exit 0
         du -hs $dir # Disk usage summary of all folders thereunder (default is PWD)
 
     # CPU info
-        cat /proc/cpuinfo
-        lscpu 
+        lscpu    # YAML : Architecture, Model name, CPU(s), Thread(s) per Core, ...
+        lscpu -J # JSON : Different structure : {lscpu: [{field: "Architecture", data: "x86_64"},...]}
+        
+        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.  
+            cat /proc/cpuinfo # Per-thread (redundant) info
         
     # Memory info
         free -mh  # Units of Mi 
-        htop 
+        top -e m -E m # Memory units in MiB : At both Task (-e) and Summary (-E) areas.
+        htop # F5 (Tree view), SHIFT+M (Sort by Memory), F4 (Filter; enter name of command), F1 (Help)
+            # RSS (Resident Set Size) : Actual physical memory used by a process
+            # - Total physical memory of machine *must* exceed sum of all RSS across all running processes. 
+            # VIRT (VIRTual memory size) : Total virtual memory a process may access;
+            # - Includes memory swapped out, memory mapped but not used, and shared memory.
+        ps -aux --sort=-%mem |head -n 10 
             # RSS (Resident Set Size) : Actual physical memory used by the process
             # - Total physical memory must be greater than sum of all RSS across all running processes. 
-            # VIRT (Virtual Memory Size) : Total virtual memory the process can access;
-            # - Incl. memory that was swapped out, memory that is mapped but not used, and shared memory.
-        ps aux --sort=-%mem |head -n 10 
-            # RSS (Resident Set Size) : Actual physical memory used by the process
-            # - Total physical memory must be greater than sum of all RSS across all running processes. 
-            # VSZ (Virtual-memory SiZe) in KiB; equivalent to htop's VIRT.
-            # - Incl. memory that was swapped out, memory that is mapped but not used, and shared memory.
+            # VSZ (Virtual-memory SiZe) in KiB; equivalent to VIRT of htop. (See above.)
 
             # Example:
             process=containerd
-            ps aux |grep -e RSS -e $process
+            ps -aux |grep -e RSS -e $process
                 USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
                 root      1234  0.5  2.1 2097152 43152 ?       Ssl  10:00   1:23 /usr/bin/containerd
-                # - VSZ (Virtual-memory SiZe) is 2097152 KiB (roughly 2GB).
-                # - RES (Resident Memory Size) is 43152 KiB (roughly 42MiB).
+                # VSZ (Virtual-memory SiZe) is 2097152 KB (roughly 2GiB).
+                # RES (Resident Memory Size) is 43152 KB (roughly 42MiB).
+
+            # psrss : RSS top ($1 else 12) or declared-command ($1) usage in MiB 
+            psrss(){
+                e=-e
+                [[ "$1" =~ ^-?[0-9]+$ ]] && n=$1 || {
+                    n=12;[[ $1 ]] && unset e 
+                }
+                ps -o pid,comm,rss,pmem,pcpu --sort=-rss \
+                    |awk '{ printf "%-8s %-22s %s[MiB]   %5s %5s\n", $1, $2, $3, $4,$5}' |head -1
+                [[ $e ]] || ps -C $1 -o pid,comm,rss,pmem,pcpu --sort=-rss --no-headers \
+                    |awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |head -$n
+                [[ $e ]] && ps $e -o pid,comm,rss,pmem,pcpu --sort=-rss --no-headers \
+                    |awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |head -$n
+            }
+
+        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.  
+            # List RSS of a PID 
+            pid=285 
+            cat /proc/$pid/status |grep Vm 
+                # VmPeak:  6115804 kB # Peak virtual memory size.
+                # VmSize:  6095096 kB # Virtual memory size.
+                # VmHWM:    670232 kB # Peak resident set size (RSS) : "High Water Mark" : .67 GB
+                # VmRSS:    670188 kB # Resident set size (INNACURATE @ Linux 4.5+) : Sum of "Rss*:"
+
+            # List RSS of a command
+            rss(){
+                pid_of_cmd(){
+                    ps -C $1 --sort=-rss |grep $1 |awk '{print $1}' |head -1
+                }
+                [[ $1 ]] || { echo '  USAGE: rss COMMAND';return 1; }
+                pid=$(pid_of_cmd $1)
+                [[ $pid ]] && cat /proc/$pid/status |grep Vm \
+                    |awk '{ printf "%-8s %5.0f %4s\n", $1, $2/1024,"MiB" }' |grep -v ' 0 '
+            }
+
+            meminfo(){
+                cat /proc/meminfo |awk '{ printf "%-16s %10.2f %4s\n", $1, $2/1024/1024,"GiB" }' |grep -v 0.00
+            }
 
     # I/O 
         vmstat -d           # Usage 
@@ -173,27 +215,27 @@ exit 0
                 [Install]
                 RequiredBy=sleep.target
 
-    # LECAGCY METHOS (RHEL 6)
-        # ... runs all executables (hooks) @ ...
-        /etc/pm/sleep.d 
+            # LECAGCY METHODS (RHEL 6)
+                # ... runs all executables (hooks) @ ...
+                /etc/pm/sleep.d 
 
-    # SUSPENSION IS PREVENTED if any such script returns [$?] non-zero exit status.
-    # So, e.g., to prevent sleep during SSH session, create a file ...
-        /etc/pm/sleep.d/05_ssh_keepawake
-        
-        vi /etc/pm/sleep.d/05_ssh_keepawake # => edit ...
-            #!/bin/sh
-            # check for SSH sessions, and prevent suspending:
-            if (( $( who | grep -cv '(:' ) > 0 ))
-            then
-                echo "SSH session(s) are active. Not suspending."
-                exit 1
-            else
-                exit 0
-            fi 
-        # save [ZZ]; then set perms; executable
-        chmod +x /etc/pm/sleep.d/05_ssh_keepawake
-    
+                # SUSPENSION IS PREVENTED if any script returns [$?] non-zero exit status.
+                # So, e.g., to prevent sleep during SSH session, create a file ...
+                    /etc/pm/sleep.d/05_ssh_keepawake
+                    
+                    vi /etc/pm/sleep.d/05_ssh_keepawake # => edit ...
+                        #!/bin/sh
+                        # check for SSH sessions, and prevent suspending:
+                        if (( $( who | grep -cv '(:' ) > 0 ))
+                        then
+                            echo "SSH session(s) are active. Not suspending."
+                            exit 1
+                        else
+                            exit 0
+                        fi 
+                    # save [ZZ]; then set perms; executable
+                    chmod +x /etc/pm/sleep.d/05_ssh_keepawake
+                
     # https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-power
         /sys/power/state # file controls system sleep states.
         
@@ -213,11 +255,22 @@ exit 0
         echo off     > /sys/power/autosleep # disable autosleep 
 
 # PACKAGE MANAGERs
-    # RHEL
+    # RHEL 
+        # See REF.RHEL.SysAdmin.sh
         yum  
         dnf  # RHEL 8+
-        # See REF.RHEL.SysAdmin.sh
- 
+            repolist
+            repodiff --repo-old old1 --repo-new new1
+            provides $pkg
+            upgrade 
+            makecache 
+            download 
+            install $pkg [--nobest --allowerasing]
+            remove $pkg 
+            info $pkg 
+
+            rpm -qa # List all installed packages
+
     # Ubuntu/Debian
         apt 
             update        # Refresh repo index 
@@ -518,6 +571,7 @@ exit 0
         strace -c COMMAND  # stats 
 
     top     # Dynamic real-time view of a running linux system;  
+        top -e m -E m # Memory units in MiB : At both Task (-e) and Summary (-E) areas.
             # system summary; list of processes/threads managed by kernel.
     htop    # Newer/nicer top
     pstree  # Shows parent/child tree structure of processes
@@ -614,7 +668,8 @@ exit 0
         uptime # up-time, #-of-users, & load-averages @ 1min 5min 15min
 
         top # PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND
-                #  LIVE list of processes & info; default sort per CPU usage; 
+            top -e m -E m # Memory units in MiB : At both Task (-e) and Summary (-E) areas.
+             #  LIVE list of processes & info; default sort per CPU usage; 
              #  toggle: '1' toggles CPU% per cores/total
              #  send signal: 'k'=kill per SIGTERM[15]/SIGKILL[9]
              #  send signal: 'r'=niceness [increment!]

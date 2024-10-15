@@ -57,31 +57,24 @@ exit 0
 
 # PKG MANAGERs : yum @ RHEL8- : dnf @ RHEL 8+
 
-    # Update
-        yum -y update
-        dnf -y update
+    dnf  # RHEL 8+
+        repolist
+        repodiff --repo-old old1 --repo-new new1
+        provides $pkg
+        upgrade|update [$pkg]
+        makecache 
+        download 
+        install $pkg [--nobest --allowerasing]
+        remove $pkg 
+        info $pkg
 
-    # Upgrade ALL pkgs 
-        yum -y upgrade
-        dnf -y upgrade
-        # Per package
-        for p in $(rpm -qa); do dnf -y upgrade $p; done 
-
-    # Update kernel 
-        yum -y update kernel
-        dnf -y update kernel
-
-    # repo-based info; 'Installed' & 'Available' Packages
-        yum info PKG
-        dnf info PKG
-    # Download and install ...
-        yum install PKG
-        dnf install PKG
-
-    # List all packages
+    # List all packages installed 
         rpm -qa 
         #... rpm is a low-level utility; does not catch/manage conflicts/dependencies
         # Useful to access repo/pkg meta
+
+        # List meta of all packages installed
+            for p in $(rpm -qa); do dnf info $p; done 
 
     # CVEs / PATCHes 
         # Test if a specific Linux kernel (RHEL version) is vulnerable to a declared CVE

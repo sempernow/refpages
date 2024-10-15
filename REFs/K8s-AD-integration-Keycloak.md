@@ -108,6 +108,8 @@ spec:
 
 ### Step 3: Integrate Kubernetes with Keycloak
 
+UPDATE: [OIDC v. SAML](https://chatgpt.com/c/670b12d7-e734-8009-a1d1-2699eee21d6e "ChatGPT")
+
 1. __Enable OIDC Authentication__ on Kubernetes :
 - Update your Kubernetes API server configuration (`kube-apiserver.yaml`) 
   to __use Keycloak as the OIDC provider__. 
@@ -123,6 +125,7 @@ This involves adding flags to the API server configuration:
     - Set the Client ID to match the `--oidc-client-id` configured in Kubernetes.
     - Set the Access Type to `confidential`.
     - Configure the __Valid Redirect URIs__ to include the Kubernetes API server URL.
+    - See [`kubelogin`](https://github.com/int128/kubelogin "github.com/int128/kubelogin")
 1. __Configure RBAC in Kubernetes__:
     - Map the Keycloak roles/groups to Kubernetes RBAC roles. 
     You can use a `ClusterRoleBinding` or `RoleBinding` 
