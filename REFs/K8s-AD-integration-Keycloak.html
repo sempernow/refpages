@@ -173,6 +173,8 @@ trigger a full sync to import AD users into Keycloak.</li>
 
 <h3>Step 3: Integrate Kubernetes with Keycloak</h3>
 
+<p>UPDATE: <a href="https://chatgpt.com/c/670b12d7-e734-8009-a1d1-2699eee21d6e" title="ChatGPT">OIDC v. SAML</a></p>
+
 <ol>
 <li><strong>Enable OIDC Authentication</strong> on Kubernetes :</li>
 
@@ -193,6 +195,7 @@ This involves adding flags to the API server configuration:</p>
 <li>Set the Client ID to match the <code>--oidc-client-id</code> configured in Kubernetes.</li>
 <li>Set the Access Type to <code>confidential</code>.</li>
 <li>Configure the <strong>Valid Redirect URIs</strong> to include the Kubernetes API server URL.</li>
+<li>See <a href="https://github.com/int128/kubelogin" title="github.com/int128/kubelogin"><code>kubelogin</code></a></li>
 </ul></li>
 
 <li><p><strong>Configure RBAC in Kubernetes</strong>:</p>

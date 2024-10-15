@@ -36,16 +36,10 @@ See &quot;3. Install GitLab Runner on Linux&quot;</li>
 <li><a href="https://docs.gitlab.com/runner/install/linux-repository.html">Install GitLab Runner | Linux</a>
 
 <ul>
-<li>May have several, each of their own scope,
-say, one per team, each available only to one team.</li>
-<li>Must register Runners with GitLab CE Server
+<li>May have several, each scoped to a team, each available to that team only.
 
 <ul>
-<li>Copy tokens from the server @ GUI
-
-<ul>
-<li>'Register an Instance Runner' (Button)</li>
-</ul></li>
+<li>Must register and configure Runners with GitLab via Web UI (<a href="https://chatgpt.com/share/670ad40b-24d4-8009-8d08-49c3e51b8cf2">ChatGPT</a>). Use the &quot;Register an Instance Runner&quot; (Button)</li>
 </ul></li>
 <li>Executor : Where the pipelines run; several options:
 
@@ -86,7 +80,7 @@ This step also <strong>uses the special container</strong> as part of the pod.</
 <li><p>GitLab package (<strong>Omnibus</strong>) | <a href="https://about.gitlab.com/install/">Install</a></p>
 
 <ul>
-<li><p>Omnibus GitLab architecture and components : Omnibus GitLab is a customized fork of the <strong>Omnibus project from Chef</strong> (<a href="https://gitlab.com/gitlab-org/omnibus-gitlab" title="GitLab.com/gitlab-org/omnibus-gitlab">`omnibus-gitlab</a>), and it uses Chef components like cookbooks and recipes to perform the task of configuring GitLab on a user’s computer. Omnibus GitLab repository on GitLab.com hosts all the necessary components of Omnibus GitLab. These include parts of Omnibus that are required to build the package, like configurations and project metadata, and the <strong>Chef related components that are used in a user’s computer after installation</strong>.</p>
+<li><p>Omnibus GitLab architecture and components : Omnibus GitLab is a customized fork of the <strong>Omnibus project from Chef</strong> (<a href="https://gitlab.com/gitlab-org/omnibus-gitlab" title="GitLab.com/gitlab-org/omnibus-gitlab"><code>omnibus-gitlab</code></a>), and it uses Chef components like cookbooks and recipes to perform the task of configuring GitLab on a user’s computer. Omnibus GitLab repository on GitLab.com hosts all the necessary components of Omnibus GitLab. These include parts of Omnibus that are required to build the package, like configurations and project metadata, and the <strong>Chef related components that are used in a user’s computer after installation</strong>.</p>
 
 <pre><code class="language-bash">sudo EXTERNAL_URL=&quot;https://gitlab.k8s.local&quot; dnf install -y gitlab-ee
 # Configures using Chef recipes
@@ -95,15 +89,14 @@ gitlab-ctl reconfigure
 systemctl status gitlab-runsvdir.service
 # Restart
 gitlab-ctl restart [nginx] # All, or any one component per subcommand
-</code></pre></li>
-
-<li><p>Runit, a lightweight init system (predates <code>systemd</code>), is the service supervisor of GitLab Omnibus. The term <code>runsvdir</code> refers to a Runit component that handles serivce directories (<code>svdir</code>) created by Runit. So, while GitLab uses <code>systemd</code>, service supervision is delegated to Runit. | <a href="https://chatgpt.com/c/67098a1c-eb8c-8009-a07a-df93d1bf9b50">ChatGPT</a></p>
+</code></pre>
 
 <ul>
+<li>Runit, a lightweight init system (predates <code>systemd</code>), is the service supervisor of GitLab Omnibus. The term <code>runsvdir</code> refers to a Runit component that handles serivce directories (<code>svdir</code>) created by Runit. So, while GitLab uses <code>systemd</code>, service supervision is delegated to Runit. | <a href="https://chatgpt.com/c/67098a1c-eb8c-8009-a07a-df93d1bf9b50">ChatGPT</a></li>
 <li>See <code>/opt/gitlab/sv/*</code></li>
 </ul></li>
 
-<li><p><strong>Single-node</strong> : <a href="https://docs.gitlab.com/ee/administration/reference_architectures/1k_users.html">Up to 20 RPS or 1,000 users</a> | <a href="GitLab.Single.Server.png"><strong>Architecture</strong></a></p></li>
+<li><p><strong>Single-node</strong> : <a href="https://docs.gitlab.com/ee/administration/reference_architectures/1k_users.html">Up to 20 RPS or 1,000 users</a> | <a href="gitlab-single-server-architecture.png">GitLab Single Server Architecture</a></p></li>
 
 <li><p>Multi-node : <a href="https://docs.gitlab.com/ee/administration/reference_architectures/2k_users.html">Up to 40 RPS or 2,000 users</a></p></li>
 
