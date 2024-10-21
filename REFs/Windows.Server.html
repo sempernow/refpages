@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Windows.Server</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2019?msockid=05311f3dde09664d0afc0b53dfa16779" title="microsoft.com">Windows Server</a> 2019 | <a href="https://learn.microsoft.com/en-us/windows-server/">Docs</a></h1>
+
+<h2>Overview</h2>
+
+<p>Windows Server 2019 is the operating system that bridges on-premises environments
+with Azure services enabling hybrid scenarios maximizing existing investments.
+Create cloud native and modernize traditional apps
+using containers and micro-services.</p>
+
+<p>Installation options (2016/2019):</p>
+
+<ul>
+<li><strong>Server Core</strong> (headless):<br>
+This is the recommended installation option.
+It’s a smaller installation that includes the core components of Windows Server
+and supports all server roles but <strong>does not include a local graphical user interface</strong> (GUI).
+<em>Managed remotely</em> through <strong>Windows Admin Center</strong>, PowerShell, or other server management tools.</li>
+<li><strong>Server with Desktop Experience</strong> : <strong>Server Manager</strong> (GUI):<br>
+This is the complete installation and includes a full GUI for customers who prefer this option.</li>
+</ul>
+
+<p>Roles/Features</p>
+
+<p>Selectable by checkbox at the AD Installation Wizard of the Server Manager GUI</p>
+
+<ul>
+<li>DHCP Server</li>
+<li>DNS Server</li>
+<li><strong>Active Directory</strong> | <a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc736627(v=ws.10)">Directory data store</a> | <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/powershell/active-directory-replication-and-topology-management-using-windows-powershell">Manage by PowerShell AD Module</a>
+
+<ul>
+<li><strong>Domain Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview">AD DS</a>) | <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/ad-ds-operations">Operations</a></li>
+<li><strong>Federation Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/ad-fs-overview">AD FS</a>)<br>
+AD FS enables <strong>Federated Identity and Access Management</strong> by securely sharing digital identity and entitlements rights across security and enterprise boundaries. Implements OIDC, and OAuth Grant flows. Successor is Microsoft Entra ID.
+
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/overview/ad-fs-openid-connect-oauth-flows-scenarios">AD FS OIDC/OAuth Flows v. App Scenarios</a></li>
+</ul></li>
+<li><strong>Certificate Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-cs/active-directory-certificate-services-overview#key-features">AD CS</a>)<br>
+Issue and manages TLS certificates via web UI. Provides Public Key Infrastructure (PKI)
+for cryptography, digital certificates and signature capabilities.</li>
+</ul></li>
+<li>PowerShell Desired State Configuration (DSC) in Windows Management Framework (WMF) 5<br>
+Windows Management Framework 5 includes updates
+to Windows PowerShell Desired State Configuration (DSC),
+Windows Remote Management (WinRM),
+and Windows Management Instrumentation (WMI).</li>
+<li><a href="https://learn.microsoft.com/en-us/training/modules/manage-windows-server-file-servers/?source=recommendations">Manage Windows Server file servers</a> : In AD DS environment having a domain member configured as a file server.</li>
+<li>Deploy Network File System (NFS)
+
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/windows-server/storage/nfs/deploy-nfs#provision-file-shares-in-heterogeneous-environments">Provision file shares in heterogenous environments</a> : SMB &amp; NFS protocols for file shares between Windows and Linux hosts. For this scenario, you <strong>must have a valid identity mapping</strong> source configuration. Windows Server supports the following <strong>identity mapping stores</strong>:
+
+<ul>
+<li>Mapping File</li>
+<li>Active Directory Domain Services (AD DS)</li>
+<li>RFC 2307-compliant LDAP stores such as Active Directory Lightweight Directory Services (AD LDS)</li>
+<li>User Name Mapping (UNM) server</li>
+</ul></li>
+<li><a href="https://learn.microsoft.com/en-us/windows-server/storage/nfs/deploy-nfs#provision-file-shares-in-unix-based-environments">Provision file shares in UNIX-based environments</a> : No share between Windows and Linux. Enabling the option, <strong>Unmapped UNIX User Access</strong> (UUUA) enables Windows servers to store NFS data without creating UNIX-to-Windows account mapping. &hellip; to quickly provision and deploy NFS sans mapping.
+
+<ul>
+<li>Mapped user accounts use standard Windows SIDs</li>
+<li>Unmapped user accounts use custom NFS SIDs.</li>
+</ul></li>
+<li><a href="https://learn.microsoft.com/en-us/windows-server/storage/nfs/deploy-nfs#configure-nfs-authentication">Configure NFS Authentication</a> :
+
+<ul>
+<li>Kerberos v5
+
+<ul>
+<li>Krb5: to authenticate users before granting them access to the file share.</li>
+<li>Krb5i: to authenticate with integrity checking (checksums),
+which verifies that the data hasn't been altered.</li>
+<li>Krb5p: to authenticate NFS traffic with encryption for privacy.
+This option is the most secure Kerberos option.</li>
+</ul></li>
+<li>Enable <strong>unmapped user access</strong> through <code>AUTH_SYS</code>. This option is insecure; it removes all authentication protections and <strong>allows any user with access to the NFS server to access data</strong> under one of two settings:
+
+<ul>
+<li>Allow unmapped user access by UID or GID, which is the default.</li>
+<li>Allow anonymous access.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p>Three Versions</p>
+
+<ul>
+<li><strong>Datacenter</strong> : Virtual Machine for Cloud environments
+
+<ul>
+<li><a href="https://1337x.to/torrent/4212270/Windows-Server-2019-DataCenter-3in1-ESD-en-US-DEC-2019-Gen2/">https://1337x.to/torrent/4212270/Windows-Server-2019-DataCenter-3in1-ESD-en-US-DEC-2019-Gen2/</a></li>
+</ul></li>
+<li><strong>Standard</strong> : Physical server or minimally-virtualized environments</li>
+<li><strong>Essentials</strong> : Small biz up to 25 users and 50 devices</li>
+</ul>
+
+<p>Requirements:</p>
+
+<ul>
+<li>CPU: 1 1.4 GHz</li>
+<li>RAM: 512 MB</li>
+<li>Disk: 32 GB</li>
+</ul>
+
+<h3><a href="https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview">Windows Admin Center</a> (WAC)</h3>
+
+<p>A locally-deployed, browser-based management tool set built to manage Windows Clients, Servers, and Clusters without needing to connect to the cloud. Windows Admin Center offers full control over all aspects of Windows-based server infrastructure and is <strong>particularly useful for managing on-prem servers</strong>.</p>
+
+<p>Windows Admin Center (WAC) is not a built-in feature of Windows Server 2019; it requires its own separate installation. While it is designed to manage Windows Server environments, WAC itself is a web-based management tool that must be downloaded and installed manually.</p>
+
+<p>Once installed, you can use Windows Admin Center to manage multiple Windows Servers (including Windows Server 2019), Hyper-V hosts, clusters, and even Windows 10 and 11 PCs from a single web-based interface. It simplifies server management tasks by centralizing the management tools and offering a modern, unified experience.</p>
+
+<p>You can install Windows Admin Center on a Windows Server or Windows client and access it via a web browser. It can also be deployed in a high-availability setup in larger environments.</p>
+
+<h2>VM on Hyper-V</h2>
+
+<ul>
+<li>Name: <code>WinSrv2019</code></li>
+<li>CPU: <code>2</code></li>
+<li>RAM: 1024-4096 MiB</li>
+<li>Network: <code>Ethernet</code>
+
+<ul>
+<li>Has DHCP issue; want outside that of gateway.
+May modify to use Default (Private/Internal).
+See &quot;DNS Options&quot; WARNING under &quot;Domain Controller Options&quot; (below).
+Also, <a href="https://chatgpt.com/share/670c59f1-7504-8009-beea-ff2f8d4caff9">ChatGPT</a> .</li>
+</ul></li>
+<li>Disk: 0-127 GB
+
+<ul>
+<li>14 GB after install.</li>
+</ul></li>
+<li>ISO: <code>Win.Server.2019.Standard.1809.Build.17763.3650.En-US..ESD Nov.2022.iso</code></li>
+<li>User: <code>Administrator</code></li>
+<li>Pass: <code>Admin!123</code></li>
+</ul>
+
+<h2>On 1st Login</h2>
+
+<p>@ Connect window</p>
+
+<ol>
+<li>Select Size: 13nn x nnn</li>
+<li>Allow discovery: Yes</li>
+<li>Server Manager (pop up)
+
+<ul>
+<li>&quot;Try managing servers with <a href="https://www.microsoft.com/en-us/windows-server/windows-admin-center?msockid=05311f3dde09664d0afc0b53dfa16779" title="microsoft.com">Windows Admin Center</a> (WAC)&quot;
+
+<ul>
+<li>Don't show this message again. (Checked)</li>
+<li>WAC is a Web UI providing remote access to the server.
+It is a separate install. It is free.
+It may be installed on the AD server or any other machine.</li>
+</ul></li>
+</ul></li>
+<li>Server Setup page</li>
+<li>Shut Down
+
+<ul>
+<li>Hyper-V
+
+<ul>
+<li>Virtual Machines
+
+<ul>
+<li>WinSrv2019
+
+<ul>
+<li>&quot;Merge in Progress&quot;  ... 10+ minutes</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ol>
+
+<h2>Videos :</h2>
+
+<ul>
+<li>Quick : <a href="https://www.youtube.com/watch?v=85-bp7XxWDQ" title="YouTube">Learn AD in 30mins</a></li>
+<li>Series : <a href="https://www.youtube.com/watch?v=XZkYV-Tac8U&amp;list=PLxTwjzMO9Zf4FZJ0BTtQlv5iErouqkbkk" title="YouTub">How to &hellip; Windows Server 2019</a></li>
+</ul>
+
+<p>TODOs:</p>
+
+<ul>
+<li>Roles: ADDS, DNS
+
+<ul>
+<li>Active Directory Domain Services (ADDS)
+
+<ul>
+<li>Domain Controller (DC)</li>
+<li>Secondary Domain Controller:
+
+<ul>
+<li>Read-only Domain Controller (RODC)</li>
+</ul></li>
+</ul></li>
+<li>DNS</li>
+</ul></li>
+</ul>
+
+<p>DONEs:</p>
+
+<p>At <strong>Server Manager</strong>, which is the GUI
+and main portal of <strong>Windows&nbsp;Server&nbsp;2019</strong> Desktop:</p>
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=0EklBDIZSgc&amp;list=PLxTwjzMO9Zf4FZJ0BTtQlv5iErouqkbkk&amp;index=2">Install AD DS</a> :
+Menu/Select, in order:
+
+<ul>
+<li>Server Manager : Local Server
+
+<ul>
+<li>Computer Name : Change:
+
+<ul>
+<li><code>Win2019-DC01</code></li>
+</ul></li>
+</ul></li>
+<li>IE Enhanced Security Configuration
+
+<ul>
+<li>Off @ Admin</li>
+<li>Off @ User</li>
+</ul></li>
+<li>Time zone : Change : EST</li>
+<li>Reboot</li>
+<li>Add server role:
+
+<ul>
+<li>Server Manager : Manage : Add Roles and Features
+
+<ul>
+<li>Active Directory Directory Services</li>
+</ul></li>
+</ul></li>
+<li>Windows Update
+
+<ul>
+<li>This interrupted the workflow during promotion (below).</li>
+</ul></li>
+<li>Promote server to DC:
+
+<ul>
+<li>Promote this server to a domain controller<br>
+&vellip;</li>
+</ul></li>
+<li>Reboot</li>
+<li>Promote server to DC:
+
+<ul>
+<li>Promote this server to a domain controller
+
+<ul>
+<li>Deployment Configuration
+
+<ul>
+<li>New forest</li>
+<li>Root domain name: <code>DEVOPS.LOCAL</code></li>
+<li>Restore-mode password: Admin!123</li>
+</ul></li>
+<li>Domain Controller Options
+
+<ul>
+<li>Forest functional level: Windows Server 2012 (From drop-down menu)</li>
+<li>Domain functional level: Windows Server 2012 (From drop-down menu)
+
+<ul>
+<li>Assure compatibility w/ existing Forest/Domain</li>
+<li>DNS Options
+
+<ul>
+<li>WARNING: A delegation for this DNS server cannot be created because authoritative parent zone cannot be found or it does not run Windows DNS infrastructure. If you are integrating with an existing DNS infrastructure, you should manually create a delegation to this DNS server in the parent zone to ensure reliable name resolution from outside the domain <code>DEVOPS.LOCAL</code>.
+
+<ul>
+<li>Ignore else reconfigure networking. See <a href="https://chatgpt.com/share/670c59f1-7504-8009-beea-ff2f8d4caff9">ChatGPT</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

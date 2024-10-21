@@ -25,41 +25,58 @@
 <h2>TL;DR</h2>
 
 <p>K3S is an unconventional though <strong>very useful</strong> distro, and has <strong>excellent documentation</strong>.
-It installs quickly and requires <strong>zero configuration</strong> for its default &quot;<em>batteries included</em>&quot; cluster; CRI, CNI, service mesh, load balancer, and ingress controller. It is <strong>designed for use by root</strong>, yet installs CLIs to <code>/usr/local/bin</code>, which is not in root <code>PATH</code> of many Linux distros. It is the go-to distro for edge devices.</p>
+It installs quickly with <strong>zero configuration</strong> for its sensible defaults.
+It includes CRI, CNI, service mesh, load balancer, and ingress controller,
+all chosen for their light weight, making it the go-to distro for edge devices.</p>
 
-<p>Includes a <a href="https://docs.k3s.io/cli"><code>k3s</code> CLI</a>,
+<p>Includes <a href="https://docs.k3s.io/cli"><code>k3s</code> CLI</a>,
 which functions as some kind of wrapper
 for some or all of the related tools
 to perform a variety of common cluster-administration tasks.</p>
 
-<h2>Overview</h2>
+<p>The one gotcha for newcomers is that using it requires <code>root</code> access,
+yet it installs to <code>/usr/local/bin</code>,
+which is not in the sudoers <code>PATH</code> of many Linux distros.</p>
+
+<h2><a href="https://chatgpt.com/share/6709ad79-d3b4-8009-b03e-44499a47ac4c" title="ChatGPT">Overview</a></h2>
 
 <blockquote>
 <p><em>K3s is a lightweight &quot;batteries included&quot; Kubernetes distribution created by Rancher Labs, and is a CNCF project. K3s is <strong>highly available and production-ready</strong>. It has a very small binary size and very low resource requirements.</em> &mdash; <a href="https://traefik.io/glossary/k3s-explained/">traefiklabs.io</a></p>
 </blockquote>
 
+<p><a href="K3s-architecture-traefiklabs.jpg" title="JPG">Architecture</a></p>
+
 <ul>
 <li>CRI: <strong>containerd</strong> / cri-dockerd container runtime (CRI)</li>
-<li>CNI: <strong>Flannel</strong> Container Network Interface (CNI)</li>
+<li>CNI: <strong>Flannel</strong> - a simple Container Network Interface (CNI), which uses VXLAN to establish an overlay (Pod) network.</li>
 <li>CSI: <strong>Local-path-provisioner</strong> Persistent Volume controller</li>
 <li>DNS: <strong>CoreDNS</strong> Cluster DNS</li>
 <li>Ingress: <strong>Traefik</strong> Ingress controller</li>
-<li>LB: <a href="https://docs.k3s.io/networking/networking-services#service-load-balancer" title="docs.k3s.io">ServiceLB</a> Load-Balancer controller
+<li>LB: <a href="https://docs.k3s.io/networking/networking-services#service-load-balancer" title="docs.k3s.io">ServiceLB</a>, which is a Service Load Balancer Controller.
 
 <ul>
 <li>Formerly <a href="https://github.com/k3s-io/klipper-lb" title="GitHub : /k3s-io/klipper-lb">Klipper LB</a> : <code>docker.io/rancher/klipper-lb:v0.4.7</code></li>
 <li><a href="https://github.com/k3s-io/k3s/discussions/9927"><em>&hellip; to set up DNAT <code>iptables</code> rules on node(s)</em></a>
 
 <ul>
-<li>&hellip; watches Kubernetes Services with the <code>spec.type</code> field set to <code>LoadBalancer</code>.</li>
-<li>For each <strong>LoadBalancer</strong> Service, a <strong>DaemonSet</strong> is created in the <code>kube-system</code> namespace. This DaemonSet in turn creates Pods with a <code>svc-</code> prefix, on each node. These Pods use <strong>iptables</strong> to forward traffic from the Pod's <strong>NodePort</strong>, to the Service's <strong>ClusterIP</strong> address and port.</li>
+<li>&hellip; watches Kubernetes Services of &quot;<code>spec.type: LoadBalancer</code>&quot; and creates a <strong>DaemonSet</strong> in <code>kube-system</code> namespace for each. This DaemonSet creates a Service-associated Pod named <code>svc-*</code> on each node. These Pods use <strong>iptables</strong> to forward traffic from the Pod's <strong>NodePort</strong>, to the Service's <strong>ClusterIP</strong> address and port.</li>
+</ul></li>
+<li>K3S allows for any other Service Load Balancer Controller. Its default is ServiceLB.</li>
+<li>Upstream project Kubernetes allows Services of type LoadBalancer to be created, but doesn't include any default (load balancer) controller, so all services of &quot;<code>spec.type: LoadBalancer</code>&quot; will remain in <code>Pending</code> status until one is installed.
+
+<ul>
+<li><em>By contrast, the K3s ServiceLB makes it possible to use LoadBalancer Services without a cloud provider or any additional configuration.</em></li>
 </ul></li>
 </ul></li>
 <li>Network Policy: <strong>Kube-router</strong> Network Policy controller</li>
-<li>Registry: <strong>Spegel</strong> distributed container image registry mirror</li>
-<li>Host configuration: Host utilities (iptables, socat, etc)</li>
-<li><a href="https://docs.k3s.io/helm">Helm</a> <strong>Controller</strong>; allowing for managing charts by <code>HelmChart</code> declarations instead of imperatively by CLI.</li>
+<li>Registry: <strong>Spegel</strong> oci-image registry mirror</li>
+<li>Host configuration: Host utilities (<code>iptables</code>, <code>socat</code>, &hellip;)</li>
+<li><a href="https://docs.k3s.io/helm">Helm</a> <strong>Controller</strong>; allowing for managing charts by <code>HelmChart</code> (API object) declarations instead of imperatively by CLI.</li>
 </ul>
+
+<p>The K3s binary includes components such as the core, which are normally static pods, CNI pods (Flannel by default), and an embedded SQLite via Kine shim (vs etcd), making the system more lightweight. <a href="https://docs.k3s.io/networking" title="docs.k3s.io/networking">Networking</a> is managed internally by K3s (a bundled Flannel by default). So all pods, including what would be static pods in other distributions, are on the Pod network.</p>
+
+<p>This architecture is a major reason why K3s is so lightweight and popular for edge computing, IoT, and other resource-constrained environments.</p>
 
 <h2><a href="https://docs.k3s.io/cli">k3s CLI</a></h2>
 
@@ -226,6 +243,7 @@ while also removing the <code>iptables</code> chain with all the associated rule
 
 <ul>
 <li>A script of K3S installation</li>
+<li><strong>Before running <code>killall</code></strong>, delete associated interfaces and iptables rules, <a href="https://docs.k3s.io/networking/basic-network-options?cni=Cilium#custom-cni" title="docs.k3s.io/networking">per CNI</a>.</li>
 </ul>
 
 <h3><a href="https://docs.k3s.io/installation/uninstall">Uninstall</a></h3>

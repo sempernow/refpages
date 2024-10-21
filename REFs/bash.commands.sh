@@ -241,15 +241,6 @@ exit
                 somefunc "$@" > /dev/null 2>&1                     # execute
                 printf "%s" "$_RETURN"                             # stdout (if desired)
 
-# BACKGROUND PROCESS
-    /bin/bash $_CMD_or_SCRIPT & 
-    # Sans STDOUT and STDERR
-    /bin/bash -c "$_CMD_or_SCRIPT arg1 arg2" >/dev/null 2>&1 &
-    # Alternative, but quirky; shell-specific behavior:
-    nohup $_CMD_or_SCRIPT arg1 arg2 & # Ignore HANGUP signal(s) (SIGHUP)
-    #... + multiple commands (in bkgnd process), and sans any output to anywhere:
-    nohup /bin/bash -c "sleep 30 && $_CMD_or_SCRIPT arg1 arg2 &" >/dev/null 2>&1
-
 # PERSISTENT (low resource) PROCESS
     # @ Containers : Override default process (PID 1)
     sleep 1d
@@ -2549,26 +2540,44 @@ exit
     ### #!/usr/bin/env bash     # Per-user default binary. (Some systems have no /bin/bash binary.)
     ### #!/usr/bin/bash         # Explicity set the binary.
 
-    /bin/bash                             # launch subshell
-    /bin/bash -c "cmd1 $a b;cmd2 $x"      # run command(s) at subshell then exit
-    /bin/bash -s < script.sh $arg1 $arg2  # run script with args at subshell then exit
-    /bin/bash -x script.sh arg1 arg2      # debug mode
-    /bin/bash -v ...                      # debug; print script lines as they are read
+    # Launch subshell
+    /bin/bash $command $args 
+    /bin/bash $script $args
 
-    # rbash : RESTRICTED SHELL; forbid dir change, redirects, ...; see `man rbash`
-    /bin/rbash 
-    /bin/bash -r  
+    # Equivalent by reading script from stdin 
+    cat $script | /bin/bash -s - $args
+    # Alt, but less clear; has fail modes
+    /bin/bash -s < $script $args
+    # Multiple commands
+    /bin/bash -c "$cmd1 $args1 && $cmd2 $args2"
+        # Other flags
+        -x # debug mode
+        -v # debug; print script lines as they are read
 
-    # SSH ( See REF.Network.SSH.sh )
-    ssh -i ${_PRIVATE_KEY} ${user}@${host_name_OR_public_ip}
-    # Remotely run LOCAL script and args (environment) through a secure shell
-    ssh ... "/bin/bash -s" < /any/local/path/script.sh $arg1 $arg2
-    #... per commands : allows partial preprocessing; escapes required in script
-    ssh ... "/bin/bash -c '$(</a/local/path/script.sh)' _ $arg1 $arg2"
-    #... advantage over HEREDOC scheme is preservation of semantic highlighting @ code editor.
-    # UPLOAD a file SANS "file upload" utility (rsync, scp, ftps):
-    ## Local file is stringified by redirect in a subshell (command substitution), and printed to remote file by redirect.
-    ssh $user@$host "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
+    # as BACKGROUND PROCESS
+    /bin/bash $command $args &
+    # Sans STDOUT and STDERR
+    /bin/bash -c "$command $args" >/dev/null 2>&1 &
+    # Alternative, but quirky; shell-specific behavior:
+    nohup $command $args & # Ignore HANGUP signal(s) (SIGHUP)
+
+    rbash # RESTRICTED SHELL; forbid dir change, redirects, ...; see `man rbash`
+        /bin/rbash 
+        /bin/bash -r  
+
+    # SSH : See REF.Network.SSH.sh 
+    ssh -i $key ${user}@$host
+    # Run LOCAL script REMOTELY through a secure shell
+    cat $script | ssh $conn /bin/bash -s - $localArgs \$remote_arg1
+    # Hacky and prone to fail modes:
+        # Remotely run LOCAL script and args (environment) through a secure shell
+        ssh  $conn "/bin/bash -s" < /any/local/path/script.sh $args
+        #... per commands : allows partial preprocessing; escapes required in script
+        ssh $conn "/bin/bash -c '$(</a/local/path/script.sh)' _ $args"
+        #... advantage over HEREDOC scheme is preservation of semantic highlighting @ code editor.
+        # UPLOAD a file SANS "file upload" utility (rsync, scp, ftps):
+        ## Local file is stringified by redirect in a subshell (command substitution), and printed to remote file by redirect.
+        ssh $conn "printf '$(</any/local/path/src.foo)' > /any/remote/path/dst.foo"
 
     # dialog utility : See 'man dialog' http://www.freeos.com/guides/lsst/ch04sec7.html
     dialog --common-options --boxType "Text" Height Width --box-specific-option

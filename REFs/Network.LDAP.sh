@@ -14,6 +14,15 @@ exit
 # Integration with Active Directory (AD)
     # @ https://chatgpt.com/share/73401243-5ea0-4cdc-9090-d6dd709ada10
 
+    # LDAP
+        ldapsearch # Query AD and check if RFC 2307 attributes are present for a user or group.
+        ldapsearch -x -H ldap://$ad_host -D "$sld.$tld" -W -b "dc=$sld,dc=$tld" "(sAMAccountName=$user)" uidNumber gidNumber
+
+    # Winbind : Samba Winbind v. SSSD
+        # - Use Winbind if AD has NTLM protocol enabled with fallback to NTLM auth.
+        # - Use Winbind to support cross-forest AD trusts when connected directly to AD;
+            # SSSD workaround is to use IdM. Being connected to IdM, SSSD recognizes other AD forests that are in trust relationships with the IdM domain. 
+
     # SSSD (System Security Services Daemon) integrates with AD 
         # - Provides a set of daemons to manage access to remote directories and authentication mechanisms; 
         #   Integration with various identity/auth providers: Active Directory, LDAP, Kerberos, ...
@@ -38,11 +47,96 @@ exit
             vi /etc/pam.d/common-session 
                 # Add the following line to ensure home directories are created automatically when a user logs in for the first time:
                 session optional pam_mkhomedir.so skel=/etc/skel umask=0077
-            ## Enable and Start SSSD
-            sudo systemctl enable --now sssd
 
-            # Verify the Setup : Check the status of a domain user or listing domain users:
-            id $user@$domain
+            # sssd.service 
+            sudo systemctl enable --now sssd.service
+
+            # sssd logs 
+            cat /var/log/sssd/sssd_$sld.$tld.log
+
+            # sssd config 
+            cat /etc/sssd/sssd.conf
+                # To use RFC 2037 
+                    # ldap_id_mapping = False 
+                    # ldap_user_object_class  = posixAccount
+                    # ldap_group_object_class = posixGroup
+                # To *not* use RFC 2037
+                    # ldap_id_mapping = True
+                    ## Range for UID:GID mapped from AD SID must not conflict with local
+                    # ldap_idmap_range_min = 10000
+                    # ldap_idmap_range_max = 20000
+                # Note "simple" access control provider allows LOGIN 
+                # per whitelist(s) of users and/or groups, 
+                # but does not affect file access of authenticated user
+                    # [domain/example.com]
+                    # id_provider = ad
+                    # auth_provider = ad
+                    # access_provider = simple
+                    # simple_allow_groups = admins, developers, support
+                        # UPN (User Principal Name) format may be used : 
+                        # admins@<REALM>, e.g., admins@EXAMPLE.COM
+                # @ Kerberos in use for authentication in SSSD 
+                    # auth_provider = krb5
+                    # krb5_server   = <KDC server>
+                    # krb5_realm    = EXAMPLE.COM
+            
+        # ssd cache : Clear
+        sudo sss_cache -E
+
+        # Verify the Setup : Check the status of a domain user or listing domain users:
+        id $user@$domain
+
+    idmapd # Service responsible for translating AD user and group names into local UID/GID. 
+        /etc/idmapd.conf # Configuration should AD realm.
+    
+    nfsidmap # Or similar service should be running and correctly configured.
+
+    # KERBEROS : https://chatgpt.com/c/670f0f6c-d81c-8009-b437-30f0009a613c 
+        # Verify SSSD is using Kerberos for authentication:
+
+        # Check for active tickets
+        klist # The presence of a TGT (Ticket Granting Ticket) for krbtgt/REALM@REALM 
+            # indicates that Kerberos is in use for authenticating users.
+            #=>
+            # Ticket cache: FILE:/tmp/krb5cc_1000
+            # Default principal: user@REALM
+
+            # Valid starting       Expires              Service principal
+            # 10/17/2022 08:01:32  10/17/2022 18:01:32  krbtgt/REALM@REALM
+
+        /etc/sssd/sssd.conf 
+            # [domain/example.com]
+            # auth_provider = krb5
+            # krb5_server   = <KDC server>
+            # krb5_realm    = EXAMPLE.COM
+
+        /etc/pam.d/system-auth 
+            # or
+        /etc/pam.d/sshd
+            # auth    required   pam_krb5.so
+
+        /etc/krb5.conf                
+            # [libdefaults]
+            #     default_realm = EXAMPLE.COM
+            #
+            # [realms]
+            #     EXAMPLE.COM = {
+            #         kdc = kdc.example.com
+            #         admin_server = kdc.example.com
+            #     }
+            #
+            # [domain_realm]
+            #     .example.com = EXAMPLE.COM
+            #     example.com  = EXAMPLE.COM
+
+        # Authentication logs
+        /var/log/secure
+            # or
+        /var/log/auth.log
+            # pam_krb5[12345]: authentication succeeds for 'user'
+            # pam_krb5[12345]: user 'user' obtains TGT for realm 'EXAMPLE.COM'
+
+
 
 #######
 # 2015

@@ -74,7 +74,7 @@ This step also <strong>uses the special container</strong> as part of the pod.</
 <h2><a href="https://about.gitlab.com/install/">Self-hosted GitLab EE|CE</a></h2>
 
 <ul>
-<li><a href="https://docs.gitlab.com/ee/administration/reference_architectures/index.html">Reference Architectures</a>
+<li><p><a href="https://docs.gitlab.com/ee/administration/reference_architectures/index.html">Reference Architectures</a></p>
 
 <ul>
 <li><p>GitLab package (<strong>Omnibus</strong>) | <a href="https://about.gitlab.com/install/">Install</a></p>
@@ -82,18 +82,12 @@ This step also <strong>uses the special container</strong> as part of the pod.</
 <ul>
 <li><p>Omnibus GitLab architecture and components : Omnibus GitLab is a customized fork of the <strong>Omnibus project from Chef</strong> (<a href="https://gitlab.com/gitlab-org/omnibus-gitlab" title="GitLab.com/gitlab-org/omnibus-gitlab"><code>omnibus-gitlab</code></a>), and it uses Chef components like cookbooks and recipes to perform the task of configuring GitLab on a user’s computer. Omnibus GitLab repository on GitLab.com hosts all the necessary components of Omnibus GitLab. These include parts of Omnibus that are required to build the package, like configurations and project metadata, and the <strong>Chef related components that are used in a user’s computer after installation</strong>.</p>
 
-<pre><code class="language-bash">sudo EXTERNAL_URL=&quot;https://gitlab.k8s.local&quot; dnf install -y gitlab-ee
-# Configures using Chef recipes
-gitlab-ctl reconfigure
-# Inspect
-systemctl status gitlab-runsvdir.service
-# Restart
-gitlab-ctl restart [nginx] # All, or any one component per subcommand
-</code></pre>
+<ul>
+<li>Runit, a lightweight init system (predates <code>systemd</code>), is the service supervisor of GitLab Omnibus. The term <code>runsvdir</code> refers to a Runit component that handles serivce directories (<code>svdir</code>) created by Runit. So, while GitLab uses <code>systemd</code>, service supervision is delegated to Runit. | <a href="https://chatgpt.com/c/67098a1c-eb8c-8009-a07a-df93d1bf9b50">ChatGPT</a>
 
 <ul>
-<li>Runit, a lightweight init system (predates <code>systemd</code>), is the service supervisor of GitLab Omnibus. The term <code>runsvdir</code> refers to a Runit component that handles serivce directories (<code>svdir</code>) created by Runit. So, while GitLab uses <code>systemd</code>, service supervision is delegated to Runit. | <a href="https://chatgpt.com/c/67098a1c-eb8c-8009-a07a-df93d1bf9b50">ChatGPT</a></li>
 <li>See <code>/opt/gitlab/sv/*</code></li>
+</ul></li>
 </ul></li>
 
 <li><p><strong>Single-node</strong> : <a href="https://docs.gitlab.com/ee/administration/reference_architectures/1k_users.html">Up to 20 RPS or 1,000 users</a> | <a href="gitlab-single-server-architecture.png">GitLab Single Server Architecture</a></p></li>
@@ -108,15 +102,39 @@ gitlab-ctl restart [nginx] # All, or any one component per subcommand
 <li><p><strong>GitLab Operator</strong>  : a <strong>K8s Operator</strong> (Not for production)</p>
 
 <ul>
-<li><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases" title="gitlab.com/gitlab-org/cloud-native/">Releases</a> : <a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/raw/1.4.2/CHART_VERSIONS"><code>/-/raw/&lt;OPERATOR_VERSION&gt;/CHART_VERSIONS</code></a>
+<li><p><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases" title="gitlab.com/gitlab-org/cloud-native/">Releases</a> : <a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/raw/1.4.2/CHART_VERSIONS"><code>/-/raw/&lt;OPERATOR_VERSION&gt;/CHART_VERSIONS</code></a></p>
+
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Chart</th>
+<th>GitLab</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>1.4.2</td>
+<td>8.4.2</td>
+<td>v17.4.2</td>
+</tr>
+
+<tr>
+<td>1.4.2</td>
+<td>8.3.5</td>
+<td>v17.3.5</td>
+</tr>
+
+<tr>
+<td>1.4.2</td>
+<td>8.2.9</td>
+<td>v17.2.9</td>
+</tr>
+</tbody>
+</table>
 
 <ul>
-<li>
-|Operator|Chart|GitLab|
-|-----|-----|--------|
-|1.4.2|8.4.2|v17.4.2 |
-|1.4.2|8.3.5|v17.3.5 |
-|1.4.2|8.2.9|v17.2.9 |</li>
 <li><a href="https://docs.gitlab.com/operator/" title="docs.gitlab.com">Docs</a></li>
 <li><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator"><code>gitlab-org/cloud-native</code></a></li>
 <li>Installation : <a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/installation.md"><code>gitlab-org/cloud-native</code></a> | <a href="https://docs.gitlab.com/operator/installation.html"><code>docs.gitlab.com</code></a>
@@ -127,14 +145,108 @@ gitlab-ctl restart [nginx] # All, or any one component per subcommand
 <li>Auth by <a href="https://docs.gitlab.com/ee/administration/auth/ldap/index.html" title="docs.gitlab.com/ee/administration/auth/ldap">LDAP</a>, <a href="https://docs.gitlab.com/ee/integration/omniauth.html" title="docs.gitlab.com/ee/integration/omniauth">SAML, and OAuth</a></li>
 </ul></li>
 </ul></li>
-<li><a href="https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator">GitLab Runner Operator</a></li>
+
+<li><p><a href="https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator">GitLab Runner Operator</a></p></li>
 </ul></li>
 </ul></li>
 </ul>
 
-<p><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/installation.md">Install GitLab : operator and app</a></p>
+<h3>Install &amp; <a href="https://docs.gitlab.com/ee/administration/configure.html" title="docs.gitlab.com">Configure</a> : <code>/etc/gitlab/gitlab.rb</code></h3>
+
+<pre><code class="language-bash"># Install the package (RPM)
+sudo dnf install -y gitlab-ee
+# Else also inject configuration parameter(s) here (imperatively)
+host=gitlab.local # Example; add/edit DNS record(s) of (sub)domain as apropos
+sudo EXTERNAL_URL=&quot;https://$host&quot; dnf install -y gitlab-ee
+# Configure (further) declaratively (optional actually, but advised)
+sudo vi /etc/gitlab/gitlab.rb
+# Apply (re)configuration (REQUIRED; runs many Chef recipes)
+gitlab-ctl reconfigure
+# Verify the service is active (optional)
+systemctl status gitlab-runsvdir.service # &quot;status&quot; else &quot;is-active&quot;
+# Restart (optional)
+gitlab-ctl restart [nginx] # All else one component by subcommand
+</code></pre>
+
+<p><a name=ldap></a></p>
+
+<ul>
+<li><a href="https://docs.gitlab.com/ee/administration/auth/ldap/ldap_synchronization.html">LDAP synchronization</a>
+
+<ul>
+<li><p><a href="https://docs.gitlab.com/ee/administration/auth/ldap/ldap_synchronization.html#group-sync">Group sync</a> : <em>If your LDAP supports the <code>memberof</code> property, when the user signs in for the first time GitLab triggers a sync for groups the user should be a member of. ... group sync process runs every hour on the hour, and</em> <strong><em><code>group_base</code> must be set in LDAP configuration for LDAP synchronizations based on group <code>CN</code> to work.</em></strong> <em>This allows GitLab group membership to be automatically updated based on LDAP group members.</em> : <code>/etc/gitlab/gitlab.rb</code> :</p>
+
+<pre><code class="language-ruby">gitlab_rails['ldap_servers'] = {
+    'main' =&gt; {
+        'group_base' =&gt; 'ou=groups,dc=example,dc=com',
+        }
+}
+</code></pre>
+
+<ul>
+<li><p><a href="https://docs.gitlab.com/ee/administration/auth/ldap/ldap_synchronization.html#external-groups">External groups</a> : <code>/etc/gitlab/gitlab.rb</code></p>
+
+<pre><code class="language-ruby">gitlab_rails['ldap_servers'] = {
+'main' =&gt; {
+    'external_groups' =&gt; ['interns', 'contractors'],
+    }
+}
+</code></pre></li>
+</ul></li>
+</ul></li>
+<li><a href="https://docs.gitlab.com/ee/administration/external_users.html">External users</a> : <em>This feature may be useful when for example a contractor is working on a given project and should only have access to that project.</em> Such users are best handled as members of &quot;<a href="#ldap">External&nbsp;groups</a>&quot; (above).
+
+<ul>
+<li>Features:
+
+<ul>
+<li>Cannot create project, groups, and snippets in their personal namespaces.</li>
+<li>Can only create projects (including forks), subgroups, and snippets within top-level groups to which they are explicitly granted access.</li>
+<li>Can access public groups and public projects.</li>
+<li>Can only access projects and groups to which they are explicitly granted access. External users cannot access internal or private projects or groups that they are not granted access to.</li>
+<li>Can only access public snippets.</li>
+</ul></li>
+<li>Methods to set user as &quot;External user&quot;:
+
+<ul>
+<li>LDAP groups
+
+<ul>
+<li>See &quot;<a href="#ldap">External&nbsp;groups</a>&quot; section above.</li>
+</ul></li>
+<li>SAML groups</li>
+<li>OmniAuth: <a href="https://docs.gitlab.com/ee/integration/omniauth.html#supported-providers">Supported providers</a> includes AuthO, AWS Cognito, Atlassian, GitHub, GitLab.com, Google, and &hellip;
+
+<ul>
+<li>JWT</li>
+<li>OpenID Connect (OIDC)</li>
+<li>Generic OAuth2</li>
+<li>SAML</li>
+<li>Kerberos</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>Upon any (re)configuration</h4>
+
+<blockquote>
+<p>Running &quot;<code>gitlab-ctl reconfigure</code>&quot; is the advised and standard method to apply changes made to <code>/etc/gitlab/gitlab.rb</code>. This command <strong>ensures that all configuration changes are correctly applied across all GitLab components and services</strong>.</p>
+</blockquote>
+
+<pre><code class="language-bash"># Apply the reconfiguration
+gitlab-ctl reconfigure
+
+# Verify service is active
+systemctl is-active gitlab-runsvdir.service
+# Or, for more info
+systemctl status gitlab-runsvdir.service
+
+</code></pre>
 
 <h3>Install GitLab on K8s</h3>
+
+<p><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/installation.md">Install GitLab : operator and app</a></p>
 
 <h4>Install GitLab Operator</h4>
 

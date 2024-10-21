@@ -22,22 +22,28 @@ man ssh_config
             ssh -i $_KEY_PATH ${user}@${hostname_OR_ip}
             ## If host is Git server (GitHub/GitLab), then user is 'git' *not* the ssh user.
             ssh -T -i ~/.ssh/gitlab git@gitlab.com # -T to DISABLE tty/pty allocation.
-            ## If connection parameters are DECLARED at ~/.ssh/config  (See man ssh_config)
-                # Host abox 
+            ## Manage per-host connections DECLARATIVELY at ~/.ssh/config : man ssh_config
+                # Host foo
                 #   HostName 10.111.0.101 www.foo.org foo.org 
-                #   User user1
+                #   User u1003
                 #   CheckHostIP yes
                 #   Port 2222
-                #   IdentityFile ~/.ssh/abox
-            ## Then simply:
-            ssh abox
+                #   IdentityFile ~/.ssh/foo_u1003
+            ## Thereafter simply:
+            ssh foo
 
-        # Generate elliptical key pair : Default type (-t) is 'rsa'.
-            # Use only ed25519 variant of elliptical; best though not yet FIPS-compliant
-                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname  # id_ed25519
-            # NIST-approved & FIPS compliant, though not as good a choice in practice
-                ssh-keygen -t ecdsa -b 384 -C "$(id -un)@$(hostname)" -N '' -f ~/.ssh/$keyname  # id_ecdsa
-            # If RSA type, use bit length option with (at least) `-b 2048` (OpenSSL default)
+        # Generate key pair : Default type (-t) is 'rsa' : No passphrase prompt (-N '')
+            # Instead of using default key names (id_rsa, id_ecdsa, id_ed25519),
+                # use a naming convention that allows for rotations per context (account,domain)
+                # E.g., ~/.ssh/local_$(id -un) for a key to all hosts on the same (local) subdomain:
+                key=~/.ssh/${domain}_$account 
+            # Elliptical
+                # Use ed25519 variant; best, though not yet FIPS-compliant
+                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f $key
+                # Else use NIST-approved & FIPS compliant, though inferior choice in practice
+                ssh-keygen -t ecdsa -b 384 -C "$(id -un)@$(hostname)" -N '' -f $key
+            # RSA : use bit length option with (at least) `-b 2048` (OpenSSL default)
+                ssh-keygen -t rsa -b 2048 -C "$(id -un)@$(hostname)" -N '' -f $key
 
             # Re(Set) key's passphrase (local security)
                 ssh-keygen -p -P $old -P $new -f $_KEY_PATH 
@@ -51,21 +57,20 @@ man ssh_config
             # Show fingerprint(s) of KNOWN (remote) HOST(s) 
                 ssh-keygen -lf ~/.ssh/known_hosts
 
-        # Copy user's PUBLIC key to remote (SSH server) by reference to either key of a pair AKA Identity File (-i)
-            ssh-copy-id -i $_KEY_PATH -p $_PORT_NUMBER ${user}@${hostname_OR_ip}
+        # Push PUBLIC key to remote (SSH server)
+            ssh-copy-id -i $key ${user}@$host
 
-        # Get IP address of an ssh-configured Host ($vm)
-            ip=$(cat ~/.ssh/config |grep -A5 $vm |grep HostName |head -n 1 |cut -d' ' -f2)
-
-        # @ PUSH KEY TO HOST (ssh-copy-id)
+        # @ PUSH KEY TO HOST (ssh-copy-id) SECURELY 
             # 1. List FPRs of host : scan a host's key(s) and print the fingerprint(s)
-                ssh-keyscan $hostname_OR_ip 2>/dev/null |ssh-keygen -lf -
-            # 2. Push key on query only if host claim validates agaisnt the scan.
-                ssh-copy-id -i $_KEY_PATH -p $_PORT_NUMBER ${user}@${hostname_OR_ip}
-            #... If 'yes', then password prompt (if host allows password method) 
-            #    lest host already has one of your existing keys.
+                ssh-keyscan $host 2>/dev/null |ssh-keygen -lf -
+            # 2. Push key on query ONLY IF host CLAIM VALIDATES AGAISNT the SCAN above (1).
+                ssh-copy-id -i $key ${user}@$host
+                #... Answer prompt w/ 'yes' if host claim is valid.
+                # Host then prompts for password if sshd config allows that,
+                # lest host ~/.ssh/authorized_keys file contains another of your keys 
+                # (configured at ~/.ssh/config, or of a default name).
 
-        # @ FIRST CONNECT
+        # @ FIRST CONNECT 
             # 1. Scan keys of the new host and print the fingerprint(s) (FPRs)
                 ssh-keyscan $host 2>/dev/null |ssh-keygen -lf - # See response below:
                 # 256 SHA256:MBJ9WyUc/yQp9AIR4NQhRREdL93JTmEozv+ur/SYV84 192.168.0.79 (ED25519)

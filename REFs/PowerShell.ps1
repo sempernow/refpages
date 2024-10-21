@@ -130,7 +130,7 @@ $(Test-Connection -ComputerName $SERVER -ErrorAction SilentlyContinue -Count 1).
 # Get MAC Address
 $(Get-NetAdapter -InterfaceAlias 'vEthernet (Default Switch)*').MacAddress
 
-# Attempt to remove disconnected Interfaces of Default Switch; Win10 bug auto-spawns one per reboot
+# Attempt to remove disconnected Interfaces of Default Switch; Win10 auto-spawns one per reboot
 $_adapter = $(Get-NetAdapter -InterfaceAlias 'vEthernet (Default Switch)*' | Where-Object status -eq 'disconnected').Name 
 # FAIL ...
 Get-NetAdapter -InterfaceAlias 'vEthernet (Default Switch)*' | Where-Object status -eq 'disconnected' | Remove-VMNetworkAdapter  -ManagementOS -VMNetworkAdapterName

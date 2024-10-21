@@ -1016,6 +1016,68 @@ exit 0
              mtree -U -f /etc/mtree/BSD.sendmail.dist
              mtree -U -f /etc/mtree/BSD.usr.dist
 
+# AD 
+    # LDAP
+        ldapsearch # Query AD and check if RFC 2307 attributes are present for a user or group.
+        ldapsearch -x -H ldap://$ad_host -D "$sld.$tld" -W -b "dc=$sld,dc=$tld" "(sAMAccountName=$user)" uidNumber gidNumber
+
+    # SSSD 
+        # sssd.service 
+        sudo systemctl enable --now sssd.service
+
+        # sssd logs 
+        cat /var/log/sssd/sssd_$sld.$tld.log
+
+        # sssd config 
+        cat /etc/sssd/sssd.conf
+            # To use RFC 2037 
+                # ldap_id_mapping = False 
+                # ldap_user_object_class  = posixAccount
+                # ldap_group_object_class = posixGroup
+            # To *not* use RFC 2037
+                # ldap_id_mapping = True
+                ## Range for UID:GID mapped from AD SID must not conflict with local
+                # ldap_idmap_range_min = 10000
+                # ldap_idmap_range_max = 20000
+            # Note "simple" access control provider allows LOGIN 
+            # per whitelist(s) of users and/or groups, 
+            # but does not affect file access of authenticated user
+                # [domain/example.com]
+                # id_provider = ad
+                # auth_provider = ad
+                # access_provider = simple
+                # simple_allow_groups = admins, developers, support
+                    # UPN (User Principal Name) format may be used : 
+                    # admins@<REALM>, e.g., admins@EXAMPLE.COM
+            # @ Kerberos in use for authentication in SSSD 
+                # auth_provider = krb5
+                # krb5_server   = <KDC server>
+                # krb5_realm    = EXAMPLE.COM
+
+        # ssd cache : Clear
+        sudo sss_cache -E
+
+    # KERBEROS : https://chatgpt.com/c/670f0f6c-d81c-8009-b437-30f0009a613c 
+        # Verify SSSD is using Kerberos for authentication:
+
+        # Check for active tickets
+        klist # The presence of a TGT (Ticket Granting Ticket) for krbtgt/REALM@REALM 
+            # indicates that Kerberos is in use for authenticating users.
+            #=>
+            # Ticket cache: FILE:/tmp/krb5cc_1000
+            # Default principal: user@REALM
+
+            # Valid starting       Expires              Service principal
+            # 10/17/2022 08:01:32  10/17/2022 18:01:32  krbtgt/REALM@REALM
+
+        /etc/sssd/sssd.conf 
+            # [domain/example.com]
+            # auth_provider = krb5
+            # krb5_server   = <KDC server>
+            # krb5_realm    = EXAMPLE.COM
+
+        # See : REF.Network.LDAP.sh 
+
 # SECURITY/AUDIT 
 
     auditd # Linux Audit Daemon : CLIs : auditctl, ausearch, aureport

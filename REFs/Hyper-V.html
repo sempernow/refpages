@@ -185,15 +185,19 @@ Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
 <h2>Virtual Switch (VS) :: <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/network/hyper-v-extensible-switch" title="docs.microsoft.com, 2017">Hyper-V Extensible Switch</a></h2>
 
 <ul>
-<li><p><code>Default Switch</code> is &quot;Internal&quot;, connecting Hyper-V VMs to OS network using NAT. Its setting cannot be modified. It does <em>not</em> show up as an adapter.</p></li>
+<li><p><code>Default Switch</code> is &quot;Internal&quot;, connecting Hyper-V VMs to OS network using NAT, though it may use WSL2 network instead, and may switch from WSL to host subnet subesquently. Its setting cannot be modified. It does <em>not</em> show up as an adapter.</p></li>
 
 <li><p><code>v&lt;PHYNAME&gt; (Default Switch)</code> is an adapter automatically created (upon reboot) by the Default Switch; an unmodifiable, undeletable, Internal VS. <code>&lt;PHYNAME&gt;</code> is the name of the physical adapter to which it binds.</p>
 
 <ul>
-<li>ISSUE: Whether Enabled or Disabled, a new adapter spawns with each reboot, with the old(er) one(s) &quot;Not connected&quot;. These can be deleted using Device Manager.</li>
+<li>ISSUE: Whether Enabled or Disabled, a new adapter spawns with each reboot, with the old(er) one(s) &quot;Not connected&quot;. These can be deleted using Device Manager.
+
+<ul>
+<li>UPDATE: On Windows 11, this may or may not exist.</li>
+</ul></li>
 </ul></li>
 
-<li><p><code>v&lt;PHYNAME&gt; (External Switch)</code>, the External VS that we create (preferably by PowerShell). There can be only <strong><em>one per physical adapter</em></strong>. It  <strong><em>completely takes over</em></strong> the <em>physical adapter</em>, (e.g., <code>Intel(R) Ethernet Connection I219-V</code>; named, e.g., <code>GbE</code>), leaving the physical adapter with only two functions (nominally) which are visible under the adapter's &quot;Properties&quot; menu:</p>
+<li><p><code>v&lt;PHYNAME&gt; (External Switch)</code>, the External VS that we create (preferably by PowerShell). Binds to <strong><em>one physical adapter</em></strong>. It  <strong><em>completely takes over</em></strong> the <em>physical adapter</em>, (e.g., <code>Intel(R) Ethernet Connection I219-V</code>; named, e.g., <code>Eth2</code>), leaving the physical adapter with only two functions (nominally) which are visible under the adapter's &quot;Properties&quot; menu:</p>
 
 <ol>
 <li>&quot;Microsoft LLDP Protocol Driver&quot;</li>
@@ -236,7 +240,7 @@ New-VMSwitch -Name &quot;vPrivateSwitch&quot; -SwitchType Private
 # - One per physical adapter
 # - Do NOT use `-SwitchType` option 
 # - Even if `-AllowManagementOS` set to false, reverts upon any such adapter addition 
-New-VMSwitch -Name &quot;External Switch&quot; -NetAdapterName &quot;Ethernet&quot; -AllowManagementOS $true
+New-VMSwitch -Name &quot;External Switch&quot; -NetAdapterName &quot;vEth1&quot; -AllowManagementOS $true
 # Add Virtural Adapter to External Switch, attached to Windows OS (rather than a VM).
 Add-VMNetworkAdapter -Name 'External Switch' -ManagementOS -SwitchName 'External Switch'  
 # Rename Adapter
@@ -245,8 +249,8 @@ Rename-NetAdapter -InterfaceAlias 'OldName' -NewName &quot;NewName&quot;
 Remove-VMNetworkAdapter -ManagementOS -VMNetworkAdapterName 'NAME'
 
 # Synonymous
-    -NetAdapterName &quot;Ethernet&quot;
-    –InterfaceAlias 'Ethernet'
+    -NetAdapterName &quot;Eth1&quot;
+    –InterfaceAlias 'Eth1'
 
 # Set Metric of Internet-(IP4)-enabled Interface LOWER than that of the others; Set Metric of TAP HIGHER.
 Get-NetIPInterface -InterfaceAlias 'vEthernet (External Switch)' | Set-NetIPInterface -InterfaceMetric   2 -PassThru
