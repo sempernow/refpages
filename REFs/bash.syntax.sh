@@ -833,6 +833,7 @@ exit
         # \\         backslash
         # \a         terminal alert character (bell); (ASCII code 7 decimal)
         # \b         backspace
+        # \033       escape (octal)
         # \e         escape (ASCII 033)
         # \E         escape (ASCII 033) \E is non-standard
         # \f         form feed
@@ -845,7 +846,6 @@ exit
         # \cA        <CTRL>-A ; e.g., $'\cZ' prints  control sequence: Ctrl-Z (^Z)
 
         # \nnn       ANSI octal code; control-chars (000-037), and printable (040-177)
-        # \0nnn      ANSI octal code; control-chars (000-037), and printable (040-177)
         
         # \xHH       ANSI 2-digit hex code
         # \xHHH      ANSI 3-digit hex code
@@ -854,12 +854,53 @@ exit
     
         # echo $'\041'    # => !
         # echo $'\x21'    # => !
+
+        # ANSI Escape Codes for Colors
+            \033[<CODE>m # Octal
+            \e[<CODE>m   # Equivalent
             
+            # Code SEQUENCEs allowed by SEMICOLON delimiter: 
+            \e[<CODE1>;<CODE2>m 
+            # E.g., \e[4;30;45mThis text is underlined black on magenta background.\e[0m
+
+            # Text Colors (Foreground):
+
+            #     Black:    30
+            #     Red:      31
+            #     Green:    32
+            #     Yellow:   33
+            #     Blue:     34
+            #     Magenta:  35
+            #     Cyan:     36
+            #     White:    37
+
+            # Background Colors
+
+            #     Black:    40
+            #     Red:      41
+            #     Green:    42
+            #     Yellow:   43
+            #     Blue:     44
+            #     Magenta:  45
+            #     Cyan:     46
+            #     White:    47
+
+            # Text Styles
+
+            #     Reset:     0 (resets everything back to default)
+            #     Bold:      1
+            #     Underline: 4
+            #     Reversed:  7 (swaps foreground and background colors)
+
+            # Example:
+            echo -e '\e[1;31mThis text is bold red!\e[0m'   # Interperet backslash escapes
+            echo $'\e[1;31mThis text is bold red!\e[0m'     # Equivalent
+
     # Unicode / UTF-8  http://www.utf8-chartable.de/
 
-        # U+2627 = e2 98 a7 = ☧  CHI RHO
-            echo $'\u2627'          # => ☧
-            echo -e "\xE2\x98\xA7"  # => ☧  
+        # U+2627, or e2, 98, a7 in 2-digit hex : glyph is "☧" : name is "CHI RHO"
+            echo $'\u2627'          # in 4-digit hex
+            echo -e '\xE2\x98\xA7'  # in 2-digit hex 
 
 # COMPOUND COMMANDS [BUILT-IN STUCTURES] 
     # https://www.gnu.org/software/bash/manual/bashref.html#Compound-Commands

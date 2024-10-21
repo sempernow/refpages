@@ -3,34 +3,45 @@
 ## TL;DR
 
 K3S is an unconventional though __very useful__ distro, and has __excellent documentation__. 
-It installs quickly and requires **zero configuration** for its default "*batteries included*" cluster; CRI, CNI, service mesh, load balancer, and ingress controller. It is __designed for use by root__, yet installs CLIs to `/usr/local/bin`, which is not in root `PATH` of many Linux distros. It is the go-to distro for edge devices.
+It installs quickly with __zero configuration__ for its sensible defaults. 
+It includes CRI, CNI, service mesh, load balancer, and ingress controller, 
+all chosen for their light weight, making it the go-to distro for edge devices.
 
-Includes a [`k3s` CLI](https://docs.k3s.io/cli), 
+Includes [`k3s` CLI](https://docs.k3s.io/cli), 
 which functions as some kind of wrapper 
 for some or all of the related tools 
 to perform a variety of common cluster-administration tasks.
 
+The one gotcha for newcomers is that using it requires `root` access, 
+yet it installs to `/usr/local/bin`, 
+which is not in the sudoers `PATH` of many Linux distros. 
 
-## Overview 
+## [Overview](https://chatgpt.com/share/6709ad79-d3b4-8009-b03e-44499a47ac4c "ChatGPT")
 
 >*K3s is a lightweight "batteries included" Kubernetes distribution created by Rancher Labs, and is a CNCF project. K3s is __highly available and production-ready__. It has a very small binary size and very low resource requirements.* &mdash; [traefiklabs.io](https://traefik.io/glossary/k3s-explained/)
 
+[Architecture](K3s-architecture-traefiklabs.jpg "JPG")
 
 - CRI: __containerd__ / cri-dockerd container runtime (CRI)
-- CNI: __Flannel__ Container Network Interface (CNI)
+- CNI: __Flannel__ - a simple Container Network Interface (CNI), which uses VXLAN to establish an overlay (Pod) network.
 - CSI: __Local-path-provisioner__ Persistent Volume controller
 - DNS: __CoreDNS__ Cluster DNS
 - Ingress: __Traefik__ Ingress controller
-- LB: [ServiceLB](https://docs.k3s.io/networking/networking-services#service-load-balancer "docs.k3s.io") Load-Balancer controller
+- LB: [ServiceLB](https://docs.k3s.io/networking/networking-services#service-load-balancer "docs.k3s.io"), which is a Service Load Balancer Controller.
     - Formerly [Klipper LB](https://github.com/k3s-io/klipper-lb "GitHub : /k3s-io/klipper-lb") : `docker.io/rancher/klipper-lb:v0.4.7`
     - [*&hellip; to set up DNAT `iptables` rules on node(s)*](https://github.com/k3s-io/k3s/discussions/9927)
-        - &hellip; watches Kubernetes Services with the `spec.type` field set to `LoadBalancer`. 
-        - For each __LoadBalancer__ Service, a __DaemonSet__ is created in the `kube-system` namespace. This DaemonSet in turn creates Pods with a `svc-` prefix, on each node. These Pods use __iptables__ to forward traffic from the Pod's __NodePort__, to the Service's __ClusterIP__ address and port.
+        - &hellip; watches Kubernetes Services of "`spec.type: LoadBalancer`" and creates a __DaemonSet__ in `kube-system` namespace for each. This DaemonSet creates a Service-associated Pod named `svc-*` on each node. These Pods use __iptables__ to forward traffic from the Pod's __NodePort__, to the Service's __ClusterIP__ address and port.
+    - K3S allows for any other Service Load Balancer Controller. Its default is ServiceLB.
+    - Upstream project Kubernetes allows Services of type LoadBalancer to be created, but doesn't include any default (load balancer) controller, so all services of "`spec.type: LoadBalancer`" will remain in `Pending` status until one is installed. 
+        - _By contrast, the K3s ServiceLB makes it possible to use LoadBalancer Services without a cloud provider or any additional configuration._
 - Network Policy: __Kube-router__ Network Policy controller
-- Registry: __Spegel__ distributed container image registry mirror 
-- Host configuration: Host utilities (iptables, socat, etc)
-- [Helm](https://docs.k3s.io/helm) __Controller__; allowing for managing charts by `HelmChart` declarations instead of imperatively by CLI.
+- Registry: __Spegel__ oci-image registry mirror 
+- Host configuration: Host utilities (`iptables`, `socat`, &hellip;)
+- [Helm](https://docs.k3s.io/helm) __Controller__; allowing for managing charts by `HelmChart` (API object) declarations instead of imperatively by CLI.
 
+The K3s binary includes components such as the core, which are normally static pods, CNI pods (Flannel by default), and an embedded SQLite via Kine shim (vs etcd), making the system more lightweight. [Networking](https://docs.k3s.io/networking "docs.k3s.io/networking") is managed internally by K3s (a bundled Flannel by default). So all pods, including what would be static pods in other distributions, are on the Pod network.
+
+This architecture is a major reason why K3s is so lightweight and popular for edge computing, IoT, and other resource-constrained environments.
 
 ## [k3s CLI](https://docs.k3s.io/cli)
 
@@ -178,6 +189,7 @@ The cluster data will not be deleted.
 /usr/local/bin/k3s-killall.sh
 ```
 - A script of K3S installation
+- __Before running `killall`__, delete associated interfaces and iptables rules, [per CNI](https://docs.k3s.io/networking/basic-network-options?cni=Cilium#custom-cni "docs.k3s.io/networking").
 
 ### [Uninstall](https://docs.k3s.io/installation/uninstall)
 
