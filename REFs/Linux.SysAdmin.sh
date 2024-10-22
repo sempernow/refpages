@@ -141,8 +141,30 @@ exit 0
                 cat /proc/meminfo |awk '{ printf "%-16s %10.2f %4s\n", $1, $2/1024/1024,"GiB" }' |grep -v 0.00
             }
 
-    # I/O 
-        vmstat -d           # Usage 
+# PERFORMANCE
+    # @ ISSUE, Step 1 is ASK:
+    # - What metric of performance is the problem?
+    # - Has the system ever performed better?
+    # - What recent changes might have affected performance?
+    # - Can we quantify meaning of "slow"?
+    # - Is this issue affecting many users, or only one?
+
+        uptime      # Complex metric of processes running or waiting for resources:
+                    # System "load average" (per cpu): @1min, @5min, @15min 
+                    # So, 1 means 100% of 1 CPU (core), or 75% idle if system has 4 CPU cores
+        top/htop    # Dynamic view of resources (CPU/MEM) usage
+        sar         # System Activity Report : Historical stats : Configure to collect periodically
+    
+    # I/O
+        vmstat -SM  # processes (r) blocked (b), memory, paging, 
+                    # block IO rcv(bi) sent(bo), traps, disks and cpu activity
+        vmstat -d   # Per disk
+        iostat      # ..., iowait, ... per device
+        netstat     # Monitor network connections 
+        netstat -a  # Active connections; open ports
+        netstat -an |grep ':80'  # Number of active connections on a port
+        netstat -l  # Listening ports
+
         lspci               # PCIe specs
         /boot/firmware/     # Configuration file(s), e.g., to enable PCIe
 
