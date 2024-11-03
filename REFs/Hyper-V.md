@@ -180,6 +180,36 @@ Remove-VMNetworkAdapter -ManagementOS -VMNetworkAdapterName 'NAME'
 IF((get-vm XYZ).networkadapters.ipaddresses -eq $Null){Write-Host "Problem Found"}
 ```
 
+WSL
+
+```powershell
+$ethWsl = (Get-NetAdapter -includehidden| Where-Object { $_.Name -like "vEthernet (WSL*" }).Name # vEthernet (WSL (Hyper-V firewall))
+
+# Set DNS nameserver 
+$dns1 = 192.168.28.1 # Gateway router
+$dns2 = 8.8.8.8      # Google
+Set-DnsClientServerAddress -InterfaceAlias "$ethWsl" -ServerAddresses ($dns1, $dns2)
+```
+
+Route from WSL to Eth1 or whatever to Gateway router is handled by Windows internally via NAT, 
+and so is not visible here:
+
+```powershell
+Get-NetRoute | Where-Object { $_.InterfaceAlias -eq "$ethWsl"} | Select-Object DestinationPrefix,NextHop,RouteMetric
+```
+```plaintext
+DestinationPrefix             NextHop RouteMetric
+-----------------             ------- -----------
+255.255.255.255/32            0.0.0.0         256
+224.0.0.0/4                   0.0.0.0         256
+172.27.255.255/32             0.0.0.0         256
+172.27.240.1/32               0.0.0.0         256
+172.27.240.0/20               0.0.0.0         256
+ff00::/8                      ::              256
+fe80::17cc:f1e1:ece4:7f71/128 ::              256
+fe80::/64                     ::              256
+
+```
 
 ### How To Fix @ FUBAR (Virtual) Network Switches/Adapters 
 

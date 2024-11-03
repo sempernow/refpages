@@ -82,7 +82,7 @@ spec:
     - Log in using the default admin credentials (which should be set during deployment).
 1. __Create a New Realm__:
     - In the Keycloak admin console, create a new realm that will be used for AD integration.
-1. __Add LDAP/AD as a User Federation Provider__:
+1. __Add LDAP/AD__ as a __User Federation__ Provider: Allowing Keycloak to connect to, and synch with, other <dfn title="Identity Provider">IdP</dfn>/<dfn title="Identity Management">IdM</dfn> such as Active Directory Domain Services (AD DS), and otherwise act as an __intermediary IdP__. Implementing such __Federated Identity__ allows users to quickly move between systems securely.
     - Navigate to __User Federation__ in the Keycloak admin console.
     - Click on Add provider and select LDAP.
     - __Configure LDAP__ settings as follows:

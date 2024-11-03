@@ -1456,6 +1456,11 @@ exit
             |base64 -d |openssl x509 -subject -noout
                 #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
 
+    jq|yq # Process JSON to YAML
+        # Convert items[] els to "---" delimited YAML docs
+            # Example has 1st-order per-el key "apiVersion"
+            cat $json |jq -Mr [.items[]] |yq eval .[] -P - |sed '1!s/^apiVersion/---\napiVersion/'
+
     jq # JSON Processor
         # https://jqlang.github.io/jq/tutorial/
         # https://jqlang.github.io/jq/manual/
@@ -1640,8 +1645,11 @@ exit
 
         # Convert JSON to YAML
             cat a.json |yq eval -P -o yaml |tee a.yaml >/dev/null # Quietly lest error  
-        # Keys having space(s) and such
-            lscpu |yq  '.["Vulnerability Spec rstack overflow"]'
+        # Access key having spaces, hyphens and/or such
+            lscpu |yq  '.["Vulnerability Spectre v1"]'
+        # Convert items[] to "---" delimited YAML documents
+            # Example has 1st-order per-el key "apiVersion"
+            cat $yaml |yq '.items | .[]' |sed '1!s/^apiVersion/---\napiVersion/'
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command

@@ -1,11 +1,12 @@
-# [Radio](https://chatgpt.com/share/671cfc17-1484-8009-91d5-497890198fee "ChatGPT") : PMR (Personal/Professional Mobile Radio)(https://chatgpt.com/share/671cfc17-1484-8009-91d5-497890198fee) 
+# Radio : [PMR](https://chatgpt.com/share/671cfc17-1484-8009-91d5-497890198fee "ChatGPT") (Personal/Professional Mobile Radio)
 
 Narrowband (typically 12.5 KHz of UHF) communication systems for voice and data.
 
->_The TP9500 supports multiple modes. Analog Conventional, MPT Trunking, DMR Tier 2 Conventional, and DMR Tier 3 Trunking_
+## Examples
 
-[TP9500](MPT-1327-radio-TAIT.TP9500.jpg)
-
+1. [TP9500](MPT-1327-radio-TAIT.TP9500.jpg)  
+_The TP9500 supports multiple modes. Analog Conventional, MPT Trunking, DMR Tier 2 Conventional, and DMR Tier 3 Trunking_
+    ```plaintext
     Available:
         VHF: 136-174MHz,
         UHF: 378-470MHz (H5), 450-520MHz (H7), 762-870MHz
@@ -13,8 +14,9 @@ Narrowband (typically 12.5 KHz of UHF) communication systems for voice and data.
         3W
     Channels/Zones:
         1,500 channels / 26 zones and 16 channels 
-
-[DMR-6x2](https://radiomadeeasy.com/product/wranglerstar-proho-radio-package/ "RadioMadeEasy.com")
+    ```
+1. [DMR-6x2](https://baofengtech.com/product/dmr-6x2/ "BaofengTech.com") | Kit @ [RadioMadeEasy.com](https://radiomadeeasy.com/product/wranglerstar-proho-radio-package/)  
+_BTECH DMR-6X2 DMR & Analog Dual Band Two-Way Radio-7W VHF/UHF (136-174MHz & 400-480MHz), Encryption, GPS, Talker Alias, Voice Recording, with Large Accessory Kit_
 
 ## [PMR446](https://en.wikipedia.org/wiki/PMR446 "Wikipedia.org")
 
