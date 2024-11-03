@@ -14,16 +14,23 @@ complete -o default -F __start_kubectl k
 
 # HELP 
 kubectl COMMAND [SUBCOMMAND] -h |less # Useful info & examples per (sub)command
-kubectl explain OBJECT[FIELD[SUBFIELD]] [--recursive] # Useful info per object (kind) (sub)key
+kubectl explain OBJECT[.FIELD[.SUBFIELD]] [--recursive] # Useful info per object (kind) (sub)key
 kubectl explain deploy.spec.selector
 kubectl api-resources # List all K8s API objects in cluster's store; API is extensible per CRDs.
 kubectl api-resources --verbs=create --namespaced=false #...only those create(able) & having cluster-wide scope.
-# Cluster-level info 
-# - Display endpoints of control plane and services having label: "kubernetes.io/cluster-service=true"
+
+# LISTs : FLATTEN "items: []" of "- apiVersion: ..." elements to "---" delimited YAML documents
+kubectl get $kind -o json |jq -Mr [.items[]] |yq eval .[] -P - |sed '1!s/^apiVersion/---\napiVersion/'
+
+# DEBUG : Get cluster-level info 
+# - Events log across all Namespace
+kkubect get events -A 
+# - Cluster control-plane URL
 kubectl cluster-info
 # - Debug/diagnostic dump of cluster store
 kubectl cluster-info dump
-kkubect get events -A # --all-namespaces 
+# - Display cluster endpoints and services 
+kubectl -n kube-system ep,svc -l 'kubernetes.io/cluster-service=true'
 
 # MANAGE WORKLOADS
 # - Declarative commands
@@ -149,12 +156,12 @@ kubectl rollout restart sts $any
 kubectl rollout history deploy $any 
 
 # GET 
-# Namespace : Work in a specified namespace
-kubectl -n $ns get $kind $name  # per statement
-kubectl get rs $any # Get ReplicaSet of any Deployment (of current namespace)
+kubectl -n $ns get $kind $name # [-o yaml|json|jsonpath|wide|...] [-A] 
 kubectl get all -n kube-system # 'all' is *not* all : See `kubectl api-resources` 
 all='pod,deploy,ds,sts,svc,ingress,cm,secret,pvc,pv'
 kubectl get $all -A # Across all namespaces
+# Endpoints and services having label ...
+kubectl -n kube-system ep,svc -l 'kubernetes.io/cluster-service=true'
 kubectl get pods -o wide # Monitor the startup process including node
 # Get all pod names of this namespace
 kubectl get po -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
@@ -166,10 +173,12 @@ kubectl get po -l type=canary
 kubectl get po -l type=canary -o jsonpath='{.metadata.name}{"\n"}{.status.podIP}'
 # Same, but as valid JSON
 kubectl get po -l type=canary -o json |jq -Mr '{name: .metadata.name,podIP: .status.podIP}'
-# Get node names, one per line.
+# Get node names only, one per line.
 kubectl get no -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-# capture a manifest
-kubectl get deploy $any -o yaml |less  
+# Capture a manifest
+kubectl get deploy $any -o yaml # |tee /save/to/here.yaml
+# Capture a dynamically-generated (e.g., kustomize) manifest
+kubectl apply -k "github.com/minio/operator?ref=v6.0.4" --dry-run=client -o yaml
 # Get all (subset of all objects) of current namespace
 kubectl get all       
 kubectl get all -A # All namespaces; --all-namespaces
@@ -349,3 +358,22 @@ kubectl create clusterrolebinding $role-crb-$group --clusterrole=$role --group=t
 # Create ServiceAccount and ClusterRoleBinding for accessing to all protected K8s API endpoints
 kubectl -n default create sa gitops --save-config=true
 kubectl create clusterrolebinding cluster-admin-crb-gitops --clusterrole=cluster-admin --serviceaccount=default:gitops
+
+# Check for subjects of role bindings 
+kubectl get rolebindings -n $ns -o=custom-columns=NAME:.metadata.name,SUBJECTS:.subjects
+# - If kind: User
+# Check for subjects of cluster role bindings
+kubectl get clusterrolebindings -o=custom-columns=NAME:.metadata.name,SUBJECTS:.subjects
+
+# Get all Roles (of a declared Namespace) bound to "kind: $sub" (Note K8s has no User object).
+ns=kube-system
+sub=User # User | ServiceAccount
+kubectl get rolebindings -n $ns -o json |jq -Mr '[.items[] | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[] |select(.kind == "'$sub'")) |{kind:.kind,name:.name}}]' |yq eval -P -o yaml
+# Get all roles (of a declared Namespace) bound to a declared .roleRef.name ($name)
+name='system:kube-controller-manager'
+kubectl get rolebindings -n $ns -o json |jq -Mr '[.items[] | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[] |select(.name == "'$name'")) |{kind:.kind,name:.name}}]' |yq eval -P -o yaml
+# X.509 certificates of "kind: User"
+# - @ K3S : /var/lib/rancher/k3s/server/tls
+# - @ K8s : /var/kubernetes/pki, /var/kubernetes/*.conf 
+# - Also check pod.volumes for path(s) declared at host process (ps aux)
+
