@@ -24,12 +24,12 @@ exit 0
         # SELINUXTYPE=targeted
 
         ## Automate (idempotent)
-        sudo sed -i -e 's/^SELINUX=permissive/SELINUX=disabled/' /etc/selinux/config
-        sudo sed -i -e 's/^SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+        sudo sed -i -e 's/^SELINUX=disabled/SELINUX=permissive/' /etc/selinux/config
+        sudo sed -i -e 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 
         ## Manual
         sudo vim /etc/selinux/config
-            # SELINUX=disabled
+            # SELINUX=permissive
         
         ## Reboot to take effect
         sudo shutdown -r now
