@@ -58,15 +58,19 @@ exit 0
 # PKG MANAGERs : yum @ RHEL8- : dnf @ RHEL 8+
 
     dnf  # RHEL 8+
+        dnf [options] COMMAND
+        provides $pkg 
+        upgrade  $pkg 
+        install  $pkg --disablerepo=* --enablerepo=$localrepo
+        install  $pkg --nobest --allowerasing 
+        download $pkg --archlist x86_64,noarch --alldeps --resolve
+        remove   $pkg 
+        info     $pkg
+
         repolist
         repodiff --repo-old old1 --repo-new new1
-        provides $pkg
-        upgrade|update [$pkg]
+        config-manager --disable $repo 
         makecache 
-        download 
-        install $pkg [--nobest --allowerasing]
-        remove $pkg 
-        info $pkg
 
     # List all packages installed 
         rpm -qa 
@@ -137,7 +141,7 @@ exit 0
 				enabled=1
 				gpgcheck=0
 				EOH
-                sudo dnf -y install --disablerepo=* --enablerepo=$localrepo $all
+                sudo dnf -y install --disablerepo=* --enablerepo=$localrepo $pkg_list
 
     # Auto-reboot when required ...
         yum install -y yum-utils 

@@ -27,7 +27,7 @@
 <pre><code class="language-bash">ansible-playbook \
     -i inventory.file \
     -u ssh_user \
-    playbook.yaml
+    playbook.yml
 
 </code></pre>
 
@@ -83,7 +83,7 @@ ansible --version
 <li><a href="https://pip.pypa.io/en/stable/cli/pip_install/" title="pip.pypa.io"><code>pip install</code></a></li>
 </ul>
 
-<h2><a href="ansible.cfg"><code>ansible.cfg</code></a> | <a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html" title="docs.ansible.com">Configuration Settings</a></h2>
+<h2>Configuration : <a href="ansible.cfg"><code>ansible.cfg</code></a> : <a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html" title="docs.ansible.com">Configuration Settings</a></h2>
 
 <p>Format is a particular <code>INI</code> variant:</p>
 
@@ -117,13 +117,151 @@ ansible-config init -t all &gt; ansible.cfg
 </code></pre>
 
 <ul>
-<li><a href="ansible-config.init.cfg"><code>ansible-config.init.cfg</code></a></li>
 <li><a href="ansible-config.init-t.all.cfg"><code>ansible-config.init-t.all.cfg</code></a></li>
 </ul>
 
-<h3><a href="https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#magic-variables">Magic variables</a></h3>
+<h3>Project Structure</h3>
 
-<p>Ansible-controlled; overrides any set by user.</p>
+<pre><code class="language-plaintext">my_ansible_project/
+├── ansible.cfg            # Main Ansible configuration file
+├── inventory/
+│   ├── hosts              # Main inventory file (can also be named &quot;inventory&quot;)
+│   ├── group_vars/        # Group variable files directory
+│   │   ├── webservers.yml # Variables for the &quot;webservers&quot; group
+│   │   └── databases.yml  # Variables for the &quot;databases&quot; group
+│   └── host_vars/         # Host variable files directory
+│       ├── web01.yml      # Variables for the &quot;web01&quot; host
+│       └── db01.yml       # Variables for the &quot;db01&quot; host
+├── playbooks/             # Directory for playbooks
+│   └── site.yml           # Example main playbook
+├── roles/                 # Directory for roles
+│   └── common/            # Example role
+└── files/                 # Additional files for tasks (e.g., templates, static files)
+
+</code></pre>
+
+<p>@ <strong><code>ansible.cfg</code></strong> | <a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html" title="docs.ansible.com">Configuration Settings</a></p>
+
+<pre><code class="language-ini">[defaults]
+inventory = ./inventory/hosts
+</code></pre>
+
+<p>@ <strong><code>inventory/hosts</code></strong> | <a href="https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html" title="docs.ansible.com">Inventory Guide</a></p>
+
+<p>Note it's typically named <code>hosts</code>, not <code>hosts.yml</code>.</p>
+
+<pre><code class="language-yaml">all:
+  hosts:
+    common-host-1:
+      ansible_host: 192.168.1.10
+    common-host-2:
+      ansible_host: 192.168.1.11
+
+  children:
+    webservers:
+      hosts:
+        web01:
+          ansible_host: 192.168.1.21
+        web02:
+          ansible_host: 192.168.1.22
+      vars:
+        http_port: 80
+        max_clients: 200
+
+    databases:
+      hosts:
+        db01:
+          ansible_host: 192.168.1.31
+        db02:
+          ansible_host: 192.168.1.32
+      vars:
+        db_engine: mysql
+        db_port: 3306
+
+    loadbalancers:
+      hosts:
+        lb01:
+          ansible_host: 192.168.1.40
+      vars:
+        loadbalancer_algorithm: round_robin
+
+</code></pre>
+
+<ul>
+<li>Explanation of Structure
+
+<ol>
+<li><strong>Top-Level Groups</strong>:
+
+<ul>
+<li><code>all</code>: This is a special group that includes all hosts in the inventory.
+Variables set here apply to all hosts unless overridden
+by more specific group or host variables.</li>
+<li><code>children</code>: Defines child groups (e.g., <code>webservers</code>, <code>databases</code>, <code>loadbalancers</code>) within <code>all</code>.
+Each child group can have its own hosts and variables.</li>
+</ul></li>
+<li><strong>Hosts within Groups</strong>:
+
+<ul>
+<li><strong>Individual Hosts</strong>: Under each group, you can list hosts by their names,
+such as <code>web01</code>, <code>web02</code>, <code>db01</code>, <code>db02</code>, etc.</li>
+<li><strong><code>ansible_host</code></strong>: This variable defines the actual IP address of the host,
+in case the hostname is different from the IP.</li>
+</ul></li>
+<li><strong>Group Variables (<code>vars</code>)</strong>:
+
+<ul>
+<li>Each group, such as <code>webservers</code> or <code>databases</code>, can have a <code>vars</code> section where you define variables that apply to all hosts in that group.</li>
+<li>For example, <code>http_port</code> and <code>max_clients</code> are defined for all hosts in <code>webservers</code>, while <code>db_engine</code> and <code>db_port</code> are for all <code>databases</code> hosts.</li>
+</ul></li>
+</ol></li>
+</ul>
+
+<p>This YAML structure provides a clear and hierarchical way to organize hosts and variables,
+making it especially useful for large and complex inventories.</p>
+
+<p>Target group <code>databases</code> and <code>common-host-2</code> hosts with an ad-hoc command:</p>
+
+<pre><code class="language-bash">ansible -i inventory/hosts db01:common-host-2 -a hostname
+</code></pre>
+
+<p>@ <strong><code>playbooks/site.yml</code></strong> (Playbook AKA Playbook file)</p>
+
+<pre><code class="language-yaml">- hosts: all
+  roles:
+    - role: myrole  # This will run `roles/myrole/tasks/main.yml`
+
+</code></pre>
+
+<p>@ <strong><code>roles/</code></strong> (Roles folder)</p>
+
+<pre><code class="language-plaintext">roles/
+├── myrole/
+│   ├── tasks/
+│   │   └── main.yml
+│   ├── files/
+│   │   └── example_file.txt
+│   ├── templates/
+│   │   └── example_template.j2
+│   └── vars/
+│       └── main.yml
+playbooks/
+└── site.yml
+</code></pre>
+
+<p>@ <strong><code>myrole/tasks/main.yml</code></strong> (Task file)</p>
+
+<pre><code class="language-yaml">- name: Copy file from role's files directory
+  copy:
+    src: example_file.txt   # This references roles/myrole/files/example_file.txt
+    dest: /destination/path/on/remote
+
+- name: Deploy configuration file from template
+  template:
+    src: example_template.j2   # This references roles/myrole/templates/example_template.j2
+    dest: /etc/config.conf
+
+</code></pre>
 
 <h3>Common <a href="https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#connection-variables">Connection variables</a></h3>
 
@@ -146,7 +284,11 @@ The path to the Python executable Ansible should use <em>on the target host</em>
 The user Ansible ‘logs in’ as.</p></li>
 </ul>
 
-<h2><a href="./inventory.yaml"><code>inventory.yaml</code></a> | <a href="https://docs.ansible.com/ansible/latest/inventory_guide/index.html" title="docs.ansible.com">Ansible Inventories</a></h2>
+<h3><a href="https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#magic-variables">Magic variables</a></h3>
+
+<p>Ansible-controlled; overrides any set by user.</p>
+
+<h2><a href="./inventory.yml"><code>inventory.yml</code></a> | <a href="https://docs.ansible.com/ansible/latest/inventory_guide/index.html" title="docs.ansible.com">Ansible Inventories</a></h2>
 
 <p>Ansible inventories are set(s) of target hosts upon which <code>ansible</code> operates.
 These are declared. Default is <code>inventory.cfg</code> file.</p>
@@ -161,65 +303,19 @@ Regardless, all must abide Ansible-specified (sub)keys.</p>
 inventory=inventory.cfg
 </code></pre>
 
-<p>@ <a href="./inventory.yaml"><code>inventory.yaml</code></a></p>
-
-<pre><code class="language-yaml"># Ansible inventory file in YAML format
-# https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html 
-all:
-  children:
-    local:
-      hosts:
-        localhost:
-          ansible_connection: local
-
-    hyperv:
-      hosts:
-        a0.local: {}
-        a1.local: {}
-        a2.local: {}
-
-    subnet:
-      hosts:
-        10.0.100.249:
-          comment: &quot;r249 - RKE2&quot;
-        10.10.10.100:
-          comment: &quot;Tutorial&quot;
-        10.0.100.252:
-      vars:
-          comment: &quot;r252 - Docker CE + Python 3&quot;
-          # Connection
-          ansible_host: 10.0.100.252
-          ansible_user: gitops
-          ansible_port: 2222
-          ansible_connection: The connection type, such as ssh (default) or local (for local execution).
-          ansible_shell_type: The shell type to use (e.g., bash, sh).
-          ansible_shell_executable: Path to a specific shell binary (e.g., /bin/bash).
-          # SSH
-          ansible_ssh_user: u1
-          ansible_ssh_private_key_file: /home/gitops/.ssh/id_rsa
-          ansible_ssh_pass: The SSH password (not recommended for production due to security reasons).
-          ansible_ssh_common_args: Additional SSH arguments to pass, such as specific options for tunneling or agent forwarding.
-          ansible_ssh_extra_args: '-o ControlMaster=no -i ~/.ssh/vm_common'
-          # Privilege-escalation
-          ansible_become: true
-          ansible_become_user: root
-          # OS and Package Management
-          ansible_distribution: Ubuntu
-          ansible_pkg_mgr: apt
-          ansible_python_interpreter: /usr/bin/python3
-          # Host-specific 
-          app_version: &quot;1.2.3&quot;
-          db_host: &quot;10.0.100.252&quot;
-          # Environment
-          environment:
-            ENV_VAR_NAME: &quot;value&quot;
-
-    target:
-      hosts:
-        a0.local: {}
-</code></pre>
+<p>@ <a href="inventory.yml"><strong><code>inventory.yml</code></strong></a></p>
 
 <p>Default inventory file: <code>/etc/ansible/hosts</code></p>
+
+<p>Validate the inventory file</p>
+
+<pre><code class="language-bash">
+ansible-inventory -i inventory/hosts.yml --list --yaml
+ansible-inventory -i inventory/hosts.yml --graph
+
+# YAML linter
+yamllint inventory/hosts.yml # dnf install yamllint
+</code></pre>
 
 <h2>Prep target(s)</h2>
 
@@ -298,7 +394,7 @@ ansible $target -m ansible.builtin.shell -a hostname
 ansible $target -m ansible.builtin.script -a foo.sh 
 
 # playbook : script w/ args injected
-ansible-playbook foo.yaml -e a=foo -e b=bar 
+ansible-playbook foo.yml -e a=foo -e b=bar 
 
 </code></pre>
 
@@ -311,7 +407,7 @@ ansible target -a 'cat /etc/sudoers.d/gitops' --become #=&gt; &quot;BECOME passw
 <h3><code>ansible-vault</code></h3>
 
 <pre><code class="language-bash"># Create vault and add become_password
-vault=become_pass.yaml
+vault=become_pass.yml
 ansible-vault create $vault
     # Prompts for vault password,
     # then opens in editor (vi). Add:
@@ -325,10 +421,10 @@ ansible-vault edit $vault --ask-vault-pass
 
 # Use : 
 # 1. Mod ansible.cfg
-# - vault_password_file = become_pass.yaml
+# - vault_password_file = become_pass.yml
 # - become_ask_pass = False
 # 2. Playbook
-ansible-playbook playbook.yaml --extra-vars &quot;@$vault&quot; --ask-vault-pass
+ansible-playbook playbook.yml --extra-vars &quot;@$vault&quot; --ask-vault-pass
 # Or Ad-hoc
 ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars &quot;@$vault&quot; --ask-vault-pass
 
@@ -336,7 +432,7 @@ ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars &quot;@$vault&q
 
 <h2>Playbook (YAML)</h2>
 
-<p>@ <code>example.yaml</code></p>
+<p>@ <code>example.yml</code></p>
 
 <pre><code class="language-yaml">---
 - name: example playbook
@@ -363,10 +459,10 @@ ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars &quot;@$vault&q
 </code></pre>
 
 <p>Because <code>ansible.cfg</code> set the inventory-file path <code>inventory.cfg</code> (@ PWD),
-and playbook (<code>example.yaml</code>) set target (group) name (<code>hosts: local</code>),
+and playbook (<code>example.yml</code>) set target (group) name (<code>hosts: local</code>),
 the command to run the playbook is simply:</p>
 
-<pre><code class="language-bash">☩ ansible-playbook example.yaml
+<pre><code class="language-bash">☩ ansible-playbook example.yml
 
 PLAY [example playbook] ***...
 
@@ -389,7 +485,7 @@ PLAY RECAP ***...
 localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
 </code></pre>
 
-<p>@ <code>foo.yaml</code></p>
+<p>@ <code>foo.yml</code></p>
 
 <pre><code class="language-yaml">---
 - name: Testing
