@@ -6,7 +6,7 @@ Agentless Push Automation : [`ansible-topology.png`](ansible-topology.png)
 ansible-playbook \
     -i inventory.file \
     -u ssh_user \
-    playbook.yaml
+    playbook.yml
 
 ```
 
@@ -58,7 +58,7 @@ ansible --version
 ```
 - [`pip install`](https://pip.pypa.io/en/stable/cli/pip_install/ "pip.pypa.io")
 
-## [`ansible.cfg`](ansible.cfg) | [Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html "docs.ansible.com")
+## Configuration : [`ansible.cfg`](ansible.cfg) : [Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html "docs.ansible.com")
 
 Format is a particular `INI` variant: 
 
@@ -77,7 +77,7 @@ Search order:
 
 (None are created upon installation.)
 
-### Create
+### Create 
 
 The `ansible-config` command provides all the configuration settings available, 
 their defaults, how to set them and where their current value comes from.
@@ -90,12 +90,142 @@ ansible-config init --disabled > ansible.cfg
 # Include those of all "existing" plugins
 ansible-config init -t all > ansible.cfg
 ```
-- [`ansible-config.init.cfg`](ansible-config.init.cfg)
 - [`ansible-config.init-t.all.cfg`](ansible-config.init-t.all.cfg)
 
-### [Magic variables](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#magic-variables)
+### Project Structure
 
-Ansible-controlled; overrides any set by user.
+```plaintext
+my_ansible_project/
+├── ansible.cfg            # Main Ansible configuration file
+├── inventory/
+│   ├── hosts              # Main inventory file (can also be named "inventory")
+│   ├── group_vars/        # Group variable files directory
+│   │   ├── webservers.yml # Variables for the "webservers" group
+│   │   └── databases.yml  # Variables for the "databases" group
+│   └── host_vars/         # Host variable files directory
+│       ├── web01.yml      # Variables for the "web01" host
+│       └── db01.yml       # Variables for the "db01" host
+├── playbooks/             # Directory for playbooks
+│   └── site.yml           # Example main playbook
+├── roles/                 # Directory for roles
+│   └── common/            # Example role
+└── files/                 # Additional files for tasks (e.g., templates, static files)
+
+```
+
+@ **`ansible.cfg`** | [Configuration Settings](https://docs.ansible.com/ansible/latest/reference_appendices/config.html "docs.ansible.com")
+
+```ini
+[defaults]
+inventory = ./inventory/hosts
+```
+
+@ **`inventory/hosts`** | [Inventory Guide](https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html "docs.ansible.com")
+
+Note it's typically named `hosts`, not `hosts.yml`.
+
+```yaml
+all:
+  hosts:
+    common-host-1:
+      ansible_host: 192.168.1.10
+    common-host-2:
+      ansible_host: 192.168.1.11
+
+  children:
+    webservers:
+      hosts:
+        web01:
+          ansible_host: 192.168.1.21
+        web02:
+          ansible_host: 192.168.1.22
+      vars:
+        http_port: 80
+        max_clients: 200
+
+    databases:
+      hosts:
+        db01:
+          ansible_host: 192.168.1.31
+        db02:
+          ansible_host: 192.168.1.32
+      vars:
+        db_engine: mysql
+        db_port: 3306
+
+    loadbalancers:
+      hosts:
+        lb01:
+          ansible_host: 192.168.1.40
+      vars:
+        loadbalancer_algorithm: round_robin
+
+```
+- Explanation of Structure
+    1. **Top-Level Groups**:
+        - `all`: This is a special group that includes all hosts in the inventory. 
+          Variables set here apply to all hosts unless overridden 
+          by more specific group or host variables.
+        - `children`: Defines child groups (e.g., `webservers`, `databases`, `loadbalancers`) within `all`. 
+        Each child group can have its own hosts and variables.
+    1. **Hosts within Groups**:
+        - **Individual Hosts**: Under each group, you can list hosts by their names, 
+        such as `web01`, `web02`, `db01`, `db02`, etc.
+        - **`ansible_host`**: This variable defines the actual IP address of the host, 
+          in case the hostname is different from the IP.
+    1. **Group Variables (`vars`)**:
+        - Each group, such as `webservers` or `databases`, can have a `vars` section where you define variables that apply to all hosts in that group.
+        - For example, `http_port` and `max_clients` are defined for all hosts in `webservers`, while `db_engine` and `db_port` are for all `databases` hosts.
+
+This YAML structure provides a clear and hierarchical way to organize hosts and variables, 
+making it especially useful for large and complex inventories.
+
+Target group `databases` and `common-host-2` hosts with an ad-hoc command:
+
+```bash
+ansible -i inventory/hosts db01:common-host-2 -a hostname
+```
+
+@ **`playbooks/site.yml`** (Playbook AKA Playbook file)
+
+```yaml
+- hosts: all
+  roles:
+    - role: myrole  # This will run `roles/myrole/tasks/main.yml`
+
+```
+
+@ **`roles/`** (Roles folder)
+
+```plaintext
+roles/
+├── myrole/
+│   ├── tasks/
+│   │   └── main.yml
+│   ├── files/
+│   │   └── example_file.txt
+│   ├── templates/
+│   │   └── example_template.j2
+│   └── vars/
+│       └── main.yml
+playbooks/
+└── site.yml
+```
+
+@ **`myrole/tasks/main.yml`** (Task file)
+
+```yaml
+- name: Copy file from role's files directory
+  copy:
+    src: example_file.txt   # This references roles/myrole/files/example_file.txt
+    dest: /destination/path/on/remote
+
+- name: Deploy configuration file from template
+  template:
+    src: example_template.j2   # This references roles/myrole/templates/example_template.j2
+    dest: /etc/config.conf
+
+```
 
 ### Common [Connection variables](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#connection-variables)
 
@@ -117,7 +247,13 @@ Connection variables are normally used to set the specifics on how to execute ac
 - `ansible_user`  
   The user Ansible ‘logs in’ as.
 
-##  [`inventory.yaml`](./inventory.yaml) | [Ansible Inventories](https://docs.ansible.com/ansible/latest/inventory_guide/index.html  "docs.ansible.com")
+
+### [Magic variables](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#magic-variables)
+
+Ansible-controlled; overrides any set by user.
+
+
+##  [`inventory.yml`](./inventory.yml) | [Ansible Inventories](https://docs.ansible.com/ansible/latest/inventory_guide/index.html  "docs.ansible.com")
 
 Ansible inventories are set(s) of target hosts upon which `ansible` operates. 
 These are declared. Default is `inventory.cfg` file.
@@ -133,66 +269,22 @@ Location of this file is declared in Ansible configuration
 inventory=inventory.cfg
 ```
 
-@ [`inventory.yaml`](./inventory.yaml)
-
-```yaml
-# Ansible inventory file in YAML format
-# https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html 
-all:
-  children:
-    local:
-      hosts:
-        localhost:
-          ansible_connection: local
-
-    hyperv:
-      hosts:
-        a0.local: {}
-        a1.local: {}
-        a2.local: {}
-
-    subnet:
-      hosts:
-        10.0.100.249:
-          comment: "r249 - RKE2"
-        10.10.10.100:
-          comment: "Tutorial"
-        10.0.100.252:
-      vars:
-          comment: "r252 - Docker CE + Python 3"
-          # Connection
-          ansible_host: 10.0.100.252
-          ansible_user: gitops
-          ansible_port: 2222
-          ansible_connection: The connection type, such as ssh (default) or local (for local execution).
-          ansible_shell_type: The shell type to use (e.g., bash, sh).
-          ansible_shell_executable: Path to a specific shell binary (e.g., /bin/bash).
-          # SSH
-          ansible_ssh_user: u1
-          ansible_ssh_private_key_file: /home/gitops/.ssh/id_rsa
-          ansible_ssh_pass: The SSH password (not recommended for production due to security reasons).
-          ansible_ssh_common_args: Additional SSH arguments to pass, such as specific options for tunneling or agent forwarding.
-          ansible_ssh_extra_args: '-o ControlMaster=no -i ~/.ssh/vm_common'
-          # Privilege-escalation
-          ansible_become: true
-          ansible_become_user: root
-          # OS and Package Management
-          ansible_distribution: Ubuntu
-          ansible_pkg_mgr: apt
-          ansible_python_interpreter: /usr/bin/python3
-          # Host-specific 
-          app_version: "1.2.3"
-          db_host: "10.0.100.252"
-          # Environment
-          environment:
-            ENV_VAR_NAME: "value"
-
-    target:
-      hosts:
-        a0.local: {}
-```
+@ [**`inventory.yml`**](inventory.yml)
 
 Default inventory file: `/etc/ansible/hosts` 
+
+Validate the inventory file
+
+```bash
+
+ansible-inventory -i inventory/hosts.yml --list --yaml
+ansible-inventory -i inventory/hosts.yml --graph
+
+# YAML linter
+yamllint inventory/hosts.yml # dnf install yamllint
+```
+
+
 
 ## Prep target(s)
 
@@ -268,7 +360,7 @@ ansible $target -m ansible.builtin.shell -a hostname
 ansible $target -m ansible.builtin.script -a foo.sh 
 
 # playbook : script w/ args injected
-ansible-playbook foo.yaml -e a=foo -e b=bar 
+ansible-playbook foo.yml -e a=foo -e b=bar 
 
 ```
 
@@ -283,7 +375,7 @@ ansible target -a 'cat /etc/sudoers.d/gitops' --become #=> "BECOME password: "
 
 ```bash
 # Create vault and add become_password
-vault=become_pass.yaml
+vault=become_pass.yml
 ansible-vault create $vault
     # Prompts for vault password,
     # then opens in editor (vi). Add:
@@ -297,10 +389,10 @@ ansible-vault edit $vault --ask-vault-pass
 
 # Use : 
 # 1. Mod ansible.cfg
-# - vault_password_file = become_pass.yaml
+# - vault_password_file = become_pass.yml
 # - become_ask_pass = False
 # 2. Playbook
-ansible-playbook playbook.yaml --extra-vars "@$vault" --ask-vault-pass
+ansible-playbook playbook.yml --extra-vars "@$vault" --ask-vault-pass
 # Or Ad-hoc
 ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars "@$vault" --ask-vault-pass
 
@@ -308,7 +400,7 @@ ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars "@$vault" --ask
 
 ## Playbook (YAML)
 
-@ `example.yaml`
+@ `example.yml`
 
 ```yaml
 ---
@@ -336,11 +428,11 @@ ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars "@$vault" --ask
 ```
 
 Because `ansible.cfg` set the inventory-file path `inventory.cfg` (@ PWD), 
-and playbook (`example.yaml`) set target (group) name (`hosts: local`), 
+and playbook (`example.yml`) set target (group) name (`hosts: local`), 
 the command to run the playbook is simply:
 
 ```bash
-☩ ansible-playbook example.yaml
+☩ ansible-playbook example.yml
 
 PLAY [example playbook] ***...
 
@@ -364,7 +456,7 @@ localhost                  : ok=2    changed=0    unreachable=0    failed=0    s
 ```
 
 
-@ `foo.yaml`
+@ `foo.yml`
 
 ```yaml
 ---

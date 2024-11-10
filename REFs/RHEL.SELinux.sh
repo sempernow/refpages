@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ###############################################################################
-# SELinux [Security Enhanced Linux] :: File AND Process Security Policy 
+# SELinux [Security Enhanced Linux] : File AND Process Security Policy 
 # RHEL8 Doc:
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/using_selinux/changing-selinux-states-and-modes_using-selinux
 ###############################################################################
@@ -16,7 +16,6 @@ exit 0
 
     # Set mode temporarily : Toggle to troubleshoot : Does not survive reboot
         setenforce 0|1 # permissive|enforcing
-
 
     # Set mode persistently : Survives and takes effect on reboot
     vi /etc/selinux/config 
@@ -66,7 +65,6 @@ exit 0
         fixfiles -F onboot # Force reset of context for customizable files
         fixfiles -R $pkg check  # Check labels on $pkg
 
-
     # KNOWN Applications
         # Adjust policies : Allow Apache to use port 443
         semanage port -a -t http_port_t -p tcp 443 
@@ -110,8 +108,8 @@ exit 0
         getsebool -a |grep 'nfs\|cifs' |grep httpd
 
 
-# Enforces MAC [Mandatory Access Control] vs. Linux's DAC [Discretionary Access Control]
-    # SECURITY CONTEXT: 3-string [label] context assigned to EVERY user AND process
+# Enforces MAC (Mandatory Access Control) vs. Linux's DAC (Discretionary Access Control)
+    # SECURITY CONTEXT: 3-string (label) context assigned to EVERY user AND process
     #  USER:ROLE:TYPE[domain]
     #   Type Enforcement; on processes and file system objects; object types; policy rules
     #   MCS [Multi Category Security] Enforcement; Roles?
@@ -119,7 +117,7 @@ exit 0
     # SELinux users and roles do not have to be related to the actual system users and roles.
     # https://en.wikipedia.org/wiki/Security-Enhanced_Linux
     # https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/SELinux_Users_and_Administrators_Guide/sect-Security-Enhanced_Linux-Introduction-SELinux_Architecture.html
-    # UPG :: User Private Groups; each user gets own group 
+    # UPG : User Private Groups; each user gets own group 
     # Typical UNIX umask of 022 [set @ /etc/bashrc] unnecessary, since group is private
     id # =>
         uid=500(foo) gid=500(foo) groups=500(foo),4(adm),10(wheel) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
@@ -164,12 +162,12 @@ exit 0
             /etc/audit/auditd.conf
             /var/log/audit/audit.log # all SELinux events
 
-    # TROUBLESHOOT :: turn selinux on/off 
+    # TROUBLESHOOT : turn selinux on/off 
     getenforce 
     setenforce {enforcing|permissive} # can toggle to troubleshoot
     setenforce 0|1                    # ... or that way 
 
-    # CONTEXT :: 3 Parts [USER:ROLE:TYPE] [RHCSA focuses only on TYPE]
+    # CONTEXT : 3 Parts [USER:ROLE:TYPE] [RHCSA focuses only on TYPE]
 
         # @ Files; show SECURITY CONTEXT; LABEL per USER:ROLE:TYPE 
             ls -Z /foo # =>
@@ -187,7 +185,7 @@ exit 0
             netstat -Ztulpen # =>
                 tcp  ... 0.0.0.0:22 ...  878/sshd  system_u:system_r:sshd_t:s0-s0:c0.c1023
 
-    # BOOLEANS :: off|on <==> PREVENT(off) OR ALLOW(on)
+    # BOOLEANS : off|on <==> PREVENT(off) OR ALLOW(on)
         getsebool -a | grep ssh # =>
             fenced_can_ssh --> off
             selinuxuser_use_ssh_chroot --> off
@@ -205,10 +203,10 @@ exit 0
             semanage boolean -l | grep ftp # =>
             BOOLEAN (CURRENT_VALUE,DEFAULT_VALUE) ...
         
-# WHY SELinux :: Hacked [Story]: 
-#  Developer under admin was hacked thru PHP backdoor; invader opened a shell and stored large number of PHP scripts on victim [admin] machine; scripts used to attack others. Web sites require access and executables @ '/tmp' and '/var/tmp'; Permissions needed too; Firewalling shouldn't block access either. So, Linux hasn't many options to secure. 
+# WHY SELinux : Hacked [Story] : Developer under admin was hacked thru PHP backdoor; invader opened a shell and stored large number of PHP scripts on victim (admin) machine; scripts used to attack others. Web sites require access and executables @ '/tmp' and '/var/tmp'; Permissions needed too; Firewalling shouldn't block access either. So, Linux hasn't many options to secure. 
 
-    # Thus, SELinux; sets file AND process access per process/application, per POLICY 
+    # SELinux sets access to files and other resources BY PROCESSes per policy (rules); 
+        # specifies what each process is allowed to do rather than directly setting access to files themselves.
 
     # CONTEXT of httpd process ...
     ps -Zaux | grep http # =>
@@ -223,29 +221,29 @@ exit 0
         ls -Zdl /tmp # =>
             drwxrwxrwt. 11 system_u:object_r:tmp_t:s0       root root 240 Feb 12 10:45 /tmp
 
-# CONFIGURE SELinux :: semanage [man pages have good examples; 'man semanage-fcontext']
+# CONFIGURE SELinux : semanage : See `man semanage-fcontext`
     # semanage writes to SELinux POLICY, not to FS
         # E.g., fix context for web-site's DocumentRoot access 
-        #  [DocumentRoot (re)set @ /etc/httpd/conf/httpd.conf]  
-        semanage fcontext -a -t httpd_sys_content_t "/web(/.*)?" # ... RegEx
-        restorecon -R -v /web # (re)writes to FS and validates, per POLICY; 
-                                        # restores any FS CONTEXT errors, per POLICY
-        
+            # Reset DocumentRoot @ /etc/httpd/conf/httpd.conf  
+            semanage fcontext -a -t httpd_sys_content_t "/web(/.*)?" # ... RegEx
+            restorecon -R -v /web # (re)writes to FS and validates, per POLICY; 
+                                            # restores any FS CONTEXT errors, per POLICY
+            
         # E.g., fix port binding ... 
-        #  [DocumentRoot (re)set @ /etc/httpd/conf/httpd.conf]  
-        semanage port -a -t http_port_t -p tcp 8888
-        restorecon -R -v /web
-        # ... NOPE; failed.
+            # Reset DocumentRoot @ /etc/httpd/conf/httpd.conf]  
+            semanage port -a -t http_port_t -p tcp 8888
+            restorecon -R -v /web
+            # ... NOPE; failed.
         
-    # chcon :: NEVER USE IT; BAD PROGRAM
+    # chcon : NEVER USE IT; BAD PROGRAM
     #  Writes directly to FS, NOT to POLICY
-    #  so [subsequent] relabel activity will reset per policy
+    #  Subsequent relabeling resets per policy
         # E.g., say need to set context label 'httpd_sys_content_t' on /foo dir
         chron -R --type=httpd_sys_content_t /blah       # BAD 
         semanage -a -t httpd_sys_content_t "/foo(/.*)?" # GOOD
         # semanage writes to POLICY which then writes to FS
         
-    # FIND LABELs [per CONTEXT USER:ROLE:TYPE]
+    # FIND LABELs : per CONTEXT USER:ROLE:TYPE
         semanage fcontext -l # list all CONTEXTs; very long list
         # man page for each context/service
         # CentOS-6 [legacy]; very helpful
@@ -268,7 +266,7 @@ exit 0
         setroubleshootd, rsyslogd, and auditd on	   /var/log/audit/audit.log
         Easier-to-read denial messages also sent to  /var/log/messages
         
-        # AUDIT LOG :: header 'AVC'
+        # AUDIT LOG : header 'AVC'
         /var/log/audit/audit.log
         
         systemctl status auditd
