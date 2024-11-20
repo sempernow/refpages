@@ -122,21 +122,41 @@ ansible-config init -t all &gt; ansible.cfg
 
 <h3>Project Structure</h3>
 
-<pre><code class="language-plaintext">my_ansible_project/
-├── ansible.cfg            # Main Ansible configuration file
-├── inventory/
-│   ├── hosts              # Main inventory file (can also be named &quot;inventory&quot;)
-│   ├── group_vars/        # Group variable files directory
-│   │   ├── webservers.yml # Variables for the &quot;webservers&quot; group
-│   │   └── databases.yml  # Variables for the &quot;databases&quot; group
-│   └── host_vars/         # Host variable files directory
-│       ├── web01.yml      # Variables for the &quot;web01&quot; host
-│       └── db01.yml       # Variables for the &quot;db01&quot; host
-├── playbooks/             # Directory for playbooks
-│   └── site.yml           # Example main playbook
-├── roles/                 # Directory for roles
-│   └── common/            # Example role
-└── files/                 # Additional files for tasks (e.g., templates, static files)
+<pre><code class="language-bash">mkdir -p {inventory/{dev/{group_vars,host_vars},pro/{group_vars,host_vars}},playbooks/roles/{common/{tasks,handlers,templates,files,vars,defaults,meta,library},role-a/{tasks,files},role-b/{tasks,files,templates,vars}}}
+touch ansible.cfg inventory/dev/hosts inventory/pro/hosts
+</code></pre>
+
+<pre><code class="language-plaintext">☩ tree
+.
+├── inventory
+│   ├── dev
+│   │   ├── group_vars
+│   │   ├── host_vars
+│   │   └── hosts
+│   └── pro
+│       ├── group_vars
+│       ├── host_vars
+│       └── hosts
+├── playbooks
+│   └── roles
+│       ├── common
+│       │   ├── defaults
+│       │   ├── files
+│       │   ├── handlers
+│       │   ├── library
+│       │   ├── meta
+│       │   ├── tasks
+│       │   ├── templates
+│       │   └── vars
+│       ├── role-a
+│       │   ├── files
+│       │   └── tasks
+│       └── role-b
+│           ├── files
+│           ├── tasks
+│           ├── templates
+│           └── vars
+└── ansible.cfg
 
 </code></pre>
 
@@ -151,78 +171,41 @@ inventory = ./inventory/hosts
 <p>Note it's typically named <code>hosts</code>, not <code>hosts.yml</code>.</p>
 
 <pre><code class="language-yaml">all:
-  hosts:
-    common-host-1:
-      ansible_host: 192.168.1.10
-    common-host-2:
-      ansible_host: 192.168.1.11
-
   children:
-    webservers:
-      hosts:
-        web01:
-          ansible_host: 192.168.1.21
-        web02:
-          ansible_host: 192.168.1.22
+    cluster:
       vars:
-        http_port: 80
-        max_clients: 200
-
-    databases:
+        cluster_scope: All hosts of all groups under cluster group
+      children:
+        master:
+          hosts:
+            a: a.lan
+            b: b.lan
+          vars:
+            master_scope: All hosts of master group 
+        worker:
+          hosts:
+            c: 192.168.1.10
+            d: 
+             hostname: d.lan
+             port: 5555
+    local:
       hosts:
-        db01:
-          ansible_host: 192.168.1.31
-        db02:
-          ansible_host: 192.168.1.32
+        localhost:
       vars:
-        db_engine: mysql
-        db_port: 3306
-
-    loadbalancers:
-      hosts:
-        lb01:
-          ansible_host: 192.168.1.40
-      vars:
-        loadbalancer_algorithm: round_robin
+        ansible_connection: local
+  vars:
+    all_scope: All hosts of all groups, local and remote
+    ansible_python_interpreter: /usr/bin/env python
 
 </code></pre>
 
 <ul>
-<li>Explanation of Structure
-
-<ol>
-<li><strong>Top-Level Groups</strong>:
-
-<ul>
-<li><code>all</code>: This is a special group that includes all hosts in the inventory.
-Variables set here apply to all hosts unless overridden
-by more specific group or host variables.</li>
-<li><code>children</code>: Defines child groups (e.g., <code>webservers</code>, <code>databases</code>, <code>loadbalancers</code>) within <code>all</code>.
-Each child group can have its own hosts and variables.</li>
-</ul></li>
-<li><strong>Hosts within Groups</strong>:
-
-<ul>
-<li><strong>Individual Hosts</strong>: Under each group, you can list hosts by their names,
-such as <code>web01</code>, <code>web02</code>, <code>db01</code>, <code>db02</code>, etc.</li>
-<li><strong><code>ansible_host</code></strong>: This variable defines the actual IP address of the host,
-in case the hostname is different from the IP.</li>
-</ul></li>
-<li><strong>Group Variables (<code>vars</code>)</strong>:
-
-<ul>
-<li>Each group, such as <code>webservers</code> or <code>databases</code>, can have a <code>vars</code> section where you define variables that apply to all hosts in that group.</li>
-<li>For example, <code>http_port</code> and <code>max_clients</code> are defined for all hosts in <code>webservers</code>, while <code>db_engine</code> and <code>db_port</code> are for all <code>databases</code> hosts.</li>
-</ul></li>
-</ol></li>
+<li>Variables may be set here and/or in variables files (YAML) under <code>host_vars/</code> and/or <code>group_vars/</code>, with each file having name of host or group to which it is scoped.</li>
 </ul>
 
-<p>This YAML structure provides a clear and hierarchical way to organize hosts and variables,
-making it especially useful for large and complex inventories.</p>
+<p>Target multiple groups and/or hosts with an ad-hoc command:</p>
 
-<p>Target group <code>databases</code> and <code>common-host-2</code> hosts with an ad-hoc command:</p>
-
-<pre><code class="language-bash">ansible -i inventory/hosts db01:common-host-2 -a hostname
+<pre><code class="language-bash">ansible master,c -a 'ip -4 addr'
 </code></pre>
 
 <p>@ <strong><code>playbooks/site.yml</code></strong> (Playbook AKA Playbook file)</p>

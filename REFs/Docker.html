@@ -892,10 +892,10 @@ Use &quot;Create Automated Build&quot; (Menu select) if automating/integrating w
 </ul></li>
 </ul>
 
-<h2>Run a Private Docker Registry</h2>
+<h2>Run a Private <a href="https://distribution.github.io/distribution/about/deploying/">Registry Server</a></h2>
 
 <ul>
-<li>Run the <a href="https://hub.docker.com/_/registry/" title="@ Docker Hub :: Docker Registry :: Official repo">registry</a> image on <strong>default port 5000</strong><br></li>
+<li>Run the Distribution <a href="https://hub.docker.com/_/registry/" title="@ Docker Hub :: Docker Registry :: Official repo">registry</a> image on <strong>default port 5000</strong><br></li>
 <li>Sans HTTPS, it allows only <code>localhost</code> (<code>127.0.0.0/8</code>) traffic.<br></li>
 <li>For <em>remote</em> self-signed TLS, enable &quot;insecure-registry&quot; engine.<br></li>
 </ul>
@@ -966,6 +966,66 @@ docker service ps registry
 </code></pre>
 
 <p>Pull/Tag (<code>127.0.0.1:5000</code>)/Push the <code>hello-world</code> image again, then view the Registry catalog @ &quot;<code>5000</code>&quot; URL (endpoint); root is empty, but root<code>/v2/_catalog</code> shows Registry content per JSON.</p>
+
+<h2>Advance Configs</h2>
+
+<pre><code class="language-bash"># @ TLS
+$ docker run -d \
+    --restart=always \
+    --name registry \
+    -v &quot;$(pwd)&quot;/certs:/certs \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    -p 443:443 \
+    registry:2
+
+# @ TLS +Basic Auth
+$ docker run -d \
+    -p 5000:5000 \
+    --restart=always \
+    --name registry \
+    -v &quot;$(pwd)&quot;/auth:/auth \
+    -e &quot;REGISTRY_AUTH=htpasswd&quot; \
+    -e &quot;REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm&quot; \
+    -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+    -v &quot;$(pwd)&quot;/certs:/certs \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    registry:2
+
+# @ Swarm Service +TLS
+$ docker node update --label-add registry=true node1
+$ docker secret create domain.crt certs/domain.crt
+$ docker secret create domain.key certs/domain.key
+$ docker service create \
+    --name registry \
+    --secret domain.crt \
+    --secret domain.key \
+    --constraint 'node.labels.registry==true' \
+    --mount type=bind,src=/mnt/registry,dst=/var/lib/registry \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/run/secrets/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/run/secrets/domain.key \
+    --publish published=443,target=443 \
+    --replicas 1 \
+    registry:2
+
+
+</code></pre>
+
+<h3>Load-Balancer Considerations</h3>
+
+<ul>
+<li><p>Required Headers</p>
+
+<pre><code class="language-ini">Docker-Distribution-API-Version: registry/2.0
+X-Forwarded-Proto 
+X-Forwarded-For
+</code></pre></li>
+</ul>
+
+<h4>Distribution Recipes : <a href="https://distribution.github.io/distribution/recipes/nginx/">NGINX</a></h4>
 
 <h3>&nbsp;</h3>
  

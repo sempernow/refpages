@@ -20,13 +20,15 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://chatgpt.com/share/66fb4da2-017c-8009-9aa7-645e0640605b" title="ChatGPT.com">Podman : Rootless Containers</a></h1>
+        <h1>Podman : Rootless Containers | <a href="https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7" title="ChatGPT.com">Chat 2</a> | <a href="https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c" title="ChatGPT.com">Chat 1</a></h1>
 
-<h2>Q:</h2>
+<h2><a href="https://chatgpt.com/share/673d366e-0384-8009-a6d3-d7a0c96c41f2" title="ChatGPT.com">Persist a Rootless Container</a></h2>
+
+<h3>Q:</h3>
 
 <p>Rootless podman containers stop when user logs out?</p>
 
-<h2>A:</h2>
+<h3>A:</h3>
 
 <p>Yes, rootless Podman containers will stop when the user logs out by default. This is because <strong>they are tied to the user's session</strong> and their processes terminate when the session ends.</p>
 
@@ -63,7 +65,7 @@ podman container rm $app
 <p>This approach ensures that your rootless Podman containers
 remain running even when you log out.</p>
 
-<h3>UPDATE : Use Quadlets</h3>
+<h4>UPDATE : Use Quadlets</h4>
 
 <p><strong>Quadlets are essentially a systemd unit generator specifically for containers</strong>. Instead of manually writing complex <code>.service</code> files, you can use <code>.container</code> files (a simplified format) to define container behaviors, such as the image to use, environment variables, volumes, and restart policies.</p>
 
@@ -79,6 +81,16 @@ cat &lt;&lt;-EOH |tee ~/.config/systemd/user/$app.container
 [Container]
 Image=docker.io/library/busybox:latest
 Name=$app
+Command=/usr/bin/start-app --flag
+Restart=always
+Volume=/host/data:/data:rw
+Volume=/host/config:/config:ro
+Network=host
+Port=8080:80
+Environment=ENV_VAR=value
+Environment=TLS_CERT=/config/cert.pem
+Environment=TLS_KEY=/config/key.pem
+WorkDir=/app
 Restart=always
 EOH
 
