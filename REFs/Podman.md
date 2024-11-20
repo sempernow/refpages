@@ -1,10 +1,13 @@
-# [Podman : Rootless Containers](https://chatgpt.com/share/66fb4da2-017c-8009-9aa7-645e0640605b "ChatGPT.com")
+# Podman : Rootless Containers | [Chat 2](https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7 "ChatGPT.com") | [Chat 1](https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c "ChatGPT.com")
 
-## Q: 
+## [Persist a Rootless Container](https://chatgpt.com/share/673d366e-0384-8009-a6d3-d7a0c96c41f2 "ChatGPT.com")
+
+
+### Q: 
 
 Rootless podman containers stop when user logs out?
 
-## A:
+### A:
 
 Yes, rootless Podman containers will stop when the user logs out by default. This is because __they are tied to the user's session__ and their processes terminate when the session ends.
 
@@ -39,7 +42,7 @@ podman container rm $app
 This approach ensures that your rootless Podman containers 
 remain running even when you log out.
 
-### UPDATE : Use Quadlets 
+#### UPDATE : Use Quadlets 
 
 __Quadlets are essentially a systemd unit generator specifically for containers__. Instead of manually writing complex `.service` files, you can use `.container` files (a simplified format) to define container behaviors, such as the image to use, environment variables, volumes, and restart policies.
 
@@ -56,6 +59,15 @@ cat <<-EOH |tee ~/.config/systemd/user/$app.container
 [Container]
 Image=docker.io/library/busybox:latest
 Name=$app
+Command=/usr/bin/start-app --flag
+Volume=/host/data:/data:rw
+Volume=/host/config:/config:ro
+Network=host
+Port=8080:80
+Environment=ENV_VAR=value
+Environment=TLS_CERT=/config/cert.pem
+Environment=TLS_KEY=/config/key.pem
+WorkDir=/app
 Restart=always
 EOH
 

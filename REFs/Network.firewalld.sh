@@ -209,6 +209,7 @@ exit
         # The NetworkManager daemon attempts to make networking configuration and operation as painless and automatic as possible by managing the primary network connection and other network interfaces, like Ethernet, Wi-Fi, and Mobile Broadband devices. NetworkManager will connect any network device when a connection for that device becomes available, unless that behavior is disabled. Information about networking is exported via a D-Bus interface to any interested application, providing a rich API with which to inspect and control network settings and operation.
         NetworkManager --print-config 
         man NetworkManager.conf 
+
         # UNMANAGED DEVICEs : Configuring NetworkManager to IGNORE some devices : manage them by nftables & firewall-cmd
             # By default, NetworkManager manages all devices except the loopback (lo) device; 
             # However, device(s) may be configured as "unmanaged",
@@ -243,8 +244,9 @@ exit
         nmcli dev status    # List devices (interfaces) + info
         nmcli dev show $dev # Network/interface info
         nmcli con show $dev # Network/interface info
+        nmcli con show --active # All
 
-        # CHANGE INTERFACE-ZONE BINDING : change firewalld zone (z) to which interface (dev) is bound
+        # Change interface-zone binding : firewalld zone ($z) of the interface (device)
             firewall-cmd --zone=$z --change-interface=$dev --permanent
             firewall-cmd --reload
             # DECONFLICT NetworkManager INTERFERENCE with firewalld:
@@ -281,17 +283,6 @@ exit
             reboot 
             # Temporarily
             hostnamectl set-hostname a0.local --transient
-
-        # E.g., set permanent IP
-        nmcli con mod "Ifupdown"
-            ipv4.addresses "HOST_IP_ADDRESS"
-            ipv4.gateway "IP_GATEWAY"
-            ipv4.dns "DNS_SERVER(S)"
-            ipv4.dns-search "DOMAIN_NAME"
-            ipv4.method "manual"
-
-        # RHEL 6 
-        service network status|stop|start|restart
 
     nftables # Successor to iptables, ip6tables, arptables, and ebtables
         systemctl enable --now nftables.service

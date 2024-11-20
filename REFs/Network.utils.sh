@@ -23,8 +23,15 @@ exit
     # 10.0.0.0/8       A       10.0.0.0      10.255.255.255    Private Use  
     # 172.16.0.0/12    B       172.16.0.0    172.31.255.255    Private Use
     # 192.168.0.0/16   C       192.168.0.0   192.168.255.255   Private Use
-    # 169.254.0.0/16   C       169.254.0.0   169.254.255.255   Link Local  
+    # 169.254.0.0/16   C       169.254.0.0   169.254.255.255   Link Local (APIPA)
     # 224.0.0.0/4      D       224.0.0.0     239.255.255.255   Multicast  
+
+    # APIPA (Automatic Private IP Addressing) address CIDR : 169.254.0.0/16
+        # A networking feature of MS Windows and others allowing devices 
+        # to *automatically assign themselves* an IP address in that range 
+        # whenever unable to obtain one from a DHCP server.
+        # This ensures that devices can still communicate within a local network 
+        # even if the DHCP server is down or misconfigured. Hence "Link Local".
 
 # KERNEL 
     # RUNTIME config : Params declared (by drop-in file(s)) here are LOADED AT RUNTIME
@@ -525,6 +532,7 @@ exit
         dev=ens192;cidr=192.168.28.0/24
         sudo arp-scan --interface=$dev $cidr
         sudo arp-scan $cidr
+
 
     nmap # Network Mapper : Security Scanner : Port Scanner  
         # Advanced tool regarding remote services availability 
