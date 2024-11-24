@@ -30,9 +30,9 @@ https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account
 
 ### Method 2
 
-- At Sign in screen, click and add a local-account name.
-- Next and add local-account password.
-- Click Sign in 
-- At " "Oops, something went wrong" click Next.
-- Repeat local-account creation: (name, password).
+- Follow install menus until User page 
+- Add user name
+        - Click Next (button)
+- Do not enter password at Password page.
+    - Click Next (button)
 

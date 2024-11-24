@@ -1,4 +1,49 @@
-# Podman : Rootless Containers | [Chat 2](https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7 "ChatGPT.com") | [Chat 1](https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c "ChatGPT.com")
+# Podman : Rootless Containers | [Chat 2](https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7 "ChatGPT.com")
+
+## [Rootless Containers](https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c "ChatGPT.com")
+
+>In rootless Podman, the container’s root user is actually a non-root user on the host, mapped via user namespaces.
+
+### Namespace and UID
+
+Mappings in Rootless Podman:
+
+- Automatic Namespace Setup: When you run a rootless container with Podman, it automatically sets up the user namespace for that container. Podman uses entries in__ `/etc/subuid` and `/etc/subgid` __to map UIDs and GIDs from the container to the host.__ This means that the __root user inside the container__ (UID `0`) is __mapped to a non-root user on the host__ (typically starting at a high UID, like `100000`, __from host user’s `subuid`/`subgid` range__). 
+    - `myuser:100000:65536` : the root user (UID 0) in the container is mapped to UID 100000 on the host, and this mapping extends for `65536` UIDs (so UID `1` inside the container maps to `100001` on the host, and so on).
+
+__Create__ `subuid`/`subgid` range __per user__
+
+```bash
+sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
+```
+- This allocates `65536` subordinate UIDs and GIDs to `auser`, starting from `100000`.
+
+### `Dockerfile` mods
+
+```dockerfile
+RUN useradd -m auser
+USER auser
+RUN chown -R auser /path/to/app
+```
+
+### Host : User Namespaces
+
+In Podman rootless mode, a __container runs in a separate user namespace__, which isolates the user and group IDs inside the container from the ones on the host. Even though a process may run as __`UID 0` (`root`) inside the container__, it is actually __mapped to a non-root user ID on the host__.
+
+### Customizing UID/GID Mappings
+
+You can modify the default UID/GID mappings by editing `/etc/subuid` and `/etc/subgid`. You can also specify custom mappings when running a container using the `--uidmap` and `--gidmap` options in podman run.
+
+```bash
+
+podman run --uidmap 0:100000:1000 --gidmap 0:100000:1000 my-image
+```
+
+#### Issues
+
+- Mounts: When mounting directories from the host into the container, you may run into permission issues if the UIDs/GIDs inside the container don’t map cleanly to the host.
+- Ports: Containers in rootless mode can’t bind to privileged ports (ports < 1024) because the user on the host is not root.
+
 
 ## [Persist a Rootless Container](https://chatgpt.com/share/673d366e-0384-8009-a6d3-d7a0c96c41f2 "ChatGPT.com")
 
