@@ -20,7 +20,60 @@
 </head>
 <body>
     <main>
-        <h1>Podman : Rootless Containers | <a href="https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7" title="ChatGPT.com">Chat 2</a> | <a href="https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c" title="ChatGPT.com">Chat 1</a></h1>
+        <h1>Podman : Rootless Containers | <a href="https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7" title="ChatGPT.com">Chat 2</a></h1>
+
+<h2><a href="https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c" title="ChatGPT.com">Rootless Containers</a></h2>
+
+<blockquote>
+<p>In rootless Podman, the container’s root user is actually a non-root user on the host, mapped via user namespaces.</p>
+</blockquote>
+
+<h3>Namespace and UID</h3>
+
+<p>Mappings in Rootless Podman:</p>
+
+<ul>
+<li>Automatic Namespace Setup: When you run a rootless container with Podman, it automatically sets up the user namespace for that container. Podman uses entries in__ <code>/etc/subuid</code> and <code>/etc/subgid</code> <strong>to map UIDs and GIDs from the container to the host.</strong> This means that the <strong>root user inside the container</strong> (UID <code>0</code>) is <strong>mapped to a non-root user on the host</strong> (typically starting at a high UID, like <code>100000</code>, <strong>from host user’s <code>subuid</code>/<code>subgid</code> range</strong>).
+
+<ul>
+<li><code>myuser:100000:65536</code> : the root user (UID 0) in the container is mapped to UID 100000 on the host, and this mapping extends for <code>65536</code> UIDs (so UID <code>1</code> inside the container maps to <code>100001</code> on the host, and so on).</li>
+</ul></li>
+</ul>
+
+<p><strong>Create</strong> <code>subuid</code>/<code>subgid</code> range <strong>per user</strong></p>
+
+<pre><code class="language-bash">sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
+</code></pre>
+
+<ul>
+<li>This allocates <code>65536</code> subordinate UIDs and GIDs to <code>auser</code>, starting from <code>100000</code>.</li>
+</ul>
+
+<h3><code>Dockerfile</code> mods</h3>
+
+<pre><code class="language-dockerfile">RUN useradd -m auser
+USER auser
+RUN chown -R auser /path/to/app
+</code></pre>
+
+<h3>Host : User Namespaces</h3>
+
+<p>In Podman rootless mode, a <strong>container runs in a separate user namespace</strong>, which isolates the user and group IDs inside the container from the ones on the host. Even though a process may run as <strong><code>UID 0</code> (<code>root</code>) inside the container</strong>, it is actually <strong>mapped to a non-root user ID on the host</strong>.</p>
+
+<h3>Customizing UID/GID Mappings</h3>
+
+<p>You can modify the default UID/GID mappings by editing <code>/etc/subuid</code> and <code>/etc/subgid</code>. You can also specify custom mappings when running a container using the <code>--uidmap</code> and <code>--gidmap</code> options in podman run.</p>
+
+<pre><code class="language-bash">
+podman run --uidmap 0:100000:1000 --gidmap 0:100000:1000 my-image
+</code></pre>
+
+<h4>Issues</h4>
+
+<ul>
+<li>Mounts: When mounting directories from the host into the container, you may run into permission issues if the UIDs/GIDs inside the container don’t map cleanly to the host.</li>
+<li>Ports: Containers in rootless mode can’t bind to privileged ports (ports &lt; 1024) because the user on the host is not root.</li>
+</ul>
 
 <h2><a href="https://chatgpt.com/share/673d366e-0384-8009-a6d3-d7a0c96c41f2" title="ChatGPT.com">Persist a Rootless Container</a></h2>
 
