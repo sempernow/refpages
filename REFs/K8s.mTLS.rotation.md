@@ -1,7 +1,10 @@
 # K8s mTLS : How to rotate control-plane certificates 
 
+>By default, a vanilla cluster automatically updates its (mTLS) control-plane certificates. 
+In case it fails to do so (not unheard of), this is the recovery procedure.
+
 1. Backup existing configuration
-    - Process is cluster/distro dependent
+    - Process is cluster/distro dependent.
 1. __Renew certificates__
     ```bash
     kubeadm certs renew all
