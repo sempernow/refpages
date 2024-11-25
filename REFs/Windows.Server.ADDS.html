@@ -651,6 +651,51 @@ Get-DhcpServerv4&lt;TAB&gt;
 <li>Read-only Domain Controller (RODC)</li>
 </ul>
 
+<h2>Create <code>DomainAdmin</code> User</h2>
+
+<p>For Win11 authn/authz against ADDS of Windows Server 2019 (<code>DC1</code>)</p>
+
+<h3>@ Active Directory Users and Computers (<strong>ADUC</strong>)</h3>
+
+<h4>Create Organizational Units (OU)</h4>
+
+<p>At the left-side menu, right click on domain <strong><code>lime.lan</code></strong>.</p>
+
+<p>Selecting <strong>New</strong> &gt;  <strong>Organizational Unit</strong>,
+create new Organizational Units, <code>OU1</code> and two OUs nested thereunder (<code>DevOps</code>, <code>IT</code>).</p>
+
+<p>Result:</p>
+
+<ul>
+<li>ADUC
+
+<ul>
+<li>lime.lan
+
+<ul>
+<li>OU1
+
+<ul>
+<li>DevOps</li>
+<li>IT</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>Create User</h4>
+
+<p>Right click on OU <code>IT</code>, and select <strong>NEW</strong> &gt; <strong>User</strong>.</p>
+
+<ul>
+<li>User name: <code>admin</code></li>
+<li>Password: <code>Foo!123456</code></li>
+</ul>
+
+<h4>Add User <code>admin</code> to Group <code>Domain Admins</code></h4>
+
+<p>Click on user <code>admin</code>, right-click <strong>Properties</strong> &gt; <strong>Member of</strong>, and <strong>Add&hellip;</strong> &gt; Select Groups &gt; <strong>Check Names</strong> &gt; type &quot;domain&quot; and select &quot;<strong>Domain Admins</strong>&quot;.</p>
+
 <h2>Join Windows host (<code>Win11</code>) into ADDS Domain</h2>
 
 <p>@ Win11</p>
