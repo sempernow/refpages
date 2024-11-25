@@ -428,6 +428,38 @@ Other tasks:
 - Secondary Domain Controller:
 - Read-only Domain Controller (RODC)
 
+## Create `DomainAdmin` User 
+
+For Win11 authn/authz against ADDS of Windows Server 2019 (`DC1`)
+
+### @ Active Directory Users and Computers (__ADUC__)
+
+#### Create Organizational Units (OU)
+
+At the left-side menu, right click on domain __`lime.lan`__.
+ 
+Selecting __New__ >  __Organizational Unit__, 
+create new Organizational Units, `OU1` and two OUs nested thereunder (`DevOps`, `IT`).
+
+Result:
+
+- ADUC
+    - lime.lan
+        - OU1 
+            - DevOps 
+            - IT
+
+#### Create User
+
+Right click on OU `IT`, and select __NEW__ > __User__.
+
+- User name: `admin`
+- Password: `Foo!123456`
+
+#### Add User `admin` to Group `Domain Admins`
+
+Click on user `admin`, right-click __Properties__ > __Member of__, and __Add&hellip;__ > Select Groups > __Check Names__ > type "domain" and select "__Domain Admins__".
+
 ## Join Windows host (`Win11`) into ADDS Domain
 
 @ Win11

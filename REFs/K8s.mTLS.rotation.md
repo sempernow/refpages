@@ -2,28 +2,32 @@
 
 1. Backup existing configuration
     - Process is cluster/distro dependent
-1. Renew certificates
+1. __Renew certificates__
     ```bash
     kubeadm certs renew all
     ```
     - If control plane is multi-node, then distribute new certs.
-1. Update the manifest of all Static Pods with the new TLS certificates. 
-   This requires the `ClusterConfiguration` manifest (`$kubeadm_config`).
+1. __Update the manifest of all Static Pods__ with the new TLS certificates. 
+   This __requires the `ClusterConfiguration` manifest__ (`$kubeadm_config`).
     ```bash
     kubeadm init phase kubeconfig all --config $kubeadm_config
     ```
-    - Set `$kubeadm_config` to `/etc/kubernetes/kubeadm-config.yaml` if exist, 
-      else create from capture: 
-      "`kubectl get cm -n kube-system kubeadm-config -o jsonpath='{.data.ClusterConfiguration}'`"
-    - After updating their manifests, kill the old (existing) Static Pods
+    - The `ClusterConfiguration` manifest may exist   
+      at `/etc/kubernetes/kubeadm-config.yaml`.   
+      If not, capture it from its ConfigMap key: 
         ```bash
-        k8s=/etc/kubernetes/manifests
-        tmp=/tmp/k8s-$(date '+%F')
-        mkdir -p $tmp &&
-            mv $k8s/*.yaml $tmp/ &&
-                sleep 10 &&
-                    mv $tmp/*.yaml $k8s/
+        kubectl get cm -n kube-system kubeadm-config -o jsonpath='{.data.ClusterConfiguration}'
         ```
+1. __Delete all the old__ (existing) __Static Pods__ by temporarily 
+  emptying the folder in which `kubelet` expects to find them.
+    ```bash
+    k8s=/etc/kubernetes/manifests
+    tmp=/tmp/k8s-$(date '+%F')
+    mkdir -p $tmp &&
+        mv $k8s/*.yaml $tmp/ &&
+            sleep 100 &&
+                mv $tmp/*.yaml $k8s/
+    ```
 
 
 ## Example using Kind cluster
