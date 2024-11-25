@@ -22,11 +22,16 @@
     <main>
         <h1>K8s mTLS : How to rotate control-plane certificates</h1>
 
+<blockquote>
+<p>By default, a vanilla cluster automatically updates its (mTLS) control-plane certificates.
+In case it fails to do so (not unheard of), this is the recovery procedure.</p>
+</blockquote>
+
 <ol>
 <li>Backup existing configuration
 
 <ul>
-<li>Process is cluster/distro dependent</li>
+<li>Process is cluster/distro dependent.</li>
 </ul></li>
 
 <li><p><strong>Renew certificates</strong></p>
