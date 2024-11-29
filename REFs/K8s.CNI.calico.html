@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.CNI.calico</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises">Calico : On-prem K8s</a></h1>
+
+<h2>Download</h2>
+
+<pre><code class="language-bash">ok(){
+    DIR=calico
+    VER='v3.29.1'
+    BASE=https://raw.githubusercontent.com/projectcalico/calico/$VER/manifests
+
+    # Manifest Method
+    ok(){
+        dir=&quot;$DIR/manifest-method&quot;
+        file=calico.yaml
+        [[ -f $dir/$file ]] &amp;&amp; return 0
+        mkdir -p $dir
+        pushd $dir
+        curl -sSLO $BASE/$file || return 100
+        popd
+    }
+    ok || return $?
+
+    # Operator Method
+    ok(){
+        dir=&quot;$DIR/operator-method&quot;
+        mkdir -p $dir
+
+        # Operator
+        file=tigera-operator.yaml
+        [[ -f $dir/$file ]] || {
+            pushd $dir
+            curl -sSLO $BASE/$file || return 200
+            popd
+        }
+
+        # CRDs
+        file=custom-resources.yaml
+        [[ -f $dir/$file ]] || {
+            pushd $dir
+            curl -sSLO $BASE/$file || return 300
+            popd
+        }
+    }
+    ok || return $?
+
+    # CLI
+    ok(){
+        # calicoctl
+        # https://docs.tigera.io/calico/latest/operations/calicoctl/install
+        dir=&quot;$DIR/cli&quot;
+        url=https://github.com/projectcalico/calico/releases/download/$VER/calicoctl-linux-amd64 
+        file=calicocli
+        [[ -f $dir/$file ]] &amp;&amp; return 0
+        mkdir -p $dir
+        pushd $dir
+        curl -sSL -o $file $url || return 400
+        popd
+    }
+    ok || return $?
+}
+ok || echo &quot;ERR: $?&quot;
+
+</code></pre>
+
+<h2>Install</h2>
+
+<h3>CLI</h3>
+
+<pre><code class="language-bash">bin=/usr/local/bin/calicoctl
+sudo mv calico $bin &amp;&amp;
+    sudo chown root:root $bin &amp;&amp;
+        sudo chmod 0755 $bin ||
+            echo &quot;ERROR : $?&quot;
+</code></pre>
+
+<h3>CNI by Operator Method</h3>
+
+<pre><code class="language-bash">operator=tigera-operator.yaml
+crds=custom-resources.yaml
+# Install the operator
+kubectl create -f $operator 
+# Install CRDs
+kubectl create -f $crds
+
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
