@@ -180,6 +180,8 @@
 ## [K8s-HA-LBs.txt](./REFs/K8s-HA-LBs.txt)
 ## [K8s.CKA.md](./REFs/K8s.CKA.md)
 ## [K8s.CKAD.md](./REFs/K8s.CKAD.md)
+## [K8s.CNI.calico.md](./REFs/K8s.CNI.calico.md)
+## [K8s.CNI.cilium.md](./REFs/K8s.CNI.cilium.md)
 ## [K8s.configure-kernel.sh](./REFs/K8s.configure-kernel.sh)
 ## [K8s.GatewayAPI.md](./REFs/K8s.GatewayAPI.md)
 ## [K8s.K3s.md](./REFs/K8s.K3s.md)

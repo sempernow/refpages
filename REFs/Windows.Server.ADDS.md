@@ -158,6 +158,24 @@ traceroute to 192.168.11.111 (192.168.11.111), 64 hops max
 
 ___Success!___
 
+### Add local DNS for best performance: 
+
+@ [`network-dns.ps1`](network-dns.ps1)
+
+Though leave DNS @ WSL2 that of its default configuration:
+
+```bash
+...
+# DNS @ WSL2 network is best handled automatically, 
+# which auto-generates /etc/resolv.conf
+# The nameserver is set to WSL's virtual DNS server (10.255.255.254)
+# And it sets the default search domain for unqualified dowmain names:
+# ☩ cat /etc/resolv.conf
+# ...
+# nameserver 10.255.255.254
+# search SEMPERLAN hsd1.md.comcast.net
+```
+- See [`network-dns.ps1`](network-dns.ps1)
 
 ## Create VM of Hyper-V
 
@@ -430,33 +448,49 @@ Other tasks:
 
 ## Create `DomainAdmin` User 
 
-For Win11 authn/authz against ADDS of Windows Server 2019 (`DC1`)
+@ Server Manager : Tools : __Active Directory Users and Computers__ (__ADUC__)
 
-### @ Active Directory Users and Computers (__ADUC__)
+### 1. Create Organizational Units (OU)
 
-#### Create Organizational Units (OU)
+Create new OU, `OU1`, and two OUs (`DevOps`, `IT`) nested under `OU1`.
 
-At the left-side menu, right click on domain __`lime.lan`__.
- 
-Selecting __New__ >  __Organizational Unit__, 
-create new Organizational Units, `OU1` and two OUs nested thereunder (`DevOps`, `IT`).
 
-Result:
+- Active Directory Users and Computers [dc1.lime.lan]
+    - lime.lan (Rt Click) : New : Organizational Unit : Name: `OU1`
+        - OU1 (Rt Click) : New : Organizational Unit : Name: `DevOps`
+        - OU1 (Rt Click) : New : Organizational Unit : Name: `IT`
 
-- ADUC
+__Resulting Structure__:
+
+- ADUC [dc1.lime.lan]
     - lime.lan
         - OU1 
             - DevOps 
             - IT
 
-#### Create User
 
-Right click on OU `IT`, and select __NEW__ > __User__.
+### 2. Create User
 
-- User name: `admin`
-- Password: `Foo!123456`
+An AD user has creds for authn/authz against ADDS of Windows Server 2019 (`DC1`) 
+at any host joined into that AD domain AKA realm.
 
-#### Add User `admin` to Group `Domain Admins`
+- Active Directory Users and Computers [dc1.lime.lan]
+    - lime.lan (Rt Click) : New : Organizational Unit : Name: `OU1`
+        - OU1 
+            - IT (Rt Click) : New : User : New Object (Window)
+                - First name: `admin`
+                - Last name:
+                - Full name: `admin`
+                - User logon name: `admin`
+
+            &vellip;
+
+__Resulting Creds__:
+
+- User: `admin`
+- Pass: `Foo!123456`
+
+### 3. Add User `admin` to Group `Domain Admins`
 
 Click on user `admin`, right-click __Properties__ > __Member of__, and __Add&hellip;__ > Select Groups > __Check Names__ > type "domain" and select "__Domain Admins__".
 
@@ -481,7 +515,7 @@ Click on user `admin`, right-click __Properties__ > __Member of__, and __Add&hel
 - Reboot
 
 
-## Join RHEL 8 host (`a0`) into ADDS Domain
+## [Join RHEL 8 host (`a0`) into ADDS Domain](https://chatgpt.com/c/67427df4-6440-8009-9d12-adb9da2faa57 "ChatGPT")
 
 ### Prep 
 
@@ -511,6 +545,9 @@ EOH
 systemctl is-active firewalld &&
     sudo firewall-cmd --reload
 ```
+
+Hostname change to FQDN having apropos realm not necessary? 
+Does kerberos require/expect FQDN?
 
 ```bash
 domain=lime.lan
@@ -555,6 +592,8 @@ u1@a0 [15:39:51] [1] [#0] ~
 
 ### Verify Join
 
+- `realm list`
+
 ```bash
 u1@a0 [15:39:51] [1] [#0] ~
 ☩ realm list
@@ -573,10 +612,21 @@ lime.lan
   login-formats: %U@lime.lan
   login-policy: allow-realm-logins
 
-u1@a0 [15:40:44] [1] [#0] ~
-☩
 ```
-- Note: `configured: kerberos-member`
+- Note, we are now: `configured: kerberos-member`
+
+### Allow through firewall
+
+```bash
+sudo firewall-cmd \
+    --add-service=kerberos \
+    --add-service=dns \
+    --add-service=ldap \
+    --add-service=samba \
+    --permanent
+
+sudo firewall-cmd --reload
+```
 
 ### Enable Authn via SSSD
 
@@ -603,6 +653,7 @@ Allow specific AD groups:
 sudo realm permit "Domain Admins"
 ```
 - Untested
+
 
 Optionally, configure __Home Directory Creation__:   
 If you want AD users to get home directories automatically on login:
@@ -644,6 +695,196 @@ Also note the RHEL host (`a0`) is now in the
 Domain Controller's DNS records. 
 See DNS console at host `WinSrv2019` 
 (Windows Server 2019).
+
+```bash
+Ubuntu [16:23:44] [1] [#0] ~
+☩ ssh admin@lime.lan@a0.lime.lan
+admin@lime.lan@a0.lime.lan's password:
+Last login: Thu Nov 28 16:23:42 2024 from 172.27.240.169
+[admin@lime.lan@a0 ~]$
+```
+
+Yet auth here fails:
+
+```bash
+Ubuntu [16:25:05] [1] [#0] ~
+☩ ssh admin@a0.lime.lan
+admin@a0.lime.lan's password:
+Permission denied, please try again.
+admin@a0.lime.lan's password: #... FAILing
+```
+
+## Fix AD-user reference : `admin@$host` vs `admin@$domain@host`
+
+
+The issue arises because the username `admin` alone is ambiguous on a system joined to an Active Directory (AD) domain. Without explicitly specifying the domain (e.g., `admin@lime.lan`), the RHEL system treats the username as a local account. Since there’s no local `admin` user, authentication fails.
+
+
+### **Why This Happens**
+
+When you use `admin@lime.lan`:
+- The system recognizes it as a fully qualified username (including the domain).
+- SSSD correctly routes the authentication to the AD domain controller (`dc1.lime.lan`).
+
+When you use just `admin`:
+- The system attempts to authenticate a local Linux user account named `admin`.
+- Since no local account exists, authentication fails.
+
+Note home dir created by `oddjob` 
+
+```bash
+☩ ls /home
+total 8.0K
+drwx------.  2 admin@lime.lan domain users@lime.lan   83 Nov 24 16:29 admin@lime.lan
+drwx------.  3 gitops         gitops                 111 Sep 22 12:53 gitops
+drwx------.  2 testuser       testuser                83 Jun 28 07:35 testuser
+drwx------. 10 u1             u1                    4.0K Nov 28 16:32 u1
+drwx------.  5 u2             u2                    4.0K Nov 12 20:47 u2
+```
+
+
+### __FIX__
+
+#### TL;DR
+
+```bash
+☩ sudo cat /etc/sssd/sssd.conf
+# - If duplicate entries, the final (highest line number) setting wins.
+# - Order of blocks matters.
+# - Order of params does not matter.
+[sssd]
+domains             = lime.lan
+config_file_version = 2
+services            = nss, pam
+
+[domain/lime.lan]
+default_shell                   = /bin/bash
+ad_server                       = dc1.lime.lan
+krb5_store_password_if_offline  = True
+cache_credentials               = True
+krb5_realm                      = LIME.LAN
+realmd_tags = manages-system joined-with-adcli
+id_provider = ad
+fallback_homedir = /home/%u@%d
+ad_domain = lime.lan
+use_fully_qualified_names = False
+ldap_id_mapping = True
+access_provider = ad
+# Bogus
+#user_mapping = admin:admin@lime.lan
+```
+- Not valid key of that block : `user_mapping = admin:admin@lime.lan`
+- `use_fully_qualified_names = False`
+
+
+```bash
+sudo sss_override user-add admin@lime.lan --name=admin
+```
+- Untested/unnecessary
+
+```bash
+Ubuntu [17:29:11] [1] [#0] ~
+☩ ssh admin@a0.lime.lan
+admin@a0.lime.lan's password:
+Last login: Thu Nov 28 17:29:01 2024 from 172.27.240.169
+[admin@a0 ~]$
+```
+
+##### SSH Auth using PKI
+
+Setup PKI 
+
+```bash
+# Generate key pair
+ssh-keygen -t ecdsa -C admin@lime.lan -f ~/.ssh/dc1_admin
+# Push key to target host
+ssh-copy-id -i ~/.ssh/dc1_admin admin@a0.lime.lan
+# Configure
+vi ~/.ssh/config
+```
+```ini
+Host admin
+    Hostname 192.168.11.103
+    User admin
+    IdentityFile ~/.ssh/dc1_admin
+```
+
+Test/Verify
+
+```bash
+Ubuntu [18:34:30] [1] [#0] ~
+☩ ssh admin
+...
+[admin@a0 ~]$ 
+
+```
+
+#### 1. **Always Specify the Domain**
+
+Continue using the fully qualified username format:
+
+```bash
+ssh admin@lime.lan@a0.lime.lan
+```
+
+This is the most reliable method, 
+as it explicitly tells the system to authenticate against the AD domain.
+
+
+#### 2. **Set the AD Domain as Default for Login**
+
+If you want to avoid specifying the domain every time, 
+configure SSSD to treat the AD domain as the default.
+
+- Edit `/etc/sssd/sssd.conf`:
+    ```ini
+    [domain/lime.lan]
+    use_fully_qualified_names = False
+    default_domain_suffix = lime.lan
+    ```
+
+- Restart SSSD:
+    ```bash
+    sudo systemctl restart sssd
+    ```
+
+- Test by logging in without specifying the domain:
+    ```bash
+    ssh admin@a0.lime.lan
+    ```
+
+This configuration automatically appends the 
+domain `lime.lan` to usernames during authentication.
+
+
+#### 3. **Add a Domain Alias for Local Convenience**
+If you prefer the `admin` format but want it to resolve to `admin@lime.lan`, you can add an alias in `/etc/sssd/sssd.conf`.
+
+- Add a domain mapping:
+    ```ini
+    [domain/lime.lan]
+    user_mapping = admin:admin@lime.lan
+    ```
+
+- Restart SSSD:
+    ```bash
+    sudo systemctl restart sssd
+    ```
+
+This approach is less common but can simplify access for specific users.
+
+
+#### 4. **Test and Verify**
+Once you've applied the changes, test authentication:
+- Without domain: `ssh admin@a0.lime.lan`
+- With domain: `ssh admin@lime.lan@a0.lime.lan`
+
+Additionally, check logs for any errors if authentication still fails:
+
+```bash
+sudo journalctl -u sssd -f
+sudo tail -f /var/log/secure
+```
 
 
 ### &nbsp;

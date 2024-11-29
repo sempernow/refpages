@@ -2463,7 +2463,9 @@ exit
     kill  $pid     # Kill a process by its PID
     kill -9 $pid   # Hard kill 
     kill  %$n      # Kill a background process by its job number (see jobs)
-    pkill $command # Kill a process by its command name 
+    pkill $ps      # Kill a process by its name ($ps) 
+    killall $ps    # Kill all processes named $ps
+    killall -0 $ps # Test if any process named $ps is running : $? is 0 if any; 1 if none.
 
     service $name start  # service : start / stop
 
