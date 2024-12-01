@@ -43,7 +43,10 @@ ok || echo '=== FAILed'
 
 ```
 
-## Install
+## [Install](https://chatgpt.com/c/6749a5f4-ad00-8009-9166-ad815bc10bfc "ChatGPT")
+
+If we want Cilium to use the HA LB (vIP) 
+when communicating with K8s API server:
 
 ```bash
 vip_or_domain=10.0.10.11 # OR k8s.lime.lan
@@ -54,13 +57,13 @@ helm install cilium cilium/cilium --namespace kube-system \
     --set kubeProxyReplacement=partial \
     --set externalIPs.enabled=true
 ```
-- `kubeProxyReplacement`:
+- `kubeProxyReplacement` :
     - Enables partial or full replacement of kube-proxy functionality by Cilium.
     - In most cases, partial is sufficient to integrate with external load balancers.
-- `externalIPs.enabled`:
+- `externalIPs.enabled` :
     - Allows the use of external IPs for services. 
       This is necessary for external load balancers 
       to direct traffic correctly.
-- `hostServices.enabled=true`:
+- `hostServices.enabled=true` :
     - Optional. Enables handling of host services by Cilium, 
       which can be helpful in environments with external load balancers.

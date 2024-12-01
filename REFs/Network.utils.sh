@@ -264,9 +264,14 @@ exit
 
         # Pull a script to ./a.sh quietly; follow redirects; rpt only if error.
             curl -fsSLO https://foo.com/path/to/a.sh
-        # Pull a script to ./b.sh quietly; follow redirects; rpt only if error.
-            curl -fsSL -o b.sh https://foo.com/path/to/a.sh
 
+        # Pull a script to /here/b.sh quietly; follow redirects; rpt only if error.
+            curl -fsSL -o /here/b.sh https://foo.com/path/to/a.sh
+
+        # Pull +extract an archive to PWD  
+            curl -sSL https://${host}/path/foo.tar.gz | tar -zxf - 
+            curl -sSL https://${host}/path/foo.tar.gz | tar -zx    # Equivalent
+ 
         # Online Golang tool: cURL-to-Golang: https://mholt.github.io/curl-to-go  
 
         # curl-based sites 
@@ -300,10 +305,7 @@ exit
 
         # Header info only 
             curl -Is foo.com
-
-        # DOWNLOAD +EXTRACT an ARCHIVE   
-            curl -L https://${host}/path/foo.tar.gz | tar -zxf -  
-            
+           
         # Validate URL (test server); send request for URL ...  
             curl -I http://google.com/bogus  # HTTP 404 (Not Found) 
 
@@ -483,8 +485,9 @@ exit
     dnsdomainname        # show LAN domain
 
     # NetworkManager CLI : See REF.Network.firewalld
-        nmcli device show $device # eth0, ens192, ...
+        nmcli device show $dev # eth0, ens192, ...
         #... use to configure NIC
+        nmcli conn show $dev |grep ipv4.dns 
 
 # CONNECTIVITY 
     # PING

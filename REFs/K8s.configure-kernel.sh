@@ -4,14 +4,17 @@
 # - Idempotent
 ########################################
 
-# Install kernel headers 
-[[ $(rpm -q kernel-headers) ]] || sudo dnf -y install kernel-headers-$(uname -r) || exit 10
-[[ $(rpm -q kernel-devel) ]]   || sudo dnf -y install kernel-devel-$(uname -r)   || exit 11
+# Install kernel headers else fail
+rpm -q kernel-headers ||
+    sudo dnf -y install kernel-headers-$(uname -r) ||
+        exit 10
 
-unset _flag_config_kernel
+rpm -q kernel-devel ||
+    sudo dnf -y install kernel-devel-$(uname -r) ||
+        exit 11
 
 ok(){
-    # Load kernel modules (now), smartly (okay if already loaded)
+    # Load kernel modules now (okay if already loaded) else fail
     sudo modprobe br_netfilter  
     [[ $(lsmod |grep br_netfilter) ]] || return 21
 
@@ -30,13 +33,11 @@ ok(){
     sudo modprobe ip_vs_sh  
     [[ $(lsmod |grep ip_vs_sh) ]] || return 26
 
-    # Load kernel modules on boot
-    conf='/etc/modules-load.d/kubernetes.conf'
-    [[ $(cat $conf 2>/dev/null |grep 'overlay') ]] && return 0
-    _flag_config_kernel=1
+    # Load kernel modules on boot (configure for that else fail)
+    conf=/etc/modules-load.d/kubernetes.conf
+    [[ $(cat $conf 2>/dev/null |grep overlay) ]] && return 0
     ## br_netfilter enables transparent masquerading 
-    ## and facilitates Virtual Extensible LAN (VxLAN) traffic 
-    ## between Pods across the cluster.
+    ## and facilitates VxLAN traffic between Pods.
 	cat <<-EOH |sudo tee $conf
 	br_netfilter
 	ip_vs
@@ -45,21 +46,18 @@ ok(){
 	ip_vs_sh
 	overlay
 	EOH
-
-    # Confirm file
-    [[ $(cat $conf 2>/dev/null |grep 'overlay') ]] && return 33
+    [[ $(cat $conf 2>/dev/null |grep overlay) ]] || return 33
 }
 ok || exit $?
 
 ok(){
-    # Set kernel runtime params (sysctl) for K8s networking
-    conf='/etc/sysctl.d/kubernetes.conf'
+    # Configure kernel runtime params (sysctl) 
+    conf=/etc/sysctl.d/99-kubernetes.conf
     [[ $(cat $conf 2>/dev/null |grep 'net.bridge.bridge-nf-call-iptables  = 1') ]] && return 0
-    _flag_config_kernel=1
 	cat <<-EOH |sudo tee $conf
-	net.ipv4.ip_forward = 1
 	net.bridge.bridge-nf-call-ip6tables = 1
 	net.bridge.bridge-nf-call-iptables  = 1
+	net.ipv4.ip_forward                 = 1
 	EOH
     # |Kernel Parameter	                    | Description                      |
     # |-------------------------------------|----------------------------------|
@@ -67,20 +65,11 @@ ok(){
     # |`net.bridge.bridge-nf-call-ip6tables`|Bridged IPv6 traffic via iptables.|
     # |`net.ipv4.ip_forward`                |IPv4 packet forwarding.           |
 
-    # Confirm file
     [[ $(cat $conf 2>/dev/null |grep 'net.bridge.bridge-nf-call-iptables  = 1') ]] || return 44
 }
 ok || exit $?
     
 # If configuration changed, then apply settings else fail
-[[ $_flag_config_kernel ]] && {
-    sudo sysctl --system |grep Applying || exit 1
+sudo sysctl --system |grep Applying || exit 88
 
-    # Disable swap (idempotent)
-    sudo swapoff -a
-    swap="$(cat /etc/fstab |grep ' swap' |grep -v '^ *#' |awk '{print $1}')"
-    [[ $swap ]] && swap="$(echo $swap |awk '{print $1}')"
-    [[ $swap ]] && sudo sed -i "s,$swap,#$swap," /etc/fstab
-}
-
-echo ok
+[[ $(sysctl net.ipv4.ip_forward |cut -d' ' -f3- |grep '1') ]] || exit 99

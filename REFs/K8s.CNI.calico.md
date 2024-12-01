@@ -62,7 +62,6 @@ ok || echo "ERR: $?"
 
 ```
 
-
 ## Install 
 
 ### CLI
@@ -73,9 +72,12 @@ sudo mv calico $bin &&
     sudo chown root:root $bin &&
         sudo chmod 0755 $bin ||
             echo "ERROR : $?"
+
 ```
 
 ### CNI by Operator Method
+
+The `tigera-operator` helm chart was failing last attempted (2024-08); failing at the template stage according to helm error messages.
 
 ```bash
 operator=tigera-operator.yaml
