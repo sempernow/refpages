@@ -41,6 +41,33 @@
 
 <p>See <a href="K8s.configure-kernel.sh"><code>K8s.configure-kernel.sh</code></a></p>
 
+<h4><a href="https://kubernetes.io/docs/setup/production-environment/container-runtimes/#cgroup-drivers">cgroup drivers</a> : <code>systemd</code> or <code>cgroupfs</code></h4>
+
+<p>On Linux, control groups constrain resources that are allocated to processes.
+The <code>kubelet</code> and the underlying container runtime need to interface with cgroups to enforce resource management for pods and containers which includes cpu/memory requests and limits for containerized workloads. There are <strong>two versions</strong> of cgroups in Linux: cgroup v1 and cgroup v2. cgroup v2 is the new generation of the cgroup API.</p>
+
+<p>Identify the cgroup version on Linux Nodes</p>
+
+<pre><code class="language-bash">stat -fc %T /sys/fs/cgroup/
+
+cgroup ()
+{
+    fs=$(stat -fc %T /sys/fs/cgroup/);
+    [[ $fs == 'tmpfs' ]] &amp;&amp; printf v1 &amp;&amp; return;
+    [[ $fs == 'cgroup2fs' ]] &amp;&amp; printf v2 &amp;&amp; return;
+    echo unknown
+}
+</code></pre>
+
+<ul>
+<li><code>cgroup2fs</code> is v2; <code>tmpfs</code> is v1.</li>
+<li>Hyper-V / AlamLinux8 : v1</li>
+<li>Hyper-V / RHEL9 : v2</li>
+</ul>
+
+<p><del>If cgroup v1, then set <code>kubelet</code> flag <code>--cgroup-driver</code> to <code>systemd</code>, else set to <code>cgroupfs</code>.</del>
+Driver should match the container runtime setting, and if the parent processes are <code>systemd</code>, then should use that.</p>
+
 <h3>Install CRI</h3>
 
 <p>See <a href="K8s.provision-cri.sh"><code>K8s.provision-cri.sh</code></a></p>
@@ -50,6 +77,51 @@
 <p>See <a href="K8s.provision-kubernetes.sh"><code>K8s.provision-kubernetes.sh</code></a></p>
 
 <h2>Topics of Interest</h2>
+
+<h3><a href="https://github.com/kubernetes/cloud-provider-vsphere/blob/master/docs/book/cloud_provider_interface.md">CPI (Cloud Provider Interface)</a> | <a href="cpi.png">Graphic</a></h3>
+
+<blockquote>
+<p>Unlike all other K8s interfaces (CRI, CNI, CSI), which are runtime interfaces, CPI remains <strong>a buildtime interface</strong> only, allowing only vetted cloud vendors , <code>kubernetes/cloud-provider-$name</code>, into the build. So, only that
+ short list of cartel members can sell any production-ready K8s <code>Service</code> of type <code>LoadBalancer</code> that is fully (actually) integrated.</p>
+
+<p>MetalLB is a beta toy provided by the cloud cartel to serve as their gatekeeper.
+The CPI is slow-walking what would be the way out of this.</p>
+</blockquote>
+
+<ul>
+<li><a href="https://chatgpt.com/share/674b1b7d-1eb0-8009-9f42-a46b3f938355">ChatGPT</a></li>
+
+<li><p><a href="https://kubernetes.io/docs/tasks/administer-cluster/running-cloud-controller/">CCM (Cloud Controller Manager)</a> : CCM is a K8s binary (<code>cloud-controller-manager</code>) that handles the CPI; a carving out of the provider-specific code that was in the KCM (Kube Controller Manager) binary (<code>kube-controller-manager</code>).</p>
+
+<ul>
+<li>Allows cloud vendors to evolve independently from the core Kubernetes code.</li>
+<li>The CCM can be linked to <strong>any cloud provider that satisfies <code>cloudprovider.Interface</code></strong>.</li>
+</ul></li>
+
+<li><p><a href="https://cloud-provider-vsphere.sigs.k8s.io/concepts/cpi_overview">Overview of the Cloud Provider Interface</a></p></li>
+
+<li><p><a href="https://github.com/kubernetes/cloud-provider/" title="GitHub"><code>cloud-provider/sample</code></a></p></li>
+</ul>
+
+<h4>Prior work</h4>
+
+<ul>
+<li><a href="https://kubernetes.io/blog/2023/12/14/cloud-provider-integration-changes/">K8s Cloud Provider Interface (CPI)</a></li>
+</ul>
+
+<blockquote>
+<p>The Cloud Provider Interface (CPI) is responsible for running all the platform specific control loops that were previously run in core Kubernetes components under Kubernetes Controller Manager (KCM), which is a daemon that embeds the core control loops shipped with Kubernetes. CPI is moved out-of-tree (K8s <code>v1.29+</code>) to allow cloud and infrastructure providers to implement integrations that can be developed, built and released independent of Kubernetes core.</p>
+</blockquote>
+
+<ul>
+<li><a href="https://github.com/munnerz/keepalived-cloud-provider">keepalived-cloud-provider</a></li>
+<li><a href="https://cloud-provider-vsphere.sigs.k8s.io/cloud_provider_interface.html#:~:text=The%20Cloud%20Provider%20Interface%20is%20responsible%20for%20running,developed%2C%20built%20and%20released%20independent%20of%20Kubernetes%20core.">vSphere CPI</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/architecture/cloud-controller/">CCM (Cloud Controller Manager)</a> | <a href="https://k8s-docs.netlify.app/en/docs/tasks/administer-cluster/developing-cloud-controller-manager/">Develop</a>
+
+<ul>
+<li><a href="https://www.techtarget.com/searchCloudComputing/tutorial/Get-started-with-Kubernetes-Cloud-Controller-Manager">Getting Started</a></li>
+</ul></li>
+</ul>
 
 <h3><a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/">Labels</a> v. <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/">Annotations</a></h3>
 

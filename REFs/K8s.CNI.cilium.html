@@ -64,7 +64,10 @@ ok || echo '=== FAILed'
 
 </code></pre>
 
-<h2>Install</h2>
+<h2><a href="https://chatgpt.com/c/6749a5f4-ad00-8009-9166-ad815bc10bfc" title="ChatGPT">Install</a></h2>
+
+<p>If we want Cilium to use the HA LB (vIP)
+when communicating with K8s API server:</p>
 
 <pre><code class="language-bash">vip_or_domain=10.0.10.11 # OR k8s.lime.lan
 port=6444 # HALB frontend; upstreams to 6443 (kube-apiserver)
@@ -76,20 +79,20 @@ helm install cilium cilium/cilium --namespace kube-system \
 </code></pre>
 
 <ul>
-<li><code>kubeProxyReplacement</code>:
+<li><code>kubeProxyReplacement</code> :
 
 <ul>
 <li>Enables partial or full replacement of kube-proxy functionality by Cilium.</li>
 <li>In most cases, partial is sufficient to integrate with external load balancers.</li>
 </ul></li>
-<li><code>externalIPs.enabled</code>:
+<li><code>externalIPs.enabled</code> :
 
 <ul>
 <li>Allows the use of external IPs for services.
 This is necessary for external load balancers
 to direct traffic correctly.</li>
 </ul></li>
-<li><code>hostServices.enabled=true</code>:
+<li><code>hostServices.enabled=true</code> :
 
 <ul>
 <li>Optional. Enables handling of host services by Cilium,

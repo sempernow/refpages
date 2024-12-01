@@ -92,9 +92,12 @@ sudo mv calico $bin &amp;&amp;
     sudo chown root:root $bin &amp;&amp;
         sudo chmod 0755 $bin ||
             echo &quot;ERROR : $?&quot;
+
 </code></pre>
 
 <h3>CNI by Operator Method</h3>
+
+<p>The <code>tigera-operator</code> helm chart was failing last attempted (2024-08); failing at the template stage according to helm error messages.</p>
 
 <pre><code class="language-bash">operator=tigera-operator.yaml
 crds=custom-resources.yaml
