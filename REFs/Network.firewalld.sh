@@ -74,12 +74,20 @@ exit
  
         # SET : set|add|remove|change
 
-            # Set default zone : DO NOT USE THIS
-                firewall-cmd --set-default-zone=$z  
+            # Set default zone : use if all unconfigured interfaces are virtual 
+                firewall-cmd --set-default-zone=trusted
+            
+            # Set all interfaces of a CIDR to a zone 
+                firewall-cmd --permanent --zone=trusted --add-source=$podCIDR  
+                firewall-cmd --permanent --zone=trusted --add-source=$svcCIDR  
 
             # Add new zone 
                 firewall-cmd --permanent --new-zone=$z
-
+            
+            # Log all DROPped packets
+                sudo firewall-cmd --permanent --set-log-denied=all # Applies to all zones
+                sudo firewall-cmd --reload
+    
             # BIND interface to a zone (regardless of current binding)
                 firewall-cmd --permanent --change-interface=$ifc --zone=$z
                 #... if interface was bound to another zone, that would be the equivalent of:
@@ -107,8 +115,9 @@ exit
                 # Add service to zone 
                 firewall-cmd --permanent --zone=$z --add-service=ssh
                 # Enable Masquerading (SNAT)
-                firewall-cmd --permanent --zone=$z --add-masquerade
-
+                firewall-cmd --permanent --zone=trusted --add-masquerade
+                # Enable forwarding
+                sudo firewall-cmd --permanent --zone=trusted --add-forward
 
             # Create (define) service (having ports) 
                 svc=istiod
@@ -228,6 +237,14 @@ exit
                 # To configure all devices of a specific type as unmanaged, add:
                     [keyfile]
                     unmanaged-devices=type:ethernet 
+
+            # WARNING : bind affected interface(s) to firewalld zone 
+            # BEFORE declaring it "unmanaged", else is interface has no zone and so is "bricked"
+                sudo firewall-cmd --permanent --zone=$z --add-interface=eth0
+                sudo firewall-cmd --permanent --zone=trusted --add-interface=cali0
+                sudo firewall-cmd --permanent --zone=trusted --add-interface=flannel0
+                sudo firewall-cmd --reload
+
             # Reload the NetworkManager service:
             systemctl reload NetworkManager 
             # Verify STATE is "unmanaged"; nominally is "connected". 
