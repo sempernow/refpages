@@ -89,6 +89,7 @@ and <dfn title="A development practice of pipelining and automated release and d
         and application software in any environment.
         A comprehensive, versatile automation tool 
         allowing for both declarative and imperative methods.
+    - [__SaltStack__](https://saltproject.io/ "Saltproject.io") | [ChatGPT](https://chatgpt.com/share/674cfd9f-6c54-8009-a84c-d824e1587fa0) Infrastructure automation and CM.
 - __IaC__ : __Workloads__
     - Application Management (K8s Manifests)
         - [__K8s Operator__](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) Pattern   
@@ -179,6 +180,8 @@ and <dfn title="A development practice of pipelining and automated release and d
         1. Cluster-wide (`PersistentVolume`, `StorageClass`, &hellip;)
             - `ClusterRole`
             - `ClusterRoleBinding`
+- __Multi-tenancy__
+    - [__vCluster__](https://github.com/loft-sh/vcluster "GitHub") Virtual clusters for better isolation than Namespace offers. OSS and Enterprise editions.
 - __Logging__ : Cluster-level logging, AKA __Log Aggregation__ AKA __Unified Loggging__, so that logs survive their (ephemeral) generator, be that of any host or container process.
     - __Elastic stack__ : to collect, store, query, and visualize log data. Composed of:
         1. [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") backend : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a __distributed document-oriented database model__ where it stores data in indices. These __indices are persisted__ to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the [Lucene](https://en.wikipedia.org/wiki/Apache_Lucene "Wikipedia") library for indexing and searching.
