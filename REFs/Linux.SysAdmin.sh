@@ -117,6 +117,10 @@ exit 0
                     |awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |head -$n
             }
 
+        # Process tree
+            ps -ejH --sort=-rss
+            pstree 
+
         /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.  
             # List RSS of a PID 
             pid=285 
@@ -591,35 +595,37 @@ exit 0
         # trace `aCommand` and send strace output to file 'aCommand.strace'
         strace -o COMMAND.strace -f COMMAND ARGs
         strace -c COMMAND  # stats 
-
-    top     # Dynamic real-time view of a running linux system;  
-        top -e m -E m # Memory units in MiB : At both Task (-e) and Summary (-E) areas.
-            # system summary; list of processes/threads managed by kernel.
+    
+    top # Dynamic real-time view of a running linux system : processes/threads
+        # Memory units in MiB at Task (-e) and Summary (-E) areas : Sort by Resident Set Size (RES)
+        top -em -Em -oRES 
     htop    # Newer/nicer top
     pstree  # Shows parent/child tree structure of processes
     ps      # Snapshot of current processes [syntax:UNIX|BSD|GNU]
-        ps aux  # list all process + owner of this user;...
-                        # all [a]; user [u]; incl external to shell [x]
-            # fields ... 
-            USER   
-            PID      # Process ID
-            %CPU 
-            %MEM     # https://povilasv.me/go-memory-management/ 
-            VSZ      # bytes of RAM reserved (Virtual Memory Size)
-            RSS      # bytes of RAM allocated (Resident Set Size)
-            TTY      # current-terminal:'pts/0', background-process:'?'
-            STAT     # status : sleep:'S', running:'R'
-            START  
-            TIME 
-            COMMAND  # the command that lauched it
-            
-        ps aux |wc -l # get the number of running processes 
-
+        # List all process sorted by RSS (Resident Set Size; actual phy mem used) [KB]
+        ps -aux --sort=-rss |head
+        ps -aux |wc -l # get the number of running processes 
+        ps -ax --sort=-rss -o user,pid,rss,pmem,pcpu,command # command (full statement); comm (command only)
+            # all (a); incl processes external to shell (x)
+                # Fields
+                USER   
+                PID      # Process ID
+                %CPU 
+                %MEM     # https://povilasv.me/go-memory-management/ 
+                VSZ      # Bytes of RAM reserved (Virtual Memory Size)
+                RSS      # Resident Set Size : Actual physical memory [KB] used by the process
+                TTY      # current-terminal:'pts/0', background-process:'?'
+                STAT     # status : sleep:'S', running:'R'
+                START  
+                TIME 
+                COMMAND  # the command that lauched it
+                
         # monitor process $1; show/stream its `ps` status @ tty11; write to syslog on stop
-            while ps aux | grep $1 | grep -v grep | grep -v bash > /dev/tty11 
+            while ps -aux | grep $1 | grep -v grep | grep -v bash > /dev/tty11 
             do; sleep 1; done 
             logger $1 has stopped.  # send to syslog; `/var/log/messages`
 
+        ps -ejH # Process tree
         ps fax # processes AND their child processes
         ps -ag # processes by group name or session
         ps ax | grep 'process-str'

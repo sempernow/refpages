@@ -9,7 +9,7 @@ ARCH=$(uname -m)
 [[ $ARCH = aarch64 ]] && ARCH=arm64
 [[ $ARCH = x86_64  ]] && ARCH=amd64
 
-REGISTRY="http://${CNCF_REGISTRY_ENDPOINT:-k8s.registry.io}"
+REGISTRY="${CNCF_REGISTRY_ENDPOINT:-registry.k8s.io}"
 
 unset _flag_configure
 disableContainerd(){
@@ -58,7 +58,7 @@ ok(){
     # https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd
 
     ## Local (insecure) registry perhaps :
-    registry=${REGISTRY:-k8s.registry.io}
+    registry=$REGISTRY
 
     conf=/etc/containerd/config.toml
     [[ -f $conf ]] && return 0
@@ -88,11 +88,11 @@ ok(){
 		            SystemdCgroup = true
 		EOH
     }
-    #minimal
+    minimal
 
     custom(){
         cat <<-EOH |sudo tee $conf
-        ## Configured for K8s : runc, systemd, and registry ($registry) 
+        ## Configured for K8s : runc, systemd, and local insecure registry 
         version = 2
         [plugins]
           [plugins."io.containerd.grpc.v1.cri"]
@@ -112,7 +112,7 @@ ok(){
                     insecure_skip_verify = true
 		EOH
     }
-    custom
+    #custom
 
     [[ $(sudo cat $conf |grep $registry) ]] || return 30
 }

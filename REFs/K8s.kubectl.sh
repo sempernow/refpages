@@ -326,12 +326,16 @@ kubectl config view --minify |grep namespace:
     # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
     # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
     user=kind-kind # See config.users[] at `kubectl config view`
-    kubectl config view --raw -o \
-        jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
+    kubectl config view --raw -o yaml \
+        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data'
+        #...
+    kubectl config view --raw \
+        -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
         |base64 -d |openssl x509 -text -noout
-        # OR just one field, e.g., Subject:
-        |base64 -d |openssl x509 -subject -noout
+        # OR just declared field(s)
+        |base64 -d |openssl x509 -noout -startdate -enddate -issuer -subject -ext subjectAltName
             #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+            # X.509 "O" maps to "kind: Group", and "CN" maps to "kind: User"
 
 # RBAC : API Access (Authz)
 group=team-1
@@ -360,20 +364,26 @@ kubectl -n default create sa gitops --save-config=true
 kubectl create clusterrolebinding cluster-admin-crb-gitops --clusterrole=cluster-admin --serviceaccount=default:gitops
 
 # Check for subjects of role bindings 
-kubectl get rolebindings -n $ns -o=custom-columns=NAME:.metadata.name,SUBJECTS:.subjects
-# - If kind: User
+kubectl get rolebindings -n $ns -o=custom-columns=NAME:.metadata.name,ROLE:.roleRef.name,SUBJECTS:.subjects
 # Check for subjects of cluster role bindings
-kubectl get clusterrolebindings -o=custom-columns=NAME:.metadata.name,SUBJECTS:.subjects
-
+kubectl get clusterrolebindings -o=custom-columns=NAME:.metadata.name,ROLE:.roleRef.name,SUBJECTS:.subjects
 # Get all Roles (of a declared Namespace) bound to "kind: $sub" (Note K8s has no User object).
 ns=kube-system
-sub=User # User | ServiceAccount
+sub=User # User|Group|ServiceAccount
 kubectl get rolebindings -n $ns -o json |jq -Mr '[.items[] | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[] |select(.kind == "'$sub'")) |{kind:.kind,name:.name}}]' |yq eval -P -o yaml
 # Get all roles (of a declared Namespace) bound to a declared .roleRef.name ($name)
 name='system:kube-controller-manager'
-kubectl get rolebindings -n $ns -o json |jq -Mr '[.items[] | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[] |select(.name == "'$name'")) |{kind:.kind,name:.name}}]' |yq eval -P -o yaml
+kubectl get rolebindings -n $ns -o json \
+    |jq -Mr '[.items[] | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[] |select(.name == "'$name'")) |{kind:.kind,name:.name}}]' \
+    |yq eval -P -o yaml
+# Get ClusterRole of Group having Name (in case of User having same name)
+sub=Group
+name='kubeadm:cluster-admins'
+kubectl get clusterrolebindings -n $ns -o json \
+    |jq -Mr '[.items[]? | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[]? |select(.kind == "'$sub'")|select(.name == "'$grp'")) |{kind:.kind,name:.name}}]' \
+    |yq eval -P -o yaml
+# Get ClusterRole of Group
 # X.509 certificates of "kind: User"
 # - @ K3S : /var/lib/rancher/k3s/server/tls
 # - @ K8s : /var/kubernetes/pki, /var/kubernetes/*.conf 
 # - Also check pod.volumes for path(s) declared at host process (ps aux)
-

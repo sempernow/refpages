@@ -490,21 +490,28 @@ exit
         nmcli conn show $dev |grep ipv4.dns 
 
 # CONNECTIVITY 
+
     # PING
-        ping -c 1 ROUTER_IP  # CONNECTIVITY TEST to Gateway Router; 1 ping
-        ping -f ROUTER_IP    # FLOOD ping; BANDWIDTH TEST [@ LAN only!]]
+        ping -c 1 ROUTER_IP # CONNECTIVITY TEST to Gateway Router; 1 ping
+        ping -f ROUTER_IP   # FLOOD ping; BANDWIDTH TEST : @ LAN only!
 
-        # SCAN SUBNET for hosts
-            netaddr=192.168.28 # Subnet: 192.168.28.0/24
-            seq 254 |xargs -I{} ping -c1 -w1 ${netaddr}.{} |grep -B1 ttl |grep $netaddr
+        # Scan subnet for hosts : /24
+            seq 254 |xargs -n1 /bin/bash -c '
+                netaddr=192.168.11
+                ping -c 1 $netaddr.$1 >/dev/null
+                [ $? -eq 0 ] && echo "$netaddr.$1 is UP" || : 
+            ' _
 
-        export ip=10.0.101.130
-        export port=22
+            arp-scan # ARP scanner
+                dev=ens192;cidr=192.168.28.0/24
+                sudo arp-scan --interface=$dev $cidr
+                sudo arp-scan $cidr
 
 # NETWORKs / SUBNETs
-    traceroute -n -T -p $port $ip
+
+    traceroute -n -T -p $port $ip # TCP
  
-    # My Traceroute : combine traceroute + ping
+    mtr # My Traceroute : combine traceroute + ping
         # https://en.wikipedia.org/wiki/MTR_(software)
         mtr -n -T -c 200 $ip --report # Per TCP (vs default; ICMP)
         #... neither are pre-installed @ `Ubuntu 18.04`
@@ -536,7 +543,6 @@ exit
         sudo arp-scan --interface=$dev $cidr
         sudo arp-scan $cidr
 
-
     nmap # Network Mapper : Security Scanner : Port Scanner  
         # Advanced tool regarding remote services availability 
         # Features: Host discovery, Port scanning, Version detection, OS detection  
@@ -560,27 +566,35 @@ exit
     nm-tool  # RedHat; NetworkManager Tool; reports status
              # ... Type, driver, speed, IP, MAC, Gateway IP, DNS, Subnet Netmask
 
-    ipcalc IP    # get Network Address / CIDR, Netmask, Wildcard, ... all the things
-        $ ipcalc 194.59.251.140
-        Address:   194.59.251.140       11000010.00111011.11111011. 10001100
-        Netmask:   255.255.255.0 = 24   11111111.11111111.11111111. 00000000
-        Wildcard:  0.0.0.255            00000000.00000000.00000000. 11111111
-        =>
-        Network:   194.59.251.0/24      11000010.00111011.11111011. 00000000
-        HostMin:   194.59.251.1         11000010.00111011.11111011. 00000001
-        HostMax:   194.59.251.254       11000010.00111011.11111011. 11111110
-        Broadcast: 194.59.251.255       11000010.00111011.11111011. 11111111
-        Hosts/Net: 254                   Class C
+    ipcalc # Get network address, CIDR, mask,... all the things
+        ipcalc -pnmb --minaddr --maxaddr --geoinfo --addrspace 193.92.150.0/27
+            # NETMASK=255.255.255.224
+            # PREFIX=27
+            # BROADCAST=193.92.150.31
+            # NETWORK=193.92.150.0
+            # MINADDR=193.92.150.1
+            # MAXADDR=193.92.150.30
+            # ADDRSPACE=Internet
+            # COUNTRYCODE=GR
+            # COUNTRY=Greece
+            # COORDINATES="37.984200,23.735300"
 
     mii-tool     # media-independent interface [MII] status [OBSOLETE; use ethtool]
     ethtool NIC  # get info on NIC, e.g., 'ethtool eth0' 
             -i NIC   # driver info
             
-    ss      # Socket Statistics; IP:PORT; like netstat
-     -r     # resolve names
-     -n     # numeric; don't resolve names
-     -p     # incl. processes
-     -at4r  # all-sockets, tcp, IPv4, resolve-names
+    ss # Socket Statistics; IP:PORT; like netstat
+        -r     # resolve names
+        -n     # numeric; don't resolve names
+        -p     # incl. processes
+        -at4r  # all-sockets, tcp, IPv4, resolve-names
+
+        # Display all TCP sockets with process SELinux security contexts.
+            ss -t -a -Z
+        # Display all UDP sockets.
+            ss -u -a
+        # Display all established ssh connections.
+            ss -o state established '( dport = :ssh or sport = :ssh )'
 
     netstat # Print network connections, routing tables, interface stats, ...
         netstat -i       # Interface Table; packet info for network cards
@@ -801,7 +815,16 @@ exit
             tcpdump ip host foo and not bar  # all IP packets between foo and any host except bar
 
     # DNS lookup utilities
+        sudo dnf install -y bind-utils traceroute tcpdump ldns
 
+        traceroute # Hop-by-hop trace from local host to remote host, 
+            # revealing any intermediary-hop hang: "* * * ..." 
+            traceroute a2.lime.lan # Typically sends ICMP or UDP 
+            # If target-host firewall blocks those protocols/ports, then try another, e.g., 53/TCP:
+            sudo traceroute -T -p 53 dc1.lime.lan
+
+        tcpdump -i $ifc port 53 # Capture DNS traffic on device AKA interface $ifc
+        
         nslookup # DNS info; query Internet (DNS) name servers; interactively if no args
 
         nslookup $domain            # get info on $domain name, e.g., www.google.com
@@ -817,6 +840,14 @@ exit
         
         # DNS latency due to declared nameserver
         dig @$nsIP $domain |grep time #=> ;; Query time: 249 msec
+
+        drill # Modern version of dig
+
+        ldns # DNSSEC support
+            ldns-signzone -k Kexample.com.+005+12345.key example.com.zone
+            ldns-verify-zone example.com.zone
+            ldns-keygen example.com
+            ldns-dane create example.com
 
     # DHCP release/renew IP Address
         dhclient 
@@ -836,37 +867,31 @@ exit
 
 # CONFIGURE  
 
-    # iproute2 library; https://en.wikipedia.org/wiki/Iproute2
-    #   ip, ss, bridge, rtacct, rtmon, tc, ctstat, lnstat,  
-    #   nstat, routef, routel, rtstat, tipc, arpd   
-    iproute2        
-    
-    Legacy utility    Obsoleted by                  Note
-    --------------    --------------------------    --------------------------
-    ifconfig          ip addr, ip link, ip -s       Address and link config
-    route             ip route                      Routing tables
-    arp               ip neigh                      Neighbors
-    iptunnel          ip tunnel                     Tunnels
-    nameif            ifrename, ip link set name    Rename network interfaces
-    ipmaddr           ip maddr                      Multicast
-    netstat           ip -s, ss, ip route           Show various network stats
-
     # Ubuntu 
         netplan # Changes PERSIST 
         netplan --debug apply
         /etc/netplan/... # Config files auto-applied on boot
 
-    ip  # configure/show routing, devices, policy routing and tunnels
+    ip # iproute2 Libary/utilities for configuring Linux : http://www.policyrouting.org/iproute2.doc.html
+        # ip, ss, bridge, rtacct, rtmon, tc, ctstat, lnstat,  
+        # nstat, routef, routel, rtstat, tipc, arpd   
+        #
+        # Configure/show routing, devices, policy routing and tunnels
         # replaces 'ifconfig' & 'route' utilities
         # changes do NOT persist; used as config-test tool; config per apropos files
- 
-        ip a  # List all addresses; per interface
-            -c  # color highlights
-            alias ip='ip -c'
+     
+        # Legacy utility    Obsoleted by                  Note
+        # --------------    --------------------------    --------------------------
+        # ifconfig          ip addr, ip link, ip -s       Address and link config
+        # route             ip route                      Routing tables
+        # arp               ip neigh                      Neighbors
+        # iptunnel          ip tunnel                     Tunnels
+        # nameif            ifrename, ip link set name    Rename network interfaces
+        # ipmaddr           ip maddr                      Multicast
+        # netstat           ip -s, ss, ip route           Show various network stats
 
-        for ip in $(seq 1 254); do 
-            ping -c 1 192.168.1.$ip>/dev/null; [ $? -eq 0 ] && echo "192.168.1.$ip UP" || : 
-        done
+        ip addr # List all addresses; per interface
+            -c  # color highlights
 
         # L4 AKA Layer 4 AKA Transport layer AKA Transport Control Layer
             # AKA Session Layer AKA TCP/UDP Layer AKA Ports Layer 
