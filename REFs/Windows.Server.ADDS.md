@@ -89,7 +89,7 @@ Networking : Connectivity btwn WSL2 &amp; Hyper-V VMs
 
 ### The NAT subnet option
 
-@ [`nat-internal-switch-v0.0.2.ps1`](nat-internal-switch-v0.0.2.ps1)
+@ [`network-nat.ps1`](network-nat.ps1)
 
 See params it configured by running [`network-get.ps1`](network-get.ps1)
 
@@ -228,7 +228,7 @@ __Any other method bricks the VM.__
 
 1. __Ethernet adapter__ (`ncpa.cpl`)
     - Subnet (`InternalSwitchNAT1`) parameters declared earlier:  
-        - [`nat-internal-switch-v0.0.2.ps1`](nat-internal-switch-v0.0.2.ps1)
+        - [`network-nat.ps1`](network-nat.ps1)
         - [`network-define.ps1`](network-define.ps1)
         - [`network-get.ps1`](network-get.ps1)
     - Ethernet adapter configuration:
@@ -424,7 +424,7 @@ Get-DhcpServerv4<TAB>
 1. Open **DHCP Manager** (`dhcpmgmt.msc`).
 2. Right-click on **IPv4** and select **New Scope**.
     - **Scope Name**: `lime.lan`.
-    - **IP Range**: Set the IP range for the internal network. Align these with `InternalSwitchNAT1` subnet ([`nat-internal-switch-v0.0.2.ps1`](nat-internal-switch-v0.0.2.ps1)) parameters. See by running  [`network-get.ps1`](network-get.ps1)
+    - **IP Range**: Set the IP range for the internal network. Align these with `InternalSwitchNAT1` subnet ([`network-nat.ps1`](network-nat.ps1)) parameters. See by running  [`network-get.ps1`](network-get.ps1)
         - **Start IP**: `192.168.11.100`
         - **End IP**: `192.168.11.200`
         - **Subnet Mask**: `255.255.255.0`
