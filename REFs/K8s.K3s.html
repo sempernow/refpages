@@ -91,12 +91,12 @@ sudo k3s check-config
 sudo k3s kubectl 
 # Else configure shell
 alias k='sudo k3s kubectl'
-# Else configure shell for regular user : Protect existing kubeconfig
-[[ -f ~/.kube/config ]] ||
-    sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config &amp;&amp;
-        chown $USER:$USER ~/.kube/config &amp;&amp; {
-            type -t k || alias k='k3s kubectl'
-        }
+# Else configure shell for regular user, protecting existing kubeconfig
+export KUBECONFIG=~/.kube/k3s_config
+sudo cp /etc/rancher/k3s/k3s.yaml $KUBECONFIG &amp;&amp;
+    chown $USER:$USER $KUBECONFIG &amp;&amp; {
+        type -t k || alias k='k3s kubectl'
+    }
 
 # To merge multiple kubeconfig (contexts)
 export KUBECONFIG=$pathConf1:$pathConf2:$pathConf3
@@ -119,6 +119,11 @@ curl -k -H &quot;Authorization: Bearer $(k -n kube-system create token default)&
 <ul>
 <li><a href="https://docs.k3s.io/cli/server"><code>k3s server</code></a></li>
 </ul>
+
+<p>List command options:</p>
+
+<pre><code class="language-bash">k3s server --help
+</code></pre>
 
 <p>Configuration files:</p>
 
@@ -165,19 +170,46 @@ reboot
 
 </code></pre>
 
-<h3><a href="https://docs.k3s.io/installation">Installation</a></h3>
+<h3><a href="https://docs.k3s.io/installation">Installation</a> : <a href="k3s-install.sh"><code>k3s-install.sh</code></a></h3>
 
-<h4>Script method</h4>
+<p>By default, values present in a YAML file located at
+<strong><code>/etc/rancher/k3s/config.yaml</code></strong>
+will be used on install.</p>
+
+<pre><code class="language-yaml">write-kubeconfig-mode: &quot;0644&quot;
+tls-san:
+  - &quot;foo.local&quot;
+node-label:
+  - &quot;foo=bar&quot;
+  - &quot;something=amazing&quot;
+cluster-init: true
+</code></pre>
+
+<ul>
+<li><a href="https://docs.k3s.io/cli/server">K3s server configuration</a>
+
+<ul>
+<li>Or: <code>k3s server --help</code></li>
+</ul></li>
+</ul>
+
+<h4><a href="https://docs.k3s.io/installation/configuration">Script method</a></h4>
+
+<p>Runs as systemd service : <code>k3s.service</code></p>
 
 <pre><code class="language-bash"># Install 
 curl -sfL https://get.k3s.io |sh - &amp;&amp;
     sudo chmod 0644 /etc/rancher/k3s/k3s.yaml
+
+# Combination of environment variables and flags:
+curl -sfL https://get.k3s.io | K3S_KUBECONFIG_MODE=&quot;644&quot; INSTALL_K3S_EXEC=&quot;server&quot; sh -s - --flannel-backend none
 
 # Configure for root user
 path=/usr/local/bin
 [[ $(sudo -i env |grep 'PATH=' |grep $path) ]] || 
     [[ $(sudo cat /root/.bashrc |grep 'PATH=' |grep $path) ]] ||
         echo 'export PATH=$PATH:'&quot;$path&quot; |sudo tee -a /root/.bashrc
+
 
 </code></pre>
 
@@ -220,14 +252,30 @@ This does <em>not</em> affect <code>/usr/local/bin/kubectl</code> unless further
 
 <h4><a href="https://docs.k3s.io/installation/configuration#configuration-with-binary">Binary method</a></h4>
 
+<p>Runs as terminal session (blocking), so only for quick tests</p>
+
 <pre><code class="language-bash"># Select release : https://github.com/k3s-io/k3s/releases
-v=1.30.3 # K8s version available at K3s
-# Pull k3s CLI
-curl -sSLO https://github.com/k3s-io/k3s/releases/download/v${v}%2Bk3s1/k3s
-# Init cluster
-sudo k3s server --cluster-init
+v=v1.31.3 # K8s version available at K3s
+
+# Install k3s CLI if needed
+[[ &quot;$(type -t k3s &amp;&amp; k3s --version |grep $v)&quot; ]] ||
+    curl -sSLO https://github.com/k3s-io/k3s/releases/download/$v%2Bk3s1/k3s
+
+# Init cluster @ terminal (blocks)
+type -t kx &amp;&amp; kx |grep k3s ||
+    sudo k3s server \
+        --write-kubeconfig-mode &quot;0644&quot; \
+        --node-label &quot;k3s=true&quot; \
+        --cluster-cidr '10.42.0.0/16' \
+        --service-cidr '10.43.0.0/16' \
+        --cluster-init
 
 </code></pre>
+
+<ul>
+<li>See <code>k3s server --help</code> for command options.</li>
+<li>kubeconfig @ <code>/etc/rancher/k3s/k3s.yaml</code></li>
+</ul>
 
 <h3><a href="https://docs.k3s.io/upgrades/killall#killall-script">Teardown</a></h3>
 
@@ -270,30 +318,6 @@ with repeatable CLI arguments being represented as YAML lists.
 Boolean flags are represented as <code>true</code> or <code>false</code> in the YAML file.</p>
 </blockquote>
 
-<pre><code class="language-bash">k3s server \
-    --write-kubeconfig-mode &quot;0644&quot;    \
-    --tls-san &quot;foo.local&quot;             \
-    --node-label &quot;foo=bar&quot;            \
-    --node-label &quot;something=amazing&quot;  \
-    --cluster-init
-
-# OR
-k3s server --config /etc/rancher/k3s/config.yaml --cluster-init
-</code></pre>
-
-<ul>
-<li><p>@ <code>/etc/rancher/k3s/config.yaml</code></p>
-
-<pre><code class="language-yaml">write-kubeconfig-mode: &quot;0644&quot;
-tls-san:
-- &quot;foo.local&quot;
-node-label:
-- &quot;foo=bar&quot;
-- &quot;something=amazing&quot;
-cluster-init: true
-</code></pre></li>
-</ul>
-
 <p>Equivalent syntaxes:</p>
 
 <pre><code class="language-bash">K3S_KUBECONFIG_MODE=&quot;644&quot; k3s server
@@ -316,19 +340,24 @@ k3s server --write-kubeconfig-mode=644
 <p>Preliminaries requiring internet access</p>
 
 <pre><code class="language-bash"># Select release : https://github.com/k3s-io/k3s/releases
-v=1.30.3 # K8s version available at K3s
+v=v1.31.3 # K8s version available at K3s
 
-# Pull K3s-images tarball
+# Pull K3s-images archive
 tarball=k3s-airgap-images-amd64.tar.gz
-curl -sSLO https://github.com/k3s-io/k3s/releases/download/v${v}%2Bk3s1/$tarball
+curl -sSLO https://github.com/k3s-io/k3s/releases/download/${v}%2Bk3s1/$tarball
 
 # Load all images (later/elsewhere) into local cache 
 # for subsequent tag/push to private registry of target air-gap environment.
-docker load -i $tarball
+type -t docker &amp;&amp;
+    docker load -i $tarball
 
 # Pull k3s CLI
-curl -sSLO https://github.com/k3s-io/k3s/releases/download/v${v}%2Bk3s1/k3s
+curl -sSLO https://github.com/k3s-io/k3s/releases/download/${v}%2Bk3s1/k3s
 </code></pre>
+
+<ul>
+<li><a href="k3s-air-gap-prep.sh"><code>k3s-air-gap-prep.sh</code></a></li>
+</ul>
 
 <h3><a href="https://docs.k3s.io/architecture#high-availability-k3s">HA K3s</a></h3>
 

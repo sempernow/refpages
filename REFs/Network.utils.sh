@@ -163,8 +163,34 @@ exit
                 # https://www.tecmint.com/test-network-throughput-in-linux/  
                 # https://github.com/esnet/iperf 
                 # https://iperf.fr/  (binaries)
-                iperf3 -s 
-                iperf3 -s -f K  
+                # Containerized: 
+                    # https://hub.docker.com/r/networkstatic/iperf3
+
+                iperf3 -s                   # Server on system 1
+                iperf3 -c $server_address   # Client on system 2
+                    --reverse   # Server to client; default is client to server
+                    -t 30       # Seconds; default is 10
+                    -p 8888     # Client/Server ports must match; default is 5201
+                    -P 4        # Parallel connections
+
+                    iperf3 -s 
+                    # -----------------------------------------------------------
+                    # Server listening on 5201
+                    # -----------------------------------------------------------
+                    # Accepted connection from 192.168.11.101, port 52474
+                    # [  5] local 192.168.11.103 port 5201 connected to 192.168.11.101 port 52484
+                    # ...
+                    # [ ID] Interval           Transfer     Bitrate
+                    # [  5]   0.00-10.04  sec  20.5 GBytes  17.6 Gbits/sec                  receiver
+
+                    iperf3 -c 192.168.11.103 
+                    # Connecting to host 192.168.11.103, port 5201 
+                    # [  5] local 192.168.11.101 port 52484 connected to 192.168.11.103 port 5201
+                    # ...
+                    # - - - - - - - - - - - - - - - - - - - - - - - - -
+                    # [ ID] Interval           Transfer     Bitrate         Retr
+                    # [  5]   0.00-10.00  sec  20.5 GBytes  17.6 Gbits/sec    0             sender
+                    # [  5]   0.00-10.04  sec  20.5 GBytes  17.6 Gbits/sec                  receiver
 
         # HTTP 
 
