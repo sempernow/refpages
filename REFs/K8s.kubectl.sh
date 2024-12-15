@@ -56,6 +56,8 @@ kubectl create deploy $app --image=$img
 kubectl create deploy bbox --image=busybox --dry-run=client -o yaml |tee deploy.bbox.yaml
 # Run a Pod sans Deployment, AKA Naked Pod
 kubectl run $any --image=$img --env FOO=bar --env BLAME=$USER
+# One-shot pod/container deleted upon command completion
+kubectl run $any --image=$img -it --rm -- $command $options 
 # Job : Create a Job which prints "Hello World"
 kubectl create job hello --image=busybox:1.28 -- echo "Hello World"
 # CronJob : create a CronJob that prints "Hello World" every minute
@@ -265,7 +267,7 @@ export KUBECONFIG=$config
 kubectl $anything  
 # Get contexts : A CONTEXT is a set of 3 things : a cluster, a user, and a namespace 
 # - config.contexts[*].context (cluster, namespace, user) 
-kubectl config get-contexts                        # as table
+k config get-contexts                        # as table
 k config view -o jsonpath='{.contexts[*].context}' # as JSON-ish
 k config view -o jsonpath='{.contexts[*].context}' |jq -Mr . --slurp  # Valid JSON
 k config view -o jsonpath='{range .contexts[*]}{.context}{"\n"}{end}' # valid JSON per line
@@ -320,23 +322,6 @@ kubectl config set-context --current --namespace=$ns
 # Validate it
 kubectl config view --minify |grep namespace:
 
-# JsonPath https://kubernetes.io/docs/reference/kubectl/jsonpath/
-    # COMMON PATTERN using its array filter "?()" :
-    # Get value of key-X of an array-element object having a key-Y set to a *declared value*.
-    # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
-    # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
-    user=kind-kind # See config.users[] at `kubectl config view`
-    kubectl config view --raw -o yaml \
-        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data'
-        #...
-    kubectl config view --raw \
-        -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
-        |base64 -d |openssl x509 -text -noout
-        # OR just declared field(s)
-        |base64 -d |openssl x509 -noout -startdate -enddate -issuer -subject -ext subjectAltName
-            #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
-            # X.509 "O" maps to "kind: Group", and "CN" maps to "kind: User"
-
 # RBAC : API Access (Authz)
 group=team-1
 role=developer
@@ -383,7 +368,53 @@ kubectl get clusterrolebindings -n $ns -o json \
     |jq -Mr '[.items[]? | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[]? |select(.kind == "'$sub'")|select(.name == "'$grp'")) |{kind:.kind,name:.name}}]' \
     |yq eval -P -o yaml
 # Get ClusterRole of Group
-# X.509 certificates of "kind: User"
+# X.509 certificates of "kind: Group"
 # - @ K3S : /var/lib/rancher/k3s/server/tls
 # - @ K8s : /var/kubernetes/pki, /var/kubernetes/*.conf 
 # - Also check pod.volumes for path(s) declared at host process (ps aux)
+
+# X.509 v. RBAC
+    # JsonPath https://kubernetes.io/docs/reference/kubectl/jsonpath/
+    # COMMON PATTERN using its array filter "?()" :
+    # Get value of key-X of an array-element object having a key-Y set to a *declared value*.
+    # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
+    # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
+    user=kind-kind # See config.users[] at `kubectl config view`
+    kubectl config view --raw -o yaml \
+        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data'
+        #...
+    kubectl config view --raw \
+        -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
+        |base64 -d |openssl x509 -text -noout
+        # OR just declared field(s)
+        |base64 -d |openssl x509 -noout -startdate -enddate -issuer -subject -ext subjectAltName
+            #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+            # X.509 "O" maps to "kind: Group", and "CN" maps to "kind: User"
+
+    # CA
+    kubectl config view --raw \
+        -o jsonpath='{.clusters[].cluster.certificate-authority-data}' \
+        |base64 -d \
+        |openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName
+
+    issuer=CN = k3s-server-ca@1734274754
+    subject=CN = k3s-server-ca@1734274754
+    notBefore=Dec 15 14:59:14 2024 GMT
+    notAfter=Dec 13 14:59:14 2034 GMT
+    No extensions in certificate
+
+    # User (Group)
+    kubectl config view --raw \
+        -o jsonpath='{.users[].user.client-certificate-data}' \
+        |base64 -d \
+        |openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName
+
+    issuer=CN = k3s-client-ca@1734274754
+    subject=O = system:masters, CN = system:admin
+    notBefore=Dec 15 14:59:14 2024 GMT
+    notAfter=Dec 15 14:59:14 2025 GMT
+    No extensions in certificate
+
+    # Find ClusterRoleBinding(s) for that Group
+    kubectl get clusterrolebinding \
+        -o jsonpath='{.items[].metadata.name}{"\n"}{.items[].subjects[?(@.kind=="Group")].name}'

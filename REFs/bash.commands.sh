@@ -1713,6 +1713,9 @@ exit
         # DELETE all EMPTY LINES
             sed '/^[[:space:]]*$/d' FILE 
 
+        # DELETE all LINEs having FIRST CHAR "#"
+            sed '/^[[:space:]]*#/d'
+
         # Remove non-word (neither letter, digit, nor underscore) characters
             sed 's/\W//g' FILE
 
