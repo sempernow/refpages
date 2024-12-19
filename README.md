@@ -184,6 +184,7 @@
 ## [K8s.CNI.cilium.md](./REFs/K8s.CNI.cilium.md)
 ## [K8s.configure-kernel.sh](./REFs/K8s.configure-kernel.sh)
 ## [K8s.GatewayAPI.md](./REFs/K8s.GatewayAPI.md)
+## [K8s.ingress-nginx.md](./REFs/K8s.ingress-nginx.md)
 ## [K8s.K3s.md](./REFs/K8s.K3s.md)
 ## [K8s.kind.md](./REFs/K8s.kind.md)
 ## [K8s.kops.md](./REFs/K8s.kops.md)
