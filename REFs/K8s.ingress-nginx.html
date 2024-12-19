@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.ingress-nginx</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://kubernetes.github.io/ingress-nginx/deploy/" title="kubernetes.github.io">Ingress-NGINX Controller</a> | <a href="https://github.com/kubernetes/ingress-nginx/releases">Releases</a></h1>
+
+<h2><code>Ingress</code> : Rewrite (<a href="https://github.com/kubernetes/ingress-nginx/blob/main/docs/examples/rewrite/README.md" title="github.com/kubernetes/ingress-nginx"><code>rewrite-target</code></a>) Syntax</h2>
+
+<p>URL rewrite rules are based on RegEx <a href="https://www.regular-expressions.info/refcapture.html" title="regular-expressions.info">Capture Group</a>s, which are saved in numbered placeholders; <code>$1</code>, <code>$2</code> &hellip; <code>$n</code>.
+So, rewrite rule <code>\$n</code> declares the capture group (of the request) that survives the rewrite, and is sent upstream.</p>
+
+<p><strong>Here are some example patterns</strong>:</p>
+
+<h3>1. <code>/a</code> --&gt; <code>/a</code></h3>
+
+<p>Here there is no actual rewrite.
+Request for <code>/a</code> is sent to upstream app as <code>/a</code>.
+The pattern is used only to optimize
+handling by NGINX processor.</p>
+
+<pre><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Ingress
+...
+  annotations:
+    # Apply rewrite to the 1st ($1) Capture Group.
+    # That is, preserve only that group.
+    nginx.ingress.kubernetes.io/use-regex: &quot;true&quot;
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+ ...
+  rules:
+    ...
+      paths:
+        # This 1st (only) capture group to capture everything after leading slash and rewrite to root. So actually rewrite nothing, yet this pattern informs NGINX to fully injest and process, resulting in optimized handling of edge-cases and query params.
+      - path: /(.*) 
+        # Inform K8s that path interpretation is performed by Ingress Controller (RegEx)
+        pathType: ImplementationSpecific
+        ...
+</code></pre>
+
+<blockquote>
+<p>Different Ingress controllers support different annotations.</p>
+</blockquote>
+
+<h3>2. <code>/a/x</code> --&gt; <code>/x</code></h3>
+
+<pre><code class="language-yaml">...
+  annotations:
+    # Apply rewrite to the 2nd ($2) Capture Group.
+    # That is, preserve only that group.
+    nginx.ingress.kubernetes.io/use-regex: &quot;true&quot;
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+..
+        
+      - path: /a(/|$)(.*)
+        pathType: ImplementationSpecific
+
+</code></pre>
+
+<ul>
+<li><code>/a</code> is the literal string.</li>
+<li><code>(/|$)</code> is the 1st capture group,
+matching either a forward slash <code>/</code>
+or the end of the string <code>($)</code>.</li>
+<li><code>(.*)</code> is the 2nd capture group,
+matching anything that comes after <code>/a/</code> or <code>/a</code>.</li>
+</ul>
+
+<p>So <strong>client request</strong> <code>/a/1/2?q=v</code> is <strong>rewritten</strong> to <code>/1/2?q=v</code>,
+<strong>before it is sent upstream</strong>.</p>
+
+<h3>3. <code>/a</code> --&gt; <code>/b</code></h3>
+
+<pre><code class="language-yaml">...
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: &quot;true&quot;
+    nginx.ingress.kubernetes.io/rewrite-target: /b/$1
+..
+      - path: /a(.*)
+        pathType: ImplementationSpecific
+
+</code></pre>
+
+<h3><code>app-root</code> : <code>/a</code>  --&gt; <code>/</code></h3>
+
+<pre><code class="language-yaml">...
+  annotations:
+    nginx.ingress.kubernetes.io/app-root: /a
+...
+      - path: /
+        pathType: Prefix
+        ...
+</code></pre>
+
+<ul>
+<li>Response to request of <code>http://foo.lime.lan/</code> is a <strong>redirect</strong>:
+
+<ul>
+<li>Code: <code>302 Moved Temporarily</code></li>
+<li>Header: <code>Location: http://foo.lime.lan/a</code></li>
+</ul></li>
+</ul>
+
+<h2>Deploy</h2>
+
+<h3>Baremetal clusters</h3>
+
+<pre><code class="language-bash"># https://github.com/kubernetes/ingress-nginx/releases
+v=1.11.3
+url=https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v$v/deploy/static/provider/baremetal/deploy.yaml
+manifest=deploy-ingress-nginx-baremetal.yaml
+curl -sSL -o $manifest $url
+
+kubectl apply -f $manifest
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

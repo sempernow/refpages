@@ -20,11 +20,11 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://docs.k3s.io/" title="docs.k3s.io">K3S</a></h1>
+        <h1><a href="https://docs.k3s.io/" title="docs.k3s.io">K3s</a></h1>
 
 <h2>TL;DR</h2>
 
-<p>K3S is an unconventional though <strong>very useful</strong> distro, and has <strong>excellent documentation</strong>.
+<p>K3s is an unconventional though <strong>very useful</strong> distro, and has <strong>excellent documentation</strong>.
 It installs quickly with <strong>zero configuration</strong> for its sensible defaults.
 It includes CRI, CNI, service mesh, load balancer, and ingress controller,
 all chosen for their light weight, making it the go-to distro for edge devices.</p>
@@ -234,14 +234,41 @@ systemd-+-2*[agetty]
 <li><p>The <code>kubeconfig</code> for &quot;<code>k3s kubectl</code>&hellip;&quot; is created at <a href="etc.rancher.k3s.yaml"><code>/etc/rancher/k3s/k3s.yaml</code></a>.
 This does <em>not</em> affect <code>/usr/local/bin/kubectl</code> unless further configured to do so.</p></li>
 
-<li><p><a href="kubeconfig.certificate-authority-data.openssl.x509.log"><code>ca-certificate-data</code></a></p>
+<li><p>X.509 v. RBA for that GroupC</p>
 
-<pre><code class="language-bash">$ k3s kubectl config view --raw \
+<pre><code class="language-bash"># CA
+☩ k config view --raw \
     -o jsonpath='{.clusters[].cluster.certificate-authority-data}' \
     |base64 -d \
-    |openssl x509 -text
-    
-</code></pre></li>
+    |openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName
+
+issuer=CN = k3s-server-ca@1734274754
+subject=CN = k3s-server-ca@1734274754
+notBefore=Dec 15 14:59:14 2024 GMT
+notAfter=Dec 13 14:59:14 2034 GMT
+No extensions in certificate
+
+# User (Group)
+☩ k config view --raw \
+    -o jsonpath='{.users[].user.client-certificate-data}' \
+    |base64 -d \
+    |openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName
+
+issuer=CN = k3s-client-ca@1734274754
+subject=O = system:masters, CN = system:admin
+notBefore=Dec 15 14:59:14 2024 GMT
+notAfter=Dec 15 14:59:14 2025 GMT
+No extensions in certificate
+# Find ClusterRoleBinding(s) for that Group
+☩ k get clusterrolebinding \
+    -o jsonpath='{.items[].metadata.name}{&quot;\n&quot;}{.items[].subjects[?(@.kind==&quot;Group&quot;)].name}'
+cluster-admin
+system:masters
+</code></pre>
+
+<ul>
+<li>X.509 <code>O</code> maps to K8s <code>Group</code></li>
+</ul></li>
 
 <li><p><a href="k.get.objs-A.log"><code>k get node,deploy,ds,sts,svc,ingress</code></a></p></li>
 
@@ -476,6 +503,41 @@ healthz check passed
   &quot;compiler&quot;: &quot;gc&quot;,
   &quot;platform&quot;: &quot;linux/amd64&quot;
 }
+</code></pre>
+
+<h2>Network : <code>iperf3</code></h2>
+
+<pre><code class="language-bash">☩ k get node -o wide
+NAME   STATUS   ROLES                  AGE     VERSION        INTERNAL-IP      EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION                       CONTAINER-RUNTIME
+xpc    Ready    control-plane,master   4h40m   v1.31.3+k3s1   172.27.240.169   &lt;none&gt;        Ubuntu 22.04.4 LTS   5.15.167.4-microsoft-standard-WSL2   containerd://1.7.23-k3s2
+
+☩ k run nbox-s --image=docker.io/n^Colaka/netshoot --restart=Never  -- iperf3 -c
+
+☩ k get pod -o wide
+NAME     READY   STATUS    RESTARTS   AGE   IP           NODE   NOMINATED NODE   READINESS GATES
+nbox-s   1/1     Running   0          19s   10.42.0.23   xpc    &lt;none&gt;           &lt;none&gt;
+
+☩ k run nbox-c --image=docker.io/nicolaka/netshoot -it --rm -- iperf3 -c 10.42.0.23
+If you don't see a command prompt, try pressing enter.
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec  4.03 GBytes  34.6 Gbits/sec  141   1.00 MBytes
+[  5]   1.00-2.00   sec  3.94 GBytes  33.8 Gbits/sec    2   1.00 MBytes
+[  5]   2.00-3.00   sec  3.88 GBytes  33.4 Gbits/sec    0   1.00 MBytes
+[  5]   3.00-4.00   sec  3.81 GBytes  32.7 Gbits/sec    0   1.00 MBytes
+[  5]   4.00-5.00   sec  3.73 GBytes  32.1 Gbits/sec    0   1.00 MBytes
+[  5]   5.00-6.00   sec  3.74 GBytes  32.1 Gbits/sec    0   1.00 MBytes
+[  5]   6.00-7.00   sec  3.79 GBytes  32.5 Gbits/sec    0   1.00 MBytes
+[  5]   7.00-8.00   sec  3.79 GBytes  32.6 Gbits/sec    0   1.00 MBytes
+[  5]   8.00-9.00   sec  3.76 GBytes  32.3 Gbits/sec    0   1.00 MBytes
+[  5]   9.00-10.00  sec  3.88 GBytes  33.3 Gbits/sec    0   1.00 MBytes
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.00  sec  38.5 GBytes  33.1 Gbits/sec  143             sender
+[  5]   0.00-10.00  sec  38.5 GBytes  33.1 Gbits/sec                  receiver
+
+iperf Done.
+pod &quot;nbox-c&quot; deleted
+
 </code></pre>
 
 <h3>&nbsp;</h3>
