@@ -490,54 +490,54 @@ exit
 
         tar # The workhorse of Linux archiving (originally "tape archive"):
             # Compress/archive; recurses through dir tree by default.
-            # EXT: tgz, txz, tar, gz, tar.gz, bzip2, lzip, lzop, lzma, xz, ... 
+            # EXT: tgz, txz, tar, gz, tar.gz, bzip2, lzip, lzop, lzma, xz, ...
+            
+            ##################################
+            #>>>  ORDER of flag(s) matter  <<< 
+            ##################################
 
-            tar -caf ARCH_PATH.EXT [OPTIONS] -C PATH SOURCE  # CREATE of SOURCE; PATH is arch root; sans sets root to PWD.
-            tar -xaf ARCH_PATH.EXT [OPTIONS] -C PATH         # EXTRACT to PATH; sans extracts to PWD.
-            tar -taf ARCH_PATH.EXT                           # LIST all content (paths).
-
-            -f PATH # Archive file path
-            -t, --list
-            -x, --extract
+            -f ARCHIVE # Path to target archive (source or result)
             -c, --create
-            -f, --file=ARCHIVE
+            -x, --extract
+            -t, --list
             -v, --verbose
-            -a, --auto-compress # Archive by method/type inferred from EXT
+            -f, --file=ARCHIVE
+            -a, --auto-compress # Infer archive type from EXT
             -j, --bzip2         # .tar.bz2 is .tbz2
             -z, --gz            # .tar.gz  is .tgz
             -J, --xz            # .tar.xz  is .txz
-            -C PATH # change to PATH before processing, so arch root is PATH;
-                # typically set to PARENT of target dir;
-                # is unnecessary if working dir (PWD) is parent of target.
+            -C PARENT # IIF flag is placed FIRST, 
+                      # then change to PARENT path before processing, 
+                      # so arch root is PARENT;
+                      # unnecessary if working dir (PWD) is parent of target.
             --newer-mtime=DATE # Work on files whose data changed after DATE.  
-            # If DATE starts with '/'' or '.', then treated as fname and DATE is its mtime. 
+            # If DATE starts with '/' or '.', then treated as file; DATE is mtime. 
             # Exclude certain folders|files; multiple such excludes okay
-            --exclude=PATTERN  # Excude PATTERN; MULTIPLE use okay; place BEFORE source path
+            --exclude=PATTERN  # IIF flag is before SOURCE, then excude PATTERN; MULTIPLE use okay
+            --exclude='.*'
             --exclude-from <(find foo -size +1M)  # Exclude files in foo larger than 1 MB
             --dereference  # Include reparse points; SYMLINKs/Junction Points/...
+ 
+            # CREATE archive of SOURCE including entire folder structure
+            tar -caf ARCH_PATH.EXT [OPTIONS] SOURCE_PATH # SOURCE is path
+            # EXTRACT archive to PWD
+            tar -xaf ARCH_PATH.EXT [OPTIONS]         
+          
+            # CREATE archive of SOURCE where PARENT of SOURCE is archive root
+            tar -C PARENT -caf ARCH_PATH.EXT [OPTIONS] SOURCE_FOLDER_OR_FILE_NAME
+            # EXTRACT archive to PARENT
+            tar -C PARENT -xaf ARCH_PATH.EXT [OPTIONS]         
+ 
+            # LIST archive content 
+            tar -taf ARCH_PATH.EXT
 
-            # TARBALL any PATH : content of PATH becomes archive root.
-                tar -caf NAME.tgz -C PARENT PATH # PARENT is that of PATH.
+            # Create archive (TARBALL) of $PWD : Tarball extracts to current PWD
+                tar -C "./../${PWD##*/}" -caf "./../${PWD##*/}.tgz" .  
 
-            # TARBALL a SUBDIR : content of ./foo becomes archive root.
-                tar -caf foo.tgz ./foo
-
-            # TARBALL the PWD : content of PWD becomes archive root.
-
-                # Create TARBALL of $PWD; create .tgz @ parent, with content of $PWD at archive root
-                    tar -caf "./../${PWD##*/}.tgz" -C "./../${PWD##*/}" .  
-                # Extract TARBALL
-                tar -xaf ARCHIVE  # extracts to (current) PWD
-
-            # Archive having PARENT FOLDER (is NOT a canonical "tarball").
-
-                # Create tgz, working from parent of PWD, having PWD FOLDERNAME as archive root
-                tar -caf "./../${PWD##*/}.tgz" -C ./../  "${PWD##*/}"  
-                # Extract archive
-                tar -xaf ARCHIVE  # extracts to FOLDERNAME of archived PWD
+            # Create archive of PWD PARENT (is NOT a canonical "tarball").
+                tar -C ./../ -caf "./../${PWD##*/}.tgz" "${PWD##*/}"  
 
             # CREATE : compression algos
-
             tar -cJf ARCH.txz ...  # create tarball; LZMA2 of tar archive
             tar -cjf ARCH.tbz ...  # create tarball; bzip2 of tar archive
             tar -czf ARCH.tgz ...  # create tarball; gzip  of tar archive  
@@ -547,22 +547,22 @@ exit
                 tar.gz  = tgz
                 unzip --help
 
-            # CREATE archive of SOURCE, a path RELATIVE TO PATH; exclude per glob pattern
-            # SOURCE is archive root; if `.`, then extracts to PWD
-            tar -caf ARCH_PATH.EXT --exclude='.*' -C PATH  SOURCE
-                
         # EXTRACT $tarball to $target_parent/...
-        tar -Cxavf $target_parent $tarball 
-        tar -xzv -C $target_parent --strip-components=1 -f $tarball
+            # Ambiguous/confusing semantics, yet commonly seen:
+            tar -Cxavf $target_parent $tarball 
+            # Better semantics:
+            tar -C $target_parent -xavf $tarball
 
         # PIPEd input per `-` (stdin)
         ... |tar [OPTIONS] -
 
-            # Extract/Install all archived bin/* files to /usr/local/bin/*
-            curl -sSL https://source.com/set_of_binaries.tar.gz |sudo tar -C /usr/local -xzf - 
+            # Extract/Install all archived (tgz) bin/* files to /usr/local/bin/*
+            curl -sSL https://source.com/set_of_binaries.tar.gz \
+                |sudo tar -C /usr/local -xzf - 
 
-            # Create foo.tgz of all dot files @ root dir
-            find . -maxdepth 1 -type f -iname '.*' -print0 |tar --null -caf foo.tgz --files-from - 
+            # Create dots.tgz of all dot files @ root dir
+            find . -maxdepth 1 -type f -iname '.*' -print0 \
+                |tar --null -caf dots.tgz --files-from - 
 
     # LIST FOLDERs/FILEs
         ls -al     # all files; long-listing format
@@ -2408,15 +2408,18 @@ exit
     ssh user@host.domain
     
     curl [options] URL  # transfer date between client and server
-        # Pull a script to ./a.sh; quitely, follow redirects, rpt only on err
-        curl -fsSL -o a.sh https://foo.com/path/to/a.sh
+        # Pull script quitely; follow redirects; fail on 404
+        curl -fsSLO https://foo.com/path/to/a.sh
+        # Pull script to /path/b.sh
+        curl -fsSL https://foo.com/path/to/a.sh -o /path/b.sh
+
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 
         # Download directly into install location 
         wget $url -O $destination
 
         # Download, extract, install a BINARY to /usr/local/bin/THIS
-        wget -nv $url -O - |sudo tar -xzvf - -C /usr/local/bin 
+        wget -nv $url -O - |sudo tar -C /usr/local/bin -xzvf - 
 
         # Download, extract, and make (compile and install) from SOURCE tarball
             wget URL_TO_SOURCE.tarball  # download it 

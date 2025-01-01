@@ -218,6 +218,15 @@ kubectl get node -o jsonpath={.items[*].spec.podCIDRs}
 kubectl get node -o jsonpath='{range .items[*]}{.spec.podCIDRs}{"\n"}{end}'
 # template : equivalent
 kubectl get node -o template='{{range .items}}{{.spec.podCIDRs}}{{"\n"}}{{end}}'
+# taints : get : spec.taints: [{key: <str>, value: <str>, effect: <str>}, ...]
+k get node $name -o jsonpath='{.spec.taints}'
+# taints : get keys, e.g., "node-role.kubernetes.io/control-plane"
+k get node a2 -o jsonpath='{.spec.taints[*].key}'
+# taints : remove
+# - remove if value (key) exist
+kubectl taint nodes $name $key1=$value1:$effect-
+# - remove if value (key) not exist
+kubectl taint nodes $name $key1:$effect-
 
 # LABELS & SELECTORS : List & Watch : filter
 # - Equality-based

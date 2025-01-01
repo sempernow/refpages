@@ -183,22 +183,24 @@ and <dfn title="A development practice of pipelining and automated release and d
 - __Multi-tenancy__
     - [__vCluster__](https://github.com/loft-sh/vcluster "GitHub") Virtual clusters for better isolation than Namespace offers. OSS and Enterprise editions.
 - __Logging__ : Cluster-level logging, AKA __Log Aggregation__ AKA __Unified Loggging__, so that logs survive their (ephemeral) generator, be that of any host or container process.
-    - __Elastic stack__ : to collect, store, query, and visualize log data. Composed of:
-        1. [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") backend : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a __distributed document-oriented database model__ where it stores data in indices. These __indices are persisted__ to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the [Lucene](https://en.wikipedia.org/wiki/Apache_Lucene "Wikipedia") library for indexing and searching.
-        1. [Kibana](https://www.elastic.co/guide/en/kibana/current/introduction.html "Elastic.co") frontend :  Web UI optimized for query/view &mdash;*Explore, Visualize, Discover* &mdash;logs from Elasticsearch.
-        1. __Logs Collector__/__Forwarder__ : This is the data-processing pipeline that ingests logs from applications, and then transform (normalize) and forwards them to provide for Unified Logging. This is __the stack's workhorse__, yet oddly external to the stack namesake and core (Elasticsearch/Kibana). Solutions are provided by various projects, many entirely separate from Elasticsearch (the company):
-            - [Logstash](https://www.elastic.co/logstash "Elastic.co") : Elastic's native solution
-            - [Fluentd](https://www.fluentd.org/architecture "Fluentd.org") : Data collector (not limited to logs, metrics and tracing).
-                - [Fluent Bit](https://fluentbit.io/) : 
-                *Lightweight forwarder for Fluentd*.
-                - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub"), formerly "FluentBit Operator" : 
-                    *Manage Fluent Bit and Fluentd the Kubernetes way*.
-        - [ECK (Elastic Cloud on K8s) Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co")  @ [Air-gap environment](https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba "ChatGPT.com") for Elasticsearch and Kibana. 
-            - Requires separate installation of a log collector/forwarder
-        - EFK Stack | [HowTo](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes "DigitalOcean.com") | [Helm](https://artifacthub.io/packages/helm/elastic/elasticsearch)
-        - ELK stack : Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.
-        - [OpenSearch](https://opensearch.org/docs/latest/about/ "OpenSearch.org") : FOSS fork of Elastic stack (Elasticsearch/Kibana)
-            - [Data Prepper](https://opensearch.org/docs/latest/data-prepper/) : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces. 
+    - __Elastic stack__ : to collect, store, query, and visualize log data. 
+        - Composed of:
+            1. __Backend__ : [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a __distributed document-oriented database model__ where it stores data in indices. These __indices are persisted__ to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the [Lucene](https://en.wikipedia.org/wiki/Apache_Lucene "Wikipedia") library for indexing and searching.
+            1. __Frontend__ : [Kibana](https://www.elastic.co/guide/en/kibana/current/introduction.html "Elastic.co") frontend :  Web UI optimized for query/view &mdash;*Explore, Visualize, Discover* &mdash;logs from Elasticsearch.
+            1. __Agent__ : Collector/Forwarder of container logs : This is the data-processing pipeline that ingests logs from applications, and then transform (normalize) and forwards them to provide for Unified Logging. This is __the stack's workhorse__, yet oddly external to the stack namesake and core (Elasticsearch/Kibana). Solutions are provided by various projects, many entirely separate from Elasticsearch (the company):
+                - [Logstash](https://www.elastic.co/logstash "Elastic.co") : Elastic's native solution
+                - [Fluentd](https://www.fluentd.org/architecture "Fluentd.org") : Data collector (not limited to logs, metrics and tracing).
+                    - [Fluent Bit](https://fluentbit.io/) : 
+                    *Lightweight forwarder for Fluentd* for environments having limited resources 
+                    - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub"), formerly "FluentBit Operator" : 
+                        *Manage Fluent Bit and Fluentd the Kubernetes way*.
+        - Stacks
+            - [ECK Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co")  (Elastic Cloud on K8s) Contains only Elasticsearch and Kibana. Does not include any Collector/Forwarder (Fluentd, Logstash, &hellip;)
+                - Deploy in [air-gap environment](https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba "ChatGPT.com")  : 
+            - __EFK Stack__ | [HowTo](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes "DigitalOcean.com") | [Helm](https://artifacthub.io/packages/helm/elastic/elasticsearch)
+            - ELK stack : Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.
+            - [OpenSearch](https://opensearch.org/docs/latest/about/ "OpenSearch.org") : FOSS fork of Elastic stack (Elasticsearch/Kibana)
+                - [Data Prepper](https://opensearch.org/docs/latest/data-prepper/) : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces. 
     - [Grafana Loki](https://grafana.com/oss/loki/) | [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") ([Install](https://grafana.com/docs/loki/latest/setup/install/)) : "*Prometheus, but for logs*". A lightweight alternative to Elastic stack.
         - __Does not provide full-text indexing__ of logs; indexes only the logs' metadata (__labels__).
         - No viable installation method is available (2024-08), contrary to project claims. 
@@ -287,29 +289,31 @@ and <dfn title="A development practice of pipelining and automated release and d
     - Service Discovery
         - etcd : K8s cluster
         - Consul : Multi-cluster
-- __Security__
-    - Distributed-Workload Identities
+- __IA__/__Security__
+    - Distributed-__Workload Identities__
         - [SPIFFE/SPIRE](https://spiffe.io/) : Successor to RBAC. Defining (SPIFFE) and implementing (SPIRE) a __workload identity platform__ and access controls rooted in Zero Trust (versus Perimeter Security) principles to mitigate risk of attack.
             - __Secure Production Identity Framework for Everyone__ (SPIFFE) : An OSS framework specificition to provide attested, cryptographic identities to distributed workloads; capable of bootstrapping and issuing identity to services; defines short-lived cryptographic identity documents (SVID) via a simple API. Workloads use these SVIDs when authenticating to other workloads, for example by establishing a TLS connection or by signing and verifying a JWT token.
             - __SPIFFE Runtime Environment__ ([SPIRE](https://spiffe.io/docs/latest/spire-about/spire-concepts/)) : a production-ready implementation of the SPIFFE APIs (pluggable multi-factor attestation and SPIFFE federation) that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.
-    - Scan for CVEs (Common Vulnerabilities and Exposures)
+    - __Threat Detection__ / __Remediation__ : __CVE__s (Common Vulnerabilities and Exposures)
+        - [K8s Adminssion Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
         - [Trivy](https://aquasecurity.github.io/trivy/v0.56/ "aquasecurity.github.io") : Scan OCI-container images, OS folders, Kubernetes clusters, Git repos, virtual machines, and more. And can create SBOM and CVE-vulnerabilities audits of them.
-            - [K8s : `trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/ "aquasecurity.github.io") by Helm chart :  
-            The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as `VulnerabilityReport` (CRD) resources, which are owned by a Kubernetes controller.
-        - [Kubescape.io](https://kubescape.io/)  
-          Risk analysis, security compliance, and misconfiguration scanning.
+            - [`trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/ "aquasecurity.github.io") by Helm chart : Recurringly scan all container images : Generates `VulnerabilityReport`s per Pod, DaemonSet, &hellip; across all/declared Namespaces.
+        - [Kubescape](https://kubescape.io/) (10K) : Runtime Detection 
+        - [Falco](https://falco.org) by [Sysdig](https://sysdig.com/opensource/) (7K) : Threat detection/reporting : Runtime security across hosts, containers, Kubernetes, and cloud environments. It leverages custom rules on Linux kernel events and other data sources through plugins, enriching event data with contextual metadata to deliver real-time alerts. Falco enables the detection of abnormal behavior, potential security threats, and compliance violations.
         - [`cve-bin-tool`](https://pypi.org/project/cve-bin-tool/#finding-known-vulnerabilities-using-the-binary-scanner "PyPI.org") :  
-            FOSS tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl
-    - Threat Detection and Remediation
-        - [Kubescape](https://kubescape.io/) : Runtime Detection
-        - Falco 
-        - KubeArmor
-    - Policies
-        - Kyverno
-        - Kubernetes Validating/Admission Policy
-    - Secrets
+            Python tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl
+    - __Policy Enforcement__ 
+        - [K8s Adminssion Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
+        - [Kyverno](https://kyverno.io) Policy as Code (6K)
+            - [Kyverno CLI](https://kyverno.io/docs/kyverno-cli/) can be used to apply and test policies __off-cluster__ e.g., as part of an IaC and CI/CD pipelines.
+            - [Kyverno Policy Reporter](https://kyverno.io/docs/kyverno-policy-reporter/) : a sub-project of Kyverno that provides in-cluster management of policy reports with a web-based graphical user interface.
+            - [Kyverno JSON](https://kyverno.io/docs/kyverno-json/) : a sub-project of Kyverno that allows applying Kyverno policies to __off-cluster__ workload. It works on any JSON payload.
+            - [Kyverno Chainsaw](https://kyverno.io/docs/kyverno-chainsaw/) sub-project of Kyverno provides declarative end-to-end testing for Kubernetes controllers.
+        - [OPA/Gatekeeper](https://open-policy-agent.github.io/gatekeeper/website/docs/)  (3.7K): Automated policy enforcement 
+        - [Kubearmor](https://kubearmor.io)  (1.6K): Runtime Security Enforcement : Policy-based controls : a runtime Kubernetes security engine that uses eBPF and Linux Security Modules (LSM) for fortifying workloads based on Cloud Containers, IoT/Edge, and 5G networks.
+    - __Secrets__
         - [Vault](https://github.com/hashicorp/vault) : 
-          [`vault-secrets-operator`](https://github.com/hashicorp/vault-secrets-operator "GitHub")
+          [`vault-helm`](https://github.com/hashicorp/vault-helm "GitHub") : [`vault-secrets-operator`](https://github.com/hashicorp/vault-secrets-operator "GitHub")
           provides for [various implementations](https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79 "ChatGPT"):
             - Vault Agent Sidecar Injection : Most secure (rest/transit) : 
               Transparent encrypt/decrypt of K8s `Secret` objects (`data`)
@@ -329,10 +333,27 @@ and <dfn title="A development practice of pipelining and automated release and d
             - Transit Engine : works entirely within Vault and does not require a sidecar or agent within your Pods. It is used by the K8s control plane (e.g., API server) to perform encryption operations, ensuring data is encrypted when stored (e.g., in etcd) and decrypted when needed.
         - [SOPS](https://github.com/getsops/sops) (Secrets OPerationS) : 
           Secrets management; editor that interfaces with Vault etal.
-    - Signing
+        - [`age`](https://github.com/FiloSottile/age "GitHub : FiloSottile/age") (Actually Good Encryption) : A simple CLI providing AEAD encrypt/decrypt. 
+          Rejoice over a replacement for the obnoxiously complicated PGP (Pretty Good Privacy) project. 
+            ```bash
+            # Install : bad binary
+            sudo curl -sSLo /usr/local/bin/age https://dl.filippo.io/age/latest?for=linux/amd64
+            # Install : okay
+            go install filippo.io/age/cmd/...@latest
+            sudo ln -s /home/u1/go/bin/age /usr/local/bin
+            
+            # Generate public-private key pair
+            key=age.key
+            pub="$(age-keygen -o $key 2>&1 |cut -d':' -f2 )"
+            # Encrypt a source (archive)
+            tar cvz ~/$src |age -r $pub > $src.tgz.age
+            # Decrypt a source
+            age -d -i $key $src.tgz.age > $src.tgz
+            ```
+    - __Signing__
         - Sigstore Cosign
         - Notary
-    - Certificates
+    - __TLS__
         - [cert-manager](https://cert-manager.io/ "cert-manager.io") : _&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry._
 - __Storage__
     - [__MinIO__](file:///D:/1%20Data/IT/Container/Kubernetes/Storage/MinIO/MinIO.html "MinIO.html") : a Kubernetes-native high performance object store with an __S3-compatible API__; 
@@ -340,7 +361,7 @@ and <dfn title="A development practice of pipelining and automated release and d
         - __MinIO Operator__ : [`minio/operator`](https://github.com/minio/operator/ "GitHub") | [Docs](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html#minio-operator-installation "min.io/docs")
     - [__Rook__](https://rook.github.io/docs/rook/latest-release/Getting-Started/intro/) : Open source cloud-native storage orchestrator, providing the platform, 
       framework, and support for __Ceph__ storage to natively integrate with cloud-native environments. Provides __S3__/Swift API.
-        - [__Ceph__](https://ceph.com/en/) : Distributed storage system that provides __file__, __block__ and __object__ storage and is deployed in large scale production clusters built from commodity hardware.
+        - [__Ceph__](https://ceph.com/en/) : Distributed storage system that provides __file__, __block__ and __object__ storage and is deployed in large scale production clusters on commodity hardware.
     - JuiceFS : Distributed POSIX file system built on top of Redis and S3 (MinIO).
     - Gluster
     - Longhorn 

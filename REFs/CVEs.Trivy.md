@@ -19,23 +19,6 @@ curl -LO $url && tar -xvaf $tarball
 sudo cp trivy /usr/local/bin/
 ```
 
-
-### [K8s : `trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/)
-
-Install by Helm 
-
-```bash
-ver='0.20.5' # Chart; trivy v0.18.4
-helm repo add trivy-operator https://aquasecurity.github.io/helm-charts/
-helm upgrade --install trivy trivy-operator/trivy-operator --version $ver
-```
-- Images : `ghcr.io` is the project registry 
-    - `aquasecurity/trivy`
-    - `aquasecurity/trivy-operator`
-    - `aquasecurity/node-collector`
-    - `aquasecurity/trivy-db`
-    - `aquasecurity/trivy-java-db`
-
 ## Useage
 
 ### List of Commands
@@ -61,6 +44,9 @@ trivy k8s --report summary $cluster_name
 
 # Scan host filesystem (FS)
 trivy fs --scanners vuln,secret,misconfig $target_path
+
+# Scan a binary file on host filesystem (FS)
+trivy fs --scanners vuln,secret,misconfig $(which $bin)
 
 # Scan a remote repo
 trivy repo https://github.com/aquasecurity/trivy-ci-test
@@ -373,9 +359,67 @@ rm $sbom.cdx.json
 
 ```
 
-### Containerized Trivy
+## Containerized Trivy
 
-Instead of installing Trivy on the host:
+### [K8s : `trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/) | `CVEs.trivy-operator` ([MD](trivy-operator/CVEs.trivy-operator.md)|[HTML](trivy-operator/CVEs.trivy-operator.html))
+
+The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as `VulnerabilityReport` (CRD) resources, which are owned by a Kubernetes controller.
+
+Install by Helm 
+
+```bash
+ver='0.24.1' # trivy v0.22.0
+helm repo add trivy-operator https://aquasecurity.github.io/helm-charts/
+helm upgrade --install trivy trivy-operator/trivy-operator --version $ver
+```
+- Images :
+    ```plaintext
+    ghcr.io/aquasecurity/trivy
+    ghcr.io/aquasecurity/trivy-operator
+    ghcr.io/aquasecurity/node-collector
+    ghcr.io/aquasecurity/trivy-db
+    ghcr.io/aquasecurity/trivy-java-db
+    ```
+
+&nbsp;
+Scan reports saved to CRD: `kind: VulnerabilityReport`
+
+```bash
+k get VulnerabilityReport 
+
+vr=statefulset-my-vault-vault
+
+k -n vault get VulnerabilityReport $vr -o json \
+    |jq -Mr '.report.vulnerabilities | .[]? |select(.severity == "CRITICAL" or .severity == "HIGH")'
+    |jq . --slurp
+```
+```json
+[
+  {
+    "fixedVersion": "23.0.15, 26.1.5, 27.1.1, 25.0.6",
+    "installedVersion": "v25.0.5+incompatible",
+    "lastModifiedDate": "2024-07-30T20:15:04Z",
+    "links": [],
+    "primaryLink": "https://avd.aquasec.com/nvd/cve-2024-41110",
+    "publishedDate": "2024-07-24T17:15:11Z",
+    "resource": "github.com/docker/docker",
+    "score": 9.9,
+    "severity": "CRITICAL",
+    "target": "",
+    "title": "moby: Authz zero length regression",
+    "vulnerabilityID": "CVE-2024-41110"
+  },
+  {
+    ...
+    "severity": "HIGH",
+    "target": "",
+    "title": "encoding/gob: golang: Calling Decoder.Decode ... can cause a panic due to stack exhaustion",
+    "vulnerabilityID": "CVE-2024-34156"
+  }
+]
+```
+
+### Docker
 
 ```bash
 
@@ -399,16 +443,7 @@ docker run --rm \
 - `-v /var/...` : Bind mount to host's Docker-server socket.
 - `-v /tmp/...` : Bind mount to an empty host store to persist Trivy's DB download(s).
 
-Summary of all scans
-
-```bash
-find . -type f -isbom '*.spdx.log' -exec /bin/bash -c '
-    cat $1 |grep -B1 -A2 ===
-' _ {} \; |tee summaries.spdx.log
-
-```
-
-#### [Advanced Docker Configuration](https://chatgpt.com/share/66fc84d8-9804-8009-a091-c4b6ed94aabc "ChatGPT.com")
+### [Advanced Docker Configuration](https://chatgpt.com/share/66fc84d8-9804-8009-a091-c4b6ed94aabc "ChatGPT.com") : Rootless
 
 Trivy running as a container (above) has a bind mount to Docker's socket (`/var/run/docker.sock`) to provide the required communication to Docker API for pulling images, examining layers and such; however, that's a big security issue because the container must then run as root. A more secure arrangement (if by TLS) is to connect via TCP using Trivy flag `--docker-host`. Note we're configuring for Trivy to __run as non-root user__, which is a security boost regardless.
 
