@@ -7,6 +7,25 @@ exit
 # https://github.com/git-for-windows/git/blob/master/Documentation/gittutorial.txt
 
 # By scenario
+## Create a new local branch from a remote branch
+git checkout --track origin/feature-branch-name # So subsequent pull needs no args
+## Combine checkout and pull to assure latest remote included
+git checkout $branch && git pull
+## Rebase instead of pull for linear commit history
+## Do this prior to MR of feature into main
+## - Pulls latest changes from origin/main.
+## - Reapplies local feature branch commits on top of latest main.
+## - Updates feature branch to reflect the changes.
+git checkout feature-branch-name
+git fetch # Updates meta but does not affect local branches
+git rebase origin/origin
+git push --force # Required unless first push of feature.
+
+## Update local feature branch with the changes (made by others) at remote 
+## by rebase of current branch onto latest state of remote origin/feature-branch-name.
+git diff origin/main 
+git rebase origin/feature-branch-name
+
 ## When local is BEHIND/DIVERGED from remote, ...
 git checkout $branch
 git pull    # Fail: "You have divergent branches and need to specify how to reconcile them."

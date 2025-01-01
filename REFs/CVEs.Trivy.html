@@ -41,27 +41,6 @@ curl -LO $url &amp;&amp; tar -xvaf $tarball
 sudo cp trivy /usr/local/bin/
 </code></pre>
 
-<h3><a href="https://aquasecurity.github.io/trivy-operator/latest/">K8s : <code>trivy-operator</code></a></h3>
-
-<p>Install by Helm</p>
-
-<pre><code class="language-bash">ver='0.20.5' # Chart; trivy v0.18.4
-helm repo add trivy-operator https://aquasecurity.github.io/helm-charts/
-helm upgrade --install trivy trivy-operator/trivy-operator --version $ver
-</code></pre>
-
-<ul>
-<li>Images : <code>ghcr.io</code> is the project registry
-
-<ul>
-<li><code>aquasecurity/trivy</code></li>
-<li><code>aquasecurity/trivy-operator</code></li>
-<li><code>aquasecurity/node-collector</code></li>
-<li><code>aquasecurity/trivy-db</code></li>
-<li><code>aquasecurity/trivy-java-db</code></li>
-</ul></li>
-</ul>
-
 <h2>Useage</h2>
 
 <h3>List of Commands</h3>
@@ -86,6 +65,9 @@ trivy k8s --report summary $cluster_name
 
 # Scan host filesystem (FS)
 trivy fs --scanners vuln,secret,misconfig $target_path
+
+# Scan a binary file on host filesystem (FS)
+trivy fs --scanners vuln,secret,misconfig $(which $bin)
 
 # Scan a remote repo
 trivy repo https://github.com/aquasecurity/trivy-ci-test
@@ -446,9 +428,68 @@ rm $sbom.cdx.json
 
 </code></pre>
 
-<h3>Containerized Trivy</h3>
+<h2>Containerized Trivy</h2>
 
-<p>Instead of installing Trivy on the host:</p>
+<h3><a href="https://aquasecurity.github.io/trivy-operator/latest/">K8s : <code>trivy-operator</code></a> | <code>CVEs.trivy-operator</code> (<a href="trivy-operator/CVEs.trivy-operator.md">MD</a>|<a href="trivy-operator/CVEs.trivy-operator.html">HTML</a>)</h3>
+
+<p>The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as <code>VulnerabilityReport</code> (CRD) resources, which are owned by a Kubernetes controller.</p>
+
+<p>Install by Helm</p>
+
+<pre><code class="language-bash">ver='0.24.1' # trivy v0.22.0
+helm repo add trivy-operator https://aquasecurity.github.io/helm-charts/
+helm upgrade --install trivy trivy-operator/trivy-operator --version $ver
+</code></pre>
+
+<ul>
+<li><p>Images :</p>
+
+<pre><code class="language-plaintext">ghcr.io/aquasecurity/trivy
+ghcr.io/aquasecurity/trivy-operator
+ghcr.io/aquasecurity/node-collector
+ghcr.io/aquasecurity/trivy-db
+ghcr.io/aquasecurity/trivy-java-db
+</code></pre></li>
+</ul>
+
+<p>&nbsp;
+Scan reports saved to CRD: <code>kind: VulnerabilityReport</code></p>
+
+<pre><code class="language-bash">k get VulnerabilityReport 
+
+vr=statefulset-my-vault-vault
+
+k -n vault get VulnerabilityReport $vr -o json \
+    |jq -Mr '.report.vulnerabilities | .[]? |select(.severity == &quot;CRITICAL&quot; or .severity == &quot;HIGH&quot;)'
+    |jq . --slurp
+</code></pre>
+
+<pre><code class="language-json">[
+  {
+    &quot;fixedVersion&quot;: &quot;23.0.15, 26.1.5, 27.1.1, 25.0.6&quot;,
+    &quot;installedVersion&quot;: &quot;v25.0.5+incompatible&quot;,
+    &quot;lastModifiedDate&quot;: &quot;2024-07-30T20:15:04Z&quot;,
+    &quot;links&quot;: [],
+    &quot;primaryLink&quot;: &quot;https://avd.aquasec.com/nvd/cve-2024-41110&quot;,
+    &quot;publishedDate&quot;: &quot;2024-07-24T17:15:11Z&quot;,
+    &quot;resource&quot;: &quot;github.com/docker/docker&quot;,
+    &quot;score&quot;: 9.9,
+    &quot;severity&quot;: &quot;CRITICAL&quot;,
+    &quot;target&quot;: &quot;&quot;,
+    &quot;title&quot;: &quot;moby: Authz zero length regression&quot;,
+    &quot;vulnerabilityID&quot;: &quot;CVE-2024-41110&quot;
+  },
+  {
+    ...
+    &quot;severity&quot;: &quot;HIGH&quot;,
+    &quot;target&quot;: &quot;&quot;,
+    &quot;title&quot;: &quot;encoding/gob: golang: Calling Decoder.Decode ... can cause a panic due to stack exhaustion&quot;,
+    &quot;vulnerabilityID&quot;: &quot;CVE-2024-34156&quot;
+  }
+]
+</code></pre>
+
+<h3>Docker</h3>
 
 <pre><code class="language-bash">
 trivy=aquasec/trivy:0.52.2
@@ -474,15 +515,7 @@ docker run --rm \
 <li><code>-v /tmp/...</code> : Bind mount to an empty host store to persist Trivy's DB download(s).</li>
 </ul>
 
-<p>Summary of all scans</p>
-
-<pre><code class="language-bash">find . -type f -isbom '*.spdx.log' -exec /bin/bash -c '
-    cat $1 |grep -B1 -A2 ===
-' _ {} \; |tee summaries.spdx.log
-
-</code></pre>
-
-<h4><a href="https://chatgpt.com/share/66fc84d8-9804-8009-a091-c4b6ed94aabc" title="ChatGPT.com">Advanced Docker Configuration</a></h4>
+<h3><a href="https://chatgpt.com/share/66fc84d8-9804-8009-a091-c4b6ed94aabc" title="ChatGPT.com">Advanced Docker Configuration</a> : Rootless</h3>
 
 <p>Trivy running as a container (above) has a bind mount to Docker's socket (<code>/var/run/docker.sock</code>) to provide the required communication to Docker API for pulling images, examining layers and such; however, that's a big security issue because the container must then run as root. A more secure arrangement (if by TLS) is to connect via TCP using Trivy flag <code>--docker-host</code>. Note we're configuring for Trivy to <strong>run as non-root user</strong>, which is a security boost regardless.</p>
 

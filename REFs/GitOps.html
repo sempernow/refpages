@@ -304,12 +304,15 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 <li><strong>Logging</strong> : Cluster-level logging, AKA <strong>Log Aggregation</strong> AKA <strong>Unified Loggging</strong>, so that logs survive their (ephemeral) generator, be that of any host or container process.
 
 <ul>
-<li><strong>Elastic stack</strong> : to collect, store, query, and visualize log data. Composed of:
+<li><strong>Elastic stack</strong> : to collect, store, query, and visualize log data.
+
+<ul>
+<li>Composed of:
 
 <ol>
-<li><a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html" title="Elastic.co">Elasticsearch</a> backend : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a <strong>distributed document-oriented database model</strong> where it stores data in indices. These <strong>indices are persisted</strong> to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the <a href="https://en.wikipedia.org/wiki/Apache_Lucene" title="Wikipedia">Lucene</a> library for indexing and searching.</li>
-<li><a href="https://www.elastic.co/guide/en/kibana/current/introduction.html" title="Elastic.co">Kibana</a> frontend :  Web UI optimized for query/view &mdash;<em>Explore, Visualize, Discover</em> &mdash;logs from Elasticsearch.</li>
-<li><strong>Logs Collector</strong>/<strong>Forwarder</strong> : This is the data-processing pipeline that ingests logs from applications, and then transform (normalize) and forwards them to provide for Unified Logging. This is <strong>the stack's workhorse</strong>, yet oddly external to the stack namesake and core (Elasticsearch/Kibana). Solutions are provided by various projects, many entirely separate from Elasticsearch (the company):
+<li><strong>Backend</strong> : <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html" title="Elastic.co">Elasticsearch</a> : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a <strong>distributed document-oriented database model</strong> where it stores data in indices. These <strong>indices are persisted</strong> to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the <a href="https://en.wikipedia.org/wiki/Apache_Lucene" title="Wikipedia">Lucene</a> library for indexing and searching.</li>
+<li><strong>Frontend</strong> : <a href="https://www.elastic.co/guide/en/kibana/current/introduction.html" title="Elastic.co">Kibana</a> frontend :  Web UI optimized for query/view &mdash;<em>Explore, Visualize, Discover</em> &mdash;logs from Elasticsearch.</li>
+<li><strong>Agent</strong> : Collector/Forwarder of container logs : This is the data-processing pipeline that ingests logs from applications, and then transform (normalize) and forwards them to provide for Unified Logging. This is <strong>the stack's workhorse</strong>, yet oddly external to the stack namesake and core (Elasticsearch/Kibana). Solutions are provided by various projects, many entirely separate from Elasticsearch (the company):
 
 <ul>
 <li><a href="https://www.elastic.co/logstash" title="Elastic.co">Logstash</a> : Elastic's native solution</li>
@@ -317,24 +320,29 @@ using a pair of K8s objects for each of the two scopes of K8s API resources (<co
 
 <ul>
 <li><a href="https://fluentbit.io/">Fluent Bit</a> :
-<em>Lightweight forwarder for Fluentd</em>.</li>
+<em>Lightweight forwarder for Fluentd</em> for environments having limited resources</li>
 <li><a href="https://github.com/fluent/fluent-operator" title="GitHub">Fluent Operator</a>, formerly &quot;FluentBit Operator&quot; :
 <em>Manage Fluent Bit and Fluentd the Kubernetes way</em>.</li>
 </ul></li>
 </ul></li>
-<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html" title="Elastic.co">ECK (Elastic Cloud on K8s) Operator</a>  @ <a href="https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba" title="ChatGPT.com">Air-gap environment</a> for Elasticsearch and Kibana.
+</ol></li>
+<li>Stacks
 
 <ul>
-<li>Requires separate installation of a log collector/forwarder</li>
+<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html" title="Elastic.co">ECK Operator</a>  (Elastic Cloud on K8s) Contains only Elasticsearch and Kibana. Does not include any Collector/Forwarder (Fluentd, Logstash, &hellip;)
+
+<ul>
+<li>Deploy in <a href="https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba" title="ChatGPT.com">air-gap environment</a>  :</li>
 </ul></li>
-<li>EFK Stack | <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes" title="DigitalOcean.com">HowTo</a> | <a href="https://artifacthub.io/packages/helm/elastic/elasticsearch">Helm</a></li>
+<li><strong>EFK Stack</strong> | <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes" title="DigitalOcean.com">HowTo</a> | <a href="https://artifacthub.io/packages/helm/elastic/elasticsearch">Helm</a></li>
 <li>ELK stack : Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.</li>
 <li><a href="https://opensearch.org/docs/latest/about/" title="OpenSearch.org">OpenSearch</a> : FOSS fork of Elastic stack (Elasticsearch/Kibana)
 
 <ul>
 <li><a href="https://opensearch.org/docs/latest/data-prepper/">Data Prepper</a> : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces.</li>
 </ul></li>
-</ol></li>
+</ul></li>
+</ul></li>
 <li><a href="https://grafana.com/oss/loki/">Grafana Loki</a> | <a href="https://github.com/grafana/loki/" title="GitHub"><code>grafana/loki</code></a> (<a href="https://grafana.com/docs/loki/latest/setup/install/">Install</a>) : &quot;<em>Prometheus, but for logs</em>&quot;. A lightweight alternative to Elastic stack.
 
 <ul>
@@ -498,10 +506,11 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li>Consul : Multi-cluster</li>
 </ul></li>
 </ul></li>
-<li><strong>Security</strong>
+
+<li><p><strong>IA</strong>/<strong>Security</strong></p>
 
 <ul>
-<li>Distributed-Workload Identities
+<li>Distributed-<strong>Workload Identities</strong>
 
 <ul>
 <li><a href="https://spiffe.io/">SPIFFE/SPIRE</a> : Successor to RBAC. Defining (SPIFFE) and implementing (SPIRE) a <strong>workload identity platform</strong> and access controls rooted in Zero Trust (versus Perimeter Security) principles to mitigate risk of attack.
@@ -511,38 +520,41 @@ for On-prem, Edge, Bare-Metal, &hellip;
 <li><strong>SPIFFE Runtime Environment</strong> (<a href="https://spiffe.io/docs/latest/spire-about/spire-concepts/">SPIRE</a>) : a production-ready implementation of the SPIFFE APIs (pluggable multi-factor attestation and SPIFFE federation) that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.</li>
 </ul></li>
 </ul></li>
-<li>Scan for CVEs (Common Vulnerabilities and Exposures)
+<li><strong>Threat Detection</strong> / <strong>Remediation</strong> : <strong>CVE</strong>s (Common Vulnerabilities and Exposures)
 
 <ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">K8s Adminssion Controllers</a></li>
 <li><a href="https://aquasecurity.github.io/trivy/v0.56/" title="aquasecurity.github.io">Trivy</a> : Scan OCI-container images, OS folders, Kubernetes clusters, Git repos, virtual machines, and more. And can create SBOM and CVE-vulnerabilities audits of them.
 
 <ul>
-<li><a href="https://aquasecurity.github.io/trivy-operator/latest/" title="aquasecurity.github.io">K8s : <code>trivy-operator</code></a> by Helm chart :<br>
-The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as <code>VulnerabilityReport</code> (CRD) resources, which are owned by a Kubernetes controller.</li>
+<li><a href="https://aquasecurity.github.io/trivy-operator/latest/" title="aquasecurity.github.io"><code>trivy-operator</code></a> by Helm chart : Recurringly scan all container images : Generates <code>VulnerabilityReport</code>s per Pod, DaemonSet, &hellip; across all/declared Namespaces.</li>
 </ul></li>
-<li><a href="https://kubescape.io/">Kubescape.io</a><br>
-Risk analysis, security compliance, and misconfiguration scanning.</li>
+<li><a href="https://kubescape.io/">Kubescape</a> (10K) : Runtime Detection</li>
+<li><a href="https://falco.org">Falco</a> by <a href="https://sysdig.com/opensource/">Sysdig</a> (7K) : Threat detection/reporting : Runtime security across hosts, containers, Kubernetes, and cloud environments. It leverages custom rules on Linux kernel events and other data sources through plugins, enriching event data with contextual metadata to deliver real-time alerts. Falco enables the detection of abnormal behavior, potential security threats, and compliance violations.</li>
 <li><a href="https://pypi.org/project/cve-bin-tool/#finding-known-vulnerabilities-using-the-binary-scanner" title="PyPI.org"><code>cve-bin-tool</code></a> :<br>
-FOSS tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl</li>
+Python tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl</li>
 </ul></li>
-<li>Threat Detection and Remediation
+<li><strong>Policy Enforcement</strong>
 
 <ul>
-<li><a href="https://kubescape.io/">Kubescape</a> : Runtime Detection</li>
-<li>Falco</li>
-<li>KubeArmor</li>
-</ul></li>
-<li>Policies
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">K8s Adminssion Controllers</a></li>
+<li><a href="https://kyverno.io">Kyverno</a> Policy as Code (6K)
 
 <ul>
-<li>Kyverno</li>
-<li>Kubernetes Validating/Admission Policy</li>
+<li><a href="https://kyverno.io/docs/kyverno-cli/">Kyverno CLI</a> can be used to apply and test policies <strong>off-cluster</strong> e.g., as part of an IaC and CI/CD pipelines.</li>
+<li><a href="https://kyverno.io/docs/kyverno-policy-reporter/">Kyverno Policy Reporter</a> : a sub-project of Kyverno that provides in-cluster management of policy reports with a web-based graphical user interface.</li>
+<li><a href="https://kyverno.io/docs/kyverno-json/">Kyverno JSON</a> : a sub-project of Kyverno that allows applying Kyverno policies to <strong>off-cluster</strong> workload. It works on any JSON payload.</li>
+<li><a href="https://kyverno.io/docs/kyverno-chainsaw/">Kyverno Chainsaw</a> sub-project of Kyverno provides declarative end-to-end testing for Kubernetes controllers.</li>
 </ul></li>
-<li>Secrets
+<li><a href="https://open-policy-agent.github.io/gatekeeper/website/docs/">OPA/Gatekeeper</a>  (3.7K): Automated policy enforcement</li>
+<li><a href="https://kubearmor.io">Kubearmor</a>  (1.6K): Runtime Security Enforcement : Policy-based controls : a runtime Kubernetes security engine that uses eBPF and Linux Security Modules (LSM) for fortifying workloads based on Cloud Containers, IoT/Edge, and 5G networks.</li>
+</ul></li>
+
+<li><p><strong>Secrets</strong></p>
 
 <ul>
 <li><a href="https://github.com/hashicorp/vault">Vault</a> :
-<a href="https://github.com/hashicorp/vault-secrets-operator" title="GitHub"><code>vault-secrets-operator</code></a>
+<a href="https://github.com/hashicorp/vault-helm" title="GitHub"><code>vault-helm</code></a> : <a href="https://github.com/hashicorp/vault-secrets-operator" title="GitHub"><code>vault-secrets-operator</code></a>
 provides for <a href="https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79" title="ChatGPT">various implementations</a>:
 
 <ul>
@@ -571,20 +583,41 @@ Pull/Push secrets; sync K8s <code>Secret</code> objects (decrypted) with externa
 </ul></li>
 <li><a href="https://github.com/getsops/sops">SOPS</a> (Secrets OPerationS) :
 Secrets management; editor that interfaces with Vault etal.</li>
+
+<li><p><a href="https://github.com/FiloSottile/age" title="GitHub : FiloSottile/age"><code>age</code></a> (Actually Good Encryption) : A simple CLI providing AEAD encrypt/decrypt.
+Rejoice over a replacement for the obnoxiously complicated PGP (Pretty Good Privacy) project.</p>
+
+<pre><code class="language-bash"># Install : bad binary
+sudo curl -sSLo /usr/local/bin/age https://dl.filippo.io/age/latest?for=linux/amd64
+# Install : okay
+go install filippo.io/age/cmd/...@latest
+sudo ln -s /home/u1/go/bin/age /usr/local/bin
+            
+# Generate public-private key pair
+key=age.key
+pub=&quot;$(age-keygen -o $key 2&gt;&amp;1 |cut -d':' -f2 )&quot;
+# Encrypt a source (archive)
+tar cvz ~/$src |age -r $pub &gt; $src.tgz.age
+# Decrypt a source
+age -d -i $key $src.tgz.age &gt; $src.tgz
+</code></pre></li>
 </ul></li>
-<li>Signing
+
+<li><p><strong>Signing</strong></p>
 
 <ul>
 <li>Sigstore Cosign</li>
 <li>Notary</li>
 </ul></li>
-<li>Certificates
+
+<li><p><strong>TLS</strong></p>
 
 <ul>
 <li><a href="https://cert-manager.io/" title="cert-manager.io">cert-manager</a> : <em>&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry.</em></li>
 </ul></li>
 </ul></li>
-<li><strong>Storage</strong>
+
+<li><p><strong>Storage</strong></p>
 
 <ul>
 <li><a href="file:///D:/1%20Data/IT/Container/Kubernetes/Storage/MinIO/MinIO.html" title="MinIO.html"><strong>MinIO</strong></a> : a Kubernetes-native high performance object store with an <strong>S3-compatible API</strong>;
@@ -597,7 +630,7 @@ supports deploying MinIO Tenants onto private and public cloud infrastructures A
 framework, and support for <strong>Ceph</strong> storage to natively integrate with cloud-native environments. Provides <strong>S3</strong>/Swift API.
 
 <ul>
-<li><a href="https://ceph.com/en/"><strong>Ceph</strong></a> : Distributed storage system that provides <strong>file</strong>, <strong>block</strong> and <strong>object</strong> storage and is deployed in large scale production clusters built from commodity hardware.</li>
+<li><a href="https://ceph.com/en/"><strong>Ceph</strong></a> : Distributed storage system that provides <strong>file</strong>, <strong>block</strong> and <strong>object</strong> storage and is deployed in large scale production clusters on commodity hardware.</li>
 </ul></li>
 <li>JuiceFS : Distributed POSIX file system built on top of Redis and S3 (MinIO).</li>
 <li>Gluster</li>
@@ -619,7 +652,8 @@ framework, and support for <strong>Ceph</strong> storage to natively integrate w
 <li>Atlas Operator : Schema</li>
 </ul></li>
 </ul></li>
-<li><strong>Misc</strong>
+
+<li><p><strong>Misc</strong></p>
 
 <ul>
 <li>Charm : Library and Tools</li>

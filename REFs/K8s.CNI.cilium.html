@@ -66,6 +66,63 @@ ok || echo '=== FAILed'
 
 <h2><a href="https://chatgpt.com/c/6749a5f4-ad00-8009-9166-ad815bc10bfc" title="ChatGPT">Install</a></h2>
 
+<p>Both methods are of Helm chart</p>
+
+<h3>CLI method</h3>
+
+<pre><code class="language-bash">☩ cilium install [flags]
+
+☩ cilium install --set config.ipam=kubernetes,global.k8sServiceHost=192.168.11.101,global.k8sServicePort=6443 --dry-run-helm-values
+</code></pre>
+
+<pre><code class="language-yaml">cluster:
+  name: kubernetes
+config:
+  ipam: kubernetes
+global:
+  k8sServiceHost: 192.168.11.101
+  k8sServicePort: 6443
+operator:
+  replicas: 1
+routingMode: tunnel
+tunnelProtocol: vxlan
+
+</code></pre>
+
+<p>@ <a href="values.yaml">`values.yaml</a></p>
+
+<pre><code class="language-bash">cilium install --kubeconfig ~/.kube/config --values values.yaml
+</code></pre>
+
+<pre><code class="language-bash">☩ kw
+cilium-dc9cb                       0/1     CrashLoopBackOff    4 (52s ago)   3m4s    192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+cilium-envoy-dprz2                 1/1     Running             0             7m27s   192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+cilium-operator-597d7f99c5-kt9kk   1/1     Running             0             7m27s   192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+coredns-76f75df574-5wtvn           0/1     ContainerCreating   0             36m     &lt;none&gt;           a1       &lt;none&gt;           &lt;none&gt;
+coredns-76f75df574-z54n4           0/1     ContainerCreating   0             36m     &lt;none&gt;           a1       &lt;none&gt;           &lt;none&gt;
+etcd-a1                            1/1     Running             18            36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-apiserver-a1                  1/1     Running             0             36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-controller-manager-a1         1/1     Running             0             36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-proxy-fnmf7                   1/1     Running             0             36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-scheduler-a1                  1/1     Running             10            36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+sysdump-7bs6q                      1/1     Terminating         0             40s     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+</code></pre>
+
+<h3><a href="https://docs.cilium.io/en/stable/installation/k8s-install-helm/" title="docs.cilium.io">Helm method</a></h3>
+
+<pre><code class="language-bash">app=cilium
+ver=1.16.4
+values=values.yaml
+tar -xaf ${app}-$ver.tgz &amp;&amp;
+    helm upgrade --install -f $values $app $app/ &amp;&amp;
+        rm -rf $app
+
+</code></pre>
+
+<ul>
+<li><a href="values.yaml"><code>values.yaml</code></a></li>
+</ul>
+
 <p>If we want Cilium to use the HA LB (vIP)
 when communicating with K8s API server:</p>
 
@@ -92,13 +149,58 @@ helm install cilium cilium/cilium --namespace kube-system \
 This is necessary for external load balancers
 to direct traffic correctly.</li>
 </ul></li>
-<li><code>hostServices.enabled=true</code> :
+
+<li><p><code>hostServices.enabled=true</code> :</p>
 
 <ul>
-<li>Optional. Enables handling of host services by Cilium,
-which can be helpful in environments with external load balancers.</li>
+<li><p>Optional. Enables handling of host services by Cilium,
+which can be helpful in environments with external load balancers.</p>
+
+<pre><code class="language-bash">helm install cilium cilium/cilium --version 1.16.4 \
+--namespace $CILIUM_NAMESPACE \
+--set ipam.mode=kubernetes \
+--set=kubeProxyReplacement=true \
+--set=securityContext.capabilities.ciliumAgent=&quot;{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}&quot; \
+--set=securityContext.capabilities.cleanCiliumState=&quot;{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}&quot; \
+--set=cgroup.autoMount.enabled=false \
+--set=cgroup.hostRoot=/sys/fs/cgroup \
+--set=k8sServiceHost=localhost \
+--set=k8sServicePort=7445 \
+--set hubble.relay.enabled=true \
+--set hubble.ui.enabled=true
+
+</code></pre></li>
 </ul></li>
 </ul>
+
+<h3><a href="https://chatgpt.com/c/675905de-37fc-8009-ba64-c0f2501df333">Optimal per ChatGPT</a> : <a href="values.yaml"><code>values.yaml</code></a></h3>
+
+<p>Datapath : Direct (L3) v. Encapsulated (Overlay/VXLAN)</p>
+
+<p>For the best performance on east-west traffic in a single-subnet cluster,
+the <strong>Direct Datapath</strong> is usually the industry recommendation.</p>
+
+<p>Query</p>
+
+<pre><code class="language-bash">cilium config view | grep tunnel
+</code></pre>
+
+<ul>
+<li>If <code>tunnel</code> is set to <code>vxlan</code> or <code>geneve</code>, it’s <strong>Encapsulated</strong>.</li>
+<li>If <code>tunnel</code> is set to <code>disabled</code>, it’s <strong>Direct</strong>.</li>
+</ul>
+
+<p>Verify Cilium's load balancing configuration:</p>
+
+<pre><code class="language-bash">cilium service list
+cilium bpf lb list
+</code></pre>
+
+<p>Test before/after</p>
+
+<p>`<code>bash
+iperf3 
+</code></p>
  
     </main>
 
