@@ -16,7 +16,7 @@ In case it fails to do so (not unheard of), this is the recovery procedure.
     kubeadm init phase kubeconfig all --config $kubeadm_config
     ```
     - The `ClusterConfiguration` manifest may exist   
-      at `/etc/kubernetes/kubeadm-config.yaml`.   
+      at `/var/lib/kubelet/config.yaml`.   
       If not, capture it from its ConfigMap key: 
         ```bash
         kubectl get cm -n kube-system kubeadm-config -o jsonpath='{.data.ClusterConfiguration}'

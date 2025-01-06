@@ -52,6 +52,10 @@ See [`K8s.provision-kubernetes.sh`](K8s.provision-kubernetes.sh)
 
 ## Topics of Interest
 
+### [Node Allocatable](https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable) (cgroup) 
+
+Settings are applied by default `kubeadm init`/`join`. Modifying this after init requires many kernel-level modifications and systemd unit files and reconfigurations. Better to destroy the cluster and start again.
+
 ### [CPI (Cloud Provider Interface)](https://github.com/kubernetes/cloud-provider-vsphere/blob/master/docs/book/cloud_provider_interface.md) | [Graphic](cpi.png)
 
 
