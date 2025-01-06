@@ -78,6 +78,10 @@ Driver should match the container runtime setting, and if the parent processes a
 
 <h2>Topics of Interest</h2>
 
+<h3><a href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable">Node Allocatable</a> (cgroup)</h3>
+
+<p>Settings are applied by default <code>kubeadm init</code>/<code>join</code>. Modifying this after init requires many kernel-level modifications and systemd unit files and reconfigurations. Better to destroy the cluster and start again.</p>
+
 <h3><a href="https://github.com/kubernetes/cloud-provider-vsphere/blob/master/docs/book/cloud_provider_interface.md">CPI (Cloud Provider Interface)</a> | <a href="cpi.png">Graphic</a></h3>
 
 <blockquote>

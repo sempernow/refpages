@@ -1471,6 +1471,11 @@ exit
         -M # Monochrome; fix for aformentioned pipe fail: -Mr 
         -R # Raw (string) input
 
+        ## Handle bad (sub)key names.
+            # a:
+            #   key.has.dots: {}
+            ... |jq -Mr '.a["key.has.dots"]'
+
         ## Filter out all but (sub)keys, of/to valid JSON.
             # Deletes ALL the STRING array els and key values, recursively.
             ... |jq -Mr 'walk(
