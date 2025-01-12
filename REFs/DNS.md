@@ -2,9 +2,9 @@
 
 ## Overview
 
-DNS is a hierarchical and distributed __name service__ AKA __directory service__ that provides a naming system for computers, services ans such on Internet Protocol (IP) networks. It associates various information with domain names (identification strings) assigned to each of the associated entities. Most prominently, it __translates__ readily memorized __domain names to their numerical IP addresses__.
+DNS is a hierarchical and distributed __name service__ AKA __directory service__ that provides a naming system for computers, services and such on Internet Protocol (IP) networks. It associates various information with domain names (identification strings) assigned to each of the associated entities. Most prominently, it __translates__ readily memorized __domain names__ to numerical __IP addresses__.
 
->Note that DNS is merely one sort of *directory service*. Other notable directory services include Microsoft [Active Directory](https://en.wikipedia.org/wiki/Active_Directory) (AD), which is a database and set of services, including that connect users with network resources. One of its "roles" is Active Directory Domain Services (AD DS), which is the <dnf title="Identity Provider">IdP</dfn> thereunder.
+>Note that DNS is merely one sort of *directory service*. Other notable directory services include Microsoft [__Active Directory__](https://en.wikipedia.org/wiki/Active_Directory) (AD), which is a database and set of services, including that connect users with network resources. One of its "roles" is Active Directory Domain Services (AD DS), which is the <dnf title="Identity Provider">IdP</dfn> thereunder.
 
 ## Domain Name System Security Extensions ([__DNSSEC__](https://en.wikipedia.org/wiki/Domain_Name_System_Security_Extensions "Wikipedia.org"))
 

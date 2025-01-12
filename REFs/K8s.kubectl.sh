@@ -187,27 +187,6 @@ kubectl get all -A # All namespaces; --all-namespaces
 all='po,deploy,ds,sts,ep,svc,ingress,pvc,pv'
 kubectl get $all # Larger subset of all K8s objects
 
-# Authz : Access protected K8s API endpoints using a ServiceAccount (sa) token
-# - GET /healthz
-# Set cluster server URL : See `k config view` else `k get node -o wide` else `k get svc -A`
-name=default # config.clusters[].cluster.name
-url="$(k config view -o jsonpath='{.clusters[?(@.name=="'$name'")].cluster.server}')"
-tkn="$(k -n default create token default --duration=10m)" # Create/use its token
-curl -k -H "Authorization: Bearer $(k -n kube-system create token default)" $url/healthz?verbose
-# Full access requires cluster-admin ClusterRole, so create and bind an sa (gitops) to that. (See RBAC section.)
-tkn="$(k -n default create token gitops --duration=10m)" 
-# - GET /api/v1/namespaces/{namespace}/pods[/{name}[/log,/status,...]]
-curl -k -H "Authorization: Bearer $tkn" https://$ep/api/v1/namespaces/default/pods
-# - GET /openapi/v2 : All endpoints : All info 
-curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
-    |jq -Mr '.paths | to_entries | map(select(.key | test("^/api"))) | from_entries'
-        # Then (optionally) filter out a keyname (or CSV list of them)
-        |jq '. |walk(if type == "object" then del(.parameters) else . end)'
-# - GET /openapi/v2 : All endpoints : List URLs only
-curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
-    |jq -Mr '.paths | keys[] | select(test("^/api"))' 
-    #... |wc -l # Print the number of URLs : @ K3S, 485 of "/api"; 112 of "/api/v1"
-
 # NODES
 kubectl get nodes -o wide
 kubectl cordon node $hostname # Prevent new pods from being scheduled to this node.
@@ -264,7 +243,8 @@ metadata:
 EOH
 kubectl create -f namespace-01.yaml
 
-# CONFIGURATION : kubeconfig
+# CONFIGURATION : kubeconfig : Includes Authorization (Authn) 
+# Identity is per subject of X.509 (typically) or ServiceAccount (uncommon)
 # https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
 kubectl config view [--raw] 
 # Set explicitly 
@@ -286,11 +266,12 @@ k config view -o jsonpath='{.current-context}'
 export KUBECONFIG=$pathConf1:$pathConf2:$pathConf3
 # To save that all as a single kubeconfig file
 kubectl config view --flatten |tee /path/to/new/merged/kubeconfig
+# Get/Set kubeconfig parameters
 # Set context 
 kubectl use-context $context 
 # Get clusters
 kubectl config get-clusters
-# Set clusters 
+# Set cluster
 kubectl config set-cluster $cluster_name_1 \
     --server=https://192.168.0.100:8443 \
     --certificate-authority=$ca_file
@@ -299,17 +280,23 @@ kubectl config set-cluster $cluster_name_2 \
     --insecure-skip-tls-verify 
 # Unset cluster 
 kubectl  config unset clusters.$cluster_name
-# Set users
+# Set user
 kubectl config set-credentials $user_name_1 \
     --client-certificate=$client_cert \
     --client-key=$client_key
 kubectl config set-credentials $user_name_2 \
+    # EITHER by X.509
+    --client-certificate="$path_to_client_x509_cert" \
+    --client-key="$path_to_client_x509_key"
+    # OR by user:pass (don't)
     --username=$creds_username \
-    --password=$creds_password # Instead of user creds here, use client-go credential plugin
-    # https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
+    --password=$creds_password 
+    # OR by token (of ServiceAccount)
+    --token="$tkn" # See
+    # OR by ...(others) : See `kubectl config set-credentials -h`
 # Unset user
 kubectl config unset users.$user_name 
-# Set contexts
+# Set context
 kubectl set-context $context_1 \
     --cluster=$cluster_name_1 \
     --namespace=$ns_1 \
@@ -331,7 +318,32 @@ kubectl config set-context --current --namespace=$ns
 # Validate it
 kubectl config view --minify |grep namespace:
 
-# RBAC : API Access (Authz)
+# Authorization (Authz) : by ServiceAccount (sa) token
+# (Use to access protected K8s API endpoints by any client).
+# Set cluster server URL : See `k config view`, else `k get node -o wide`, else `k get svc -A`
+name=default # config.clusters[].cluster.name
+url="$(k config view -o jsonpath='{.clusters[?(@.name=="'$name'")].cluster.server}')"
+# UNPROTECTED endpoint
+curl -k $url/healthz?verbose
+# PROTECTED endpoint
+# Full access requires cluster-admin ClusterRole, 
+# so create and bind an sa (ops) to that. (See RBAC section.)
+ns=default
+name=ops
+tkn="$(k -n $ns create token $name --duration=10m)" 
+# - GET /api/v1/namespaces/{namespace}/pods[/{name}[/log,/status,...]]
+curl -k -H "Authorization: Bearer $tkn" https://$ep/api/v1/namespaces/default/pods
+# - GET /openapi/v2 : All endpoints : All info 
+curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
+    |jq -Mr '.paths | to_entries | map(select(.key | test("^/api"))) | from_entries'
+        # Then (optionally) filter out a keyname (or CSV list of them)
+        |jq '. |walk(if type == "object" then del(.parameters) else . end)'
+# - GET /openapi/v2 : All endpoints : List URLs only
+curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
+    |jq -Mr '.paths | keys[] | select(test("^/api"))' 
+    #... |wc -l # Print the number of URLs : @ K3S, 485 of "/api"; 112 of "/api/v1"
+
+# RBAC (Authz) : API Access : Subject is EITHER a user, group, or ServiceAccount
 group=team-1
 role=developer
 ns=foo
@@ -346,21 +358,21 @@ kubectl create clusterrole $role --verb=get --resource=pv --resource-name=app-1-
 kubectl create clusterrole $role --verb=get --non-resource-url=/logs/*
 # - aggregationRule
 kubectl create clusterrole $role --aggregation-rule="rbac.example.com/aggregate-to-monitoring=true"
-# RoleBinding : Binds EITHER (Cluster)Role to namespace, REGARDLESS.
-# - This pattern is commonly used to apply cluster-wide policies (roles) selectively to namespaces (groups).
+# RoleBinding : Binds subject to EITHER (Cluster)Role to namespace, REGARDLESS.
+# - This pattern is commonly used to apply cluster-wide policies (roles) to selected namespaces (groups).
 kubectl create rolebinding $role-rb-$group --clusterrole=$role --user=u1 --user=$USER --namespace=$ns
 kubectl create rolebinding $role-rb-$group --role=$role --serviceaccount=acme:myapp --namespace=$ns
-# ClusterRoleBinding : Binds ONLY a ClusterRole, NOT any Role.
+# ClusterRoleBinding : Binds subject to ClusterRole ONLY.
 kubectl create clusterrolebinding $role-crb-$group --clusterrole=$role --group=team-1 --group=team-3 --group=gitops-$role-tester
-
-# Create ServiceAccount and ClusterRoleBinding for accessing to all protected K8s API endpoints
-kubectl -n default create sa gitops --save-config=true
-kubectl create clusterrolebinding cluster-admin-crb-gitops --clusterrole=cluster-admin --serviceaccount=default:gitops
-
-# Check for subjects of role bindings 
-kubectl get rolebindings -n $ns -o=custom-columns=NAME:.metadata.name,ROLE:.roleRef.name,SUBJECTS:.subjects
-# Check for subjects of cluster role bindings
-kubectl get clusterrolebindings -o=custom-columns=NAME:.metadata.name,ROLE:.roleRef.name,SUBJECTS:.subjects
+# Create ServiceAccount and (Cluster)RoleBinding to (Cluster)Role cluster-admin
+group=ops
+ns=$group
+obj=rolebinding # rolebinding|clusterrolebinding
+role=cluster-admin
+kubectl -n $ns create sa $group --save-config=true
+kubectl create $obj $role-$group --clusterrole=$role --serviceaccount=$ns:$group
+# Find subjects of (Cluster)RoleBindings
+kubectl get $obj -n $ns -o=custom-columns=NAME:.metadata.name,ROLE:.roleRef.name,SUBJECTS:.subjects
 # Get all Roles (of a declared Namespace) bound to "kind: $sub" (Note K8s has no User object).
 ns=kube-system
 sub=User # User|Group|ServiceAccount
@@ -374,56 +386,71 @@ kubectl get rolebindings -n $ns -o json \
 sub=Group
 name='kubeadm:cluster-admins'
 kubectl get clusterrolebindings -n $ns -o json \
-    |jq -Mr '[.items[]? | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[]? |select(.kind == "'$sub'")|select(.name == "'$grp'")) |{kind:.kind,name:.name}}]' \
+    |jq -Mr '[.items[]? | {rolebinding: .metadata.name,role: .roleRef.name,subject: (.subjects[]? |select(.kind == "'$sub'")|select(.name == "'$group'")) |{kind:.kind, name:.name}}]' \
     |yq eval -P -o yaml
-# Get ClusterRole of Group
-# X.509 certificates of "kind: Group"
+# Find (Cluster)RoleBinding(s) having subjects of a declared kind
+kindObj=ClusterRoleBinding  # ClusterRoleBinding|RoleBinding
+kindSub=Group               # Group|User|ServiceAccount
+# As YAML using yq
+kubectl get $kindObj -A -o yaml |yq '.items[] 
+    | {
+        "kind": .kind, 
+        "name":.metadata.name, 
+        "roleRef": .roleRef, 
+        "subjects": [(.subjects[]? | select(.kind=="'$kindSub'"))]
+    }
+    | select(.subjects | length > 0)
+    | split_doc
+'
+# As JSON using jq
+kubectl get $kindObj -o json |jq -Mr '.items[] 
+    | [{
+        "kind": .kind, 
+        "name": .metadata.name, 
+        "roleRef": .roleRef, 
+        "subjects": (.subjects[]? | select(.kind=="'$kindSub'"))
+    }] 
+    | .[]
+    | select(.subjects | length > 0)
+' |jq . --slurp
+
+# X.509 Certificates
 # - @ K3S : /var/lib/rancher/k3s/server/tls
 # - @ K8s : /var/kubernetes/pki, /var/kubernetes/*.conf 
 # - Also check pod.volumes for path(s) declared at host process (ps aux)
-
-# X.509 v. RBAC
+# Certificate "subject" maps to RBAC via (Cluster)RoleBinding.subjects[].kind .
+# The X.509 "O" maps to "kind: Group", and "CN" maps to "kind: User".
+# JsonPath is used to extract these values from manifests programmatically:
     # JsonPath https://kubernetes.io/docs/reference/kubectl/jsonpath/
     # COMMON PATTERN using its array filter "?()" :
     # Get value of key-X of an array-element object having a key-Y set to a *declared value*.
     # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
-    # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
-    user=kind-kind # See config.users[] at `kubectl config view`
+# Parse TLS certificate and extract subject
+user=kubernetes-admin # See config.users[] at `kubectl config view` 
+    # Note we can (re)set kubeconfig "name" keys at our whim; 
+    # the name keys are client-side references only; 
+    # does not affect (X.509) "subject" seen by K8s API server.
+    # @ yq (here for syntax reference only)
     kubectl config view --raw -o yaml \
-        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data'
-        #...
+        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data' #...
+    # @ JsonPath
     kubectl config view --raw \
         -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
-        |base64 -d |openssl x509 -text -noout
-        # OR just declared field(s)
-        |base64 -d |openssl x509 -noout -startdate -enddate -issuer -subject -ext subjectAltName
-            #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
-            # X.509 "O" maps to "kind: Group", and "CN" maps to "kind: User"
+        |base64 -d |openssl x509 -noout -issuer -subject -ext subjectAltName -startdate -enddate
+        # issuer=CN = kubernetes
+        # subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+        # No extensions in certificate
+        # notBefore=Jan  5 22:09:55 2025 GMT
+        # notAfter=Jan  5 22:14:57 2026 GMT
+# Parse TLS certificate and extract CA info
+kubectl config view --raw \
+    -o jsonpath='{.clusters[].cluster.certificate-authority-data}' \
+    |base64 -d \
+    |openssl x509 -noout -issuer -subject -ext subjectAltName -startdate -enddate
+    # issuer=CN = kubernetes
+    # subject=CN = kubernetes
+    # X509v3 Subject Alternative Name:
+    #     DNS:kubernetes
+    # notBefore=Jan  5 22:09:55 2025 GMT
+    # notAfter=Jan  3 22:14:55 2035 GMT
 
-    # CA
-    kubectl config view --raw \
-        -o jsonpath='{.clusters[].cluster.certificate-authority-data}' \
-        |base64 -d \
-        |openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName
-
-    issuer=CN = k3s-server-ca@1734274754
-    subject=CN = k3s-server-ca@1734274754
-    notBefore=Dec 15 14:59:14 2024 GMT
-    notAfter=Dec 13 14:59:14 2034 GMT
-    No extensions in certificate
-
-    # User (Group)
-    kubectl config view --raw \
-        -o jsonpath='{.users[].user.client-certificate-data}' \
-        |base64 -d \
-        |openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName
-
-    issuer=CN = k3s-client-ca@1734274754
-    subject=O = system:masters, CN = system:admin
-    notBefore=Dec 15 14:59:14 2024 GMT
-    notAfter=Dec 15 14:59:14 2025 GMT
-    No extensions in certificate
-
-    # Find ClusterRoleBinding(s) for that Group
-    kubectl get clusterrolebinding \
-        -o jsonpath='{.items[].metadata.name}{"\n"}{.items[].subjects[?(@.kind=="Group")].name}'
