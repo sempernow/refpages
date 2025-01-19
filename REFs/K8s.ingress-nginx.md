@@ -205,12 +205,19 @@ spec:
   ...
 ```
 
-[Override setting(s) via `ConfigMap.data`](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/) to fit environment and otherwise modify the release: 
+__Modify a relase__ to better fit the environment. We can [add declarations to `ConfigMap.data`](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/) of `ingress-nginx-controller`. These settings __override__ those declared elsewhere.
 
 ```yaml
 ---
 apiVersion: v1
 kind: ConfigMap
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    ...
 data:
   ## allow-snippet-annotations : Enable only if we TRUST users with permission to create Ingress objects; may allow programmatic mods to nginx.conf file.
   allow-snippet-annotations: "true"
