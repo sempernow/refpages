@@ -22,10 +22,6 @@
     <main>
         <h1><a href="https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters" title="kubernetes.github.io">Ingress-NGINX Controller</a> | <a href="https://github.com/kubernetes/ingress-nginx/releases">Releases</a> | <a href="https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/index.md">Configuration</a></h1>
 
-<h2><a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#configuration-options">Configuration Options</a></h2>
-
-<p>Modify the <code>ConfigMap</code> (<code>cm.ingress-nginx-controller</code>) <strong>to overwrite any parameter</strong></p>
-
 <h2><code>Ingress</code> : Rewrite (<a href="https://github.com/kubernetes/ingress-nginx/blob/main/docs/examples/rewrite/README.md" title="github.com/kubernetes/ingress-nginx"><code>rewrite-target</code></a>) Syntax</h2>
 
 <p>URL rewrite rules are based on RegEx <a href="https://www.regular-expressions.info/refcapture.html" title="regular-expressions.info">Capture Group</a>s, which are saved in numbered placeholders; <code>$1</code>, <code>$2</code> &hellip; <code>$n</code>.
@@ -235,7 +231,9 @@ spec:
   ...
 </code></pre>
 
-<p><strong>Modify a relase</strong> to better fit the environment. We can <a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/">add declarations to <code>ConfigMap.data</code></a> of <code>ingress-nginx-controller</code>. These settings <strong>override</strong> those declared elsewhere.</p>
+<h2><a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#configuration-options">Configuration Options</a></h2>
+
+<p>Modify the <code>ConfigMap</code> (<code>cm.ingress-nginx-controller</code>) of a release <strong>to overwrite any parameter</strong>.</p>
 
 <pre><code class="language-yaml">---
 apiVersion: v1
@@ -269,18 +267,32 @@ data:
 
 </code></pre>
 
-<pre><code class="language-bash">☩ k get node a1 -o wide
+<h2>E2E Test</h2>
+
+<ul>
+<li><p><a href="ingress-nginx.sh"><code>ingress-nginx.sh</code></a></p>
+
+<ul>
+<li><p><a href="ingress-nginx-usage.yaml"><code>ingress-nginx-usage.yaml</code></a></p>
+
+<pre><code class="language-bash">☩ bash ingress-nginx.sh e2e
+</code></pre></li>
+</ul></li>
+</ul>
+
+<p>Or</p>
+
+<pre><code class="language-bash">☩ k apply -f ingress-nginx-usage.yaml
+
+☩ k get node a1 -o wide
 NAME   STATUS   ROLES           AGE   VERSION   INTERNAL-IP      EXTERNAL-IP ...
 a1     Ready    control-plane   17h   v1.29.6   192.168.11.101   &lt;none&gt;      ...
 
 ☩ kubectl -n ingress-nginx get svc ingress-nginx-controller
 NAME                       TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                     
 ingress-nginx-controller   NodePort   10.37.30.17   &lt;none&gt;        80:30409/TCP,443:32390/TCP
-</code></pre>
 
-<p>@ <a href="ingress-nginx-usage.yaml"><code>ingress-nginx-usage.yaml</code></a></p>
-
-<pre><code class="language-bash">☩ curl http://192.168.11.101:30409/foo/hostname
+☩ curl http://192.168.11.101:30409/foo/hostname
 foo
 </code></pre>
 
