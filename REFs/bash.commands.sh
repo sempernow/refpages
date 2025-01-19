@@ -627,11 +627,6 @@ exit
             tree -L 2               # 2 levels only : $PWD and all 1st-child subdirs
             tree -I 'vendor|media'  # Exclude pattern(s) : /vendor and /media dirs (and files thereunder)
             
-    # Sockets : UNIX Domain | TCP/UDP
-        socat  # https://linux.die.net/man/1/socat 
-            # https://blog.travismclarke.com/post/socat-tutorial/
-            socat UNIX-LISTEN:/usr/local/var/run/test/test.sock -
-
     # PERMISSIONs : chmod(1) man page https://linux.die.net/man/1/chmod
         chmod 755 DIR   drwxr-xr--  
         chmod 744 FILE  -rwxr--r--
@@ -1681,7 +1676,7 @@ exit
         sed 's:// .*::' FILE # STRIP FILE of ALL COMMENTS: "// ...NOTE space else 'http://' too"
         sed '3p'   FILE         # p; print line 3
         sed '2d'   FILE         # d; delete 2nd line
-        sed '2i foo bar' FILE   # i; insert line: 'foo bar' @ line 2; prepends, so l2 pushed to l3   
+        sed '2i foo bar' FILE   # i; insert line: 'foo bar' @ line 2; prepends, so l2 pSushed to l3   
         sed '2,4!d'  FILE       # !d; delete all lines except 2-4
         sed '2,4p' FILE         # p; print lines 2 thru 4
         sed '5,10d;12d'   FILE  # d; delete lines 5-10 and 12
@@ -2360,16 +2355,92 @@ exit
     # add number to each line in file
     cat -n "$file"
 
-    # /dev : http://www.tldp.org/LDP/abs/html/devref1.html#NPREF
+    # Change directories, yet preserve prior(s) in a LIFO (push/pop) stack.
+    pushd /change/to/this/dir   # push current dir to stack, and then cd
+    popd                        # cd to directory popped from stack
 
-    # time from nist.gov
-    cat </dev/tcp/time.nist.gov/13   
+    # Configure script to run at *its* location (PWD)  
+    # regardless of how invoked, i.e., w/out explicit path.
+    # Useful in scripts having relative-path reference(s).
+        #!/usr/bin/env bash
+        pushd ${BASH_SOURCE%/*} 2>/dev/null || pushd . || exit 
+        #... Do script stuff here ...
+        err=$?      # Capture the resulting error code.
+        popd        # Return to folder from which caller came.
+        exit $err   # Return this (informative) error code.
 
-    pushd "$folder_path" # cd & push stack
-    popd             # cd by pop stack
+# SOCKET COMMANDS
+
+    lsof -U # List all open UNIX Domain Sockets 
+    lsof /tmp/demo.sock # Info on this socket only
+
+    socat   # SOcket CAT : Multipurpose relay : "Netcat for sockets" 
+            # See "Examples" @ https://linux.die.net/man/1/socat 
+        socat UNIX-LISTEN:/usr/local/var/run/test/test.sock - 
+
+    # Chat : client/server (peers) : TWO-WAY COMMS channel (STDIN/STDOUT)
+        # @ Server (listener) terminal
+        nc -l $port # Listen on all interface at port $port
+        # @ Client terminal
+        nc -N $ip $port # -N to shutdown the network socket after EOF (CTRL-D)
+        #... thereafter, anything typed at one terminal is sent to the other 
+
+    # Create a UNIX Socket 
+        # -U : Unix Socket file 
+        # -l : act as the server-side; listen for incoming connections.
+        nc -U /tmp/demo.sock -l
+
+    netstat -a  # Active UNIX domain sockets; list all network ports
+
+    netperf     # Benchmark traffic between 2 hosts : Does UNIX sockets too
+
+    ss # Socket Statistics; IP:PORT; like netstat
+        -r     # resolve names
+        -n     # numeric; don't resolve names
+        -p     # incl. processes
+        -at4r  # all-sockets, tcp, IPv4, resolve-names
+
+        # Display all TCP sockets with process SELinux security contexts.
+            ss -t -a -Z
+        # Display all UDP sockets.
+            ss -u -a
+        # Display all established ssh connections.
+            ss -o state established '( dport = :ssh or sport = :ssh )'
+
+    # Bash can read/write (TCP) SOCKET as file descriptor
+        # /dev : http://www.tldp.org/LDP/abs/html/devref1.html#NPREF
+        # These are *not* files; are *not* seen by FS utilities (ls etal).
+        # /dev/tcp/$host/$port
+
+        # Get time from nist.gov
+        cat </dev/tcp/time.nist.gov/13   
+            # 60693 21-12-24 15:13:34 00 0 0 920.8 UTC(NIST) *
+        
+        # Handle app-layer (HTTP) protocol too:
+
+            # 1. Download a root URL
+            host=ifconfig.me;port=80
+            exec 3<>/dev/tcp/$host/$port &&
+                echo -e "GET / HTTP/1.1\r\nhost: $host\r\nConnection: close\r\n\r\n" >&3 &&
+                    cat <&3
+                        # HTTP/1.1 200 OK
+                        # date: Mon, 18 Jan 2021 15:17:52 GMT
+                        # content-type: text/plain
+                        # Content-Length: 13
+                        # access-control-allow-origin: *
+                        # via: 1.1 google
+                        # Connection: close
+
+                        # 93.131.177.49
+
+            # 2. HTTP Connectivity Test : A kind of ping
+            host=ifconfig.me;port=80
+            echo -e "GET / HTTP/1.1\r\nhost: $host\r\nConnection: close\r\n\r\n" \
+                >/dev/tcp/$host/$port && echo ok
+
 
 # eval ; convert a string into a command 
-# http://www.tldp.org/LDP/abs/html/internal.html#LETREF
+    # http://www.tldp.org/LDP/abs/html/internal.html#LETREF
     eval arg1 [arg2] ... # used for code generation from the command-line or within a script. 
 
 # HARDWARE COMMANDS : ls{NAME} & modprobe
@@ -2396,7 +2467,7 @@ exit
 
 # NETWORK COMMANDS
 
-    # See 'REF.Network.utils.sh'
+    # See 'REF.Network.utils.sh' 
 
     host -4 myip.opendns.com resolver1.opendns.com # This machine's public IPv4 address
     ping -c 1 ROUTER_IP # test connectivity to Gateway Router
