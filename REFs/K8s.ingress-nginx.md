@@ -1,8 +1,5 @@
 # [Ingress-NGINX Controller](https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters "kubernetes.github.io") | [Releases](https://github.com/kubernetes/ingress-nginx/releases) | [Configuration](https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/index.md)
 
-## [Configuration Options](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#configuration-options)
-
-Modify the `ConfigMap` (`cm.ingress-nginx-controller`) __to overwrite any parameter__
 
 ## `Ingress` : Rewrite ([`rewrite-target`](https://github.com/kubernetes/ingress-nginx/blob/main/docs/examples/rewrite/README.md "github.com/kubernetes/ingress-nginx")) Syntax
 
@@ -205,7 +202,10 @@ spec:
   ...
 ```
 
-__Modify a relase__ to better fit the environment. We can [add declarations to `ConfigMap.data`](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/) of `ingress-nginx-controller`. These settings __override__ those declared elsewhere.
+## [Configuration Options](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#configuration-options)
+
+
+Modify the `ConfigMap` (`cm.ingress-nginx-controller`) of a release __to overwrite any parameter__.
 
 ```yaml
 ---
@@ -240,8 +240,21 @@ data:
 
 ```
 
+## E2E Test
+
+- [`ingress-nginx.sh`](ingress-nginx.sh)
+    - [`ingress-nginx-usage.yaml`](ingress-nginx-usage.yaml)
+
 
 ```bash
+☩ bash ingress-nginx.sh e2e
+```
+
+Or
+
+```bash
+☩ k apply -f ingress-nginx-usage.yaml
+
 ☩ k get node a1 -o wide
 NAME   STATUS   ROLES           AGE   VERSION   INTERNAL-IP      EXTERNAL-IP ...
 a1     Ready    control-plane   17h   v1.29.6   192.168.11.101   <none>      ...
@@ -249,11 +262,7 @@ a1     Ready    control-plane   17h   v1.29.6   192.168.11.101   <none>      ...
 ☩ kubectl -n ingress-nginx get svc ingress-nginx-controller
 NAME                       TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                     
 ingress-nginx-controller   NodePort   10.37.30.17   <none>        80:30409/TCP,443:32390/TCP
-```
 
-@ [`ingress-nginx-usage.yaml`](ingress-nginx-usage.yaml)
-
-```bash
 ☩ curl http://192.168.11.101:30409/foo/hostname
 foo
 ```
