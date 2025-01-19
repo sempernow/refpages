@@ -7,8 +7,8 @@ exit 0
 ######
 
 # DISABLE SPAM : RHEL 9 spams systemd journal (logs) with RedHat corporation marketing messages
-    sudo chmod -x /etc/update-motd.d/* # DISABLE
-    sudo chmod +x /etc/update-motd.d/* # ENABLE
+    chmod -x /etc/update-motd.d/* # DISABLE
+    chmod +x /etc/update-motd.d/* # ENABLE
     # Disable per user
     touch ~/.hushlogin
 
@@ -20,13 +20,13 @@ exit 0
         --no-pager  # Full message (else truncates per entry)
 
     # Recent journal messages (all services)
-    sudo journalctl -xe --no-pager
+    journalctl -xe --no-pager
 
     # Recent journal of service
-    sudo journalctl --no-pager -xeu $service
+    journalctl --no-pager -xeu $service
 
     # Boot log
-    sudo journalctl -xb
+    journalctl -xb
 
 # LOGGING 
     # See REF.Linux.SysAdmin.sh
@@ -72,6 +72,27 @@ exit 0
         config-manager --disable $repo 
         makecache 
 
+    # Modules are part of Application Stream (AppStream) of RHEL8+;
+    # collections of software packages grouped together and managed as a unit. They contain a set of RPM packages and metadata that define their default versions and available streams (app versions)
+        # List Available Modules
+        dnf module list
+        # Enable a Module Stream (version) : To use a non-default version
+        dnf module enable go-toolset:1.21
+        # Install a Module
+        dnf module install go-toolset
+        # Switch app versions (streams)
+        dnf module reset go-toolset
+        dnf module enable go-toolset:1.18
+        # Disable a Module : Prevent from being installed
+        dnf module disable go-toolset
+
+        # Change version without using package manager
+        alternatives # Maintain symbolic links determining default commands
+        # ... LINK NAME PATH PRIORITY
+        alternatives --install /usr/bin/python python /usr/bin/python3.6 1
+        alternatives --config python # List configured versions
+        alternatives --list          # List all  
+
     # List all packages installed 
         rpm -qa 
         #... rpm is a low-level utility; does not catch/manage conflicts/dependencies
@@ -99,12 +120,12 @@ exit 0
             cve-bin-tool --sbom ${spec:-cyclonedx} --sbom-file $sbom 
 
     # Add repo
-        sudo dnf install dnf-plugins-core
-        sudo dnf config-manager --add-repo $url 
+        dnf install dnf-plugins-core
+        dnf config-manager --add-repo $url 
         # E.g., EPEL repo of RHEL8
-        sudo dnf config-manager --add-repo https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64
+        dnf config-manager --add-repo https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64
         # Import GPG key
-        sudo rpm --import http://arepo.example.com/repo/RPM-GPG-KEY-arepo
+        rpm --import http://arepo.example.com/repo/RPM-GPG-KEY-arepo
 
     # AIR GAP 
         # 1. DOWNLOAD all packages (RPM) *and* all their dependencies (recurse). 
@@ -117,18 +138,18 @@ exit 0
             # Example set of packages
             all='yum-utils dnf-plugins-core gcc make createrepo createrepo_c mkisofs iproute-tc bash-completion bind-utils unbound tar nc socat rsync lsof wget curl tcpdump traceroute nmap arp-scan iotop htop hdparm fio git httpd httpd-tools jq vim  ansible-core tree'
             # Prep
-            sudo dnf -y $try update |& tee $log  
-            sudo dnf -y makecache   |& tee -a $log  
+            dnf -y $try update 
+            dnf -y makecache   
             # Download
-            sudo dnf -y download $opts $all |& tee -a $log
+            dnf -y download $opts $all 
         # 2. INSTALL : Two methods 
             # 2.a. Quick and Dirty™ : Install packages, but not ordered by deps, so some fail, so multiple runs required.  
-                sudo dnf -y install --nobest --allowerasing --disablerepo=* *.rpm |& tee -a $log
+                dnf -y install --nogpgcheck --nobest --allowerasing --disablerepo=* *.rpm
                 # Else use rpm : even messier : doesn't resolve dependencies and it's a lower-level method.
                 rpm -ihv *.rpm # Expect silent fails and such.
             # 2.b : PROPERly install : CREATE A LOCAL REPOsitory, so all deps managed as normally.
                 # This method requires createrepo package, and so must be handled out-of-band
-                sudo dnf install createrepo # Implies RHEL repo access  
+                dnf install createrepo # Implies RHEL repo access  
                 # Create the local repo
                 localrepo=localrepo
                 mkdir -p /tmp/$localrepo
@@ -141,7 +162,7 @@ exit 0
 				enabled=1
 				gpgcheck=0
 				EOH
-                sudo dnf -y install --disablerepo=* --enablerepo=$localrepo $pkg_list
+                dnf -y install --disablerepo=* --enablerepo=$localrepo $pkg_list
 
     # Auto-reboot when required ...
         yum install -y yum-utils 
@@ -184,22 +205,22 @@ exit 0
         mkdir -p repos;cd repos
         
         ## by reposync method (RHEL 8)
-            sudo yum -y update 
-            sudo yum -y install yum-utils createrepo createrepo_c xorriso
+            yum -y update 
+            yum -y install yum-utils createrepo createrepo_c xorriso
             # Download the repo including its metadata
-            sudo reposync --gpgcheck --repoid=$id --download-path=$(pwd) --downloadcomps --downloadonly --download-metadata
+            reposync --gpgcheck --repoid=$id --download-path=$(pwd) --downloadcomps --downloadonly --download-metadata
             # Create repo
-            sudo createrepo_c $id || sudo createrepo $id
+            createrepo_c $id || sudo createrepo $id
             # Create ISO file
             makeisofs -o $id.iso -R -J -joliet-long $id
 
         ## By dnf reposync method (RHEL 9)
-            sudo dnf -y update 
-            sudo dnf -y install dnf-plugins-core createrepo_c genisoimage
+            dnf -y update 
+            dnf -y install dnf-plugins-core createrepo_c genisoimage
             # Download the repo including its metadata
-            sudo dnf reposync --gpgcheck --repoid=$id --download-path=$(pwd) --downloadcomps --downloadonly --download-metadata
+            dnf reposync --gpgcheck --repoid=$id --download-path=$(pwd) --downloadcomps --downloadonly --download-metadata
             # Create repo
-            sudo createrepo_c $id
+            createrepo_c $id
             # Create ISO file
             genisoimage -o $id.iso -R -J -joliet-long $id
 

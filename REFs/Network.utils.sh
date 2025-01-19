@@ -633,7 +633,7 @@ exit
 
     lsof # List Open Files : lsof(8) man page : https://linux.die.net/man/8/lsof
         lsof -U                 # List info of all UNIX socks
-        lsof /tmp/demo.sock     # Info of only this one
+        lsof /tmp/demo.sock     # Info on this socket only
         
         # List all OPEN PORTs : All LISTENING PORTs
         sudo lsof -i -n -P |grep LISTEN
@@ -944,6 +944,7 @@ exit
                 # Shows node's public IP address:
                 #... scope link  src 192.168.1.183 ...
             ip -r route  # Resolve your public IP address to name of Gateway
+            sudo ip route add $cidr via $gateway_ip
             sudo ip route add 20.0.0.0/8 via 192.168.1.1  # add a route
             sudo ip route add default via 192.168.50.100  # add default gateway
 
