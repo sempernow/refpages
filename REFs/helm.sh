@@ -91,7 +91,7 @@ helm status $release
 helm test $release
 
 # Render chart templates locally and display resulting manifests
-helm template $chart 
+helm template $chart --values $values --namespace $ns
 
 # Show ... {chart,values} are YAML(ish)
 helm show {chart,readme,crds,values,all} $chart

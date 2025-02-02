@@ -17,6 +17,39 @@ GitOps consists of Infrastructure as Code (__IaC__), configuration management (_
 and <dfn title="A development practice of pipelining an automated merge, build and test of incremental code changes that are recorded and otherwise controlled by immutable versioning">Continuous Integration</dfn> 
 and <dfn title="A development practice of pipelining and automated release and deployment such that the process has visibility and feedback by all team members">[Continuous Delivery](Continuous-Delivery-process-diagram.png)</dfn> (__CI/CD__).  
 
+### Why
+
+#### Q: 
+
+How many possible configurations are there for five machines, 
+each with two services that can each be in one of three states?
+
+#### A:
+
+There are __59,049 possible configurations__.
+
+Work:
+
+Since each machine has 2 services, and each service can independently be in one of 3 states, 
+the number of configurations for the services on one machine is:
+
+    3 states/service × 3 states/service = 9
+
+For 5 machines, the number of configurations is __9__ configurations/machine __raised to the power of 5__,
+since each machine has 9 possible configurations.
+
+So, the total number of configurations for all machines is:
+
+    9^5 = 59,049 configurations.
+
+Now consider some dozen hosts on a LAN. 
+
+- More than two systemd services? 
+- Each service has more than 3 parameters, and parameters imply at least two settings, often more.
+
+6 services, each with 5 possible states is 15,625 (5^6) per machine. 
+For six hosts, thats __1.45 × 10^25__ (15625^6) possible configurations.
+
 ### Principles
 
 1. __Declarative__  
@@ -27,6 +60,7 @@ and <dfn title="A development practice of pipelining and automated release and d
     Software agents automatically pull the desired state declarations from the source.
 4. __Continuously Reconciled__  
     Software agents continuously observe actual system state and attempt to apply the desired state.
+
 
 ### Results
 
