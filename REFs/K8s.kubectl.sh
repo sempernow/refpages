@@ -30,7 +30,7 @@ kubectl cluster-info
 # - Debug/diagnostic dump of cluster store
 kubectl cluster-info dump
 # - Display cluster endpoints and services 
-kubectl -n kube-system ep,svc -l 'kubernetes.io/cluster-service=true'
+kubectl -n kube-system get ep,svc -l 'kubernetes.io/cluster-service=true'
 
 # MANAGE WORKLOADS
 # - Declarative commands

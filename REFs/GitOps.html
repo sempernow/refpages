@@ -39,6 +39,43 @@ GitOps consists of Infrastructure as Code (<strong>IaC</strong>), configuration 
 and <dfn title="A development practice of pipelining an automated merge, build and test of incremental code changes that are recorded and otherwise controlled by immutable versioning">Continuous Integration</dfn>
 and <dfn title="A development practice of pipelining and automated release and deployment such that the process has visibility and feedback by all team members"><a href="Continuous-Delivery-process-diagram.png">Continuous Delivery</a></dfn> (<strong>CI/CD</strong>).</p>
 
+<h3>Why</h3>
+
+<h4>Q:</h4>
+
+<p>How many possible configurations are there for five machines,
+each with two services that can each be in one of three states?</p>
+
+<h4>A:</h4>
+
+<p>There are <strong>59,049 possible configurations</strong>.</p>
+
+<p>Work:</p>
+
+<p>Since each machine has 2 services, and each service can independently be in one of 3 states,
+the number of configurations for the services on one machine is:</p>
+
+<pre><code>3 states/service × 3 states/service = 9
+</code></pre>
+
+<p>For 5 machines, the number of configurations is <strong>9</strong> configurations/machine <strong>raised to the power of 5</strong>,
+since each machine has 9 possible configurations.</p>
+
+<p>So, the total number of configurations for all machines is:</p>
+
+<pre><code>9^5 = 59,049 configurations.
+</code></pre>
+
+<p>Now consider some dozen hosts on a LAN.</p>
+
+<ul>
+<li>More than two systemd services?</li>
+<li>Each service has more than 3 parameters, and parameters imply at least two settings, often more.</li>
+</ul>
+
+<p>6 services, each with 5 possible states is 15,625 (5^6) per machine.
+For six hosts, thats <strong>1.45 × 10^25</strong> (15625^6) possible configurations.</p>
+
 <h3>Principles</h3>
 
 <ol>

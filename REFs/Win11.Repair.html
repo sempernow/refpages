@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win11.Repair</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Windows 11 Repair</h1>
+
+<p>Open a PowerWhell terminal <strong>run as Administrator</strong></p>
+
+<pre><code class="language-powershell">DISM /Online /Cleanup-Image /RestoreHealth
+
+</code></pre>
+
+<p>Else</p>
+
+<pre><code class="language-powershell">sfc /scannow
+DISM /Online /Cleanup-Image /RestoreHealth
+</code></pre>
+
+<p>Example output</p>
+
+<pre><code class="language-plainteext">Microsoft Windows [Version 10.0.26100.1742]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\X1&gt;DISM /Online /Cleanup-Image /RestoreHealth
+
+Deployment Image Servicing and Management tool
+Version: 10.0.26100.1150
+
+Image Version: 10.0.26100.1742
+
+[==========================100.0%==========================] The restore operation completed successfully.
+The operation completed successfully.
+</code></pre>
+
+<p>Else</p>
+
+<pre><code class="language-powershell"># Mount Windows-11-Install ISO using &quot;Open With ... Windows Explorer &quot;, and then run : 
+
+# Find index 
+dism /Get-WimInfo /WimFile:D:\Sources\install.wim
+
+# Set to proper index, e.g., 6
+DISM /Online /Cleanup-Image /RestoreHealth /Source:D:\Sources\install.wim:6 /LimitAccess
+
+</code></pre>
+
+<p>Else</p>
+
+<ul>
+<li>Create installation USB of downloaded <a href="https://www.microsoft.com/en-us/software-download/windows11">Windows 11 Disk Image (ISO)</a> using <a href="https://rufus.ie/en/"><strong><code>rufus</code></strong></a>
+
+<ul>
+<li>Select Bypass TPM</li>
+<li>Bypass all the Microsoft nonsense</li>
+</ul></li>
+<li>Reboot and Disable TPM at UEFI menu</li>
+<li>Run <code>setup.exe</code> of the USB volume (Windows 11 Installation)</li>
+<li>Choose <strong>Upgrade this PC</strong> now and select <strong>Keep personal files and apps</strong>.</li>
+</ul>
+
+<p>Else</p>
+
+<ul>
+<li>Mount Windows 11 install ISO</li>
+<li>Run <code>setup.exe</code> from the mounted drive.</li>
+<li>Choose <strong>Upgrade this PC</strong> now and select <strong>Keep personal files and apps</strong>.</li>
+<li>Follow the installation process.</li>
+</ul>
+
+<p>Else disable TPM and then try again</p>
+
+<ul>
+<li>Open <code>regedit</code></li>
+<li><code>HKEY_LOCAL_MACHINE\SYSTEM\Setup\MoSetup</code></li>
+<li>Right-click in the right pane → New → DWORD (32-bit) Value.</li>
+<li><code>AllowUpgradesWithUnsupportedTPMOrCPU</code></li>
+<li>Double-click it, set Value data to <code>1</code>, and click OK.</li>
+<li>Close <code>regedit</code></li>
+<li>Restart</li>
+</ul>
+
+<p>Else</p>
+
+<p>If Windows still blocks installation, delete <code>appraiserres.dll</code> from the USB.</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

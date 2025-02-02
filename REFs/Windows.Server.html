@@ -22,12 +22,38 @@
     <main>
         <h1><a href="https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2019?msockid=05311f3dde09664d0afc0b53dfa16779" title="microsoft.com">Windows Server</a> 2019 | <a href="https://learn.microsoft.com/en-us/windows-server/">Docs</a></h1>
 
+<table>
+<thead>
+<tr>
+<th>host</th>
+<th>user</th>
+<th>pass</th>
+<th>fqdn</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>a0</code></td>
+<td>admin</td>
+<td>Foo!123456</td>
+<td><code>a0.lime.lan</code></td>
+</tr>
+
+<tr>
+<td><code>WinSrv2019</code></td>
+<td>Administrator</td>
+<td>Admin!123</td>
+<td><code>dc1.lime.lan</code></td>
+</tr>
+</tbody>
+</table>
+
 <h2>Overview</h2>
 
 <p>Windows Server 2019 is the operating system that bridges on-premises environments
 with Azure services enabling hybrid scenarios maximizing existing investments.
-Create cloud native and modernize traditional apps
-using containers and micro-services.</p>
+Create cloud native and modernize traditional apps using containers and micro-services.</p>
 
 <p>Installation options (2016/2019):</p>
 
@@ -51,14 +77,14 @@ This is the complete installation and includes a full GUI for customers who pref
 <li><strong>Active Directory</strong> | <a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc736627(v=ws.10)">Directory data store</a> | <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/powershell/active-directory-replication-and-topology-management-using-windows-powershell">Manage by PowerShell AD Module</a>
 
 <ul>
-<li><strong>Domain Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview">AD DS</a>) | <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/ad-ds-operations">Operations</a></li>
-<li><strong>Federation Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/ad-fs-overview">AD FS</a>)<br>
-AD FS enables <strong>Federated Identity and Access Management</strong> by securely sharing digital identity and entitlements rights across security and enterprise boundaries. Implements OIDC, and OAuth Grant flows. Successor is Microsoft Entra ID.
+<li><strong>Domain Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview">ADDS</a>) | <a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/ad-ds-operations">Operations</a></li>
+<li><strong>Federation Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/ad-fs-overview">ADFS</a>)<br>
+AD FS enables <strong>Federated Identity</strong> and <strong>Access Management</strong> by securely sharing digital identity and entitlements rights across security and enterprise boundaries. Implements OIDC, and OAuth Grant flows. Successor is Microsoft Entra ID.
 
 <ul>
 <li><a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/overview/ad-fs-openid-connect-oauth-flows-scenarios">AD FS OIDC/OAuth Flows v. App Scenarios</a></li>
 </ul></li>
-<li><strong>Certificate Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-cs/active-directory-certificate-services-overview#key-features">AD CS</a>)<br>
+<li><strong>Certificate Services</strong> (<a href="https://learn.microsoft.com/en-us/windows-server/identity/ad-cs/active-directory-certificate-services-overview#key-features">ADCS</a>)<br>
 Issue and manages TLS certificates via web UI. Provides Public Key Infrastructure (PKI)
 for cryptography, digital certificates and signature capabilities.</li>
 </ul></li>
@@ -137,115 +163,268 @@ This option is the most secure Kerberos option.</li>
 
 <p>You can install Windows Admin Center on a Windows Server or Windows client and access it via a web browser. It can also be deployed in a high-availability setup in larger environments.</p>
 
-<h2>VM on Hyper-V</h2>
+<h2>Preliminaries @ Hyper-V</h2>
 
-<ul>
-<li>Name: <code>WinSrv2019</code></li>
-<li>CPU: <code>2</code></li>
-<li>RAM: 1024-4096 MiB</li>
-<li>Network: <code>Ethernet</code>
+<p>Networking : Connectivity btwn WSL2 &amp; Hyper-V VMs</p>
 
-<ul>
-<li>Has DHCP issue; want outside that of gateway.
-May modify to use Default (Private/Internal).
-See &quot;DNS Options&quot; WARNING under &quot;Domain Controller Options&quot; (below).
-Also, <a href="https://chatgpt.com/share/670c59f1-7504-8009-beea-ff2f8d4caff9">ChatGPT</a> .</li>
-</ul></li>
-<li>Disk: 0-127 GB
+<h3><a href="https://chatgpt.com/share/67391a83-bdbc-8009-99fb-d69281826092" title="ChatGPT">Overview of best options</a></h3>
 
-<ul>
-<li>14 GB after install.</li>
-</ul></li>
-<li>ISO: <code>Win.Server.2019.Standard.1809.Build.17763.3650.En-US..ESD Nov.2022.iso</code></li>
-<li>User: <code>Administrator</code></li>
-<li>Pass: <code>Admin!123</code></li>
-</ul>
+<h3>The NAT subnet option</h3>
 
-<h2>On 1st Login</h2>
+<p>@ <a href="network-nat.ps1"><code>network-nat.ps1</code></a></p>
 
-<p>@ Connect window</p>
+<p>See params it configured by running <a href="network-get.ps1"><code>network-get.ps1</code></a></p>
 
 <ol>
-<li>Select Size: 13nn x nnn</li>
-<li>Allow discovery: Yes</li>
-<li>Server Manager (pop up)
+<li>User above script or Hyper-V GUI to create the Internal Switch (<code>InternalSwitchNAT1</code>)
 
 <ul>
-<li>&quot;Try managing servers with <a href="https://www.microsoft.com/en-us/windows-server/windows-admin-center?msockid=05311f3dde09664d0afc0b53dfa16779" title="microsoft.com">Windows Admin Center</a> (WAC)&quot;
+<li>PowerShell script above creates the switch if not exist, yet using it to do so prior to finding the packet-forwarding solution mentioned below resulted in failure of connectivity tests.</li>
+<li>Isolated, this is initally/automatically assigned an APIPA address</li>
+</ul></li>
+
+<li><p>Use PowerShell to <strong>create the <code>NAT1</code> subnet</strong> (<code>192.168.11.0/24</code>)
+having <strong>route to WSL subnet</strong> (<code>172.27.240.0/20</code>) <strong>gateway</strong>.</p>
+
+<pre><code class="language-powershell">New-NetNat -Name &quot;$NatName&quot; -InternalIPInterfaceAddressPrefix &quot;$NatCIDR&quot;
+Set-NetIPAddress -InterfaceAlias &quot;$WslAlias&quot; -IPAddress &quot;$WslGateway&quot; -PrefixLength 20 
+</code></pre></li>
+
+<li><p>Use <code>ncpa.cpl</code> (GUI) to manually set
+IP address within our declared <code>NAT1</code> CIDR
+on <code>$NatAlias</code> interface (<code>InternalSwitchNAT1</code>).</p></li>
+
+<li><p><strong>Enable IP packet forwarding</strong>, per adapter (switch),
+to provide connectivity across subnets.</p>
+
+<pre><code class="language-powershell"># Enable IP packet forwarding (across subnets)
+# Per adapter
+Set-NetIPInterface -InterfaceAlias &quot;$WslAlias&quot; -Forwarding Enabled
+Set-NetIPInterface -InterfaceAlias &quot;$DefAlias&quot; -Forwarding Enabled
+Set-NetIPInterface -InterfaceAlias &quot;$NatAlias&quot; -Forwarding Enabled
+
+# Else all at once
+Get-NetIPInterface | Where-Object {$_.InterfaceAlias -like 'vEthernet (*' } | Set-NetIPInterface -Forwarding Enabled
+
+</code></pre>
 
 <ul>
-<li>Don't show this message again. (Checked)</li>
-<li>WAC is a Web UI providing remote access to the server.
-It is a separate install. It is free.
-It may be installed on the AD server or any other machine.</li>
+<li>WSL2 has connectivity to Windows 11 host (<code>External</code>) network regardless;
+NAT subnet does not, until packet forwarding is enabled.</li>
+</ul></li>
+</ol>
+
+<p>Verify</p>
+
+<pre><code class="language-bash">traceroute $ip_of_hyperv_vm
+</code></pre>
+
+<p>@ WSL2 and PowerShell (subnets)</p>
+
+<pre><code class="language-bash">☩ traceroute 172.30.121.104
+traceroute to 172.30.121.104 (172.30.121.104), 64 hops max
+  1   172.27.240.1  0.297ms  0.126ms  0.129ms    # WSL Gateway
+  2   172.30.121.104  0.415ms  0.226ms  0.169ms  # Target Hyper-V VM host
+
+</code></pre>
+
+<p>To test NAT1 sans DHCP/DNS server on that subnet, we must manually add IP and route on that CIDR. Perform this from a Hyper-V Connect session:</p>
+
+<pre><code class="language-bash"> # Manually assign IP within NAT1 CIDR
+sudo ip addr add 192.168.11.111/24 dev eth0
+# Add default gatewayy (The IPv4 declared at NAT1 adapter) 
+sudo ip route add default via 192.168.11.1
+
+</code></pre>
+
+<p>Now test @ WSL:</p>
+
+<pre><code class="language-bash">☩ traceroute 192.168.11.111
+traceroute to 192.168.11.111 (192.168.11.111), 64 hops max
+  1   172.27.240.1  0.361ms  0.175ms  0.160ms
+  2   192.168.11.111  0.326ms  0.231ms  0.164ms
+</code></pre>
+
+<p><strong><em>Success!</em></strong></p>
+
+<h3>Add local DNS for best performance:</h3>
+
+<p>@ <a href="network-dns.ps1"><code>network-dns.ps1</code></a></p>
+
+<p>Though leave DNS @ WSL2 that of its default configuration:</p>
+
+<pre><code class="language-bash">...
+# DNS @ WSL2 network is best handled automatically, 
+# which auto-generates /etc/resolv.conf
+# The nameserver is set to WSL's virtual DNS server (10.255.255.254)
+# And it sets the default search domain for unqualified dowmain names:
+# ☩ cat /etc/resolv.conf
+# ...
+# nameserver 10.255.255.254
+# search SEMPERLAN hsd1.md.comcast.net
+</code></pre>
+
+<ul>
+<li>See <a href="network-dns.ps1"><code>network-dns.ps1</code></a></li>
+</ul>
+
+<h2>Create VM of Hyper-V</h2>
+
+<ul>
+<li>Generation: <code>2</code></li>
+<li>Name: <code>WinSrv2019</code></li>
+<li>CPU: <code>2</code></li>
+<li>RAM: <code>2048-4096</code> MiB (Dynamic)</li>
+<li>Network: <code>InternalSwitchNAT1</code>
+
+<ul>
+<li>If <code>External...</code>, then has DHCP issue.
+See below: &quot;DNS Options&quot; WARNING under &quot;Domain Controller Options&quot;, and <a href="https://chatgpt.com/share/670c59f1-7504-8009-beea-ff2f8d4caff9">ChatGPT</a> .</li>
+</ul></li>
+<li>Integration Services
+
+<ul>
+<li>Guest services (check)</li>
+<li>All should be checked.</li>
+</ul></li>
+<li>Disk: <code>0-32 GB</code> (Dynamic)
+
+<ul>
+<li><code>14 GB</code> after install.</li>
+</ul></li>
+<li>ISO: <code>SRV2019STD.ENU.NOV2022.iso</code>
+
+<ul>
+<li>&quot;<strong>Windows Server 2019 Standard</strong> 1809 Build 17763.3650 en-US ESD NOV 2022&quot;</li>
+</ul></li>
+</ul>
+
+<h2>Install Windows Server 2019</h2>
+
+<h3>WARNING:</h3>
+
+<p>Boot from ISO fails when installing Windows Server 2019 host on Hyper-V VM is using the Start button from Hyper-V menu. Rather, <strong>select Connect option, and press Start button only from inside that window.</strong> This method captures the keyboard, allowing OS install on &quot;Press any key &hellip;&quot;.</p>
+
+<p><strong>Any other method bricks the VM.</strong></p>
+
+<h3>Windows Server Install</h3>
+
+<ol>
+<li><strong>Connect</strong>
+
+<ul>
+<li>Options : Local Resources : More : Drives : Scratch (S:) or whatever to <strong>share drive(s) between host and VM</strong>.</li>
+<li>Save conguration (checkbox)</li>
+</ul></li>
+<li><strong>Start</strong> (button in the Connect window)
+
+<ul>
+<li>&quot;GENERATION<sup>2</sup>&quot; screen displays</li>
+<li><strong>Windows Setup</strong> window (eventually) appears
+
+<ul>
+<li>Install option: &quot;Custom ...&quot; is the only viable/allowable.</li>
+<li>Without Guest services of Settings menu, disk size is hardcoded to 127 GB. No options. ISO has no drivers.</li>
+<li>&quot;Customize settings&quot;
+
+<ul>
+<li>&quot;User name: <strong>Administrator</strong>&quot; (hardcoded)</li>
+<li>Password: <strong>Admin!123</strong></li>
 </ul></li>
 </ul></li>
-<li>Server Setup page</li>
-<li>Shut Down
+<li>Shutdown
 
 <ul>
-<li>Hyper-V
-
-<ul>
-<li>Virtual Machines
-
-<ul>
-<li>WinSrv2019
-
-<ul>
-<li>&quot;Merge in Progress&quot;  ... 10+ minutes</li>
+<li>Merge at Hyper-V takes many minutes.</li>
 </ul></li>
 </ul></li>
+<li><strong>Remove DVD</strong> at Hyper-V Settings.</li>
+<li>Connect/Start
+
+<ul>
+<li>Boots into Server Manager
+
+<ul>
+<li>Enter password</li>
+<li>Local Server</li>
 </ul></li>
 </ul></li>
 </ol>
 
-<h2>Videos :</h2>
+<h2>Activate @ &quot;Not Activated&quot;</h2>
+
+<p>How to <strong>Activate via KMS</strong> using <a href="https://github.com/massgravel/Microsoft-Activation-Scripts" title="GitHub.com">Microsoft Activation Scripts (MAS)</a> method at a PowerShell terminal:</p>
+
+<pre><code class="language-powershell">Install-WindowsFeature -Name VolumeActivation -IncludeManagementTools
+
+# Run this statement and select the &quot;KMS&quot; option at its menu
+irm https://get.activated.win | iex
+</code></pre>
+
+<h3>Disable MS Online Account Sign-in Requirement</h3>
+
+<p>The default OS install has a &quot;Welcome&quot; login
+sequence requiring a Microsoft account.
+It blocks user from login until user signs up for MS account,
+enters creds of existing account,
+or selects a button that is effectively a
+&quot;Repeatedly block and bother me again later&quot;.</p>
+
+<p>This statement cures that:</p>
+
+<pre><code class="language-powershell">Set-ItemProperty -Path &quot;HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System&quot; -Name &quot;NoConnectedUser&quot; -Value 3 -Type DWord
+
+</code></pre>
+
+<h2>Configure Windows Server</h2>
+
+<ol>
+<li><strong>Ethernet adapter</strong> (<code>ncpa.cpl</code>)
 
 <ul>
-<li>Quick : <a href="https://www.youtube.com/watch?v=85-bp7XxWDQ" title="YouTube">Learn AD in 30mins</a></li>
-<li>Series : <a href="https://www.youtube.com/watch?v=XZkYV-Tac8U&amp;list=PLxTwjzMO9Zf4FZJ0BTtQlv5iErouqkbkk" title="YouTub">How to &hellip; Windows Server 2019</a></li>
-</ul>
-
-<p>TODOs:</p>
+<li>Reference the network (<code>InternalSwitchNAT1</code>) <strong>installed earlier</strong><br>
+in a PowerShell session at the host (Windows 11) :<br>
 
 <ul>
-<li>Roles: ADDS, DNS
+<li><a href="network-nat.ps1"><code>network-nat.ps1</code></a></li>
+<li><a href="network-define.ps1"><code>network-define.ps1</code></a></li>
+<li><a href="network-get.ps1"><code>network-get.ps1</code></a></li>
+</ul></li>
+<li>Ethernet adapter configuration:
 
 <ul>
-<li>Active Directory Domain Services (ADDS)
+<li>Properties:
 
 <ul>
-<li>Domain Controller (DC)</li>
-<li>Secondary Domain Controller:
+<li>IPv6 (Uncheck)</li>
+<li>IPv4 (check) : Properties:
 
 <ul>
-<li>Read-only Domain Controller (RODC)</li>
+<li>&quot;Use the following IP address&quot; (check)
+
+<ul>
+<li>IP address: <code>192.168.11.2</code> (Self)</li>
+<li>Subnet mask: <code>255.255.255.0</code> (<code>24</code> bit)</li>
+<li>Default gateway: <code>192.168.11.1</code> (NAT1 IPv4)</li>
 </ul></li>
 </ul></li>
-<li>DNS</li>
-</ul></li>
-</ul>
-
-<p>DONEs:</p>
-
-<p>At <strong>Server Manager</strong>, which is the GUI
-and main portal of <strong>Windows&nbsp;Server&nbsp;2019</strong> Desktop:</p>
-
-<ul>
-<li><a href="https://www.youtube.com/watch?v=0EklBDIZSgc&amp;list=PLxTwjzMO9Zf4FZJ0BTtQlv5iErouqkbkk&amp;index=2">Install AD DS</a> :
-Menu/Select, in order:
-
-<ul>
-<li>Server Manager : Local Server
-
-<ul>
-<li>Computer Name : Change:
-
-<ul>
-<li><code>Win2019-DC01</code></li>
 </ul></li>
 </ul></li>
+</ul></li>
+<li><strong>Local Server</strong>
+
+<ul>
+<li>Computer name: <strong><code>dc1</code></strong> (Domain Controller 1)</li>
+<li>Ethernet: <strong><code>192.168.11.2</code></strong>
+
+<ul>
+<li>Set static IP to that declared at
+subnet (<code>InternalSwitchNAT1</code>) configured earlier.</li>
+</ul></li>
+<li>Time zone: <code>Eastern</code></li>
+<li>IE Enhanced Security Configuration: <code>Off</code> (All)
+
+<ul>
 <li>IE Enhanced Security Configuration
 
 <ul>
@@ -253,7 +432,61 @@ Menu/Select, in order:
 <li>Off @ User</li>
 </ul></li>
 <li>Time zone : Change : EST</li>
-<li>Reboot</li>
+</ul></li>
+</ul></li>
+</ol>
+
+<blockquote>
+<p><strong>Server Manager</strong> is the GUI and main
+portal of <strong>Windows&nbsp;Server&nbsp;2019</strong> Desktop.
+<a href="https://www.microsoft.com/en-us/windows-server/windows-admin-center?msockid=05311f3dde09664d0afc0b53dfa16779" title="microsoft.com">Windows Admin Center</a> (WAC)&quot; is a web UI providing remote access to the server.
+It is installed separately,
+either on the AD server or any remote host</p>
+</blockquote>
+
+<h2>Share Files between Host and VM</h2>
+
+<p>How to add network share(s):</p>
+
+<ul>
+<li>@ Hyper-V Settings : Enable &quot;<strong>Enhanced Sesison Mode</strong>&quot;</li>
+<li>@ VM Settings : Integration Services : Check &quot;<strong>Guest Services</strong>&quot;</li>
+<li>@ Connect : &quot;<strong>Local devices and resources</strong>&quot; :
+Button: <strong>More...</strong>  : Checkbox: &quot;<strong>Scratch (S:)</strong>&quot;
+and/or whatever other drive is to be shared.</li>
+</ul>
+
+<h2>Add Roles</h2>
+
+<ol>
+<li>Open <strong>Server Manager</strong>.</li>
+<li>Click <strong>Manage</strong> and select <strong>Add Roles and Features</strong>.</li>
+<li>In the <strong>Add Roles and Features Wizard</strong>:
+
+<ul>
+<li>Click <strong>Next</strong> through the default screens :<br>
+&quot;<strong>Role-based or feature-based installation</strong>&quot;.</li>
+<li>Select sever ...</li>
+<li>At <strong>Server Roles</strong> screen, select whatever role(s)</li>
+<li>Click <strong>Next</strong> and proceed with the installation.</li>
+</ul></li>
+<li>After installation, you'll be prompted to <strong>Complete $hellip; Configuration</strong>.
+Click on the notification to complete.</li>
+</ol>
+
+<h3>ADDS and DNS</h3>
+
+<blockquote>
+<p>Adding the <strong>Active Directory Domain Services</strong> (ADDS) role by Wizard adds the required DNS role, so need select only the ADDS role.</p>
+</blockquote>
+
+<p>Reference video: &quot;<a href="https://www.youtube.com/watch?v=joIubWzQ6P8" title="YouTube.com">Installing Active Directory Domain Services in Windows Server 2022, along with DNS and DHCP</a>&quot;</p>
+
+<h4><a href="https://www.youtube.com/watch?v=0EklBDIZSgc&amp;list=PLxTwjzMO9Zf4FZJ0BTtQlv5iErouqkbkk&amp;index=2">Add <strong>ADDS</strong> Role</a> (and <strong>DNS</strong> role too) :</h4>
+
+<p>Use the Wizard</p>
+
+<ul>
 <li>Add server role:
 
 <ul>
@@ -284,22 +517,22 @@ Menu/Select, in order:
 <li>Deployment Configuration
 
 <ul>
-<li>New forest</li>
-<li>Root domain name: <code>DEVOPS.LOCAL</code></li>
-<li>Restore-mode password: Admin!123</li>
+<li><strong>New forest</strong></li>
+<li>Root domain name: <strong><code>lime.lan</code></strong></li>
+<li>Restore-mode password: <code>Admin!123</code></li>
 </ul></li>
 <li>Domain Controller Options
 
 <ul>
-<li>Forest functional level: Windows Server 2012 (From drop-down menu)</li>
-<li>Domain functional level: Windows Server 2012 (From drop-down menu)
+<li>Forest functional level: Windows Server 2016 (From drop-down menu)</li>
+<li>Domain functional level: Windows Server 2016 (From drop-down menu)
 
 <ul>
 <li>Assure compatibility w/ existing Forest/Domain</li>
-<li>DNS Options
+<li>DNS Options (If not using this as DNS server)
 
 <ul>
-<li>WARNING: A delegation for this DNS server cannot be created because authoritative parent zone cannot be found or it does not run Windows DNS infrastructure. If you are integrating with an existing DNS infrastructure, you should manually create a delegation to this DNS server in the parent zone to ensure reliable name resolution from outside the domain <code>DEVOPS.LOCAL</code>.
+<li>WARNING: A delegation for this DNS server cannot be created because authoritative parent zone cannot be found or it does not run Windows DNS infrastructure. If you are integrating with an existing DNS infrastructure, you should manually create a delegation to this DNS server in the parent zone to ensure reliable name resolution from outside the domain <code>lime.lan</code>.
 
 <ul>
 <li>Ignore else reconfigure networking. See <a href="https://chatgpt.com/share/670c59f1-7504-8009-beea-ff2f8d4caff9">ChatGPT</a></li>
@@ -309,32 +542,917 @@ Menu/Select, in order:
 </ul></li>
 </ul></li>
 </ul></li>
+</ul>
+
+<h4>Configure DNS</h4>
+
+<p>ADDS Wizard configures Forward Lookup Zone, but not Revers.</p>
+
+<ol>
+<li>Open <strong>DNS Manager</strong> (<code>dnsmgmt.msc</code>).</li>
+<li>Right-click the server and select <strong>Configure a DNS Server</strong>.
+
+<ul>
+<li>Select <strong>Create a Forward Lookup Zone</strong>.</li>
+<li>Name the zone something relevant to your internal network (e.g., <strong><code>lime.lan</code></strong>).</li>
+<li>Set the DNS server to use <strong>forwarders</strong> for external lookups (e.g., point it to <code>8.8.8.8</code> for Google DNS or your preferred DNS servers).</li>
+</ul></li>
+</ol>
+
+<p>Create a <strong>Reverse Lookup Zone</strong>.
+The primary reverse lookup zone needs a pointer (<code>PTR</code>) record.
+The ADDS Wizard does not do this for us.</p>
+
+<ul>
+<li>Create Primary Zone</li>
+<li>Add Network Addr</li>
+<li>Resolve</li>
+<li>Update PTR in Forward Record</li>
+</ul>
+
+<h4>DNS @ ADDS : <code>&quot;_msdcs.&lt;domain&gt;&quot;</code></h4>
+
+<p>The <code>&quot;_msdcs.&lt;domain&gt;&quot;</code> zone created during the Active Directory Domain Services (AD DS) integration with the DNS role (via Wizard) is a critical component of AD DS's dynamic DNS infrastructure.  It enables seamless communication and operation of the AD environment by providing a dynamically updated repository of service location information.</p>
+
+<ul>
+<li>Automatically <strong>created as a forward lookup zone</strong> if it doesn't exist.
+
+<ul>
+<li>Configured to replicate across all DNS servers in the forest if the domain is part of a larger forest.</li>
+<li>Ensures that critical DNS data is available across all DNS servers, improving redundancy and fault tolerance.</li>
+</ul></li>
+<li>What is <code>_msdcs.&lt;domain&gt;</code>?
+
+<ul>
+<li><strong>Namespace for Active Directory Services</strong>:
+
+<ul>
+<li><code>_msdcs</code> stands for &quot;Microsoft Domain Controller Services.&quot;</li>
+<li>This zone contains service locator (SRV) records and other essential DNS entries used by Active Directory to locate domain controllers and other AD services.</li>
+</ul></li>
+<li><strong>Globally Unique Identifier (GUID) Records</strong>:
+
+<ul>
+<li>Each domain controller in an AD forest is assigned a unique GUID. These GUIDs are stored in the <code>_msdcs</code> zone to allow clients to find specific domain controllers in the forest.</li>
+</ul></li>
+<li><strong>Forest-wide Locator Records</strong>:
+
+<ul>
+<li><code>_msdcs.&lt;domain&gt;</code> includes records that are forest-wide, meaning they are necessary for locating services across the entire forest, not just within a single domain.</li>
+</ul></li>
+</ul></li>
+<li>Key Features of <code>_msdcs.&lt;domain&gt;</code>
+
+<ul>
+<li><strong>Service Locator (SRV) Records</strong>:</li>
+<li>The zone holds SRV records that direct clients to domain controllers for authentication, replication, and other AD services.</li>
+<li>Example: <code>_ldap._tcp.dc._msdcs.lime.lan</code> directs LDAP clients to a domain controller in the lime.lan domain.</li>
+<li><strong>Alias Records (CNAME)</strong>:</li>
+<li>It includes CNAME records that map GUIDs to domain controllers.</li>
+<li>Example: <code>&lt;DC-GUID&gt;._msdcs.lime.lan</code> helps clients locate a specific domain controller.</li>
+</ul></li>
+<li><strong>Forest Root Information</strong>:
+
+<ul>
+<li>In multi-domain forests, <code>_msdcs.&lt;forest-root&gt;</code> is shared across domains to ensure inter-domain operations, such as trust relationships and global catalog searches.</li>
+</ul></li>
+<li>Importance in AD DS Functionality
+
+<ul>
+<li><strong>Client Authentication</strong>: Without <code>_msdcs</code>, clients wouldn't know which domain controller to contact for login authentication.</li>
+<li><strong>Replication</strong>: Domain controllers rely on <code>_msdcs</code> to locate replication partners.</li>
+<li><strong>Global Catalog Services</strong>: Used for locating global catalog servers across the forest.</li>
+</ul></li>
+<li>Management Considerations
+
+<ul>
+<li><strong>Replication Scope</strong>:
+
+<ul>
+<li>By default, the <code>_msdcs.&lt;domain&gt;</code> zone is stored in the forest-wide DNS application partition.</li>
+<li>Ensure that replication is correctly configured to all DNS servers in the forest.</li>
+</ul></li>
+<li><strong>Do Not Modify Manually</strong>:
+
+<ul>
+<li>The records in <code>_msdcs</code> are automatically maintained by AD DS. Avoid manual changes to prevent breaking critical AD operations.</li>
+</ul></li>
 </ul></li>
 </ul>
 
+<h2>ADD DHCP Role</h2>
+
+<p>Use the Wizard</p>
+
+<p><strong><a href="https://learn.microsoft.com/en-us/windows-server/networking/technologies/dhcp/quickstart-install-configure-dhcp-server?tabs=powershell" title="learn.microsoft.com">Configure DHCP</a></strong></p>
+
+<p>@ PowerShell</p>
+
+<p>XML scripts exported from Wizards allow for scripted configuration, either again here, or on other hosts:</p>
+
+<pre><code class="language-powershell">
+$dns    = &quot;DNS.DeploymentConfigTemplate.xml&quot;
+Windows-Feature -ConfigurationFilePath $dns
+
+$dhcp   = &quot;DHCP.DeploymentConfigTemplate.xml&quot;
+Windows-Feature -ConfigurationFilePath $dhcp
+</code></pre>
+
+<p>Separately, this is is a PowerShell method of scripting the DHCP server. It is cobbled together from references:</p>
+
+<pre><code class="language-powershell">$NatNtwk    = &quot;192.168.11&quot;
+$HostName   = &quot;dc1.lime.lan&quot;
+$NatDNS     = &quot;$NatNtwk.2&quot;
+
+# These first statements are performed by the Add-Role Wizard
+Install-WindowsFeature DHCP -IncludeManagementTools
+Add-DhcpServerSecurityGroup -ComputerName &quot;$HostName&quot; 
+netsh dhcp add securitygroups
+# If in ADDS
+Add-DhcpServerInDC -DnsName &quot;$hostName&quot; -IPAddress &quot;$NatDNS&quot; -PassThru
+
+# The following statements may be run *after* the above objects exist.
+
+# Create/Define Scope
+Add-DhcpServerv4Scope -Name &quot;lime.lan&quot; `
+    -StartRange &quot;$NatNtwk\.100&quot; `
+    -EndRange &quot;$NatNtwk\.200&quot; `
+    -SubnetMask 255.255.255.0 `
+    -LeaseDuration 8.00:00:00 `
+    -State Active `
+    -PassThru 
+
+# Verify ADDS Authorized
+Get-DhcpServerInDC
+# IPAddress            DnsName
+# ---------            -------
+# 192.168.11.2         dc1.lime.lan
+
+Restart-Service DHCPServer 
+
+# Query available parameters
+Get-DhcpServerv4&lt;TAB&gt;
+</code></pre>
+
+<p>@ GUI</p>
+
+<ol>
+<li>Open <strong>DHCP Manager</strong> (<code>dhcpmgmt.msc</code>).</li>
+<li>Right-click on <strong>IPv4</strong> and select <strong>New Scope</strong>.
+
+<ul>
+<li><strong>Scope Name</strong>: <code>lime.lan</code>.</li>
+<li><strong>IP Range</strong>: Set the IP range for the internal network. Align these with <code>InternalSwitchNAT1</code> subnet (<a href="network-nat.ps1"><code>network-nat.ps1</code></a>) parameters. See by running  <a href="network-get.ps1"><code>network-get.ps1</code></a>
+
+<ul>
+<li><strong>Start IP</strong>: <code>192.168.11.100</code></li>
+<li><strong>End IP</strong>: <code>192.168.11.200</code></li>
+<li><strong>Subnet Mask</strong>: <code>255.255.255.0</code></li>
+</ul></li>
+<li><strong>Default Gateway</strong>: Set this to the <strong>vEthernet</strong> interface on the host (<code>192.168.11.1</code>).</li>
+<li><strong>DNS</strong>: Set to this Windows Server IP, since it's the DNS server for our internal network. We set this to <code>192.168.11.2</code>; static IP at Windows Server's Local Server menu, aligned with delcared subnet params. See PowerShell scripts.
+
+<ul>
+<li>Manually set it.</li>
+</ul></li>
+</ul></li>
+<li><strong>Activate the Scope</strong>.
+
+<ul>
+<li>Right-click the new scope and click <strong>Activate</strong>.</li>
+</ul></li>
+</ol>
+
+<p>To get a new IP address from DHCP:</p>
+
+<ul>
+<li><strong>Windows</strong>: Use <code>ipconfig /release</code> and <code>ipconfig /renew</code>.</li>
+<li><strong>RHEL</strong>: Restart the network service with <code>sudo systemctl restart network</code>.</li>
+</ul>
+
+<p>Other tasks:</p>
+
+<ul>
+<li>Secondary Domain Controller:</li>
+<li>Read-only Domain Controller (RODC)</li>
+</ul>
+
+<h2>Active Directory Users and Computers (<strong>ADUC</strong>)</h2>
+
+<p>Create <code>DomainAdmin</code> User</p>
+
+<p>@ Server Manager : Tools : <strong>Active Directory Users and Computers</strong> (<strong>ADUC</strong>)</p>
+
+<h3>1. Create Organizational Units (OU)</h3>
+
+<p>Create new OU, <code>OU1</code>, and two OUs (<code>DevOps</code>, <code>IT</code>) nested under <code>OU1</code>.</p>
+
+<ul>
+<li>Active Directory Users and Computers [dc1.lime.lan]
+
+<ul>
+<li><code>lime.lan</code> (Rt Click) : New : Organizational Unit : Name: <code>OU1</code>
+
+<ul>
+<li><code>OU1</code> (Rt Click) : New : Organizational Unit : Name: <code>DevOps</code></li>
+<li><code>OU1</code> (Rt Click) : New : Organizational Unit : Name: <code>IT</code></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p><strong>Resulting Structure</strong>:</p>
+
+<ul>
+<li>ADUC [dc1.lime.lan]
+
+<ul>
+<li>lime.lan
+
+<ul>
+<li>OU1
+
+<ul>
+<li>DevOps</li>
+<li>IT</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>2. Create User</h3>
+
+<p>An AD user has creds for authn/authz against ADDS of Windows Server 2019 (<code>DC1</code>)
+at any host joined into that AD domain AKA realm.</p>
+
+<ul>
+<li><p>Active Directory Users and Computers [dc1.lime.lan]</p>
+
+<ul>
+<li><p>lime.lan (Rt Click) : New : Organizational Unit : Name: <code>OU1</code></p>
+
+<ul>
+<li><p>OU1</p>
+
+<ul>
+<li>IT (Rt Click) : New : User : New Object (Window)
+
+<ul>
+<li>First name: <code>admin</code></li>
+<li>Last name:</li>
+<li>Full name: <code>admin</code></li>
+<li>User logon name: <code>admin</code></li>
+</ul></li>
+</ul>
+
+<p>&vellip;</p></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p><strong>Resulting Creds</strong>:</p>
+
+<ul>
+<li>User: <code>admin</code></li>
+<li>Pass: <code>Foo!123456</code></li>
+</ul>
+
+<h3>3. Add User <code>admin</code> to Group <code>Domain Admins</code></h3>
+
+<p>Click on user <code>admin</code>, right-click <strong>Properties</strong> &gt; <strong>Member of</strong>, and <strong>Add&hellip;</strong> &gt; Select Groups &gt; <strong>Check Names</strong> &gt; type &quot;domain&quot; and select &quot;<strong>Domain Admins</strong>&quot;.</p>
+
+<h2>Join Windows host (<code>Win11</code>) into ADDS Domain</h2>
+
+<p>@ Win11</p>
+
+<ul>
+<li>Verify apropos IP is assigned;<br>
+it should be within range of our DHCP server<br>
+
+<ul>
+<li><code>192.168.11.&lt;100-200&gt;</code></li>
+</ul></li>
+<li><strong>System</strong> (window) : <strong>To rename this computer or ...</strong>
+
+<ul>
+<li><strong>Change</strong> (button)
+
+<ul>
+<li><strong>Member of</strong>
+
+<ul>
+<li><strong>Domain</strong> (checkbox) :
+Enter the domain of our ADDS server:
+
+<ul>
+<li><code>lime.lan</code><br></li>
+</ul></li>
+</ul></li>
+<li>A pop-up window prompts for <strong>credentials</strong> :<br>
+Enter those of an <strong>ADDS admin</strong> user:
+
+<ul>
+<li><strong>User name</strong></li>
+<li><strong>Password</strong></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Await confirmation</li>
+<li>Reboot</li>
+</ul>
+
+<h2><a href="https://chatgpt.com/c/67427df4-6440-8009-9d12-adb9da2faa57" title="ChatGPT">Join RHEL 8 host (<code>a0</code>) into ADDS Domain</a></h2>
+
+<h3>Prep</h3>
+
+<pre><code class="language-bash"># Install pkgs
+all='
+    realmd 
+    sssd 
+    sssd-tools 
+    samba-common 
+    samba-common-tools 
+    krb5-workstation 
+    oddjob 
+    oddjob-mkhomedir
+'
+sudo dnf install -y $all
+
+# Add services / Open ports 
+systemctl is-active firewalld &amp;&amp;
+cat &lt;&lt;EOH |xargs -I{} sudo firewall-cmd --permanent --add-service={}
+kerberos
+dns
+ldap
+samba
+EOH
+
+systemctl is-active firewalld &amp;&amp;
+    sudo firewall-cmd --reload
+</code></pre>
+
+<p>Hostname change to FQDN having apropos realm not necessary?
+Does kerberos require/expect FQDN?</p>
+
+<pre><code class="language-bash">domain=lime.lan
+sudo hostnamectl set-hostname a0.$domain
+
+dc=dc1.$domain
+realm discover $dc
+</code></pre>
+
+<pre><code class="language-plaintext">lime.lan
+  type: kerberos
+  realm-name: LIME.LAN
+  domain-name: lime.lan
+  configured: no
+  server-software: active-directory
+  client-software: sssd
+  required-package: oddjob
+  required-package: oddjob-mkhomedir
+  required-package: sssd
+  required-package: adcli
+  required-package: samba-common-tools
+</code></pre>
+
+<ul>
+<li>Note: <code>configured: no</code></li>
+</ul>
+
+<h3>Join</h3>
+
+<pre><code class="language-bash">sudo realm join --user=Administrator $dc
+</code></pre>
+
+<p>Actually:</p>
+
+<pre><code class="language-bash">u1@a0 [15:39:28] [1] [#0] ~
+☩ sudo realm join --user=Administrator $dc
+Password for Administrator@LIME.LAN:
+
+u1@a0 [15:39:51] [1] [#0] ~
+☩
+</code></pre>
+
+<h3>Verify Join</h3>
+
+<ul>
+<li><p><code>realm list</code></p>
+
+<pre><code class="language-bash">u1@a0 [15:39:51] [1] [#0] ~
+☩ realm list
+lime.lan
+type: kerberos
+realm-name: LIME.LAN
+domain-name: lime.lan
+configured: kerberos-member
+server-software: active-directory
+client-software: sssd
+required-package: oddjob
+required-package: oddjob-mkhomedir
+required-package: sssd
+required-package: adcli
+required-package: samba-common-tools
+login-formats: %U@lime.lan
+login-policy: allow-realm-logins
+
+</code></pre></li>
+
+<li><p>Note, we are now: <code>configured: kerberos-member</code></p></li>
+</ul>
+
+<h3>Allow through firewall</h3>
+
+<pre><code class="language-bash">sudo firewall-cmd \
+    --add-service=kerberos \
+    --add-service=dns \
+    --add-service=ldap \
+    --add-service=samba \
+    --permanent
+
+sudo firewall-cmd --reload
+</code></pre>
+
+<h3>Enable Authn via SSSD</h3>
+
+<p>Enable and Start SSSD:<br>
+Ensure SSSD is running <strong>to handle authentication</strong>:</p>
+
+<pre><code class="language-bash">sudo systemctl enable --now sssd
+</code></pre>
+
+<p>Allow Domain Users to Log In:<br>
+By default, only admins can log in.</p>
+
+<p>Allow all domain users:</p>
+
+<pre><code class="language-bash">sudo realm permit --all
+</code></pre>
+
+<ul>
+<li>Ran this</li>
+</ul>
+
+<p>Allow specific AD groups:</p>
+
+<pre><code class="language-bash">sudo realm permit &quot;Domain Admins&quot;
+</code></pre>
+
+<ul>
+<li>Untested</li>
+</ul>
+
+<p>Optionally, configure <strong>Home Directory Creation</strong>:<br>
+If you want AD users to get home directories automatically on login:</p>
+
+<pre><code class="language-bash">sudo systemctl enable --now oddjobd
+</code></pre>
+
+<ul>
+<li>Ran this.</li>
+</ul>
+
+<h3>Verify Authn against ADDS from RHEL host</h3>
+
+<p>From the newly-joined RHEL host of the domain:</p>
+
+<h5><code>ssh &quot;admin@lime.lan&quot;@localhost</code></h5>
+
+<p>Success!</p>
+
+<p>Note that <code>HOME</code> dir is created for user <code>admin</code></p>
+
+<pre><code class="language-bash">u1@a0 [15:59:31] [1] [#0] ~
+☩ ssh &quot;admin@lime.lan&quot;@localhost
+admin@lime.lan@localhost's password:
+
+[admin@lime.lan@a0 ~]$ ls -hal
+total 12K
+drwx------. 2 admin@lime.lan domain users@lime.lan  62 Nov 24 15:59 .
+drwxr-xr-x. 7 root           root                   78 Nov 24 15:59 ..
+-rw-------. 1 admin@lime.lan domain users@lime.lan  18 Nov 24 15:59 .bash_logout
+-rw-------. 1 admin@lime.lan domain users@lime.lan 141 Nov 24 15:59 .bash_profile
+-rw-------. 1 admin@lime.lan domain users@lime.lan 492 Nov 24 15:59 .bashrc
+
+[admin@lime.lan@a0 ~]$ pwd
+/home/admin@lime.lan
+
+</code></pre>
+
+<p>Also note the RHEL host (<code>a0</code>) is now in the
+Domain Controller's DNS records.
+See DNS console at host <code>WinSrv2019</code>
+(Windows Server 2019).</p>
+
+<pre><code class="language-bash">Ubuntu [16:23:44] [1] [#0] ~
+☩ ssh admin@lime.lan@a0.lime.lan
+admin@lime.lan@a0.lime.lan's password:
+Last login: Thu Nov 28 16:23:42 2024 from 172.27.240.169
+[admin@lime.lan@a0 ~]$
+</code></pre>
+
+<p>Yet auth here fails:</p>
+
+<pre><code class="language-bash">Ubuntu [16:25:05] [1] [#0] ~
+☩ ssh admin@a0.lime.lan
+admin@a0.lime.lan's password:
+Permission denied, please try again.
+admin@a0.lime.lan's password: #... FAILing
+</code></pre>
+
+<h3>Fix AD-user reference : <code>admin@$host</code> vs <code>admin@$domain@host</code></h3>
+
+<p>The issue arises because the username <code>admin</code> alone is ambiguous on a system joined to an Active Directory (AD) domain. Without explicitly specifying the domain (e.g., <code>admin@lime.lan</code>), the RHEL system treats the username as a local account. Since there’s no local <code>admin</code> user, authentication fails.</p>
+
+<h4><strong>Why This Happens</strong></h4>
+
+<p>When you use <code>admin@lime.lan</code>:
+- The system recognizes it as a fully qualified username (including the domain).
+- SSSD correctly routes the authentication to the AD domain controller (<code>dc1.lime.lan</code>).</p>
+
+<p>When you use just <code>admin</code>:
+- The system attempts to authenticate a local Linux user account named <code>admin</code>.
+- Since no local account exists, authentication fails.</p>
+
+<p>Note home dir created by <code>oddjob</code></p>
+
+<pre><code class="language-bash">☩ ls /home
+total 8.0K
+drwx------.  2 admin@lime.lan domain users@lime.lan   83 Nov 24 16:29 admin@lime.lan
+drwx------.  3 gitops         gitops                 111 Sep 22 12:53 gitops
+drwx------.  2 testuser       testuser                83 Jun 28 07:35 testuser
+drwx------. 10 u1             u1                    4.0K Nov 28 16:32 u1
+drwx------.  5 u2             u2                    4.0K Nov 12 20:47 u2
+</code></pre>
+
+<h4><strong>FIX</strong></h4>
+
+<h4>TL;DR</h4>
+
+<pre><code class="language-bash">☩ sudo cat /etc/sssd/sssd.conf
+# - If duplicate entries, the final (highest line number) setting wins.
+# - Order of blocks matters.
+# - Order of params does not matter.
+[sssd]
+domains             = lime.lan
+config_file_version = 2
+services            = nss, pam
+
+[domain/lime.lan]
+default_shell                   = /bin/bash
+ad_server                       = dc1.lime.lan
+krb5_store_password_if_offline  = True
+cache_credentials               = True
+krb5_realm                      = LIME.LAN
+realmd_tags = manages-system joined-with-adcli
+id_provider = ad
+fallback_homedir = /home/%u@%d
+ad_domain = lime.lan
+use_fully_qualified_names = False
+ldap_id_mapping = True
+access_provider = ad
+# Bogus
+#user_mapping = admin:admin@lime.lan
+</code></pre>
+
+<ul>
+<li>Not valid key of that block : <code>user_mapping = admin:admin@lime.lan</code></li>
+
+<li><p><code>use_fully_qualified_names = False</code></p>
+
+<pre><code class="language-bash">sudo sss_override user-add admin@lime.lan --name=admin
+</code></pre></li>
+
+<li><p>Untested/unnecessary</p>
+
+<pre><code class="language-bash">Ubuntu [17:29:11] [1] [#0] ~
+☩ ssh admin@a0.lime.lan
+admin@a0.lime.lan's password:
+Last login: Thu Nov 28 17:29:01 2024 from 172.27.240.169
+[admin@a0 ~]$
+</code></pre></li>
+</ul>
+
+<h3>SSH Auth using PKI</h3>
+
+<p>Setup PKI</p>
+
+<pre><code class="language-bash"># Generate key pair
+ssh-keygen -t ecdsa -C admin@lime.lan -f ~/.ssh/dc1_admin
+# Push key to target host
+ssh-copy-id -i ~/.ssh/dc1_admin admin@a0.lime.lan
+# Configure
+vi ~/.ssh/config
+</code></pre>
+
+<pre><code class="language-ini">Host admin
+    Hostname 192.168.11.103
+    User admin
+    IdentityFile ~/.ssh/dc1_admin
+</code></pre>
+
+<p>Test/Verify</p>
+
+<pre><code class="language-bash">Ubuntu [18:34:30] [1] [#0] ~
+☩ ssh admin
+...
+[admin@a0 ~]$ 
+
+</code></pre>
+
+<h4>1. <strong>Always Specify the Domain</strong></h4>
+
+<p>Continue using the fully qualified username format:</p>
+
+<pre><code class="language-bash">ssh admin@lime.lan@a0.lime.lan
+</code></pre>
+
+<p>This is the most reliable method,
+as it explicitly tells the system to authenticate against the AD domain.</p>
+
+<h4>2. <strong>Set the AD Domain as Default for Login</strong></h4>
+
+<p>If you want to avoid specifying the domain every time,
+configure SSSD to treat the AD domain as the default.</p>
+
+<ul>
+<li><p>Edit <code>/etc/sssd/sssd.conf</code>:</p>
+
+<pre><code class="language-ini">[domain/lime.lan]
+use_fully_qualified_names = False
+default_domain_suffix = lime.lan
+</code></pre></li>
+
+<li><p>Restart SSSD:</p>
+
+<pre><code class="language-bash">sudo systemctl restart sssd
+</code></pre></li>
+
+<li><p>Test by logging in without specifying the domain:</p>
+
+<pre><code class="language-bash">ssh admin@a0.lime.lan
+</code></pre></li>
+</ul>
+
+<p>This configuration automatically appends the
+domain <code>lime.lan</code> to usernames during authentication.</p>
+
+<h4>3. <strong>Add a Domain Alias for Local Convenience</strong></h4>
+
+<p>If you prefer the <code>admin</code> format but want it to resolve to <code>admin@lime.lan</code>, you can add an alias in <code>/etc/sssd/sssd.conf</code>.</p>
+
+<ul>
+<li><p>Add a domain mapping:</p>
+
+<pre><code class="language-ini">[domain/lime.lan]
+user_mapping = admin:admin@lime.lan
+</code></pre></li>
+
+<li><p>Restart SSSD:</p>
+
+<pre><code class="language-bash">sudo systemctl restart sssd
+</code></pre></li>
+</ul>
+
+<p>This approach is less common but can simplify access for specific users.</p>
+
+<h4>4. <strong>Test and Verify</strong></h4>
+
+<p>Once you've applied the changes, test authentication:
+- Without domain: <code>ssh admin@a0.lime.lan</code>
+- With domain: <code>ssh admin@lime.lan@a0.lime.lan</code></p>
+
+<p>Additionally, check logs for any errors if authentication still fails:</p>
+
+<pre><code class="language-bash">sudo journalctl -u sssd -f
+sudo tail -f /var/log/secure
+</code></pre>
+
+<h3><a href="https://chatgpt.com/share/679e5087-0d8c-8009-949a-c328ff4b5c02">Login Lockout v. Sudo (Non-)Lockout</a></h3>
+
+<p>@ <strong><code>/etc/pam.d/sudo</code></strong></p>
+
+<pre><code class="language-ini">#%PAM-1.0
+auth       include      system-auth
+account    include      system-auth
+password   include      system-auth
+session    include      system-auth
+</code></pre>
+
+<p>@ <strong><code>/etc/pam.d/system-auth</code></strong></p>
+
+<pre><code class="language-ini">auth     required  pam_faillock.so preauth silent audit deny=3 unlock_time=600
+auth     required  pam_faillock.so authfail audit deny=3 unlock_time=600
+</code></pre>
+
+<h2>AD Certificate Services (AD CS)</h2>
+
+<p>See snapshots of the GUI</p>
+
+<ol>
+<li>Open <strong>Server Manager</strong>.</li>
+<li>Click <strong>Manage</strong> and select <strong>Add Roles and Features</strong>.</li>
+<li>In the <strong>Add Roles and Features Wizard</strong>:
+
+<ul>
+<li>Active Directory Certificate Services : Roles (checkboxes):
+
+<ul>
+<li>Certificate Authority</li>
+<li>Certificate Authority Web Enrollment
+
+<ul>
+<li>CA name (checkbox)</li>
+<li>Target CA: <code>dc1.lime.lan\lime-DC1-CA</code></li>
+</ul></li>
+<li>Certificate Enrollment Web Service (CES)
+
+<ul>
+<li>Type: Client certificate authentication</li>
+</ul></li>
+<li>Server Certificate
+
+<ul>
+<li>Specify a Server Authentication Certificate
+
+<ul>
+<li>Choose an existing certificate for SSL encryption
+
+<ul>
+<li><code>dc1.lime.lan</code> (One year expiry)</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Add the designated ADCS (web service) <code>User</code> (<code>Administrator</code>) to <code>Group</code> <code>IIS_IUSRS</code>
+
+<ul>
+<li>The certificate server is protected by ADDS
+
+<ul>
+<li>Authenticate at: <a href="https://dc1.lime.lan/certsrv/">https://dc1.lime.lan/certsrv/</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><strong>Save the Root CA certificate</strong>
+
+<ul>
+<li>Open Certification Authority GUI (<code>crtsrv</code>)
+
+<ul>
+<li><strong>Right-click on the certificate</strong> (<code>dc1.lime.lan</code>)</li>
+<li>Open
+
+<ul>
+<li>Details : &quot;Copy to File&quot; (button) : Next :
+
+<ul>
+<li>&quot;<strong>Base-64 encoded X.509 (.CER)</strong>&quot; (checkbox) : Next ... Save file.
+
+<ul>
+<li>E.g., <code>ca-root-dc1.lime.lan.cer</code></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><strong>Import the Root CA certficate</strong> into host(s) and/or client(s) trust store,
+so that the IIS-served TLS certificate of <strong>Certificate Services</strong> web page will validate.
+
+<ul>
+<li>@ Windows 11, open <code>certlm.msc</code> and import to &quot;<strong>Trusted Root Certification Authorities</strong>&quot; folder.</li>
+</ul></li>
+</ol>
+
+<h3>Root CA certificate</h3>
+
+<p>Save the root CA certificate using PowerShell</p>
+
+<pre><code class="language-powershell">$caName     = &quot;lime-DC1-CA&quot;
+$filePath   = &quot;ca-root-dc1.lime.lan.cer&quot;
+$cert       = Get-ADObject -LDAPFilter &quot;(cn=$caName)&quot; -SearchBase &quot;CN=Certification Authorities,CN=Public Key Services,CN=Services,$((Get-ADRootDSE).configurationNamingContext)&quot; -Properties &quot;cACertificate&quot;
+[System.IO.File]::WriteAllBytes($filePath, $cert.&quot;cACertificate&quot;[0])
+
+</code></pre>
+
+<h3>Obtain a TLS certificate  via CSR</h3>
+
+<h4>@ <a href="https://dc1.lime.lan/certsrv/">https://dc1.lime.lan/certsrv/</a></h4>
+
+<ol>
+<li>Authenticate (against ADDS) by Username/Password
+
+<ul>
+<li>Administrator
+
+<ul>
+<li><code>User</code> must be member of <code>Group</code> <code>IIS_IUSRS</code></li>
+</ul></li>
+</ul></li>
+<li><strong>Request a certificate</strong>
+
+<ul>
+<li>... submit an <a href="#hyperlink-mock"><strong>advanced certificate request</strong></a></li>
+</ul></li>
+<li><strong>Submit a Certificate Request</strong> or Renewal Request
+
+<ul>
+<li><strong>Saved Request</strong> (HTML FORM : text input box):
+
+<ul>
+<li>Paste the <strong>CSR</strong> of <strong>PKCS#10</strong> (New) / PKCS#7 (Renewal) <strong>format</strong></li>
+</ul></li>
+<li><strong>Certificate Template</strong>:
+
+<ul>
+<li><strong>Web Server</strong> (dropdown)</li>
+</ul></li>
+<li>Additional Attributes (text input box):
+
+<ul>
+<li>Leave blank</li>
+</ul></li>
+</ul></li>
+<li>Submit (button)</li>
+</ol>
+
+<h4>CSR</h4>
+
+<p>AD CS requires CSR in PKCS#10/#7 (New/Renew) format.
+OpenSSL generates the request (<code>*.csr</code>) in that format by default.</p>
+
+<p>Regarding Windows Server 2019 and prior,
+AD CS offers <strong>only RSA-based certificates</strong>
+unless that role is configured otherwise,
+which is a non-trivial task that nearly no organization performs.</p>
+
+<pre><code class="language-bash">root=lime.lan
+cn=kube.$root
+TLS_ST=MD
+TLS_L=AAC
+TLS_O=DisselTree
+TLS_OU=ops
+## Create the configuration file (CNF) : See man config
+## See: man openssl-req : CONFIGURATION FILE FORMAT section
+## https://www.openssl.org/docs/man1.0.2/man1/openssl-req.html
+cat &lt;&lt;EOH |tee $cn.cnf
+[ req ]
+prompt              = no        # Disable interactive prompts.
+default_bits        = 2048      # Key size for RSA keys. Ignored for Ed25519.
+default_md          = sha256    # Hashing algorithm.
+distinguished_name  = req_distinguished_name 
+req_extensions      = v3_req    # Extensions to include in the request.
+[ req_distinguished_name ] 
+CN              = $cn                   # Common Name
+C               = ${TLS_C:-US}          # Country
+ST              = ${TLS_ST:-NY}         # State or Province
+L               = ${TLS_L:-Gotham}      # Locality name
+O               = ${TLS_O:-Foobar Inc}  # Organization name
+OU              = ${TLS_OU:-GitOps}     # Organizational Unit name
+emailAddress    = admin@$root 
+[ v3_req ]
+subjectAltName      = @alt_names
+keyUsage            = digitalSignature
+extendedKeyUsage    = serverAuth
+[ alt_names ]
+DNS.1 = $cn
+DNS.2 = *.$cn   # Wildcard. CA must allow, else declare each subdomain.
+EOH
+
+# RSA
+openssl req -new -noenc -config $cn.cnf -extensions v3_req -newkey rsa:2048 -keyout $cn.key -out $cn.csr 
+# ED25519
+openssl req -new -noenc -config $cn.cnf -extensions v3_req -newkey ed25519 -keyout $cn.key -out $cn.csr
+# ECDSA (NIST P-256 curve)
+openssl req -new -noenc -config $cn.cnf -extensions v3_req -newkey ec:&lt;(openssl ecparam -name prime256v1 -genkey) -keyout $cn.key -out $cn.csr
+</code></pre>
+
+<p>Request the TLS certificate using the HTML FORM of Windows AD CS web server at <a href="https://dc1.lime.lan/certsrv/">https://dc1.lime.lan/certsrv/</a> .
+The response has both full-chain and end-entity certificates encoded in PKCS#7 and having DER (binary) format.</p>
+
+<ul>
+<li><p><code>certnew.p7b</code></p>
+
+<pre><code class="language-bash">
+# Convert certificate from PKCS#7 (.p7b) to PEM format
+cn=kube.lime.lan
+openssl pkcs7 -print_certs -in certnew.p7b -out $cn.crt
+
+# Parse the certificate
+openssl x509 -noout -issuer -subject -startdate -enddate -ext subjectAltName -in $cn.crt
+</code></pre>
+
+<pre><code class="language-plaintext">issuer=DC = lan, DC = lime, CN = lime-DC1-CA
+subject=C = US, ST = MD, L = AAC, O = DisselTree, OU = ops, CN = kube.lime.lan, emailAddress = admin@lime.lan
+notBefore=Jan 25 14:32:36 2025 GMT
+notAfter=Jan 25 14:32:36 2027 GMT
+X509v3 Subject Alternative Name:
+DNS:kube.lime.lan, DNS:*.kube.lime.lan
+</code></pre></li>
+
+<li><p>Note root CA is <code>lime-DC1-CA</code></p></li>
+</ul>
+
 <h3>&nbsp;</h3>
-
-<!-- 
-
-# Markdown Cheatsheet
-
-[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
-
-
-# Link @ (HTML | MD)
-
-([HTML](___.md "___"))   
-
-
-# Bookmark
-
-- Reference
-[Foo](#foo)
-
-- Target
-<a name="foo"></a>
-
--->
  
     </main>
 
