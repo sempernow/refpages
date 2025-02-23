@@ -765,6 +765,27 @@ Implement security scanning of your Docker images and Kubernetes configurations 
 Tools like <a href="https://trivy.dev/" title="trivy.dev">Trivy</a>, Clair, and KubeLinter can be integrated into your workflows.</li>
 </ul>
 
+<h2>Schemes for Unique Identifier</h2>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a> (Universally Unique Identifier):<br>
+A widely used 128-bit number that guarantees uniqueness across different systems, often used in databases and distributed systems; considered the standard for generating unique identifiers. [1, 2, 3]<br></li>
+<li>NanoID:<br>
+A compact, URL-friendly unique string generator with a similar collision probability to UUID, designed for JavaScript environments [1, 4, 5]<br></li>
+<li>ULID (Universally Unique Lexicographically Sortable Identifier): A unique identifier that is also sortable, combining timestamp and randomness for efficient database indexing [1, 6]<br></li>
+<li>CUID (Collision-resistant Unique Identifier): A unique identifier that incorporates a timestamp, counter, and random characters, designed for collision resistance in distributed systems [1, 5]<br></li>
+<li>Snowflake ID: A unique identifier scheme often used in distributed databases, incorporating timestamps and sequence numbers to generate unique IDs [6, 7]<br></li>
+</ul>
+
+<h3>Key points to consider when choosing a unique identifier scheme:</h3>
+
+<ul>
+<li><strong>Collision probability</strong>: How likely is it for two different identifiers to be the same.</li>
+<li>Length and <strong>readability</strong>: How long is the identifier and <strong>how easy is it to read</strong> and interpret.</li>
+<li><strong>Sorting capabilities</strong>: Whether the identifier can be <strong>easily sorted in a database</strong></li>
+<li>Generation method: How the identifier is generated, <strong>whether it uses randomness or timestamps</strong></li>
+</ul>
+
 <h3>&nbsp;</h3>
 
 <!-- 

@@ -58,6 +58,12 @@ kubectl create deploy bbox --image=busybox --dry-run=client -o yaml |tee deploy.
 kubectl run $any --image=$img --env FOO=bar --env BLAME=$USER
 # One-shot pod/container deleted upon command completion
 kubectl run $any --image=$img -it --rm -- $command $options 
+img=nicolaka/netshoot:e1fbbfaf1a3f874a57103c4317f43444d8aae75d
+kubectl run nbox2 -it --rm \
+    --image=$img \
+    --overrides='{"spec": {"nodeName": "'$nodeName'"}}' \
+    --restart=Never  -- \
+    iperf3 -c $podIP -p $port
 # Job : Create a Job which prints "Hello World"
 kubectl create job hello --image=busybox:1.28 -- echo "Hello World"
 # CronJob : create a CronJob that prints "Hello World" every minute
