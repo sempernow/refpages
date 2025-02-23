@@ -117,6 +117,8 @@
 ## [git.sh](./REFs/git.sh)
 ## [GitHub.sh](./REFs/GitHub.sh)
 ## [GitLab.md](./REFs/GitLab.md)
+## [GitLab.self-hosted-chat.url](./REFs/GitLab.self-hosted-chat.url)
+## [GitLab.self-hosted.md](./REFs/GitLab.self-hosted.md)
 ## [GitOps.md](./REFs/GitOps.md)
 ## [GKE.md](./REFs/GKE.md)
 ## [Go-jitsu.go](./REFs/Go-jitsu.go)

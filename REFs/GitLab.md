@@ -8,6 +8,11 @@ Reference: "GitLab CICD Intermediate" [2023]
     - GitLab Runner (Golang) | Linode VM @ 2 CPU / 4Gi Memory
       See "3. Install GitLab Runner on Linux"
 - [Install GitLab Runner | Linux](https://docs.gitlab.com/runner/install/linux-repository.html)
+    - [GitLab Runner Operator](https://operatorhub.io/operator/gitlab-runner-operator) 
+    The GitLab Runner operator manages the lifecycle of GitLab Runner in Kubernetes or Openshift clusters. The operator aims to automate the tasks needed to run your CI/CD jobs in your container orchestration platform.
+    - [Use the agent to install GitLab Runner](https://docs.gitlab.com/runner/install/kubernetes-agent.html)
+        - [Connecting a Kubernetes cluster with GitLab](https://docs.gitlab.com/ee/user/clusters/agent/) 
+          Connect your K8s cluster with GitLab to deploy, manage, and monitor your cloud-native solutions. To connect a Kubernetes cluster to GitLab, you must first [install an agent in the cluster](https://docs.gitlab.com/ee/user/clusters/agent/install/index.html).
     - May have several, each scoped to a team, each available to that team only.
         - Must register and configure Runners with GitLab via Web UI ([ChatGPT](https://chatgpt.com/share/670ad40b-24d4-8009-8d08-49c3e51b8cf2)). Use the "Register an Instance Runner" (Button)
     - Executor : Where the pipelines run; several options: 

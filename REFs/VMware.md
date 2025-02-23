@@ -1,67 +1,50 @@
-# [VMware](https://www.vmware.com/ "VMware.com")
+# [VMware](https://www.vmware.com/ "VMware.com") | [Proxmox v. ESXi v. OpenStack](https://chatgpt.com/share/f5522c3c-a597-42ac-adee-4d445b0836f6 "ChatGPT.com")
 
-## [Proxmox v. ESXi v. OpenStack](https://chatgpt.com/share/f5522c3c-a597-42ac-adee-4d445b0836f6 "ChatGPT.com")
+>VMware is now (2023) owned by __Broadcom__,  
+>which has (2024) [__discontinued its *free* ESXi__](https://knowledge.broadcom.com/external/article?legacyId=2107518 "knowledge.broadcom.com") hypervisor"
 
->VMware is now owned by Broadcom, which has __discontinued the Free ESXi Hypervisor__ : [End Of General Availability of the free vSphere Hypervisor](https://knowledge.broadcom.com/external/article?legacyId=2107518 "knowledge.broadcom.com")"
-
-
-## vSphere ESXi 
+## [ESXi](https://en.wikipedia.org/wiki/VMware_ESXi)
 
 - Type:  
     Bare-metal, Type-1 hypervisor.
 - Purpose:  
-    ESXi is installed directly on server hardware to allow it to run 
-    multiple VMs efficiently by virtualizing the hardware resources of the physical server.
+    ESXi is installed directly on server hardware to allow it to run multiple virtual machines (VMs) efficiently by 
+    virtualizing the hardware resources of the physical server.
 - Use Case: 
-    ESXi is for server-level deployments. 
-    It's widely used in data centers and enterprise environments 
-    where organizations need to run multiple VMs on a server. 
-    ESXi is the foundation of VMware's enterprise-level virtualization stack.
+    ESXi is for server-level deployments. It's widely used in data centers and enterprise environments where organizations need to run multiple VMs on a server. ESXi is the foundation of VMware's enterprise-level virtualization stack.
 - Key Features:  
-    Resource management, high availability, support for clustering, 
-    performance tuning, and security for running multiple VMs.
+    Resource management, high availability, support for clustering, performance tuning, and security for running multiple VMs.
 - Relation to VMware Workstation and vCenter:   
-    Unlike VMware Workstation, ESXi is for server-level deployments. 
-    It can be managed either directly via its web interface 
-    or through vCenter for larger environments.
+    Unlike VMware Workstation, ESXi is for server-level deployments. It can be managed either directly via its web interface or through vCenter for larger environments.
 
-Components/Features:
+__Components__/__Features__:
 
-- NSX : Networking and Security Virtualization SDN
-    - Requires [VMware Cloud Foundation](https://www.vmware.com/products/cloud-infrastructure/vmware-cloud-foundation) (VCF) : Private Cloud Platform
-- vMotion : live migration of a VM to another physical machine without any downtime
+- __Horizon Connection Server__: 
+    This is the core component of the Horizon VDI architecture. It manages session brokering, authentication, and directs incoming VDI connection requests from users to their respective virtual desktops or published applications.
+- __ESXi Hosts__ (Physical Servers): 
+    These are the servers where the VMs or desktops are hosted. They run the VMware ESXi hypervisor, which allows multiple VMs to share physical hardware resources.
+-  __Thin Clients__: 
+    These are minimalistic computers that primarily provide network connectivity and the necessary interfaces to interact with the user's virtual desktop. They run thin client operating systems and include client software, 
+    typically the VMware __Horizon Client__.
+- __NSX__ (Networking and Security Virtualization)
+    - SDN requiring [VMware Cloud Foundation](https://www.vmware.com/products/cloud-infrastructure/vmware-cloud-foundation) (__VCF__) : Private Cloud Platform
+- __vMotion__ : live migration of a VM to another physical machine without any downtime
     - Enterprise feature : Requires license
--  `.vmdk` : Proprietary virtualization format only, 
-   whereas Proxmox supports that and others; `.qcow2` and `.vdi`
-- Remote access only; per Web console
+-  `.vmdk` : Proprietary virtualization format; __Proxmox__ supports that and others (`.qcow2` and `.vdi`).
 - ~~[Free version](https://my.vmware.com/en/web/vmware/evalcenter?p=free-esxi6) for registered users~~
 
-## Workstation
+__Tools__:
 
-- Type:  
-    Desktop virtualization software.
-- Purpose:  
-    It allows users to run multiple virtual machines (VMs) on a single desktop or laptop computer. 
-    It's primarily used for personal or small-scale development, testing, and learning.
-- Use Case:  
-    Ideal for developers, IT professionals, and hobbyists 
-    who want to create and run VMs on their personal machine without the need for dedicated server hardware.
-- Key Features:  
-    Supports a variety of guest operating systems, snapshots, virtual networking, 
-    and resource sharing (like CPU, memory, disk, etc.) between VMs.
-- Relation to ESXi and vCenter:  
-    VMware Workstation __can connect to and manage ESXi hosts__, 
-    but it’s generally not part of a larger enterprise-grade data center solution.
-
-- VMware Workstation Pro 17.5.2 
-    - https://1337x.to/torrent/6098934/VMware-Workstation-Pro-17-5-2-23775571-Lifetime-Activation-Serials-AppDoze/
+- __vSphere Client__ is the __administrative interface__ for the overall management of VMware's vSphere products, including __ESXi hosts__ and __vCenter Servers__.
+- VMware __Remote Console__ (__VMRC__) is used for direct interaction with a VM's operating system, similar to accessing a physical machine's console. It's part of managing VMs within the vSphere environment, but is focused on VM interaction rather than broader infrastructure management.
+- VMware __Horizon Client__ is specifically for accessing virtual desktops and applications in a __VDI__ environment.
 
 ## vCenter 
 
 - Type:  
     Centralized management platform for VMware environments.
 - Purpose:  
-    vCenter allows administrators to manage multiple ESXi hosts 
+    vCenter allows administrators to manage multiple __ESXi__ hosts 
     and the VMs running on them from a single console. 
     It provides advanced features like __VM migration__ (__vMotion__), 
     high availability (HA), distributed resource scheduling (DRS), and more.
@@ -69,7 +52,7 @@ Components/Features:
     vCenter is used in enterprise environments where many ESXi hosts and VMs 
     need to be centrally managed for efficiency, scalability, and high availability.
 - Key Features:   
-    Centralized management of multiple ESXi hosts, resource pooling, 
+    __Centralized management of multiple ESXi hosts__, resource pooling, 
     load balancing, VM migration, and performance monitoring.
 - Relation to ESXi and VMware Workstation:  
     vCenter is used to manage multiple ESXi hosts, 
@@ -78,65 +61,155 @@ Components/Features:
 Components/Features:
 
 - Manage/Access multiple ESXi hosts, all from one console. 
-- Deployed on VM, on vSphere ESXi host, as either:
-    1. VCSA VMware Center Service Appliance VM (preferred)
-        - Was openSUSE; @ 6.5 is VMware Photon OS
-    2. Windows VM on vSphere ESXi host; uses MS SQL database
+- __vCenter__ is deployed on ESXi VM host as __either__:
+    1. __VCSA__ (VMware Center (vCenter) Service __Appliance__) (preferred)
+        - Was OpenSUSE; now (v6.5+) is VMware __Photon OS__
+    2. __Windows__, which uses MS SQL database
 - Flash (legacy) and HTML5 based interfaces available. 
 - Advanced features; VM Cloning, load balancing, ...
 
-## ESXi : Subnets and Firewalls
+The technology that facilitates connection to vCenter and provides the pop-up window 
+where you interact with the VM is primarily the __VMRC__ or the __Web Console__.
+
+### VMware Remote Console (VMRC) 
+
+VMRC connects to vCenter Server, allowing users to interact directly with the guest operating system of a VM through a pop-up window. It handles the keyboard, video, and mouse (__KVM__) streams, making it feel like you are directly logged onto the machine. VMRC can be __launched from the vSphere Web Client or directly as a standalone application__.
+
+Sometimes informally referred to as the "__vSphere Remote Client__".
+The VMRC is actually a KVM-type of utility that provides console access to guest operating systems running on VMware VMs. VMRC allows you to remotely interact with the VM's operating system as if you were sitting in front of it, complete with screen, keyboard, and mouse input. 
+
+### vSphere Web Console
+    
+An alternative to VMRC, especially in newer versions of vSphere, is the web console provided directly through the HTML5-based vSphere Client. This console allows for interaction with the VM without needing to install additional software like VMRC.
+
+Both VMRC and the web console use a combination of technologies, 
+including proprietary VMware protocols, to provide secure and efficient access 
+to manage and operate the VMs remotely. 
+
+These tools ensure that you have near-real-time interaction with the VMs, 
+enabling tasks such as configuring operating systems, installing applications, 
+and monitoring operations directly from the console window.
+
+
+## Virtual Desktop Infrastructure (VDI) 
+
+This uses VMware __Horizon__; a VDI platform to provide a virtual desktop and application services, allowing users to access personal desktop environments hosted on VMware ESXi servers through lightweight or thin client devices.
+
+This VDI setup is particularly __popular in enterprise environments__ where security, management, and cost efficiency are paramount. It allows organizations to provide a standardized set of applications and resources to users, 
+regardless of their physical location or the capabilities of their local hardware.
+
+Here's how it generally works:
+
+Prior to authentication, the __client pop-up__ in a VMware __Horizon VDI__ environment 
+is typically part of the __Horizon Client__ application that's __installed on the thin client__. 
+This client software is responsible for initiating the connection 
+to the VMware __Horizon Connection Server__. 
+
+Here's how the sequence usually unfolds:
+
+- __Horizon Client Initialization__: When the thin client is powered on and the VMware Horizon Client is launched, the initial screen usually __prompts the user to enter the server address__ (the Horizon Connection Server) and possibly other connection parameters. This step is necessary for the thin client to know where to direct its authentication request and subsequent virtual desktop session traffic.
+- __Login Screen__: After the server address is provided and successfully reached by the Horizon Client, the next screen typically presented is the login screen. Here, the user is asked to provide their credentials, which might include a username and password. Additional layers of security such as two-factor authentication (2FA) may also be part of this process depending on the organization's security policies.
+- __Session Broker__: Once the credentials are entered and validated by the Connection Server, 
+it acts as a session broker, determining which resources (virtual desktops or applications) 
+are available to the user based on their credentials and group memberships.
+- __Resource Selection__: If multiple resources are available (e.g., different virtual desktops or applications), 
+the user may be presented with a selection screen where they can choose the desired virtual desktop or application to launch.
+- __Connection Establishment__: After selecting the resource, the Horizon Client establishes a connection 
+using <dfn title="PC-over-IP is a proprietary remote display protocol used in AWS Workspaces and VMware Horizon View">[__PCoIP__](https://en.wikipedia.org/wiki/Teradici#PCoIP_Protocol)</dfn> 
+or <dfn title="VMware proprietary protocol using that of H.264">__Blast Extreme__</dfn> protocols, and the user's virtual desktop session begins. The user then interacts with their desktop environment as if it were running locally, 
+although it is hosted on the ESXi servers in the data center.
+
+### Process
+
+1. __User Authentication__: The user logs into the Horizon Client installed on their thin client or another device. 
+    Authentication is usually handled by the Connection Server, 
+    which may integrate with enterprise directory services like Microsoft Active Directory.
+
+2. __Desktop Provisioning__: Once authenticated, the Connection Server brokers a connection to a virtual desktop instance hosted 
+    on one of the ESXi hosts. This desktop can be a persistent desktop, 
+    which maintains user data and settings between sessions, or a non-persistent desktop, which provides a clean state at every login.
+
+3. __Connection__: The Horizon Client on the thin client establishes a connection to the virtual desktop using VMware's PCoIP (PC-over-IP) 
+    or Blast Extreme protocols. These protocols are designed to deliver high-performance virtual desktop experiences over the network 
+    with efficient compression and encryption.
+
+4. __User Session__: The user interacts with the Windows environment as if they were using a local PC, 
+    but all processing happens on the server-side. The thin client simply displays the desktop and handles input and output.
+
+### Advantages
+
+- __Security__: Since data is processed and stored in the data center, sensitive information never leaves the secure environment.
+- __Cost-Effective__: Thin clients are generally cheaper to maintain and consume less power than traditional desktop PCs.
+- __Centralized Management__: Updates, patches, and software installations can be managed centrally, which simplifies IT operations.
+
+
+## Workstation
+
+- Type:  
+    Desktop virtualization software.
+- Purpose:  
+    It allows users to run multiple VMs on a single desktop or laptop computer. It's primarily used for personal or small-scale development, testing, and learning.
+- Use Case:  
+    Ideal for developers, IT professionals, and hobbyists 
+    who want to create and run VMs on their personal machine without the need for dedicated server hardware.
+- Key Features:  
+    Supports a variety of guest operating systems, snapshots, virtual networking, and resource sharing (like CPU, memory, disk, etc.) between VMs.
+- Relation to ESXi and vCenter:  
+    VMware Workstation __can connect to and manage ESXi hosts__, but it's generally not part of a larger enterprise-grade data center solution.
+
+- VMware Workstation Pro 17.5.2 
+    - https://1337x.to/torrent/6098934/VMware-Workstation-Pro-17-5-2-23775571-Lifetime-Activation-Serials-AppDoze/
+
+## ESXi Subnets and Firewalls
 
 @ ChatGPT4o
 
 ### Q: 
 
-Regarding VMs under ESXi, shouldn't each set of logically related VMs have 
-their own firewalled subnet defined and managed via the hypervisor 
-and perhaps allowing prgrammatic access from the VMs?
+Regarding VMs under ESXi, shouldn't each set of logically related VMs have their own firewalled subnet defined and managed via the hypervisor and perhaps allowing prgrammatic access from the VMs?
 
 ### A: 
 
-Yes, it is a good practice to segment logically related VMs into their own 
-firewalled subnets within an ESXi environment. 
+Yes, it is a good practice to segment logically related VMs into their own firewalled subnets within an ESXi environment. 
 This approach provides several advantages:
 
 ### Advantages of Firewalled Subnets for Logically Related VMs:
 
-1. **Security**: By isolating groups of VMs, you can limit the blast radius of any potential security incidents. If one VM is compromised, the attacker’s ability to move laterally within the network is restricted.
+1. __Security__: By isolating groups of VMs, you can limit the blast radius of any potential security incidents. 
+If one VM is compromised, the attacker's ability to move laterally within the network is restricted.
 
-2. **Traffic Control**: Firewalled subnets allow you to control the flow of traffic between different groups of VMs. This ensures that only necessary and approved communication paths are allowed, reducing the risk of unauthorized access.
+2. __Traffic Control__: Firewalled subnets allow you to control the flow of traffic between different groups of VMs. This ensures that only necessary and approved communication paths are allowed, reducing the risk of unauthorized access.
 
-3. **Compliance**: Many regulatory frameworks require strict network segmentation to protect sensitive data. Isolating VMs into different subnets can help meet these requirements.
+3. __Compliance__: Many regulatory frameworks require strict network segmentation to protect sensitive data. Isolating VMs into different subnets can help meet these requirements.
 
-4. **Performance Management**: Segregating traffic can help in managing and optimizing network performance by reducing congestion and ensuring that critical applications have the necessary bandwidth.
+4. __Performance Management__: Segregating traffic can help in managing and optimizing network performance by reducing congestion and ensuring that critical applications have the necessary bandwidth.
 
 ### Implementation in ESXi:
 
-1. **Virtual Switches (vSwitches)**: Use ESXi’s virtual switches to create isolated networks for different groups of VMs. Each vSwitch can have its own set of port groups and VLANs.
+1. __Virtual Switches (vSwitches)__: Use ESXi's virtual switches to create isolated networks for different groups of VMs. Each vSwitch can have its own set of port groups and VLANs.
     - Port groups define the network configuration, including VLAN ID, network traffic policies, and security settings for the connected VMs.
 
-2. **Distributed Virtual Switches (vDS)**: For larger environments, consider using VMware vSphere Distributed Switches, which provide centralized management of network configurations across multiple ESXi hosts.
+2. __Distributed Virtual Switches (vDS)__: For larger environments, consider using VMware vSphere Distributed Switches, which provide centralized management of network configurations across multiple ESXi hosts.
 
-3. **Firewall Rules**: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX (Networking and Security Virtualization) if available, or through physical firewalls and network devices if NSX is not in use.
+3. __Firewall Rules__: Configure firewall rules to control traffic between subnets. This can be done using VMware NSX (Networking and Security Virtualization) if available, or through physical firewalls and network devices if NSX is not in use.
 
-4. **Programmatic Access**: Allow programmatic access to manage and configure network settings from the VMs. This can be achieved using VMware’s APIs and tools like PowerCLI for scripting and automation.
+4. __Programmatic Access__: Allow programmatic access to manage and configure network settings from the VMs. This can be achieved using VMware's APIs and tools like PowerCLI for scripting and automation.
 
 ### Steps to Set Up Firewalled Subnets:
 
 >Terraform, or Ansible module `community.vmware`, can be used for this.
 
-1. **Define Subnets**: Plan and define the subnets based on the logical grouping of VMs.
-2. **Create vSwitches/vDS**: Set up virtual switches or distributed switches in ESXi to host the subnets.
-3. **Assign VLANs**: Assign VLAN IDs to the port groups on the switches to segregate the network traffic.
-4. **Configure Firewalls**: Implement firewall rules to control the traffic between different subnets. If using NSX, leverage its micro-segmentation capabilities.
-5. **Programmatic Configuration**: Use scripts and automation tools to manage network configurations and ensure consistency across the environment.
+1. __Define Subnets__: Plan and define the subnets based on the logical grouping of VMs.
+2. __Create vSwitches/vDS__: Set up virtual switches or distributed switches in ESXi to host the subnets.
+3. __Assign VLANs__: Assign VLAN IDs to the port groups on the switches to segregate the network traffic.
+4. __Configure Firewalls__: Implement firewall rules to control the traffic between different subnets. If using NSX, leverage its micro-segmentation capabilities.
+5. __Programmatic Configuration__: Use scripts and automation tools to manage network configurations and ensure consistency across the environment.
 
 ### Example:
 
-- **Development Environment**: Subnet A
-- **Production Environment**: Subnet B
-- **Database Servers**: Subnet C
+- __Development Environment__: Subnet A
+- __Production Environment__: Subnet B
+- __Database Servers__: Subnet C
 
 Each of these subnets would be isolated on different vSwitches or port groups with appropriate VLANs and firewall rules to control the traffic flow between them, ensuring that development servers cannot directly access production databases, for instance.
 
@@ -146,7 +219,6 @@ This segmentation and isolation strategy is a key part of a robust network secur
 ## [Create VMs via IaC method](https://chatgpt.com/share/6701397c-d940-8009-b7f7-6d103934228a)
 
 ### 1. Terraform / vSphere Provider
-
 
 
 ### 2. Ansible : `community.vmware.vmware_guest`

@@ -1,5 +1,6 @@
 # [Windows Server](https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2019?msockid=05311f3dde09664d0afc0b53dfa16779 "microsoft.com") 2019 | [Docs](https://learn.microsoft.com/en-us/windows-server/)
 
+
 ## Overview
 
 Windows Server 2019 is the operating system that bridges on-premises environments 
@@ -107,40 +108,38 @@ See params it configured by running [`network-get.ps1`](network-get.ps1)
 1. __Enable IP packet forwarding__, per adapter (switch), 
    to provide connectivity across subnets.
     ```powershell
-    # Enable IP packet forwarding (across subnets)
-    # Per adapter
-    Set-NetIPInterface -InterfaceAlias "$WslAlias" -Forwarding Enabled
-    Set-NetIPInterface -InterfaceAlias "$DefAlias" -Forwarding Enabled
-    Set-NetIPInterface -InterfaceAlias "$NatAlias" -Forwarding Enabled
-
+    # Enable IP packet forwarding (across subnets) : Per adapter
+    Set-NetIPInterface -InterfaceAlias "$ExtAlias" -Forwarding Enabled -Verbose
+    Set-NetIPInterface -InterfaceAlias "$WslAlias" -Forwarding Enabled -Verbose
+    Set-NetIPInterface -InterfaceAlias "$DefAlias" -Forwarding Enabled -Verbose
+    Set-NetIPInterface -InterfaceAlias "$NatAlias" -Forwarding Enabled -Verbose
     # Else all at once
     Get-NetIPInterface | Where-Object {$_.InterfaceAlias -like 'vEthernet (*' } | Set-NetIPInterface -Forwarding Enabled
 
     ```
-    - WSL2 has connectivity to Windows 11 host (`External`) network regardless; 
-      NAT subnet does not, until packet forwarding is enabled.
 
-Verify
+WSL2 has connectivity to Windows 11 host (`External`) network regardless;
+however, NAT subnet does not until packet forwarding is enabled.
+
+__Verify connectivity__ from WSL2 to NAT1 subnet;
+route between `Ubuntu` (WSL2) host and `a0.lime.lan` (NAT1) host:
 
 ```bash
-traceroute $ip_of_hyperv_vm
+Ubuntu [13:23:45] [1] [#0] /c/TEMP
+☩ traceroute a0.lime.lan
+traceroute to a0.lime.lan (192.168.11.104), 64 hops max
+1   172.24.208.1  0.432ms  0.227ms  0.139ms    # WSL Gateway
+2   192.168.11.104  0.448ms  0.230ms  0.287ms  # Target Hyper-V VM host
 ```
 
-@ WSL2 and PowerShell (subnets)
+To test NAT1 prior to provisioning DHCP/DNS server on that subnet, 
+manually add the IP and route on that CIDR to the host's network device. 
+This task is performed from a Hyper-V Connect session:
 
 ```bash
-☩ traceroute 172.30.121.104
-traceroute to 172.30.121.104 (172.30.121.104), 64 hops max
-  1   172.27.240.1  0.297ms  0.126ms  0.129ms    # WSL Gateway
-  2   172.30.121.104  0.415ms  0.226ms  0.169ms  # Target Hyper-V VM host
-
-```
-
-To test NAT1 sans DHCP/DNS server on that subnet, we must manually add IP and route on that CIDR. Perform this from a Hyper-V Connect session:
-
-```bash
- # Manually assign IP within NAT1 CIDR
+# Manually assign IP within NAT1 CIDR
 sudo ip addr add 192.168.11.111/24 dev eth0
+
 # Add default gatewayy (The IPv4 declared at NAT1 adapter) 
 sudo ip route add default via 192.168.11.1
 
@@ -161,7 +160,7 @@ ___Success!___
 
 @ [`network-dns.ps1`](network-dns.ps1)
 
-Though leave DNS @ WSL2 that of its default configuration:
+Keep the default DNS configuration of WSL2 host:
 
 ```bash
 ...
@@ -486,11 +485,51 @@ Other tasks:
 
 ## Active Directory Users and Computers (__ADUC__)
 
-Create `DomainAdmin` User 
+In AD, there's a __built-in container__ named `CN=Users`, 
+which is not technically an OU. 
+Rather it's just a default container for user accounts and groups created during domain setup.
+
+__Built-in Containers__
+
+```
+lime.lan
+└── Users (CN=Users, DC=lime, DC=lan)
+    ├── Administrator
+    ├── Domain Admins
+    ├── Domain Users
+    ├── Guest
+    └── Other default groups/accounts
+```
+
+__OUs__ (__Organizational Units__) are those we create:
+
+```
+lime.lan
+└── OU1 (OU=OU1,DC=lime,DC=lan)
+    ├── IT
+    ├── DevOps
+    └── OU1-01
+```
+- Group Policies can be linked to OUs.
+- Administrative permissions may be delegated to (groups and users in) OUs.
+    - See "__Delegate Control__" section (below)
+
+__Naming conventions__ for AD Groups/Users of both Windows and Linux hosts:
+
+- __Group__ name
+    - `linux-users` : Standard access
+    - `linux-admins` : Host administrators
+    - `linux-sudoers` : Users granted sudo access
+    - `linux-operators` : Limited management of Linux hosts/services.
+- __User__ name
+    - `alex.hamilton`
+    - `alexhamilton`
+
+### Create `admin` User
 
 @ Server Manager : Tools : __Active Directory Users and Computers__ (__ADUC__)
 
-### 1. Create Organizational Units (OU)
+#### 1. Create Organizational Units (OU)
 
 Create new OU, `OU1`, and two OUs (`DevOps`, `IT`) nested under `OU1`.
 
@@ -509,7 +548,7 @@ __Resulting Structure__:
             - IT
 
 
-### 2. Create User
+#### 2. Create User
 
 An AD user has creds for authn/authz against ADDS of Windows Server 2019 (`DC1`) 
 at any host joined into that AD domain AKA realm.
@@ -530,9 +569,24 @@ __Resulting Creds__:
 - User: `admin`
 - Pass: `Foo!123456`
 
-### 3. Add User `admin` to Group `Domain Admins`
+#### 3. Add User `admin` to Group `Domain Admins`
 
 Click on user `admin`, right-click __Properties__ > __Member of__, and __Add&hellip;__ > Select Groups > __Check Names__ > type "domain" and select "__Domain Admins__".
+
+
+
+### Delegation : "Delegate Control"
+
+Delegation in AD DS refers to granting specific administrative permissions to a user or group for managing objects within an Organizational Unit (OU), without giving them full domain administrator privileges.
+
+For example, if OU1 contains IT and DevOps sub-OUs, and you want IT admins to manage only the IT users and DevOps admins to manage only DevOps users, you can delegate specific administrative tasks to them without granting Domain Admin access.
+
+List all
+
+```powershell
+Get-ACL "AD:OU=OU1,DC=lime,DC=lan" | Format-List
+```
+
 
 ## Join Windows host (`Win11`) into ADDS Domain
 
@@ -555,8 +609,17 @@ Click on user `admin`, right-click __Properties__ > __Member of__, and __Add&hel
 - Reboot
 
 
-## [Join RHEL 8 host (`a0`) into ADDS Domain](https://chatgpt.com/c/67427df4-6440-8009-9d12-adb9da2faa57 "ChatGPT")
+## [Join RHEL host into ADDS Domain](https://chatgpt.com/c/67427df4-6440-8009-9d12-adb9da2faa57 "ChatGPT")
 
+[Integrating RHEL systems directly with ADDS](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html-single/integrating_rhel_systems_directly_with_windows_active_directory/index "docs.RedHat.com")
+
+>You can join Red Hat Enterprise Linux (RHEL) hosts to an Active Directory (AD) domain by using the System Security Services Daemon (SSSD) or the Samba Winbind service to access AD resources. 
+
+- `sssd` (System Security Services Daemon (SSSD)) : For identity and authentication.
+- `realmd` : To detect available domains and configure the underlying systemd services.
+
+Test on RHEL8 host `a0.lime.lan` 
+with AD user __`admin`__ member of AD group __Domain Admins__.
 
 ### Prep 
 
@@ -592,7 +655,7 @@ Does kerberos require/expect FQDN?
 
 ```bash
 domain=lime.lan
-sudo hostnamectl set-hostname a0.$domain
+sudo hostnamectl set-hostname $(hostname).$domain
 
 dc=dc1.$domain
 realm discover $dc
@@ -613,14 +676,9 @@ lime.lan
 ```
 - Note: `configured: no`
 
-
 ### Join
 
-```bash
-sudo realm join --user=Administrator $dc
-```
-
-Actually:
+Requires an ADDS admin-user creds
 
 ```bash
 u1@a0 [15:39:28] [1] [#0] ~
@@ -654,7 +712,10 @@ lime.lan
   login-policy: allow-realm-logins
 
 ```
-- Note, we are now: `configured: kerberos-member`
+- Note, we are now: 
+    - `configured: kerberos-member`
+- Subsequent `sssd.conf` mods to allow logon by `$user` (v. `$user@domain`; see below), result in change to this report: 
+    - "`login-formats: %U`"
 
 ### Allow through firewall
 
@@ -755,23 +816,14 @@ Permission denied, please try again.
 admin@a0.lime.lan's password: #... FAILing
 ```
 
-### Fix AD-user reference : `admin@$host` vs `admin@$domain@host`
+So ...
+
+### AD-user reference : `admin@$host` v. `admin@$domain@host`
 
 
 The issue arises because the username `admin` alone is ambiguous on a system joined to an Active Directory (AD) domain. Without explicitly specifying the domain (e.g., `admin@lime.lan`), the RHEL system treats the username as a local account. Since there’s no local `admin` user, authentication fails.
 
-
-#### **Why This Happens**
-
-When you use `admin@lime.lan`:
-- The system recognizes it as a fully qualified username (including the domain).
-- SSSD correctly routes the authentication to the AD domain controller (`dc1.lime.lan`).
-
-When you use just `admin`:
-- The system attempts to authenticate a local Linux user account named `admin`.
-- Since no local account exists, authentication fails.
-
-Note home dir created by `oddjob` 
+Note the default home dir created by `oddjob` has form `/home/$user@$domain`
 
 ```bash
 ☩ ls /home
@@ -786,10 +838,23 @@ drwx------.  5 u2             u2                    4.0K Nov 12 20:47 u2
 
 #### __FIX__
 
-#### TL;DR
+@ `/etc/sssd/sssd.conf`
+
+```ini
+...
+[domain/lime.lan]
+...
+fallback_homedir            = /home/%u
+use_fully_qualified_names   = False
+...
+```
+
+So modify the `sssd` configuration file
 
 ```bash
-☩ sudo cat /etc/sssd/sssd.conf
+☩ sudo vi /etc/sssd/sssd.conf
+```
+```ini
 # - If duplicate entries, the final (highest line number) setting wins.
 # - Order of blocks matters.
 # - Order of params does not matter.
@@ -800,40 +865,53 @@ services            = nss, pam
 
 [domain/lime.lan]
 default_shell                   = /bin/bash
+ad_domain                       = lime.lan
 ad_server                       = dc1.lime.lan
+krb5_realm                      = LIME.LAN
 krb5_store_password_if_offline  = True
 cache_credentials               = True
-krb5_realm                      = LIME.LAN
 realmd_tags = manages-system joined-with-adcli
-id_provider = ad
-fallback_homedir = /home/%u@%d
-ad_domain = lime.lan
-use_fully_qualified_names = False
-ldap_id_mapping = True
-access_provider = ad
-# Bogus
-#user_mapping = admin:admin@lime.lan
-```
-- Not valid key of that block : `user_mapping = admin:admin@lime.lan`
-- `use_fully_qualified_names = False`
+access_provider             = ad
+id_provider                 = ad
+ldap_id_mapping             = True
+#fallback_homedir            = /home/%u@%d
+fallback_homedir            = /home/%u
+use_fully_qualified_names   = False
 
+```
+
+
+Untested/unnecessary:
 
 ```bash
 sudo sss_override user-add admin@lime.lan --name=admin
 ```
-- Untested/unnecessary
+
+And then restart the service
 
 ```bash
-Ubuntu [17:29:11] [1] [#0] ~
+sudo systemctl restart sssd
+```
+
+#### Test/Verify
+
+```bash
 ☩ ssh admin@a0.lime.lan
 admin@a0.lime.lan's password:
 Last login: Thu Nov 28 17:29:01 2024 from 172.27.240.169
 [admin@a0 ~]$
 ```
 
+If auth fails, check service logs
+
+```bash
+sudo journalctl -u sssd -f
+sudo tail -f /var/log/secure
+```
+
 ### SSH Auth using PKI
 
-Setup PKI 
+Now setup PKI for key-based authentication
 
 ```bash
 # Generate key pair
@@ -860,71 +938,24 @@ Ubuntu [18:34:30] [1] [#0] ~
 
 ```
 
-#### 1. **Always Specify the Domain**
 
-Continue using the fully qualified username format:
+### Fix SELinux objects
 
 ```bash
-ssh admin@lime.lan@a0.lime.lan
+# View current
+☩ id -Z
+unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+
+# Fix
+☩ sudo semanage login -a -s sysadm_u 'admin@lime.lan'
 ```
 
-This is the most reliable method, 
-as it explicitly tells the system to authenticate against the AD domain.
-
-
-#### 2. **Set the AD Domain as Default for Login**
-
-If you want to avoid specifying the domain every time, 
-configure SSSD to treat the AD domain as the default.
-
-- Edit `/etc/sssd/sssd.conf`:
-    ```ini
-    [domain/lime.lan]
-    use_fully_qualified_names = False
-    default_domain_suffix = lime.lan
-    ```
-
-- Restart SSSD:
-    ```bash
-    sudo systemctl restart sssd
-    ```
-
-- Test by logging in without specifying the domain:
-    ```bash
-    ssh admin@a0.lime.lan
-    ```
-
-This configuration automatically appends the 
-domain `lime.lan` to usernames during authentication.
-
-
-#### 3. **Add a Domain Alias for Local Convenience**
-If you prefer the `admin` format but want it to resolve to `admin@lime.lan`, you can add an alias in `/etc/sssd/sssd.conf`.
-
-- Add a domain mapping:
-    ```ini
-    [domain/lime.lan]
-    user_mapping = admin:admin@lime.lan
-    ```
-
-- Restart SSSD:
-    ```bash
-    sudo systemctl restart sssd
-    ```
-
-This approach is less common but can simplify access for specific users.
-
-
-#### 4. **Test and Verify**
-Once you've applied the changes, test authentication:
-- Without domain: `ssh admin@a0.lime.lan`
-- With domain: `ssh admin@lime.lan@a0.lime.lan`
-
-Additionally, check logs for any errors if authentication still fails:
+Verify after logout/in
 
 ```bash
-sudo journalctl -u sssd -f
-sudo tail -f /var/log/secure
+# View current (fixed)
+☩ id -Z
+staff_u:staff_r:staff_t:s0-s0:c0.c1023
 ```
 
 ### [Login Lockout v. Sudo (Non-)Lockout](https://chatgpt.com/share/679e5087-0d8c-8009-949a-c328ff4b5c02)
@@ -945,7 +976,6 @@ session    include      system-auth
 auth     required  pam_faillock.so preauth silent audit deny=3 unlock_time=600
 auth     required  pam_faillock.so authfail audit deny=3 unlock_time=600
 ```
-
 
 ## AD Certificate Services (AD CS)
 

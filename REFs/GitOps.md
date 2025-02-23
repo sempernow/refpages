@@ -458,9 +458,22 @@ __Upon what infrastructure__ does the app AKA workload AKA service run?
     Implement security scanning of your Docker images and Kubernetes configurations as part of your CI/CD pipelines. 
     Tools like [Trivy](https://trivy.dev/ "trivy.dev"), Clair, and KubeLinter can be integrated into your workflows.
 
+## Schemes for Unique Identifier
 
+- [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier) (Universally Unique Identifier):  
+  A widely used 128-bit number that guarantees uniqueness across different systems, often used in databases and distributed systems; considered the standard for generating unique identifiers. [1, 2, 3]  
+- NanoID:   
+A compact, URL-friendly unique string generator with a similar collision probability to UUID, designed for JavaScript environments [1, 4, 5]  
+- ULID (Universally Unique Lexicographically Sortable Identifier): A unique identifier that is also sortable, combining timestamp and randomness for efficient database indexing [1, 6]  
+- CUID (Collision-resistant Unique Identifier): A unique identifier that incorporates a timestamp, counter, and random characters, designed for collision resistance in distributed systems [1, 5]  
+- Snowflake ID: A unique identifier scheme often used in distributed databases, incorporating timestamps and sequence numbers to generate unique IDs [6, 7]  
 
+### Key points to consider when choosing a unique identifier scheme: 
 
+- __Collision probability__: How likely is it for two different identifiers to be the same. 
+- Length and __readability__: How long is the identifier and __how easy is it to read__ and interpret. 
+- __Sorting capabilities__: Whether the identifier can be __easily sorted in a database__ 
+- Generation method: How the identifier is generated, __whether it uses randomness or timestamps__ 
 
 
 ### &nbsp;
