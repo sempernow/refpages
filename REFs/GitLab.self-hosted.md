@@ -5,7 +5,8 @@
 - [Self-host the product documentation](https://docs.gitlab.com/administration/docs_self_host/#self-host-the-product-documentation-with-gitlab-pages)
     - [Redirect `/help` links to Docs](https://docs.gitlab.com/administration/docs_self_host/#redirect-the-help-links-to-the-new-docs-site)
         - [Redirect `/help` links](https://docs.gitlab.com/administration/settings/help_page/#redirect-help-pages)
-
+- [__Synch Repos Across Domains__](https://chatgpt.com/share/67bd002b-c7e8-8009-8427-44e4223e1481)
+    - [Migrate projects and groups by using file exports](https://docs.gitlab.com/user/project/settings/import_export/)
 ---
 
 # [Configuration](https://chatgpt.com/share/67b8a032-3848-8009-9622-77cb22777ea5)
@@ -17,7 +18,6 @@ of GitLab for self-hosted __single host__
 serving some 500 python developers.
 
 # A:
-
 
 Optimizing a **self-hosted GitLab instance** for **500 Python developers** requires careful tuning of GitLab’s services, including **Gitaly, PostgreSQL, Puma (Rails), Redis, and Workhorse**. Below is a **sane performance tuning guide** to improve responsiveness, repository operations, and overall stability for **a single-host deployment**.
 
