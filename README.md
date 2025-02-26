@@ -118,7 +118,6 @@
 ## [git.sh](./REFs/git.sh)
 ## [GitHub.sh](./REFs/GitHub.sh)
 ## [GitLab.md](./REFs/GitLab.md)
-## [GitLab.self-hosted-chat.url](./REFs/GitLab.self-hosted-chat.url)
 ## [GitLab.self-hosted.md](./REFs/GitLab.self-hosted.md)
 ## [GitLab.self-hosted.synch-1.md](./REFs/GitLab.self-hosted.synch-1.md)
 ## [GitLab.self-hosted.synch-2.md](./REFs/GitLab.self-hosted.synch-2.md)
