@@ -247,7 +247,7 @@ exit
             --data-ascii DATA      # HTTP POST ASCII data
             --data-binary DATA     # HTTP POST binary data 
             --compressed           # Detect compression and auto-decompress  
-            -f, --fail             # Fail silently; no output; used when fetching scripts
+            -f, --fail             # Fail (silently) if HTTP resp not 2nn; otherwise exits 0 on any resp.
             -o, --output FILE      # write body to FILE; one per url
             -O URL                 # write body to file of URL BASENAME
             -L, --location         # follow redirects; intelligently handle server response codes 
@@ -264,6 +264,31 @@ exit
             -v --trace-time        # Prepend each line with current time (usec resolution)
             -v --trace FILE --trace-time # Write trace/time to FILE   
             -w, --write-out @FILE  # FORMAT output per txt FILE
+
+        # TLS : CURL_CA_BUNDLE | --cacert 
+            # Linux
+                # CLI
+                --cacert=$path_to_ca_bundle_crt_pem
+                export CURL_CA_BUNDLE=$path_to_ca_bundle_crt_pem
+                # Install internet's CA bundle
+                    # Debian/Ubuntu
+                    sudo apt update && sudo apt install -y ca-certificates
+                    # RHEL/CentOS/Fedora
+                    sudo dnf install -y ca-certificates
+                # Add custom CA
+                    custom=/usr/local/share/ca-certificates/
+                    sudo mkdir -p $custom
+                    sudo cp $ca_crt_pem $custom
+                    sudo update-ca-certificates
+            # Windows
+                --cacert C:\path\to\cacert.pem 
+                setx CURL_CA_BUNDLE C:\path\to\cacert.pem
+                # PowerShell
+                [System.Environment]::SetEnvironmentVariable("CURL_CA_BUNDLE", "C:\path\to\cacert.pem", "User")
+                # mmc.exe
+                # Certificates > Computer Account > Local Computer
+                # > Trusted Root Certification Authorities.
+                # > Import
 
         # Print connect-timing info (only) to STDOUT: 
             # >>>  PRESERVE TABs of HEREDOC  <<<
