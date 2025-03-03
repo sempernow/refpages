@@ -98,6 +98,15 @@ kubectl exec -it $pod -- cat /etc/resolv.conf
         exit            # if shell NOT @ PID 1
         CTRL p;CTRL q   # if shell @ PID 1
 
+# Get environment of all pods of current namespace
+for pod in $(kubectl get po --output=jsonpath={.items..metadata.name})
+do 
+    echo "=== $pod" && kubectl exec -it $pod -- env
+done
+# Or
+echo $(kubectl get po --output=jsonpath={.items..metadata.name}) \
+    |xargs -n1 /bin/bash -c 'echo === $1 && kubectl exec -it $1 -- env' _
+
 # GENERATE/CAPTURE MANIFEST (YAML)
 # - Using kubernetes.io/docs : cut/paste from examples
 # - Using `kubectl run...--dry-run=client -o yaml`
@@ -132,6 +141,12 @@ curl http://localhost:5555/{api/v1/pods/,api/}
 # GET file existing # host ~/.local/web/ 
 curl http://localhost:5555/static/$file # Sans $file returns directory listing (HTML)       
 
+# PULL file from container to (local) host path 
+ctnr=ngx-7bb6f649c6-stl26
+from=/usr/share/nginx/html/index.html
+to_local=index.pulled.html
+kubectl cp $ctnr:$from $to_local
+
 # PATCH : https://chatgpt.com/share/a45d346d-270e-4919-94a7-dccabb1e1246
 # JSON Patch (RFC 6902) : Modify an existing resource in-place (cluster's data-store content)
 kubectl patch $kind $name --type='json' \
@@ -142,26 +157,31 @@ kubectl patch $kind $name --type='merge' \
 # K8s Strategic Merge Patch
 kubectl patch $kind $name --type='strategic' \
     -p='{"spec": {"template": {"spec": {"containers": [{"name": "nginx", "image": "nginx:1.15.4"}]}}}}'
+# Update a deployment's replica count by patching its scale subresource
+kubectl patch deployment nginx-deployment --subresource='scale' --type='merge' -p '{"spec":{"replicas":2}}'
+# Partially update a node
+kubectl patch node k8s-node-1 -p '{"spec":{"unschedulable":true}}'
 # Using Kustomize / YAML 
 kustomize build $folder |kubectl apply -f -
 # Equivalent:
 kubectl kustomize $folder |kubectl apply -f -
 
-# PULL file from container to (local) host path 
-ctnr=ngx-7bb6f649c6-stl26
-from=/usr/share/nginx/html/index.html
-to_local=index.pulled.html
-kubectl cp $ctnr:$from $to_local
 
 # ROLLOUT : https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/
 # Rollback to previous deployment : All having labels subkey 'type' set to 'canary'
-kubectl rollout undo deploy -l type=canary 
-# Check the rollout status of a daemonset (ds)
-kubectl rollout status ds $any
-# Restart a statefulset (sts)
-kubectl rollout restart sts $any
+any=deployment/frontend
+# Rolling update of containers mon of ds/ceph
+kubectl set image ds/ceph mon=image:v2
+# Rollback to declared revision 
+kubectl rollout undo deploy -l type=canary --to-revision=2 
+# Check rolling update status 
+kubectl rollout status $any
+# Watch rolling update status until completion
+kubectl rollout status -w $any                
+# Rolling restart
+kubectl rollout restart $any
 # View rollout history
-kubectl rollout history deploy $any 
+kubectl rollout history $any 
 
 # GET 
 kubectl -n $ns get $kind $name # [-o yaml|json|jsonpath|wide|...] [-A] 
