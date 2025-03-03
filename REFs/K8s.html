@@ -80,17 +80,85 @@ Driver should match the container runtime setting, and if the parent processes a
 
 <h3><a href="https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable">Node Allocatable</a> (cgroup)</h3>
 
-<p>Settings are applied by default <code>kubeadm init</code>/<code>join</code>. Modifying this after init requires many kernel-level modifications and systemd unit files and reconfigurations. Better to destroy the cluster and start again.</p>
+<h4>Reserve Compute Resources for System Daemons</h4>
+
+<blockquote>
+<p>Kubernetes nodes can be scheduled to Capacity. Pods can consume all the available capacity on a node by default. This is an issue because nodes typically run quite a few system daemons that power the OS and Kubernetes itself. Unless resources are set aside for these system daemons, pods and system daemons compete for resources and lead to resource starvation issues on the node.</p>
+</blockquote>
+
+<p>The <code>kubelet</code> exposes a feature named &quot;Node Allocatable&quot; that helps to <strong>reserve compute resources for system daemons</strong>.
+Cluster administrators are advised to configure 'Node Allocatable' based on their workload density on each node.</p>
+
+<p>Set at <code>kubelet.service</code> configuration</p>
+
+<pre><code class="language-bash">kubelet --kube-reserved=cpu=500m,memory=500Mi --system-reserved=cpu=500m,memory=500Mi --eviction-hard=memory.available&lt;500Mi,nodefs.available&lt;10%
+</code></pre>
+
+<p>Set at <a href="https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/"><code>KubeletConfiguration</code></a> file</p>
+
+<p>@ <code>/var/lib/kubelet/config.yaml</code></p>
+
+<pre><code class="language-yaml">apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+## DeepSeek advise based on psrss report at node of 2 CPU and 4GiB memory
+kubeReserved:
+  cpu: &quot;500m&quot;
+  memory: &quot;1.5Gi&quot;
+  ephemeral-storage: &quot;1Gi&quot;
+systemReserved:
+  cpu: &quot;500m&quot;
+  memory: &quot;1Gi&quot;
+  ephemeral-storage: &quot;1Gi&quot;
+evictionHard:
+  memory.available: &quot;500Mi&quot;
+  nodefs.available: &quot;10%&quot;
+  # Settings not of DeepSeek
+  nodefs.inodesFree: &quot;5%&quot;
+  imagefs.available: &quot;15%&quot;
+  imagefs.inodesFree: &quot;5%&quot;
+...
+</code></pre>
+
+<ul>
+<li><strong><code>evictionHard</code></strong> : The <code>kubelet</code> will evict Pods under one of the following conditions:
+
+<ul>
+<li>When the node's available memory drops below 500MiB.</li>
+<li>When the node's main filesystem's available space is less than 10%.</li>
+<li>When the image filesystem's available space is less than 15%.</li>
+<li>When more than 95% of the node's main filesystem's inodes are in use.</li>
+</ul></li>
+</ul>
+
+<p>View current settings from the (authenticated) proxy:</p>
+
+<pre><code class="language-bash">kubectl proxy &amp; #=&gt; Starting to serve on 127.0.0.1:8001
+curl -sX GET http://localhost:8001/api/v1/nodes/$nodeName/proxy/configz |jq .kubeletconfig.evictionHard
+
+</code></pre>
+
+<p>Settings are applied by default on <code>kubeadm init</code>/<code>join</code>. Modifying this after init requires many kernel-level modifications and systemd unit files and reconfigurations. May be quicker to teardown the cluster and start again.</p>
+
+<pre><code class="language-bash">☩ k get pod -l component=etcd -o yaml |yq '.items[] | [.spec.priorityClassName,.spec.priority]'
+- system-node-critical
+- 2000001000
+- system-node-critical
+- 2000001000
+- system-node-critical
+- 2000001000
+</code></pre>
 
 <h3><a href="https://github.com/kubernetes/cloud-provider-vsphere/blob/master/docs/book/cloud_provider_interface.md">CPI (Cloud Provider Interface)</a> | <a href="cpi.png">Graphic</a></h3>
 
 <blockquote>
-<p>Unlike all other K8s interfaces (CRI, CNI, CSI), which are runtime interfaces, CPI remains <strong>a buildtime interface</strong> only, allowing only vetted cloud vendors , <code>kubernetes/cloud-provider-$name</code>, into the build. So, only that
- short list of cartel members can sell any production-ready K8s <code>Service</code> of type <code>LoadBalancer</code> that is fully (actually) integrated.</p>
+<p>Unlike all other K8s interfaces (CRI, CNI, CSI), which are runtime interfaces, CPI remains <strong>a buildtime interface</strong>,
+allowing only vetted cloud vendors , <code>kubernetes/cloud-provider-$name</code>, into the build.
+So, <strong>only members of that cartel</strong> can sell any production-ready K8s <code>Service</code> of type <code>LoadBalancer</code> that is fully (actually) integrated.</p>
 
-<p>MetalLB is a beta toy provided by the cloud cartel to serve as their gatekeeper.
-The CPI is slow-walking what would be the way out of this.</p>
+<p>MetalLB is a beta toy provided by the cloud cartel to serve as their gatekeeper.</p>
 </blockquote>
+
+<p>The CPI is slow-walking what would be the way out of the cartel's grasp.</p>
 
 <ul>
 <li><a href="https://chatgpt.com/share/674b1b7d-1eb0-8009-9f42-a46b3f938355">ChatGPT</a></li>
@@ -322,7 +390,7 @@ and has a base directory for other locally stored data,
 
 <h4>Mounts</h4>
 
-<p>To avoid issues, mount all <code>/var/lib/*</code> on one XFS partition:</p>
+<p><strong>To avoid issues, mount all <code>/var/lib/*</code> on one XFS partition</strong>:</p>
 
 <ul>
 <li><code>/var/lib/kubelet</code></li>
@@ -330,7 +398,7 @@ and has a base directory for other locally stored data,
 <li><code>/var/lib/containerd</code></li>
 </ul>
 
-<p>Mount logs dir on separate partition.</p>
+<p><strong>Mount logs dir on separate partition.</strong></p>
 
 <ul>
 <li><code>/var/logs</code></li>

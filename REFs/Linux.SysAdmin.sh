@@ -451,6 +451,9 @@ exit 0
             # OR
             gpasswd -a $user group 
 
+        # Delete a user
+            userdel -r $user 
+
         # Remove a user from a grop
             gpasswd -d $user $group
         
