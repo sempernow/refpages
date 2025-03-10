@@ -17,9 +17,9 @@ kubectl COMMAND [SUBCOMMAND] -h |less # Useful info & examples per (sub)command
 kubectl explain OBJECT[.FIELD[.SUBFIELD]] [--recursive] # Useful info per object (kind) (sub)key
 kubectl explain deploy.spec.selector
 kubectl api-resources # List all K8s API objects in cluster's store; API is extensible per CRDs.
-kubectl api-resources --verbs=create --namespaced=false #...only those create(able) & having cluster-wide scope.
+kubectl api-resources --verbs=create --namespaced=false #…only those create(able) & having cluster-wide scope.
 
-# LISTs : FLATTEN "items: []" of "- apiVersion: ..." elements to "---" delimited YAML documents
+# LISTs : FLATTEN "items: []" of "- apiVersion: …" elements to "---" delimited YAML documents
 kubectl get $kind -o json |jq -Mr [.items[]] |yq eval .[] -P - |sed '1!s/^apiVersion/---\napiVersion/'
 
 # DEBUG : Get cluster-level info 
@@ -36,16 +36,16 @@ kubectl -n kube-system get ep,svc -l 'kubernetes.io/cluster-service=true'
 # - Declarative commands
 kubectl kustomize .   # Process all kustomization (and patch) files @ PWD
 kubectl apply -f .    # Create else rolling update per all manifest(s) @ PWD.
-#... Update of object is not allowed if any of its immutable keys are changed.
+#… Update of object is not allowed if any of its immutable keys are changed.
 kubectl apply -R -f . # Recurse; process all at and under PWD.
 kubectl create -f $manifest --save-config # Adds last-applied annotation to allow for future apply.
 kubectl diff -f $manifest # Compare current state with that declared in manifest.
-#... K8s API accepts manifests of either YAML or JSON format.
+#… K8s API accepts manifests of either YAML or JSON format.
 # - Imperative commands
 app=ngx
 kubectl create -f $app.yaml
 kubectl edit $kind $any # Edit any mutable key(s) of any existing object AKA kind.
-#... if vim editor ... Save: ZZ, Cancel: ZQ 
+#… if vim editor … Save: ZZ, Cancel: ZQ 
 kubectl delete -f $app.yaml -f another.yaml
 kubectl replace -f $app.yaml # Harsh; deletes all undeclared but existing key(s); prefer apply.
 kubectl rollout undo deploy $app # Rollback to previous deployment state
@@ -86,7 +86,7 @@ kubectl annotate $kind $name a/b=x --overwrite
 # View : labels||annotations (either)
 kubectl get $kind $name -o jsonpath="'{.metadata.$either}'"
 kubectl get $kind $name -o jsonpath="'{.metadata.$either."a/b"}'" #=> 'x'
-# Execute an interactive shell (bash, sh, ...) into a container 
+# Execute an interactive shell (bash, sh, …) into a container 
 kubectl exec -it $pod -- /bin/bash    # If single-container Pod
 kubectl exec -it $pod -c $ctnr -- sh  # If multi-container Pod : Use TAB completion
 # Run command(s) in a container and exit.
@@ -109,9 +109,9 @@ echo $(kubectl get po --output=jsonpath={.items..metadata.name}) \
 
 # GENERATE/CAPTURE MANIFEST (YAML)
 # - Using kubernetes.io/docs : cut/paste from examples
-# - Using `kubectl run...--dry-run=client -o yaml`
+# - Using `kubectl run … --dry-run=client -o yaml`
 kubectl run bbox --image=busybox --dry-run=client -o yaml -- sleep 1d |tee bbox-pod.yaml
-# - Using `kubectl get ...-o yaml`
+# - Using `kubectl get … -o yaml`
 kubectl get deploy ngx -o yaml |tee deploy.ngx.yaml
 
 # EXPOSE : Create a new service of a resource (kind: po, deploy, rs or svc) based on its selector
@@ -135,7 +135,7 @@ kubectl proxy -h |less # See options
 kubectl proxy & # Proxy to http://localhost:8001 : To kill, type fg then CTRL+C
 # - Proxy some of the API and serve static files from host ~/.local/web
 kubectl proxy --port=5555 --www=~/.local/web --www-prefix=/static/ --api-prefix=/api/ &
-#... make requests of either the API endpoints, or of static files on host:
+#… make requests of either the API endpoints, or of static files on host:
 # GET K8s API endpoints : only some are available here; can't serve all *and* host static files too.
 curl http://localhost:5555/{api/v1/pods/,api/} 
 # GET file existing # host ~/.local/web/ 
@@ -166,7 +166,6 @@ kustomize build $folder |kubectl apply -f -
 # Equivalent:
 kubectl kustomize $folder |kubectl apply -f -
 
-
 # ROLLOUT : https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/
 # Rollback to previous deployment : All having labels subkey 'type' set to 'canary'
 any=deployment/frontend
@@ -184,17 +183,19 @@ kubectl rollout restart $any
 kubectl rollout history $any 
 
 # GET 
-kubectl -n $ns get $kind $name # [-o yaml|json|jsonpath|wide|...] [-A] 
+kubectl -n $ns get $kind $name # [-o yaml|json|jsonpath|wide|…] [-A] 
 kubectl get all -n kube-system # 'all' is *not* all : See `kubectl api-resources` 
 all='pod,deploy,ds,sts,svc,ingress,cm,secret,pvc,pv'
 kubectl get $all -A # Across all namespaces
-# Endpoints and services having label ...
+# Get IP address of node (the first one listed)
+kubectl get node -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'
+# Get endpoints and services having a label key and value
 kubectl -n kube-system ep,svc -l 'kubernetes.io/cluster-service=true'
 kubectl get pods -o wide # Monitor the startup process including node
 # Get all pod names of this namespace
 kubectl get po -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-# Get all images running in this cluster, one per line
-kubectl get po -A -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}'
+# Get all images running in the cluster, across all namespaces, one per line.
+kubectl get po -A -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}' |sort -u
 # Get all Pods having (selector) label 'type' set to 'canary'
 kubectl get po -l type=canary
 # Get 'name' and 'podID' of those Pods
@@ -223,7 +224,7 @@ kubectl get node -o jsonpath={.items[*].spec.podCIDRs}
 kubectl get node -o jsonpath='{range .items[*]}{.spec.podCIDRs}{"\n"}{end}'
 # template : equivalent
 kubectl get node -o template='{{range .items}}{{.spec.podCIDRs}}{{"\n"}}{{end}}'
-# taints : get : spec.taints: [{key: <str>, value: <str>, effect: <str>}, ...]
+# taints : get : spec.taints: [{key: <str>, value: <str>, effect: <str>}, …]
 k get node $name -o jsonpath='{.spec.taints}'
 # taints : get keys, e.g., "node-role.kubernetes.io/control-plane"
 k get node a2 -o jsonpath='{.spec.taints[*].key}'
@@ -245,14 +246,14 @@ kubectl get po,deploy -l 'type in (webshop)' -l 'app in (ngx2)'
 # DESCRIBE (any object) : Examine a Pod status
 kubectl describe pod $any |less
     #  Containers:
-    #    ...
+    #    …
     #    State: Waiting
     #      Reason: PodInitializing
     #  Events:
 
 # LOGS : Examine container logs
 kubectl logs $any # If multi-container pod, 
-#... then TAB/select for (required) ctnr name  
+#… then TAB/select for (required) ctnr name  
 
 # NAMESPACES 
 # Namespaces MUST be valid DNS Label (RFC 1123/1035) : 0-9, a-Z and dash (-)
@@ -275,7 +276,7 @@ kubectl create -f namespace-01.yaml
 kubectl config view [--raw] 
 # Set explicitly 
 config=/path/to/any/valid/kubectl/config
-kubectl --kubeconfig=$config ... 
+kubectl --kubeconfig=$config … 
 # Else implicitly by its env variable
 export KUBECONFIG=$config
 # Else implicitly per ~/.kube/config 
@@ -319,7 +320,7 @@ kubectl config set-credentials $user_name_2 \
     --password=$creds_password 
     # OR by token (of ServiceAccount)
     --token="$tkn" # See
-    # OR by ...(others) : See `kubectl config set-credentials -h`
+    # OR by …(others) : See `kubectl config set-credentials -h`
 # Unset user
 kubectl config unset users.$user_name 
 # Set context
@@ -357,7 +358,7 @@ curl -k $url/healthz?verbose
 ns=default
 name=ops
 tkn="$(k -n $ns create token $name --duration=10m)" 
-# - GET /api/v1/namespaces/{namespace}/pods[/{name}[/log,/status,...]]
+# - GET /api/v1/namespaces/{namespace}/pods[/{name}[/log,/status,…]]
 curl -k -H "Authorization: Bearer $tkn" https://$ep/api/v1/namespaces/default/pods
 # - GET /openapi/v2 : All endpoints : All info 
 curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
@@ -367,7 +368,7 @@ curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
 # - GET /openapi/v2 : All endpoints : List URLs only
 curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
     |jq -Mr '.paths | keys[] | select(test("^/api"))' 
-    #... |wc -l # Print the number of URLs : @ K3S, 485 of "/api"; 112 of "/api/v1"
+    #… |wc -l # Print the number of URLs : @ K3S, 485 of "/api"; 112 of "/api/v1"
 
 # RBAC (Authz) : API Access : Subject is EITHER a user, group, or ServiceAccount
 group=team-1
@@ -458,7 +459,7 @@ user=kubernetes-admin # See config.users[] at `kubectl config view`
     # does not affect (X.509) "subject" seen by K8s API server.
     # @ yq (here for syntax reference only)
     kubectl config view --raw -o yaml \
-        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data' #...
+        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data' #…
     # @ JsonPath
     kubectl config view --raw \
         -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \

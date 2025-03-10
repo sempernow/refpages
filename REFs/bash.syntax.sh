@@ -363,31 +363,37 @@ exit
         for i in "${ARRAY[@]}"; do; f "$i"; done
         #=> x: foo 
         #=> x: bar
-        
+
         # @ Indices
         for i in "${!ARRAY[@]}"; do; f "$i"; done
         #=> x: 0 
         #=> x: 1
 
+    # ITERATE over N (+stateful)
+        N=4;export count=0;for i in $(seq $N); do
+            ((count++))
+            (( $count != 2 )) && echo "@ $i"
+        done
+
 # FILE DESCRIPTOR (FD); a number which refers to an open file. 
     #  Each process has its own private set of FDs
     #  FDs are inherited by child processes from the parent process.
     #  Every process should inherit 3 open FDs from its parent: 
-    #    0 ("standard input"), open for reading
-    #    1 ("standard output")  
-    #    2 ("standard error"), open for writing
+    #    0 ("standard INPUT"), open for reading
+    #    1 ("standard OUTPUT")  
+    #    2 ("standard ERROR"), open for writing
 
 # FILE TEST OPERATORS http://tldp.org/LDP/abs/html/fto.html
     # FILE TYPE EXPRESSION; True if ...
         # http://mywiki.wooledge.org/BashGuide/TestsAndConditionals
-        -b FILE   # file is a block device [HDD, SDD, CD-drive]
-        -c FILE   # file is a character device [keyboard, modem, soundcard]
-        -d FILE   # file is a Directory.
-        -e FILE   # file Exists.
-        -f FILE   # file is a regular file [NOT a dir].
-        -r FILE   # file is readable by user.
-        -s FILE   # file size > 0 ; exists and is not empty.
-        -t FD     # FD is open at: stdin (FD=0), stdout (FD=1), stderr (FD=2)
+        -b FILE   # file is a BLOCK DEVICE [HDD, SDD, CD-drive]
+        -c FILE   # file is a CHARACTER DEVICE [keyboard, modem, soundcard]
+        -d FILE   # file is a DIRECTORY (folder).
+        -e FILE   # file EXISTS.
+        -f FILE   # file is a regular FILE [NOT a dir].
+        -r FILE   # file is READABLE by user.
+        -s FILE   # file SIZE > 0 ; exists and is not empty.
+        -t FD     # FD is OPEN : stdin (FD=0), stdout (FD=1), stderr (FD=2)
         
     # PIPEd args test
     [[ -t 0 ]] && echo 'NOT PIPEd (FD 0 is open)' || echo 'PIPEd' 
@@ -395,20 +401,6 @@ exit
         # to process piped input ...
         [[ ! -t 0 ]] && xargs -I {} COMMAND {} 
         
-        # So, a function that accepts EITHER piped OR not (args) ...
-        f(){ 
-            [[ -t 0 ]] || xargs -I {} $FUNCNAME {}
-            #... is made by prepending the above to any 
-            # script that otherwise accepts only non-piped args:
-            echo "This is $FUNCNAME processing '$@'"
-            #... Note that FUNCNAME is a Bash keyword.
-        }
-        export -f f
-        f 1 2 3
-        #=> This is f processing '1 2 3'
-        echo 1 2 3 |xargs -I {} /bin/bash -c 'f {}'
-        #=> This is f processing '1 2 3'
-
     # other examples of '-t FD' usage
     [[ -t 1 ]] && echo 'FD 1 open - stdout'
     [[ -t 2 ]] && echo 'FD 2 open - stderr'

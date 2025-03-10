@@ -320,6 +320,97 @@ However, OCSP also introduces its own complexities, such as the need for additio
 
 <p>EV certificate also <strong><em>gets special treatment in web browsers</em></strong>. Whereas browsers typically denote a DV certificate with a <strong><em>green-padlock icon</em></strong>, EV certificates also show a larger green bar containing the name of the organization it was issued to. This is intended to reduce phishing attacks, though some studies show that users tend not to notice when this green bar is missing.</p>
 
+<h2>Intermediate CA</h2>
+
+<p>When creating an Intermediate Certificate Authority (CA) to scope its authority to a specific subset of CIDRs, IPs,
+hostnames, or other identifiers, you need to carefully configure the certificate's extensions and constraints.
+Here are the key parameters and considerations:</p>
+
+<p>How to configure an Intermediate CA using OpenSSL:</p>
+
+<ol>
+<li><p><strong>OpenSSL Configuration File</strong> (<code>openssl.cnf</code>):</p>
+
+<pre><code class="language-ini">[ v3_intermediate_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:TRUE, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+nameConstraints = critical, permitted;DNS:example.com, permitted;IP:192.168.1.0/24
+</code></pre></li>
+</ol>
+
+<ul>
+<li>Set <strong>Basic Constraints</strong> to define CA capabilities and path length.
+
+<ul>
+<li>Indicate that the certificate is for a CA (<code>CA: TRUE</code>).</li>
+<li>Specify the maximum depth of subordinate CAs allowed (<code>pathlen</code>):
+
+<ul>
+<li><code>pathlen:0</code> means the Intermediate CA can only issue end-entity certificates (no further subordinate CAs).</li>
+<li><code>pathlen:1</code> allows one level of subordinate CAs.</li>
+</ul></li>
+</ul></li>
+<li>Configure <strong>Key Usage</strong> appropriately.
+
+<ul>
+<li>Ensure the <code>keyCertSign</code> and <code>cRLSign</code> bits are set for CA certificates.</li>
+<li><strong>Extended Key Usage</strong> (optional):
+
+<ul>
+<li>Limit the purposes for which the Intermediate CA can issue certificates (e.g., server authentication, client authentication).</li>
+</ul></li>
+</ul></li>
+
+<li><p>Use the <strong>Name Constraints</strong> extension to limit DNS names, IP ranges, etc.</p>
+
+<ul>
+<li>This is <strong>the primary mechanism</strong> to limit the scope of an Intermediate CA's authority.</li>
+<li>It can restrict the CA to issuing certificates for specific:
+
+<ul>
+<li><strong>DNS names</strong> (e.g., <code>example.com</code>, <code>*.example.com</code>)</li>
+<li><strong>IP addresses</strong> (e.g., <code>192.168.1.0/24</code>, <code>10.0.0.0/8</code>)</li>
+<li><strong>Email addresses</strong> (e.g., <code>@example.com</code>)</li>
+<li><strong>Directory names</strong> (e.g., distinguished names in LDAP)</li>
+</ul></li>
+<li><strong>Syntax</strong>:
+
+<ul>
+<li><code>permittedSubtrees</code>: Specifies allowed names or IP ranges.</li>
+<li><code>excludedSubtrees</code>: Specifies explicitly excluded names or IP ranges.</li>
+</ul></li>
+
+<li><p>Example:</p>
+
+<ul>
+<li><p>To allow only <code>*.example.com</code> and <code>192.168.1.0/24</code>:</p>
+
+<pre><code class="language-plaintext">permittedSubtrees:
+- DNS: example.com
+- IP: 192.168.1.0/24
+</code></pre></li>
+
+<li><p>To exclude <code>*.internal.example.com</code>:</p>
+
+<pre><code class="language-plaintext">excludedSubtrees:
+- DNS: internal.example.com
+</code></pre></li>
+</ul></li>
+</ul></li>
+
+<li><p>Optionally, define <strong>Certificate Policies</strong> and ensure proper revocation mechanisms.</p></li>
+</ul>
+
+<ol>
+<li><p><strong>Generate the Intermediate CA Certificate</strong>:</p>
+
+<pre><code class="language-bash">openssl req -new -key intermediate.key -out intermediate.csr
+openssl x509 -req -in intermediate.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out intermediate.crt -days 365 -extfile openssl.cnf -extensions v3_intermediate_ca
+</code></pre></li>
+</ol>
+
 <h2>Projects</h2>
 
 <h3>@ <a href="https://docs.docker.com/engine/swarm/configs/" title="docs.docker.com/swarm/configs">Docker/Nginx</a></h3>

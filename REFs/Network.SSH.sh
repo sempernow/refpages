@@ -40,7 +40,7 @@ man ssh_config
             # Elliptical
                 # Use ed25519 variant; best, though not yet FIPS-compliant
                 ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f $key
-                # Else use NIST-approved & FIPS compliant, though inferior choice in practice
+                # Else use NIST-approved & FIPS compliant
                 ssh-keygen -t ecdsa -b 384 -C "$(id -un)@$(hostname)" -N '' -f $key
             # RSA : use bit length option with (at least) `-b 2048` (OpenSSL default)
                 ssh-keygen -t rsa -b 2048 -C "$(id -un)@$(hostname)" -N '' -f $key
