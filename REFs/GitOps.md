@@ -290,11 +290,16 @@ For six hosts, thats __1.45 × 10^25__ (15625^6) possible configurations.
     - Komodor : Troubleshooting
     - Pixie : All in one
     - Groundcover : All in one
-- __Streaming__/__Messaging__
-    - [RabbitMQ](https://github.com/rabbitmq/rabbitmq-server) : [MQTT](https://mqtt.org/) Broker for IoT messaging.
-    - [Strimzi](https://strimzi.io/ "Strimzi.io") : Kafka on K8s : [`strimzi-kafka-operator`](https://github.com/strimzi/strimzi-kafka-operator "GitHub") : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications. 
+- __Streaming__/__Messaging__ : Run on __dedicated nodes__
+    - [RabbitMQ](https://github.com/rabbitmq/rabbitmq-server) : 
+     A widely used open-source message broker that supports multiple messaging protocols, including AMQP, [MQTT](https://mqtt.org/), and STOMP. It's known for its simplicity, ease of setup, and support for various messaging patterns like work queues, publish-subscribe, and routing. RabbitMQ is a good choice for IoT and other simpler, high-throughput messaging scenarios.
+    - [Strimzi](https://strimzi.io/ "Strimzi.io") : Kafka on K8s : [`strimzi-kafka-operator`](https://github.com/strimzi/strimzi-kafka-operator "GitHub") : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS over TCP. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications. 
         - Kafka operators to deploy and configure an Apache Kafka cluster on K8s. 
         - Kafka Bridge provides a RESTful interface for your HTTP clients.
+    - [NATS](https://nats.io/) : A lightweight, high-performance messaging system designed for microservices, IoT, and cloud-native systems. It supports various messaging models including pub-sub, request-reply, and queueing. NATS is known for its simplicity and performance.
+    - [Redpanda](https://docs.redpanda.com/current/home/) : A newer, __Kafka-compatible streaming platform__ designed to offer better performance and easier operation. It is API-compatible with Kafka, which means existing Kafka clients and ecosystem tools work with Redpanda without modification. Redpanda is designed to be simpler to deploy and manage, with a focus on reducing operational overhead.
+        - >Enabling SELinux can result in latency issues. If you wish to avoid such latency issues, do not use this mechanism.
+
 - __Networking__
     - External Load Balancer
         - `kube-vip` ([GitHub](https://github.com/kube-vip/kube-vip "GitHub.com") | [Docs](https://kube-vip.io/ "kube-vip.io")): 

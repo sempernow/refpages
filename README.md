@@ -286,6 +286,8 @@
 ## [rsync@CMD.MINGW64.log](./REFs/rsync@CMD.MINGW64.log)
 ## [rust.md](./REFs/rust.md)
 ## [SDcard.md](./REFs/SDcard.md)
+## [Secrets.age.md](./REFs/Secrets.age.md)
+## [Secrets.Vault.md](./REFs/Secrets.Vault.md)
 ## [server.benchmark.md](./REFs/server.benchmark.md)
 ## [SMTP.md](./REFs/SMTP.md)
 ## [sockets.UNIX.TCP.md](./REFs/sockets.UNIX.TCP.md)

@@ -273,6 +273,64 @@ Unlike DV and OV certificates, EV cannot be issued as a wildcard certificate.
 EV certificate also ***gets special treatment in web browsers***. Whereas browsers typically denote a DV certificate with a ***green-padlock icon***, EV certificates also show a larger green bar containing the name of the organization it was issued to. This is intended to reduce phishing attacks, though some studies show that users tend not to notice when this green bar is missing.
 
 
+## Intermediate CA
+
+When creating an Intermediate Certificate Authority (CA) to scope its authority to a specific subset of CIDRs, IPs, 
+hostnames, or other identifiers, you need to carefully configure the certificate's extensions and constraints. 
+Here are the key parameters and considerations:
+
+How to configure an Intermediate CA using OpenSSL:
+
+1. **OpenSSL Configuration File** (`openssl.cnf`):
+
+```ini
+[ v3_intermediate_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:TRUE, pathlen:0
+keyUsage = critical, digitalSignature, cRLSign, keyCertSign
+nameConstraints = critical, permitted;DNS:example.com, permitted;IP:192.168.1.0/24
+```
+- Set **Basic Constraints** to define CA capabilities and path length.
+    - Indicate that the certificate is for a CA (`CA: TRUE`).
+    - Specify the maximum depth of subordinate CAs allowed (`pathlen`):
+        - `pathlen:0` means the Intermediate CA can only issue end-entity certificates (no further subordinate CAs).
+        - `pathlen:1` allows one level of subordinate CAs.
+- Configure **Key Usage** appropriately.
+   - Ensure the `keyCertSign` and `cRLSign` bits are set for CA certificates.
+    - **Extended Key Usage** (optional):
+        - Limit the purposes for which the Intermediate CA can issue certificates (e.g., server authentication, client authentication).
+- Use the **Name Constraints** extension to limit DNS names, IP ranges, etc.
+   - This is __the primary mechanism__ to limit the scope of an Intermediate CA's authority.
+   - It can restrict the CA to issuing certificates for specific:
+     - **DNS names** (e.g., `example.com`, `*.example.com`)
+     - **IP addresses** (e.g., `192.168.1.0/24`, `10.0.0.0/8`)
+     - **Email addresses** (e.g., `@example.com`)
+     - **Directory names** (e.g., distinguished names in LDAP)
+   - **Syntax**:
+     - `permittedSubtrees`: Specifies allowed names or IP ranges.
+     - `excludedSubtrees`: Specifies explicitly excluded names or IP ranges.
+   - Example:
+     - To allow only `*.example.com` and `192.168.1.0/24`:
+       ```plaintext
+       permittedSubtrees:
+         - DNS: example.com
+         - IP: 192.168.1.0/24
+       ```
+     - To exclude `*.internal.example.com`:
+       ```plaintext
+       excludedSubtrees:
+         - DNS: internal.example.com
+       ```
+- Optionally, define **Certificate Policies** and ensure proper revocation mechanisms.
+
+2. **Generate the Intermediate CA Certificate**:
+
+```bash
+openssl req -new -key intermediate.key -out intermediate.csr
+openssl x509 -req -in intermediate.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out intermediate.crt -days 365 -extfile openssl.cnf -extensions v3_intermediate_ca
+```
+
 ## Projects
 
 ### @ [Docker/Nginx](https://docs.docker.com/engine/swarm/configs/ "docs.docker.com/swarm/configs") 

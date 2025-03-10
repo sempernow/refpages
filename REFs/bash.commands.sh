@@ -1681,6 +1681,7 @@ exit
         sed '2,4p' FILE         # p; print lines 2 thru 4
         sed '5,10d;12d'   FILE  # d; delete lines 5-10 and 12
         sed '/PATTERN/d'  FILE  # d; delete lines containing PATTERN
+        sed '\,PATTERN,d'  FILE # Same as above, but delimiting with "," (backslash oddly required for d, but not s)
         sed '/SEARCH/c\REPLACE' # c\; replace lines containing SEARCH str with REPLACE str
         sed 's/foo/bar/'  FILE  # s; subst 'foo' for 'bar'; FIRST/ONCE
         sed 's/foo/bar/I' FILE  # s/I; case Insensititve; FIRST/ONCE

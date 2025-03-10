@@ -18,6 +18,7 @@ curl -LO $url && tar -xvaf $tarball
 # Install it
 sudo cp trivy /usr/local/bin/
 ```
+- [__Releases__](https://github.com/aquasecurity/trivy/releases)
 
 ## Useage
 
@@ -361,7 +362,7 @@ rm $sbom.cdx.json
 
 ## Containerized Trivy
 
-### [K8s : `trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/) | `CVEs.trivy-operator` ([MD](trivy-operator/CVEs.trivy-operator.md)|[HTML](trivy-operator/CVEs.trivy-operator.html))
+### [K8s : `trivy-operator`](https://aquasecurity.github.io/trivy-operator/latest/)
 
 The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as `VulnerabilityReport` (CRD) resources, which are owned by a Kubernetes controller.
 
