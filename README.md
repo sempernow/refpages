@@ -122,6 +122,7 @@
 ## [GitLab.self-hosted.md](./REFs/GitLab.self-hosted.md)
 ## [GitLab.self-hosted.synch-1.md](./REFs/GitLab.self-hosted.synch-1.md)
 ## [GitLab.self-hosted.synch-2.md](./REFs/GitLab.self-hosted.synch-2.md)
+## [gitlabs.export-import.md](./REFs/gitlabs.export-import.md)
 ## [GitOps.md](./REFs/GitOps.md)
 ## [GKE.md](./REFs/GKE.md)
 ## [Go-jitsu.go](./REFs/Go-jitsu.go)
