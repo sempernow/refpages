@@ -6,6 +6,23 @@ exit
 # git-for-windows [tutorial] 
 # https://github.com/git-for-windows/git/blob/master/Documentation/gittutorial.txt
 
+# Migrate project
+git clone --mirror https://github.com//group-a/sub-1/project-x.git
+cd repository.git
+git remote add gitlab https://gitlab.com//group-b/sub-2/project-x.git
+git push --mirror gitlab
+# @ GitLab, check for existence of target project using API
+GET /api/v4/projects/group-b%2Fsub-2%2Fproject-x
+# Get ID if namespace exist
+GET /api/v4/namespaces?search=sub-b
+# Create if not
+POST /api/v4/projects
+{
+    "name": "newproject",
+    "namespace_id": [namespace_id],
+    "visibility": "private" // or "public" or "internal"
+}
+
 # By scenario
 ## Create a new local branch from a remote branch
 git checkout --track origin/feature-branch-name # So subsequent pull needs no args
