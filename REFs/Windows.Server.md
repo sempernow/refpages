@@ -650,8 +650,7 @@ systemctl is-active firewalld &&
     sudo firewall-cmd --reload
 ```
 
-Hostname change to FQDN having apropos realm not necessary? 
-Does kerberos require/expect FQDN?
+### Status (`discover`) 
 
 ```bash
 domain=lime.lan

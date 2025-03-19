@@ -6,6 +6,142 @@
 exit 0
 ######
 
+# AD : realm + sssd
+    # Install pkgs
+    all='
+        realmd 
+        sssd 
+        sssd-tools 
+        samba-common 
+        samba-common-tools 
+        krb5-workstation 
+        oddjob 
+        oddjob-mkhomedir
+    '
+    dnf install -y $all
+
+# Discover (inspect)
+domain=lime.lan
+dc=dc1.$domain
+
+realm discover $dc
+# Join
+realm join --user=Administrator $dc
+# List all realms discovered and configured
+realm list # --all : include unconfigured realms
+# Allow only users of an AD Group (by its name)
+ad_group_name='Domain Admins'
+realm permit "$ad_group_name"
+# Allow all AD users
+realm permit --all
+
+# Enable sssd
+systemctl enable --now sssd
+# Test AD-user auth
+id $any_ad_username@$(hostname -d)
+
+# Allow for non-default configuration 
+# of AD-users' HOME directory creation (per initial login)
+systemctl enable --now oddjobd
+
+sssctl config-check                     # Verify sssd config
+journalctl -u sssd --no-pager |tail     # Inspect sssd logs
+sudo cat /var/log/sssd/sssd.log |tail   # Inspect sssd logs
+
+sssctl cache-remove u2  # Clear sssd cache
+systemctl restart sssd  # Restart sssd (to apply changes)
+
+# NFS : nfs-server
+
+    # Install pkgs
+    all='
+        realmd 
+        sssd 
+        sssd-tools 
+        samba-common 
+        samba-common-tools 
+        krb5-workstation 
+        oddjob 
+        oddjob-mkhomedir
+    '
+    sudo dnf install -y $all
+
+    # Add services / Open ports 
+    systemctl is-active firewalld &&
+		cat <<-EOH |xargs -I{} sudo firewall-cmd --permanent --add-service={}
+		kerberos
+		dns
+		ldap
+		ldaps
+		samba
+		EOH
+
+    systemctl is-active firewalld &&
+        sudo firewall-cmd --reload
+
+    # Mount (temporary)
+    mount -t nfs4 -o vers=4.2 $nfs_server:$nfs_mount/ $local_mnt/
+
+    systemctl restart nfs-server rpc-gssd
+    systemctl status nfs-server 
+    ps aux |grep nfsd       # Check running nfs processes
+    ps aux |grep rpc        # Check running rpc.mountd
+    exportfs -v             # Verify exports
+    exportfs -rv            # Reload exports
+    lsmod |grep nfs         # Verify kernel modules for nfs
+    ss -tulpn |grep :2049   # Check nfs-server port
+
+    showmount -e localhost
+    cat /etc/exports
+
+# Kerberos
+
+    # Configurations
+    - /etc/sssd/sssd.conf
+    - /etc/pam.d/sshd
+    - /etc/krb5.conf 
+
+    # Regarding /etc/pam.d/
+    authselect current     # Show current PAM profile
+    # Configure /etc/sssd/sssd.conf for kerberos, then ...
+    authselect select sssd #... configure PAM to use sssd.
+
+    # Verify : By same CLI at RHEL (bash) and AD KDC (PowerShell) 
+    klist                   # List Kerberos principals and tickets
+    klist -f                # Check ticket expiry; error if expired
+    keytab=/etc/krb5.keytab
+    klist -k $keytab        # List keys of declared keytab file
+    # Listed dual entries is normal; one per encryption type
+        # Keytab name: FILE:/etc/krb5.keytab
+        # KVNO Principal
+        # ---- --------------------------------------------------------------------------
+        #    2 A2$@LIME.LAN
+        #    2 A2$@LIME.LAN
+        #    2 host/A2@LIME.LAN
+        #    2 host/A2@LIME.LAN
+        #    2 host/a2.lime.lan@LIME.LAN
+        #    2 host/a2.lime.lan@LIME.LAN
+        #    2 RestrictedKrbHost/A2@LIME.LAN
+        #    2 RestrictedKrbHost/A2@LIME.LAN
+        #    2 RestrictedKrbHost/a2.lime.lan@LIME.LAN
+        #    2 RestrictedKrbHost/a2.lime.lan@LIME.LAN
+
+    # Create/Renew TGT (ticket-granting ticket) : Prompts for user's AD password
+    kinit # Default (AD DS USER@REALM)
+    # Else declare the principal
+    realm=$(hostname -d)
+    kinit $(id -un)@${realm^^}
+    kinit u2@LIME.LAN 
+    # Else from a declared keytab file
+    kinit -k -t /etc/krb5.keytab nfs/a0.lime.lan
+    # Test if AD KDC correctly issues a ticket at client(s) of SPN nfs/a0.lime.lan
+    svc=nfs/a0.lime.lan
+    kinit -S $svc u2@LIME.LAN
+
+    kinit -R    # Renew ticket manually
+    kdestroy    # Destroy all tickets
+    kdestroy -A # Destroy all tickets and cache too
+
 # DISABLE SPAM : RHEL 9 spams systemd journal (logs) with RedHat corporation marketing messages
     chmod -x /etc/update-motd.d/* # DISABLE
     chmod +x /etc/update-motd.d/* # ENABLE

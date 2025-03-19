@@ -1,6 +1,4 @@
-# Podman : Rootless Containers | [Chat 2](https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7 "ChatGPT.com")
-
-## [Rootless Containers](https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c "ChatGPT.com")
+# Podman : Rootless Containers | [Chat 2](https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7 "ChatGPT.com") | [Chat 3](https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c "ChatGPT.com")
 
 >In rootless Podman, the container’s root user is actually a non-root user on the host, mapped via user namespaces.
 
@@ -17,6 +15,8 @@ __Create__ `subuid`/`subgid` range __per user__
 sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
 ```
 - This allocates `65536` subordinate UIDs and GIDs to `auser`, starting from `100000`.
+    - A more sophisticated method is required if multiple users are to run podman rootless, 
+    because each user must have their own unique range of `subuid`/`subgid`.
 
 ### `Dockerfile` mods
 
@@ -28,7 +28,10 @@ RUN chown -R auser /path/to/app
 
 ### Host : User Namespaces
 
-In Podman rootless mode, a __container runs in a separate user namespace__, which isolates the user and group IDs inside the container from the ones on the host. Even though a process may run as __`UID 0` (`root`) inside the container__, it is actually __mapped to a non-root user ID on the host__.
+In Podman rootless mode, a __container runs in a separate user namespace__, 
+which isolates the user and group IDs inside the container from the ones on the host. 
+Even though a process may run as __`UID 0` (`root`) inside the container__, 
+it is actually __mapped to a non-root user ID on the host__.
 
 ### Customizing UID/GID Mappings
 
@@ -87,7 +90,7 @@ podman container rm $app
 This approach ensures that your rootless Podman containers 
 remain running even when you log out.
 
-#### UPDATE : Use Quadlets 
+## Quadlets 
 
 __Quadlets are essentially a systemd unit generator specifically for containers__. Instead of manually writing complex `.service` files, you can use `.container` files (a simplified format) to define container behaviors, such as the image to use, environment variables, volumes, and restart policies.
 
@@ -126,6 +129,148 @@ loginctl enable-linger $(whoami)
 
 This approach is cleaner and recommended if you are seeing warnings about Quadlets. Quadlets simplify the management of containers using systemd while retaining the flexibility of systemd service management.
 
+
+
+## `podman play kube` 
+
+Define the pod and its containers declaratively using **Podman's `podman play kube`** feature. 
+This allows you to describe the entire pod (including its containers, volumes, and networking) 
+in a **K8s-compatible YAML file**. The systemd service can then use this YAML file 
+to start and manage the pod without requiring out-of-band `podman` commands.
+
+Here’s how to do it:
+
+---
+
+### 1. **Create a K8s-Compatible YAML File**
+Define the pod and its containers in a YAML file. Save it as `/path/to/registry-pod.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: registry-pod
+spec:
+  containers:
+    - name: registry
+      image: docker.io/library/registry:2
+      volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+      ports:
+        - containerPort: 5000
+
+    - name: nginx
+      image: docker.io/library/nginx:alpine
+      volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: nginx-ssl
+          mountPath: /etc/nginx/ssl
+      ports:
+        - containerPort: 443
+
+  volumes:
+    - name: registry-data
+      hostPath:
+        path: /path/to/registry/data
+        type: Directory
+    - name: nginx-config
+      hostPath:
+        path: /path/to/nginx/conf.d
+        type: Directory
+    - name: nginx-ssl
+      hostPath:
+        path: /path/to/nginx/ssl
+        type: Directory
+```
+
+- Replace `/path/to/registry/data` with the directory for the registry data.
+- Replace `/path/to/nginx/conf.d` and `/path/to/nginx/ssl` with the paths to your NGINX configuration and TLS certificates.
+
+---
+
+### 2. **Create the NGINX Configuration**
+Create the NGINX configuration file for the registry at `/path/to/nginx/conf.d/registry.conf`:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name registry.example.com;
+
+    ssl_certificate /etc/nginx/ssl/registry.crt;
+    ssl_certificate_key /etc/nginx/ssl/registry.key;
+
+    client_max_body_size 0; # Disable body size check for large uploads
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+- Replace `registry.example.com` with your domain.
+- Place your TLS certificate and key in `/path/to/nginx/ssl/registry.crt` and `/path/to/nginx/ssl/registry.key`.
+
+---
+
+### 3. **Create a Systemd Service**
+Create a systemd service file to manage the pod using the YAML file. Save it as `/etc/systemd/system/registry-pod.service`:
+
+```ini
+[Unit]
+Description=CNCF Distribution Registry Pod (Podman)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/podman play kube /path/to/registry-pod.yaml
+ExecStop=/usr/bin/podman pod stop -t 10 registry-pod
+ExecStopPost=/usr/bin/podman pod rm -f registry-pod
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Replace `/path/to/registry-pod.yaml` with the path to your YAML file.
+
+Reload systemd and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start registry-pod
+sudo systemctl enable registry-pod
+```
+
+---
+
+### 4. **Verify the Setup**
+- Test the registry by pushing/pulling an image using the NGINX proxy:
+  ```bash
+  docker pull alpine
+  docker tag alpine registry.example.com/alpine
+  docker push registry.example.com/alpine
+  ```
+- Check the status of the pod and containers:
+  ```bash
+  podman pod ps
+  podman ps
+  ```
+
+---
+
+### 5. **Optional: Secure the Registry**
+- Add authentication to the registry by configuring HTTP basic auth or integrating with an external authentication service.
+- Use Podman's secrets management for secure handling of credentials.
+
+---
+
+### Summary
+This approach uses a **declarative YAML file** to define the pod and its containers, which is then managed by a **systemd service**. The `podman play kube` command reads the YAML file and creates the pod, ensuring that the entire setup is self-contained and reproducible without requiring out-of-band `podman` commands.
 
 
 ### &nbsp;
