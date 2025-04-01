@@ -151,3 +151,49 @@ This pulls changes from the `master` branch in the bundle into the current branc
 
 In summary, `git bundle` is a flexible tool designed to work with any type of Git repository. Its primary advantage lies in encapsulating repository data into a single file, which simplifies the process of repository transport and archival in a portable and efficient format.
 
+
+# How to update remote if local is known to be newer of all branches
+
+Yes! If you're confident that your local repository has the **latest (or same) state** of all branches and you want to **force-overwrite** the remote to match, you have a few options:
+
+### 1. **`git push --all --force origin`**  
+   - Pushes all branches, **overwriting** remote branches if they differ.  
+   - Safer than `--mirror` (since it doesn’t affect tags or delete remote branches).  
+   - **Recommended** if you just want to sync branches.  
+
+   ```bash
+   git push --all --force origin
+   ```
+
+### 2. **`git push origin '*:*' --force`**  
+   - Explicitly pushes **all branches** (including new ones) and overwrites conflicts.  
+   - Works even if `--all` sometimes misses new branches.  
+
+   ```bash
+   git push origin '*:*' --force
+   ```
+   or (equivalent):
+   ```bash
+   git push origin refs/heads/*:refs/heads/* --force
+   ```
+
+### 3. **`git push --mirror origin`** (Nuclear Option)  
+   - Pushes **everything** (branches, tags, notes) and **deletes remote branches** that don’t exist locally.  
+   - **Use with caution!** Only run this if you’re absolutely sure the remote should be an exact copy of your local repo.  
+
+   ```bash
+   git push --mirror origin
+   ```
+
+### Key Differences:
+| Command | Overwrites Branches? | Pushes New Branches? | Affects Tags? | Deletes Remote Branches? |
+|---------|----------------------|----------------------|---------------|--------------------------|
+| `git push --all --force` | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| `git push origin '*:*' --force` | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| `git push --mirror` | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes (dangerous!) |
+
+### Recommendation:
+- **For most cases**, use `git push --all --force origin`.  
+- If `--all` misses new branches, use `git push origin '*:*' --force`.  
+- **Only use `--mirror`** if you want the remote to be an exact clone (including pruning deleted branches).  
+
