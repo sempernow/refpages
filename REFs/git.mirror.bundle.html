@@ -181,6 +181,97 @@ rm -rf .git/*  # Removes all non-Git files, essentially making the clone bare
 </ul>
 
 <p>In summary, <code>git bundle</code> is a flexible tool designed to work with any type of Git repository. Its primary advantage lies in encapsulating repository data into a single file, which simplifies the process of repository transport and archival in a portable and efficient format.</p>
+
+<h1>How to update remote if local is known to be newer of all branches</h1>
+
+<p>Yes! If you're confident that your local repository has the <strong>latest (or same) state</strong> of all branches and you want to <strong>force-overwrite</strong> the remote to match, you have a few options:</p>
+
+<h3>1. <strong><code>git push --all --force origin</code></strong></h3>
+
+<ul>
+<li>Pushes all branches, <strong>overwriting</strong> remote branches if they differ.<br></li>
+<li>Safer than <code>--mirror</code> (since it doesn’t affect tags or delete remote branches).<br></li>
+
+<li><p><strong>Recommended</strong> if you just want to sync branches.</p>
+
+<pre><code class="language-bash">git push --all --force origin
+</code></pre></li>
+</ul>
+
+<h3>2. <strong><code>git push origin '*:*' --force</code></strong></h3>
+
+<ul>
+<li>Explicitly pushes <strong>all branches</strong> (including new ones) and overwrites conflicts.<br></li>
+
+<li><p>Works even if <code>--all</code> sometimes misses new branches.</p>
+
+<pre><code class="language-bash">git push origin '*:*' --force
+</code></pre></li>
+</ul>
+
+<p>or (equivalent):</p>
+
+<pre><code class="language-bash">   git push origin refs/heads/*:refs/heads/* --force
+</code></pre>
+
+<h3>3. <strong><code>git push --mirror origin</code></strong> (Nuclear Option)</h3>
+
+<ul>
+<li>Pushes <strong>everything</strong> (branches, tags, notes) and <strong>deletes remote branches</strong> that don’t exist locally.<br></li>
+
+<li><p><strong>Use with caution!</strong> Only run this if you’re absolutely sure the remote should be an exact copy of your local repo.</p>
+
+<pre><code class="language-bash">git push --mirror origin
+</code></pre></li>
+</ul>
+
+<h3>Key Differences:</h3>
+
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Overwrites Branches?</th>
+<th>Pushes New Branches?</th>
+<th>Affects Tags?</th>
+<th>Deletes Remote Branches?</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>git push --all --force</code></td>
+<td>✅ Yes</td>
+<td>✅ Yes</td>
+<td>❌ No</td>
+<td>❌ No</td>
+</tr>
+
+<tr>
+<td><code>git push origin '*:*' --force</code></td>
+<td>✅ Yes</td>
+<td>✅ Yes</td>
+<td>❌ No</td>
+<td>❌ No</td>
+</tr>
+
+<tr>
+<td><code>git push --mirror</code></td>
+<td>✅ Yes</td>
+<td>✅ Yes</td>
+<td>✅ Yes</td>
+<td>✅ Yes (dangerous!)</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Recommendation:</h3>
+
+<ul>
+<li><strong>For most cases</strong>, use <code>git push --all --force origin</code>.<br></li>
+<li>If <code>--all</code> misses new branches, use <code>git push origin '*:*' --force</code>.<br></li>
+<li><strong>Only use <code>--mirror</code></strong> if you want the remote to be an exact clone (including pruning deleted branches).<br></li>
+</ul>
  
     </main>
 
