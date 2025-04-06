@@ -80,6 +80,7 @@ helm upgrade $release $chart --install --values $values
     --reuse-values      # Reuse installed values and merge in overrides via --set and -f
                         #... This is *ignored* if '--reset-values' is declared too.
     --set k1=v1,k2=v2   # Set the declared values
+    --wait              # Wait until all K8s-API resources are created else timeout.
  
 ## Alternate (bad) install method : Don't use; subsequent update requires teardown.
 helm install $release $repo/$chart $flags
@@ -90,8 +91,11 @@ helm status $release
 # Test and get useful info on an installed chart (release)
 helm test $release
 
-# Render chart templates locally and display resulting manifests
+# Render chart templates locally and print resulting manifests of current config ($values)
 helm template $chart --values $values --namespace $ns
+
+# Capture manifest of the running release from the K8s API
+helm get $release -n $ns
 
 # Show ... {chart,values} are YAML(ish)
 helm show {chart,readme,crds,values,all} $chart
