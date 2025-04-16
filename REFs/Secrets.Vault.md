@@ -56,18 +56,16 @@ get-secrets:
     - echo "Verifying JWT..."
     - echo $CI_JOB_JWT |cut -d '.' -f2 |base64 -d |jq .
     - echo "Fetching Vault token using JWT..."
-    - export VAULT_TOKEN=$(curl --request POST --data "{\"jwt\":\"$CI_JOB_JWT\",\"role\":\"gitlab-pipeline-role\"}" $VAULT_ADDR/v1/auth/jwt-gitlab/login | jq -Mr '.auth.client_token')
+    - export VAULT_TOKEN=$(curl --request POST --data "{\"jwt\":\"$CI_JOB_JWT\",\"role\":\"gitlab-pipeline-role\"}" $VAULT_ADDR/v1/auth/jwt-gitlab/login |jq -Mr '.auth.client_token')
     - echo "Reading secret..."
     - curl -H "X-Vault-Token: $VAULT_TOKEN" $VAULT_ADDR/v1/kv/data/gitlab/group-1 |jq -Mr .data.data.API_KEY
 
 ```
 
-
 ### [Vault authentication with GitLab OpenID Connect](https://docs.gitlab.com/integration/vault/ "docs.gitlab.com")
 
 OIDC with OAuth2 Client Credentials (requires GitLab config); 
 OpenID Connect client ID and secret from GitLab
-
 
 ## [AppRole](https://developer.hashicorp.com/vault/docs/auth/approle "hashicorp.com") AuthN Method
 

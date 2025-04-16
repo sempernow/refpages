@@ -114,8 +114,8 @@ It specifies how to encode data for signing or encryption with RSA.
 
 A standard ([RFC-5652](https://datatracker.ietf.org/doc/html/rfc5652 "IETF.org")) for encryption and signing, suitable for messages like signed or encrypted emails. It defines **a general syntax** for data that may have cryptography applied to it, such as digital signatures and encryption. It is widely used in various security and cryptographic applications. This standard is versatile, supporting not only encryption and digital signatures but also other enhancements like data compression and certificate dissemination.
 
-One or more Base64 ASCII certificates are stored in a `.p7b` or `.p7c` file. 
-Commonly used in Windows and Java applications.
+One or more Base64 ASCII certificates are stored in a __`.p7b`__ or `.p7c` file. 
+Commonly used in __Windows__ and __Java__ applications.
 
 ##### [PKCS#8](https://en.wikipedia.org/wiki/PKCS_8)
 
@@ -124,11 +124,11 @@ both encrypted and unencrypted forms.
 
 ##### PKCS#10/[CSR](https://en.wikipedia.org/wiki/Certificate_signing_request)
 
-A format regarding [Certificate Signing Request](https://en.wikipedia.org/wiki/Certificate_signing_request "Wikipedia.org") (CSR) data structure, for requesting certificates from a CA. It specifies what information the CSR contains and how that information is organized. This ([ASN.1](https://en.wikipedia.org/wiki/ASN.1 "Wikipedia.org")) format is recognized universally and is the standard format for CSRs regardless of the software or platform being used. The file may be in either DER or PEM format. Common filename extensions for a CSR are `.csr`, `.pem` and `.der`.
+A format regarding [Certificate Signing Request](https://en.wikipedia.org/wiki/Certificate_signing_request "Wikipedia.org") (__CSR__) data structure, for requesting certificates from a CA. It specifies what information the CSR contains and how that information is organized. This ([ASN.1](https://en.wikipedia.org/wiki/ASN.1 "Wikipedia.org")) format is recognized universally and is the standard format for CSRs regardless of the software or platform being used. The file may be in either DER or PEM format. Common filename extensions for a CSR are __`.csr`__, `.pem` and `.der`.
 
 ##### [PKCS#12](https://en.wikipedia.org/wiki/PKCS_12 "Wikipedia.org")/PFX/P12
 
-A **binary archive-file format** for storing many cryptographic objects (certificates and key) in a single password-protected file, each in a *SafeBag* (container); successor to Microsoft's PFX. Common filename extensions are `.pfx` and `.p12`. Often used in Java applications and across Windows machines. Code-signing certificates stored in PFX are also often used for signing with Microsoft Authenticode.
+A **binary archive-file format** for storing many cryptographic objects (certificates and key) in a single password-protected file, each in a *SafeBag* (container); successor to Microsoft's PFX. Common filename extensions are `.pfx` and `.p12`. Often used in Java applications and across Windows machines. Code-signing certificates stored in PFX are also often used for signing with __Microsoft Authenticode__.
 
 Key characteristics and uses of PKCS#12 include:
 
