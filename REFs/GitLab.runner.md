@@ -1,6 +1,98 @@
 # [GitLab Runner](https://docs.gitlab.com/runner/) | [Operator](https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator "gitlab.com")
 
 
+## Q: 
+
+How to configure custom `cache_dir` of `gitlab-runner` if it's a kubernetes executor
+
+## A:
+
+Here's the **complete, consolidated configuration** to properly set up a custom cache directory with correct permissions in your GitLab Kubernetes runner:
+
+### 1. Final `config.toml` Configuration
+```toml
+[[runners]]
+  name = "kubernetes-runner"
+  url = "https://gitlab.example.com"
+  token = "YOUR_RUNNER_TOKEN"
+  executor = "kubernetes"
+  cache_dir = "/mnt/cache"  # Your custom cache path
+  
+  # Critical permission settings
+  [runners.kubernetes.pod_security_context]
+    fs_group = 1000         # Ensures write permission for gitlab-runner
+    run_as_user = 1000      # Default gitlab-runner user
+    run_as_group = 1000     # Default gitlab-runner group
+  
+  # PVC Mount (replace with your existing PVC name)
+  [runners.kubernetes]
+    [[runners.kubernetes.volumes.pvc]]
+      name = "gitlab-runner-cache"  # Must match your PVC name
+      mount_path = "/mnt/cache"     # Must match cache_dir
+```
+
+### 2. Required Kubernetes Resources
+```yaml
+# PVC Definition (if not existing)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitlab-runner-cache  # ← Must match config.toml
+spec:
+  accessModes:
+    - ReadWriteMany          # Critical for cache functionality
+  resources:
+    requests:
+      storage: 10Gi         # Adjust size as needed
+  storageClassName: standard # Match your storage class
+```
+
+### 3. Verification Checklist
+1. **PVC Exists and is Bound**:
+   ```bash
+   kubectl get pvc gitlab-runner-cache
+   ```
+   Should show STATUS=Bound
+
+2. **Correct Permissions**:
+   ```bash
+   kubectl exec -it <runner-pod> -- ls -ld /mnt/cache
+   ```
+   Should show:
+   ```
+   drwxrwsr-x 2 1000 1000 4096 ...
+   ```
+   (The 's' in group permissions indicates working setgid)
+
+3. **Write Test**:
+   ```bash
+   kubectl exec -it <runner-pod> -- \
+     sh -c "touch /mnt/cache/testfile && ls -l /mnt/cache/testfile"
+   ```
+
+### Key Takeaways
+1. **Four Critical Elements**:
+   - `cache_dir` in `[[runners]]`
+   - Matching PVC `mount_path`
+   - `pod_security_context` with `fs_group`
+   - PVC with `ReadWriteMany` access
+
+2. **Permission Flow**:
+   ```mermaid
+   graph TD
+     A[PVC Storage] -->|inherits| B[PV Permissions]
+     B -->|modified by| C[Pod fs_group]
+     C -->|applied to| D[/mnt/cache]
+     D -->|used by| E[GitLab Runner]
+   ```
+
+3. **Troubleshooting Tip**:
+   If files still appear as root-owned, add this to your jobs:
+   ```yaml
+   variables:
+     FF_KUBERNETES_HONOR_ENTRYPOINT: "1"  # Ensures pod user context is respected
+   ```
+
 ## Q:
 
 Regarding RBAC, if a GitLab runner is deployed into K8s cluster under its own namespace, and the CI/CD has `kubectl` that deploys app to cluster, what `Role`s must it have for pipelines to __deploy to any declared namespace__?
