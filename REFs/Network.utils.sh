@@ -617,23 +617,16 @@ exit
     nm-tool  # RedHat; NetworkManager Tool; reports status
              # ... Type, driver, speed, IP, MAC, Gateway IP, DNS, Subnet Netmask
 
-    ipcalc # Get network address, CIDR, mask,... all the things
+    ipcalc  # Get network address, CIDR, mask,... all the things
         ipcalc -pnmb --minaddr --maxaddr --geoinfo --addrspace 193.92.150.0/27
-            # NETMASK=255.255.255.224
-            # PREFIX=27
-            # BROADCAST=193.92.150.31
-            # NETWORK=193.92.150.0
-            # MINADDR=193.92.150.1
-            # MAXADDR=193.92.150.30
-            # ADDRSPACE=Internet
-            # COUNTRYCODE=GR
-            # COUNTRY=Greece
-            # COORDINATES="37.984200,23.735300"
 
     mii-tool     # media-independent interface [MII] status [OBSOLETE; use ethtool]
     ethtool NIC  # get info on NIC, e.g., 'ethtool eth0' 
             -i NIC   # driver info
-            
+
+    # Get bandwidth of a network interface
+    lshw -class network |grep -A 10 eth0 |grep size # size: 10Gbit/s
+                
     ss # Socket Statistics; IP:PORT; like netstat
         -r     # resolve names
         -n     # numeric; don't resolve names
