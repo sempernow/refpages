@@ -446,16 +446,16 @@ exit 0
             getent passwd foo
 
         # Add user to group
-            usermod -aG $group $user 
+            usermod -aG $g $u 
             newgrp docker # Supposedly to take effect now, but side effects linger. Better to logout/login 
             # OR
-            gpasswd -a $user group 
+            gpasswd -a $u group 
 
         # Delete a user
-            userdel -r $user 
-
-        # Remove a user from a grop
-            gpasswd -d $user $group
+            userdel -r $u 
+            userdel -r -Z $u
+        # Remove a user from a group
+            gpasswd -d $u $g
         
         # Lock user account
             passwd -l $u
@@ -475,8 +475,8 @@ exit 0
         chown -R $(id -u):$(id -g) /top/path
 
         # Sudoers GROUP : Add USER | sudoers(5) https://linux.die.net/man/5/sudoers   
-        usermod -aG wheel $user  # RHEL/CentOS/Fedora (wheel group)
-        usermod -aG sudo $user   # Ubuntu/Debian      (sudo group)
+        usermod -aG wheel $u  # RHEL/CentOS/Fedora (wheel group)
+        usermod -aG sudo $u   # Ubuntu/Debian      (sudo group)
 
         # Change NAME : user
             usermod -l $new -d /home/$new -m $old
@@ -484,7 +484,7 @@ exit 0
             groupmod -n $new $old
         # Change PASSWORD
             # Set interactively
-            passwd $user 
+            passwd $u 
             # Set non-interactively : 
              echo "$pw" |sudo passwd $u --stdin
             # Set to unknowable password :
@@ -497,9 +497,9 @@ exit 0
                 echo -e "$user1:$pass1\n$user2:$pass2" |sudo chpasswd
 
         # Delete user's PASSWORD; may/not prevent login with no password
-        sudo passwd -d $user
+        sudo passwd -d $u
         # LOCK user ACCOUNT to prevent login by password (SSH by key okay).
-        sudo passwd -l $user
+        sudo passwd -l $u
         # CHANGE : HOME dir : default is /home/$USER
             sudo vim /etc/passwd  
             # sudo(8)  https://linux.die.net/man/8/sudo 
@@ -534,7 +534,11 @@ exit 0
                 # OR, by UID
                 echo "#$(id -u) ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
             # GROUP-SCOPED declarations : group 'ops'
-                sudo visudo /etc/sudoers/ops
+                g=ops
+                # Full access
+                echo "%$g ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$g
+                # Limited access
+                sudo visudo /etc/sudoers/$g
                 ## Allow group 'ops' members to run declared (CSV) list of (sub)commands/flags:
                 # Cmnd_Alias  GROUP_OPS_CMDS =  /usr/bin/dnf update, \
                 #                         /usr/bin/systemctl status *, \
