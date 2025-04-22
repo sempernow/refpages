@@ -492,35 +492,90 @@ oc logs -l app=test-app | grep &quot;X-Forwarded-For&quot;
 
 <h3><strong>2. User-Provisioned Infrastructure (UPI) – Bare Metal, VMware, On-Prem</strong></h3>
 
-<ul>
-<li><strong>You must manually configure firewall rules</strong> before installation.</li>
+<p><strong>You must manually configure firewall rules</strong> before installation.</p>
 
-<li><p><strong>Critical ports include</strong>:
- | <strong>Component</strong>       | <strong>Port(s)</strong>       | <strong>Direction</strong> | <strong>Purpose</strong>                     |
- |---------------------|-------------------|---------------|----------------------------------|
- | <strong>API Server</strong>      | TCP/6443          | Inbound       | Kubernetes API access            |
- | <strong>Machine Config</strong>  | TCP/22623         | Inbound       | Node provisioning (masters only) |
- | <strong>ETCD</strong>           | TCP/2379-2380     | Internal      | ETCD cluster communication       |
- | <strong>Kubelet</strong>        | TCP/10250         | Internal      | Metrics &amp; pod communication      |
- | <strong>Ingress (Router)</strong> | TCP/80, TCP/443   | Inbound       | Application traffic              |
- | <strong>NodePort Services</strong> | TCP/30000-32767 | Inbound       | Optional for external services   |
- | <strong>Internal Pod Network</strong> | VXLAN (UDP/4789), Geneve (UDP/6081) | Internal | SDN (OpenShift SDN/OVN-Kubernetes) |
- | <strong>DNS</strong>            | UDP/53            | Internal      | CoreDNS resolution               |</p></li>
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>Port(s)</strong></th>
+<th><strong>Direction</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
 
-<li><p><strong>Example for <code>firewalld</code> (RHEL/CentOS)</strong>:</p>
+<tbody>
+<tr>
+<td><strong>API Server</strong></td>
+<td>TCP/6443</td>
+<td>Inbound</td>
+<td>Kubernetes API access</td>
+</tr>
 
-<pre><code class="language-bash"> # Masters and Workers
- firewall-cmd --permanent --add-port=6443/tcp       # API
- firewall-cmd --permanent --add-port=10250/tcp      # Kubelet
- firewall-cmd --permanent --add-port=4789/udp       # OpenShift SDN (VXLAN)
- firewall-cmd --permanent --add-port=6081/udp       # OVN-Kubernetes (Geneve)
- firewall-cmd --permanent --add-port=30000-32767/tcp # NodePort range
- # Masters only
- firewall-cmd --permanent --add-port=2379-2380/tcp  # ETCD
- firewall-cmd --permanent --add-port=22623/tcp      # Machine Config
- firewall-cmd --reload
-</code></pre></li>
-</ul>
+<tr>
+<td><strong>Machine Config</strong></td>
+<td>TCP/22623</td>
+<td>Inbound</td>
+<td>Node provisioning (masters only)</td>
+</tr>
+
+<tr>
+<td><strong>ETCD</strong></td>
+<td>TCP/2379-2380</td>
+<td>Internal</td>
+<td>ETCD cluster communication</td>
+</tr>
+
+<tr>
+<td><strong>Kubelet</strong></td>
+<td>TCP/10250</td>
+<td>Internal</td>
+<td>Metrics &amp; pod communication</td>
+</tr>
+
+<tr>
+<td><strong>Ingress (Router)</strong></td>
+<td>TCP/80, TCP/443</td>
+<td>Inbound</td>
+<td>Application traffic</td>
+</tr>
+
+<tr>
+<td><strong>NodePort Services</strong></td>
+<td>TCP/30000-32767</td>
+<td>Inbound</td>
+<td>Optional for external services</td>
+</tr>
+
+<tr>
+<td><strong>Internal Pod Network</strong></td>
+<td>VXLAN (UDP/4789), Geneve (UDP/6081)</td>
+<td>Internal</td>
+<td>SDN (OpenShift SDN/OVN-Kubernetes)</td>
+</tr>
+
+<tr>
+<td><strong>DNS</strong></td>
+<td>UDP/53</td>
+<td>Internal</td>
+<td>CoreDNS resolution</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Example for <code>firewalld</code> (RHEL/CentOS)</strong>:</p>
+
+<pre><code class="language-bash"># Masters and Workers
+firewall-cmd --permanent --add-port=6443/tcp       # API
+firewall-cmd --permanent --add-port=10250/tcp      # Kubelet
+firewall-cmd --permanent --add-port=4789/udp       # OpenShift SDN (VXLAN)
+firewall-cmd --permanent --add-port=6081/udp       # OVN-Kubernetes (Geneve)
+firewall-cmd --permanent --add-port=30000-32767/tcp # NodePort range
+# Masters only
+firewall-cmd --permanent --add-port=2379-2380/tcp  # ETCD
+firewall-cmd --permanent --add-port=22623/tcp      # Machine Config
+firewall-cmd --reload
+</code></pre>
 
 <hr>
 
@@ -825,10 +880,29 @@ oc debug node/&lt;node&gt;  # Inspect the underlying OS
 
 <h3><strong>Summary Table</strong></h3>
 
-<p>| <strong>Node Type</strong>       | <strong>Recommended OS</strong> | <strong>Alternative OS</strong> |<br>
-|---------------------|--------------------|--------------------|<br>
-| <strong>Control Plane</strong>   | RHCOS              | None               |<br>
-| <strong>Workers</strong>        | RHCOS (default)    | RHEL 8/9 (if needed) |</p>
+<table>
+<thead>
+<tr>
+<th><strong>Node Type</strong></th>
+<th><strong>Recommended OS</strong></th>
+<th><strong>Alternative OS</strong> ---</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Control Plane</strong></td>
+<td>RHCOS</td>
+<td>None</td>
+</tr>
+
+<tr>
+<td><strong>Workers</strong></td>
+<td>RHCOS (default)</td>
+<td>RHEL 8/9 (if needed)</td>
+</tr>
+</tbody>
+</table>
 
 <p>For production, <strong>stick with RHCOS unless you have a compelling reason to use RHEL workers</strong>.</p>
 
