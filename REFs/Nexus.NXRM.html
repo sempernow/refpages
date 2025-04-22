@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Nexus.NXRM</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Sonatype <a href="https://help.sonatype.com/en/sonatype-nexus-repository.html" title="help.sonatype.com">Nexus Repository Manager</a> (<strong>NXRM</strong>)</h1>
+
+<h1>Backup Script</h1>
+
+<p>Handle the blob store, <code>/nexus-data/blobs</code>,  via filesystem level backup</p>
+
+<p>This script will safely backup just:</p>
+
+<ul>
+<li>OrientDB database</li>
+<li>Configuration (<code>etc</code>, <code>keystores</code>, security, users, roles, scheduled tasks, etc.)</li>
+<li>Repository metadata</li>
+<li>Everything else <strong>except</strong> <code>/nexus-data/blobs</code></li>
+</ul>
+
+<hr>
+
+<h2>📜 Backup Script (Without Blob Store): <code>/usr/local/bin/nexus-config-backup.sh</code></h2>
+
+<pre><code class="language-bash">#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR=&quot;/opt/nexus-backups&quot;
+NEXUS_DATA=&quot;/nexus-data&quot;
+EXCLUDE_BLOBS=&quot;${NEXUS_DATA}/blobs&quot;
+NEXUS_SERVICE=&quot;nexus&quot;
+TIMESTAMP=$(date +&quot;%Y%m%d-%H%M%S&quot;)
+BACKUP_NAME=&quot;nexus-config-backup-${TIMESTAMP}.tar.gz&quot;
+TEMP_DIR=&quot;/tmp/nexus-backup-${TIMESTAMP}&quot;
+
+echo &quot;[INFO] Starting Nexus configuration backup...&quot;
+
+# Step 1: Stop Nexus to ensure DB consistency
+echo &quot;[INFO] Stopping Nexus...&quot;
+systemctl stop &quot;${NEXUS_SERVICE}&quot;
+
+# Step 2: Create temp working dir
+mkdir -p &quot;${TEMP_DIR}&quot;
+
+# Step 3: Rsync everything but blobs
+echo &quot;[INFO] Copying configuration and database (excluding blobs)...&quot;
+rsync -a --delete \
+  --exclude=&quot;blobs/&quot; \
+  &quot;${NEXUS_DATA}/&quot; &quot;${TEMP_DIR}/nexus-data/&quot;
+
+# Step 4: Start Nexus again
+echo &quot;[INFO] Restarting Nexus...&quot;
+systemctl start &quot;${NEXUS_SERVICE}&quot;
+
+# Step 5: Create archive
+mkdir -p &quot;${BACKUP_DIR}&quot;
+echo &quot;[INFO] Creating archive: ${BACKUP_DIR}/${BACKUP_NAME}&quot;
+tar -czf &quot;${BACKUP_DIR}/${BACKUP_NAME}&quot; -C &quot;${TEMP_DIR}&quot; nexus-data
+
+# Step 6: Cleanup
+rm -rf &quot;${TEMP_DIR}&quot;
+echo &quot;[INFO] Configuration backup complete: ${BACKUP_NAME}&quot;
+</code></pre>
+
+<hr>
+
+<h2>🧼 Make Executable</h2>
+
+<pre><code class="language-bash">chmod +x /usr/local/bin/nexus-config-backup.sh
+</code></pre>
+
+<hr>
+
+<h2>🧪 Restore Process (Without Blob Store)</h2>
+
+<p>To restore:</p>
+
+<ol>
+<li><p>Stop Nexus:</p>
+
+<pre><code class="language-bash">systemctl stop nexus
+</code></pre></li>
+
+<li><p>Restore the config:</p>
+
+<pre><code class="language-bash">tar -xzf nexus-config-backup-*.tar.gz -C /
+</code></pre></li>
+
+<li><p>Ensure <code>/nexus-data/blobs</code> exists and is restored separately.</p></li>
+
+<li><p>Start Nexus:</p>
+
+<pre><code class="language-bash">systemctl start nexus
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h2>✅ Bonus: Filesystem Snapshot for Blobs</h2>
+
+<p>If using LVM:</p>
+
+<pre><code class="language-bash">lvcreate --size 50G --snapshot --name nexusblob-snap /dev/vg0/nexusblob
+</code></pre>
+
+<p>Then mount it and archive:</p>
+
+<pre><code class="language-bash">mount /dev/vg0/nexusblob-snap /mnt/nexusblob-snap
+rsync -a /mnt/nexusblob-snap/ /some/backup/target/
+umount /mnt/nexusblob-snap
+lvremove /dev/vg0/nexusblob-snap
+</code></pre>
+
+<hr>
+
+<h1>Tasks</h1>
+
+<p>Curated set of <strong>NXRM Tasks</strong> specifically for <strong>application-level maintenance</strong>, pruning, and performance — not backup.</p>
+
+<p>These tasks help keep the Nexus repo healthy, smaller, and faster — <strong>ideal to run on a schedule</strong>, e.g., nightly or weekly. I'll show:</p>
+
+<ol>
+<li><strong>Recommended Tasks</strong> for cleanup/maintenance</li>
+<li><strong>How to create them in the GUI</strong></li>
+<li><strong>REST API JSON templates</strong> (so you can script them)</li>
+</ol>
+
+<hr>
+
+<h2>✅ 1. Recommended Maintenance Tasks</h2>
+
+<table>
+<thead>
+<tr>
+<th>Task Name</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Remove Snapshots from Maven Repositories</strong></td>
+<td>Deletes old <code>-SNAPSHOT</code> versions beyond a retention policy</td>
+</tr>
+
+<tr>
+<td><strong>Delete Unused Components</strong></td>
+<td>Deletes components that are no longer referenced by any metadata</td>
+</tr>
+
+<tr>
+<td><strong>Compact Blob Store</strong></td>
+<td>Frees space by removing soft-deleted blobs (garbage collection)</td>
+</tr>
+
+<tr>
+<td><strong>Rebuild Repository Index</strong></td>
+<td>Recreates the search index for a given repo (if corrupted)</td>
+</tr>
+
+<tr>
+<td><strong>Repair - Reconcile component database</strong></td>
+<td>Re-syncs metadata DB with blobs; good after crashes</td>
+</tr>
+
+<tr>
+<td><strong>Evict unused proxy items from cache</strong></td>
+<td>Clears unused items from proxy cache (only for proxy repos)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>🖱️ 2. Create via GUI</h2>
+
+<p><strong>Path</strong>: <code>Admin &gt; System &gt; Tasks &gt; Create task</code></p>
+
+<ul>
+<li><strong>Task type</strong>: choose one of the above</li>
+<li><strong>Schedule</strong>: daily/weekly, or after-hours</li>
+<li><strong>Repository</strong>: set <code>All Repositories</code> or choose per task</li>
+<li><strong>Retention</strong>: set days to keep, # to retain, etc.</li>
+</ul>
+
+<p>Example:</p>
+
+<ul>
+<li>Task Type: <code>Remove Snapshots from Maven Repositories</code></li>
+<li>Repositories: All hosted maven</li>
+<li>Minimum snapshot count: 2</li>
+<li>Snapshot retention (days): 14</li>
+<li>Run as: <code>admin</code></li>
+<li>Schedule: <code>Daily @ 01:00 AM</code></li>
+</ul>
+
+<hr>
+
+<h2>📡 3. JSON Templates (via REST API)</h2>
+
+<p>You can use <code>curl</code> to POST these to your Nexus instance at:</p>
+
+<pre><code class="language-http">POST http://localhost:8081/service/rest/v1/tasks
+Authorization: Basic &lt;admin:password base64&gt;
+Content-Type: application/json
+</code></pre>
+
+<h3>🧹 Remove Snapshots (14 days old, keep 2)</h3>
+
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Remove Old Maven Snapshots&quot;,
+  &quot;type&quot;: &quot;removeSnapshots&quot;,
+  &quot;message&quot;: &quot;Remove maven snapshots older than 14 days&quot;,
+  &quot;schedule&quot;: {
+    &quot;type&quot;: &quot;daily&quot;,
+    &quot;time&quot;: &quot;01:00&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;properties&quot;: {
+    &quot;repositoryName&quot;: &quot;maven-releases&quot;,
+    &quot;minimumRetained&quot;: &quot;2&quot;,
+    &quot;snapshotRetentionDays&quot;: &quot;14&quot;
+  }
+}
+</code></pre>
+
+<h3>🗑️ Delete Unused Components</h3>
+
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Delete Unused Components&quot;,
+  &quot;type&quot;: &quot;cleanup&quot;,
+  &quot;message&quot;: &quot;Delete orphaned components&quot;,
+  &quot;schedule&quot;: {
+    &quot;type&quot;: &quot;weekly&quot;,
+    &quot;dayOfWeek&quot;: &quot;Saturday&quot;,
+    &quot;time&quot;: &quot;01:30&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;properties&quot;: {
+    &quot;lastBlobUpdatedDays&quot;: &quot;30&quot;
+  }
+}
+</code></pre>
+
+<h3>🧼 Compact Blob Store</h3>
+
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Compact Default Blob Store&quot;,
+  &quot;type&quot;: &quot;blobstore.compact&quot;,
+  &quot;message&quot;: &quot;GC cleanup on default blob store&quot;,
+  &quot;schedule&quot;: {
+    &quot;type&quot;: &quot;weekly&quot;,
+    &quot;dayOfWeek&quot;: &quot;Sunday&quot;,
+    &quot;time&quot;: &quot;02:00&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;properties&quot;: {
+    &quot;blobstoreName&quot;: &quot;default&quot;
+  }
+}
+</code></pre>
+
+<p>You can repeat this template for each blob store.</p>
+
+<hr>
+
+<h2>🧠 Pro Tips</h2>
+
+<ul>
+<li>If using <code>content selectors</code> and cleanup policies, you can attach them to automate deletion of old/unused artifacts per repo.</li>
+<li>For large systems: stagger tasks to avoid I/O spikes.</li>
+<li>Enable task logs under <code>Support &gt; Logging</code> if needed.</li>
+</ul>
+
+<h1>Generate Tasks using API</h1>
+
+<p><strong>shell script</strong> to automate the creation of maintenance tasks in <strong>Sonatype Nexus Repository Manager</strong>
+using the <strong>REST API</strong>. It authenticates with basic auth, sends task definitions as JSON, and checks for successful responses.</p>
+
+<hr>
+
+<h2>📜 Script: <code>nexus-maintenance-tasks.sh</code></h2>
+
+<pre><code class="language-bash">#!/bin/bash
+set -euo pipefail
+
+# === CONFIGURATION ===
+NEXUS_URL=&quot;http://localhost:8081&quot;
+NEXUS_USER=&quot;admin&quot;
+NEXUS_PASS=&quot;yourpassword&quot;  # Replace with a secure method in production
+
+# === AUTH HEADER ===
+AUTH=$(echo -n &quot;${NEXUS_USER}:${NEXUS_PASS}&quot; | base64)
+
+# === POST FUNCTION ===
+post_task() {
+  local task_name=&quot;$1&quot;
+  local json_payload=&quot;$2&quot;
+  echo &quot;[INFO] Creating task: ${task_name}&quot;
+  curl -s -o /dev/null -w &quot;%{http_code}&quot; -X POST &quot;${NEXUS_URL}/service/rest/v1/tasks&quot; \
+    -H &quot;Authorization: Basic ${AUTH}&quot; \
+    -H &quot;Content-Type: application/json&quot; \
+    -d &quot;${json_payload}&quot;
+}
+
+# === TASK 1: Remove Snapshots ===
+SNAPSHOT_TASK=$(cat &lt;&lt;EOF
+{
+  &quot;name&quot;: &quot;Remove Old Maven Snapshots&quot;,
+  &quot;type&quot;: &quot;removeSnapshots&quot;,
+  &quot;message&quot;: &quot;Remove maven snapshots older than 14 days&quot;,
+  &quot;schedule&quot;: {
+    &quot;type&quot;: &quot;daily&quot;,
+    &quot;time&quot;: &quot;01:00&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;properties&quot;: {
+    &quot;repositoryName&quot;: &quot;maven-releases&quot;,
+    &quot;minimumRetained&quot;: &quot;2&quot;,
+    &quot;snapshotRetentionDays&quot;: &quot;14&quot;
+  }
+}
+EOF
+)
+post_task &quot;Remove Old Maven Snapshots&quot; &quot;$SNAPSHOT_TASK&quot;
+
+# === TASK 2: Delete Unused Components ===
+DELETE_UNUSED_TASK=$(cat &lt;&lt;EOF
+{
+  &quot;name&quot;: &quot;Delete Unused Components&quot;,
+  &quot;type&quot;: &quot;cleanup&quot;,
+  &quot;message&quot;: &quot;Delete orphaned components&quot;,
+  &quot;schedule&quot;: {
+    &quot;type&quot;: &quot;weekly&quot;,
+    &quot;dayOfWeek&quot;: &quot;Saturday&quot;,
+    &quot;time&quot;: &quot;01:30&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;properties&quot;: {
+    &quot;lastBlobUpdatedDays&quot;: &quot;30&quot;
+  }
+}
+EOF
+)
+post_task &quot;Delete Unused Components&quot; &quot;$DELETE_UNUSED_TASK&quot;
+
+# === TASK 3: Compact Blob Store ===
+COMPACT_BLOB_TASK=$(cat &lt;&lt;EOF
+{
+  &quot;name&quot;: &quot;Compact Default Blob Store&quot;,
+  &quot;type&quot;: &quot;blobstore.compact&quot;,
+  &quot;message&quot;: &quot;GC cleanup on default blob store&quot;,
+  &quot;schedule&quot;: {
+    &quot;type&quot;: &quot;weekly&quot;,
+    &quot;dayOfWeek&quot;: &quot;Sunday&quot;,
+    &quot;time&quot;: &quot;02:00&quot;
+  },
+  &quot;enabled&quot;: true,
+  &quot;properties&quot;: {
+    &quot;blobstoreName&quot;: &quot;default&quot;
+  }
+}
+EOF
+)
+post_task &quot;Compact Default Blob Store&quot; &quot;$COMPACT_BLOB_TASK&quot;
+
+echo &quot;[DONE] All tasks created.&quot;
+</code></pre>
+
+<hr>
+
+<h2>🔧 Usage</h2>
+
+<ol>
+<li><p>Save the script:</p>
+
+<pre><code class="language-bash">nano nexus-maintenance-tasks.sh
+</code></pre></li>
+
+<li><p>Make executable:</p>
+
+<pre><code class="language-bash">chmod +x nexus-maintenance-tasks.sh
+</code></pre></li>
+
+<li><p>Run it:</p>
+
+<pre><code class="language-bash">./nexus-maintenance-tasks.sh
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h2>🧠 Notes</h2>
+
+<ul>
+<li>You can also store <code>NEXUS_PASS</code> securely using <code>read -s</code> or pulling from a secret file.</li>
+<li>Change <code>repositoryName</code> to <code>&quot;*&quot;</code> if you want to apply to all Maven repos (if supported in your version).</li>
+<li>Confirm with <code>GET /service/rest/v1/tasks</code> to see created tasks.</li>
+</ul>
+
+<hr>
+
+<p>Want a version that <strong>reads tasks from JSON files</strong> in a directory instead, for version-controlled task definitions?</p>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
