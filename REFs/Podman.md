@@ -2,6 +2,12 @@
 
 >In rootless Podman, the container’s root user is actually a non-root user on the host, mapped via user namespaces.
 
+## Storage Issues
+
+```bash
+podman system reset
+rm -rf ~/.local/share/containers
+```
 ### Namespace and UID
 
 Mappings in Rootless Podman:
@@ -9,7 +15,7 @@ Mappings in Rootless Podman:
 - Automatic Namespace Setup: When you run a rootless container with Podman, it automatically sets up the user namespace for that container. Podman uses entries in__ `/etc/subuid` and `/etc/subgid` __to map UIDs and GIDs from the container to the host.__ This means that the __root user inside the container__ (UID `0`) is __mapped to a non-root user on the host__ (typically starting at a high UID, like `100000`, __from host user’s `subuid`/`subgid` range__). 
     - `myuser:100000:65536` : the root user (UID 0) in the container is mapped to UID 100000 on the host, and this mapping extends for `65536` UIDs (so UID `1` inside the container maps to `100001` on the host, and so on).
 
-__Create__ `subuid`/`subgid` range __per user__
+~~__Create__ `subuid`/`subgid` range __per user__~~ This should be handles automatically by Podman, except for users create prior to Podman install. Also, see additional configuration if users are non-local, as with AD users.
 
 ```bash
 sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
@@ -17,6 +23,66 @@ sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
 - This allocates `65536` subordinate UIDs and GIDs to `auser`, starting from `100000`.
     - A more sophisticated method is required if multiple users are to run podman rootless, 
     because each user must have their own unique range of `subuid`/`subgid`.
+
+
+__Persist per-user Namespaces__ : `kernel.unprivileged_userns_clone=1`
+
+```bash
+# Add entry to sysctl via drop-in method
+echo 'kernel.unprivileged_userns_clone=1' |sudo tee /etc/sysctl.d/00-local-userns.conf
+sudo service procps restart
+# Load the new settings without requiring a restart:
+sudo sysctl -p /etc/sysctl.d/00-local-userns.conf
+```
+
+__Configure SSSD for Automatic SubUID/GID Assignment__
+
+```bash
+sudo dnf install podman sssd-ad oddjob-mkhomedir
+
+```
+@ `/etc/sssd/sssd.conf`
+```ini
+[domain/your.domain]
+...
+auto_private_groups = True
+subdomains_provider = ad
+override_homedir = /home/%d/%u
+ad_gpo_map_interactive = +podman-user
+```
+
+```bash
+sudo dnf install shadow-utils-subid-sssd
+sudo authselect enable-feature with-subid
+sudo systemctl restart sssd
+```
+__Enable Lingering for AD Users__
+
+```bash
+sudo tee /etc/pam.d/system-login <<'EOF'
+#%PAM-1.0
+...
+session optional pam_exec.so /usr/bin/loginctl enable-linger
+EOF
+
+# Verfify linger on next login
+loginctl show-user $USER | grep Linger
+```
+
+SELinux Considerations
+
+```bash
+sudo setsebool -P container_manage_cgroup true
+sudo semanage boolean --modify --on container_use_devices
+sudo restorecon -R -v /home # If permission errors
+```
+
+Verfiy on per-user login
+
+```bash
+grep $USER /etc/subuid
+grep $USER /etc/subgid
+```
 
 ### `Dockerfile` mods
 

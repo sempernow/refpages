@@ -315,32 +315,35 @@ OpenShift **requires specific firewall rules** for proper operation, but whether
 ---
 
 ### **2. User-Provisioned Infrastructure (UPI) – Bare Metal, VMware, On-Prem**
-   - **You must manually configure firewall rules** before installation.
-   - **Critical ports include**:
-     | **Component**       | **Port(s)**       | **Direction** | **Purpose**                     |
-     |---------------------|-------------------|---------------|----------------------------------|
-     | **API Server**      | TCP/6443          | Inbound       | Kubernetes API access            |
-     | **Machine Config**  | TCP/22623         | Inbound       | Node provisioning (masters only) |
-     | **ETCD**           | TCP/2379-2380     | Internal      | ETCD cluster communication       |
-     | **Kubelet**        | TCP/10250         | Internal      | Metrics & pod communication      |
-     | **Ingress (Router)** | TCP/80, TCP/443   | Inbound       | Application traffic              |
-     | **NodePort Services** | TCP/30000-32767 | Inbound       | Optional for external services   |
-     | **Internal Pod Network** | VXLAN (UDP/4789), Geneve (UDP/6081) | Internal | SDN (OpenShift SDN/OVN-Kubernetes) |
-     | **DNS**            | UDP/53            | Internal      | CoreDNS resolution               |
 
-   - **Example for `firewalld` (RHEL/CentOS)**:
-     ```bash
-     # Masters and Workers
-     firewall-cmd --permanent --add-port=6443/tcp       # API
-     firewall-cmd --permanent --add-port=10250/tcp      # Kubelet
-     firewall-cmd --permanent --add-port=4789/udp       # OpenShift SDN (VXLAN)
-     firewall-cmd --permanent --add-port=6081/udp       # OVN-Kubernetes (Geneve)
-     firewall-cmd --permanent --add-port=30000-32767/tcp # NodePort range
-     # Masters only
-     firewall-cmd --permanent --add-port=2379-2380/tcp  # ETCD
-     firewall-cmd --permanent --add-port=22623/tcp      # Machine Config
-     firewall-cmd --reload
-     ```
+**You must manually configure firewall rules** before installation.
+
+
+| **Component**       | **Port(s)**       | **Direction** | **Purpose**                     |
+|---------------------|-------------------|---------------|----------------------------------|
+| **API Server**      | TCP/6443          | Inbound       | Kubernetes API access            |
+| **Machine Config**  | TCP/22623         | Inbound       | Node provisioning (masters only) |
+| **ETCD**           | TCP/2379-2380     | Internal      | ETCD cluster communication       |
+| **Kubelet**        | TCP/10250         | Internal      | Metrics & pod communication      |
+| **Ingress (Router)** | TCP/80, TCP/443   | Inbound       | Application traffic              |
+| **NodePort Services** | TCP/30000-32767 | Inbound       | Optional for external services   |
+| **Internal Pod Network** | VXLAN (UDP/4789), Geneve (UDP/6081) | Internal | SDN (OpenShift SDN/OVN-Kubernetes) |
+| **DNS**            | UDP/53            | Internal      | CoreDNS resolution               |
+
+**Example for `firewalld` (RHEL/CentOS)**:
+
+```bash
+# Masters and Workers
+firewall-cmd --permanent --add-port=6443/tcp       # API
+firewall-cmd --permanent --add-port=10250/tcp      # Kubelet
+firewall-cmd --permanent --add-port=4789/udp       # OpenShift SDN (VXLAN)
+firewall-cmd --permanent --add-port=6081/udp       # OVN-Kubernetes (Geneve)
+firewall-cmd --permanent --add-port=30000-32767/tcp # NodePort range
+# Masters only
+firewall-cmd --permanent --add-port=2379-2380/tcp  # ETCD
+firewall-cmd --permanent --add-port=22623/tcp      # Machine Config
+firewall-cmd --reload
+```
 
 ---
 
@@ -549,10 +552,11 @@ oc debug node/<node>  # Inspect the underlying OS
 ---
 
 ### **Summary Table**  
-| **Node Type**       | **Recommended OS** | **Alternative OS** |  
-|---------------------|--------------------|--------------------|  
-| **Control Plane**   | RHCOS              | None               |  
-| **Workers**        | RHCOS (default)    | RHEL 8/9 (if needed) |  
+
+| **Node Type**       | **Recommended OS** | **Alternative OS** ---|
+|---------------------|--------------------|-----------------------|
+| **Control Plane**   | RHCOS              | None                |
+| **Workers**         | RHCOS (default)    | RHEL 8/9 (if needed) |
 
 For production, **stick with RHCOS unless you have a compelling reason to use RHEL workers**.  
 
