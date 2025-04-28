@@ -195,6 +195,10 @@ sudo systemctl restart docker
             |xargs -IX /bin/bash -c \
                 'docker tag $1 $0/$1 && docker push $0/$1' $registry X
 
+# K8s-API Client : secure kubectl container
+    docker run -it --rm \
+        -v ~/.kube/config:/home/nonroot/.kube/config \
+        cgr.dev/chainguard/kubectl:latest get pods
 # Docker in Docker (DinD) : https://hub.docker.com/_/docker
     # Use to build images in a (containerized) CI pipeline, such as at Jenkins, GitLab, …
     docker run -it -v /var/run/docker.sock:/var/run/docker.sock docker

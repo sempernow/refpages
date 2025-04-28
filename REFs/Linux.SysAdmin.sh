@@ -525,21 +525,33 @@ exit 0
             # - The visudo utility is a safety net against user lockout due to wrong syntax,
             #   yet it does *not* protect context-specific errors.
             #   Such errors are uncaught, and fail to apply without hint as to why.
+
         # ALLOW per file(s) of sudoers statements at /etc/sudoers.d/ 
             sudo visudo /etc/sudoers.d/$USER  # Create/Edit.
             # - All files under /etc/sudoers.d/ are invoked automatically.
             # - Changes take effect immediately.
+
             # ALLOW current user to run ALL COMMANDS as sudo SANS PASSWORD:
                 echo "$USER ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
                 # OR, by UID
                 echo "#$(id -u) ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$USER
+
             # GROUP-SCOPED declarations : group 'ops'
                 g=ops
-                # Full access
-                echo "%$g ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$g
-                # Limited access
+
+                # FULL access
+                echo "%$g ALL=(ALL) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$g   # ALLOWS impersonate (run as) other users
+                # So, `sudo -u postgres psql` is allowed
+                echo "%$g ALL=(root) NOPASSWD: ALL" |sudo tee /etc/sudoers.d/$g  # BLOCKS impersonation
+                # So, `sudo -u postgres psql` is *not* allowed
+
+                # LIMITED access
                 sudo visudo /etc/sudoers/$g
                 ## Allow group 'ops' members to run declared (CSV) list of (sub)commands/flags:
+                # Cmnd_Alias OPERATOR_CMDS = /usr/bin/systemctl start *, /usr/bin/systemctl stop *, ...
+                # Cmnd_Alias LOG_CMDS = /usr/bin/journalctl *, /bin/cat /var/log/*, ...
+                # %group-x ALL=(root) OPERATOR_CMDS, LOG_CMDS
+
                 # Cmnd_Alias  GROUP_OPS_CMDS =  /usr/bin/dnf update, \
                 #                         /usr/bin/systemctl status *, \
                 #                         /usr/bin/systemctl list-unit-files, \
@@ -549,14 +561,16 @@ exit 0
                 #                         /usr/bin/firewalld --get-services, \
                 #                         /usr/bin/firewalld --permanent --info-service=*
                 ##...Allow sans password:
-                # %ops ALL=(ALL) NOPASSWD: GROUP_OPS_CMDS
-                ## Modify sudo PATH (secure_path) for group 'ops':
+                # %ops ALL=(root) NOPASSWD: GROUP_OPS_CMDS
+
+                ## Modify sudo PATH (secure_path) for group 'ops' to include /usr/local/bin :
                 # Defaults:%ops secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
                 ## Similar, but password required (per timestamp_timeout setting):
                 # %ops ALL=(ALL) GROUP_OPS_CMDS
                 ## Similar, but group declared by its GID
                 # %#2222 ALL=(ALL) GROUP_OPS_CMDS
-            # Set timeout for sudo password entry
+
+1            # Set TTL on sudo PASSWORD ENTRY
                 # Defaults timestamp_timeout=-1 # Once per terminal session
                 # Defaults timestamp_timeout=60 # 60 minutes 
                 ## Scoped to user

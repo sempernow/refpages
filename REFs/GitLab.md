@@ -1,36 +1,5 @@
 # GitLab | [Docs](https://docs.gitlab.com/runner/executors/kubernetes/)
 
-## CI/CD Pipelines 
-
-Reference: "GitLab CICD Intermediate" [2023]
-
-- GitLab CE Server (+Web GUI) | Linode VM @ 4 CPU / 8 Gi Memory
-    - GitLab Runner (Golang) | Linode VM @ 2 CPU / 4Gi Memory
-      See "3. Install GitLab Runner on Linux"
-- [Install GitLab Runner | Linux](https://docs.gitlab.com/runner/install/linux-repository.html)
-    - [GitLab Runner Operator](https://operatorhub.io/operator/gitlab-runner-operator) 
-    The GitLab Runner operator manages the lifecycle of GitLab Runner in Kubernetes or Openshift clusters. The operator aims to automate the tasks needed to run your CI/CD jobs in your container orchestration platform.
-    - [Use the agent to install GitLab Runner](https://docs.gitlab.com/runner/install/kubernetes-agent.html)
-        - [Connecting a Kubernetes cluster with GitLab](https://docs.gitlab.com/ee/user/clusters/agent/) 
-          Connect your K8s cluster with GitLab to deploy, manage, and monitor your cloud-native solutions. To connect a Kubernetes cluster to GitLab, you must first [install an agent in the cluster](https://docs.gitlab.com/ee/user/clusters/agent/install/index.html).
-    - May have several, each scoped to a team, each available to that team only.
-        - Must register and configure Runners with GitLab via Web UI ([ChatGPT](https://chatgpt.com/share/670ad40b-24d4-8009-8d08-49c3e51b8cf2)). Use the "Register an Instance Runner" (Button)
-    - Executor : Where the pipelines run; several options: 
-        - Kubernetes - Use the Kubernetes executor to use Kubernetes clusters for your builds. 
-          The executor calls the Kubernetes cluster API and creates a pod for each GitLab CI job,
-          dividing the build into multiple steps:
-            1. Prepare: Create Pod having containers required for the build and services to run.
-            1. Pre-build: Clone, restore cache, and download artifacts from previous stages. 
-                This step __runs on a special container__ as part of the pod.
-            1. Build: User build.
-            1. Post-build: Create cache, __upload artifacts to GitLab__. 
-                This step also __uses the special container__ as part of the pod. 
-        - Docker - runs pipeline in container
-        - Shell - runs pipline at shell of host OS.
-- Metrics : 
-    - [InfluxDB](https://www.influxdata.com/products/influxdb/) All-in-One solution : Collect/Proccess/Graph
-        - [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) Agent at each Runner
-
 ## [Self-hosted GitLab EE|CE](https://about.gitlab.com/install/)
 
 - [Reference Architectures](https://docs.gitlab.com/ee/administration/reference_architectures/index.html)
@@ -205,6 +174,40 @@ spec:
 
 [Steps after installing GitLab](https://docs.gitlab.com/ee/install/next_steps.html)
 
+
+## [GitLab Agent for Kubernetes](https://chatgpt.com/share/680b9e25-1020-8009-83d4-12758edf02b1)
+
+## CI/CD Pipelines 
+
+Reference: "GitLab CICD Intermediate" [2023]
+
+- GitLab CE Server (+Web GUI) | Linode VM @ 4 CPU / 8 Gi Memory
+    - GitLab Runner (Golang) | Linode VM @ 2 CPU / 4Gi Memory
+      See "3. Install GitLab Runner on Linux"
+- [Install GitLab Runner | Linux](https://docs.gitlab.com/runner/install/linux-repository.html)
+    - [GitLab Runner Operator](https://operatorhub.io/operator/gitlab-runner-operator) 
+    The GitLab Runner operator manages the lifecycle of GitLab Runner in Kubernetes or Openshift clusters. The operator aims to automate the tasks needed to run your CI/CD jobs in your container orchestration platform.
+    - [Use the agent to install GitLab Runner](https://docs.gitlab.com/runner/install/kubernetes-agent.html)
+        - [Connecting a Kubernetes cluster with GitLab](https://docs.gitlab.com/ee/user/clusters/agent/) 
+          Connect your K8s cluster with GitLab to deploy, manage, and monitor your cloud-native solutions. To connect a Kubernetes cluster to GitLab, you must first [install an agent in the cluster](https://docs.gitlab.com/ee/user/clusters/agent/install/index.html).
+    - May have several, each scoped to a team, each available to that team only.
+        - Must register and configure Runners with GitLab via Web UI ([ChatGPT](https://chatgpt.com/share/670ad40b-24d4-8009-8d08-49c3e51b8cf2)). Use the "Register an Instance Runner" (Button)
+    - Executor : Where the pipelines run; several options: 
+        - Kubernetes - Use the Kubernetes executor to use Kubernetes clusters for your builds. 
+          The executor calls the Kubernetes cluster API and creates a pod for each GitLab CI job,
+          dividing the build into multiple steps:
+            1. Prepare: Create Pod having containers required for the build and services to run.
+            1. Pre-build: Clone, restore cache, and download artifacts from previous stages. 
+                This step __runs on a special container__ as part of the pod.
+            1. Build: User build.
+            1. Post-build: Create cache, __upload artifacts to GitLab__. 
+                This step also __uses the special container__ as part of the pod. 
+        - Docker - runs pipeline in container
+        - Shell - runs pipline at shell of host OS.
+- Metrics : 
+    - [InfluxDB](https://www.influxdata.com/products/influxdb/) All-in-One solution : Collect/Proccess/Graph
+        - [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) Agent at each Runner
+
 ## [GitLab `git` workflow](https://gitlab.com/sempernow/gitlab-workflow "sempernow/gitlab-workflow")
 
 ### Initialize a Project
@@ -220,13 +223,13 @@ git config --list
 prj=prj
 ## Set network params for SSH mode
 proto='git@'
-server='gitlab.com' # Domain name of the Git-server host
+host='gitlab.com' # Domain name of the Git-server host
 path="$(git config user.account)/$prj"
-keypath=~/.ssh/${server%.*}_$(git config user.account)
+keypath=~/.ssh/${host%.*}_$(git config user.account)
 ## SSH login sans creds prompts
-ssh -T -i $keypath git@${server}
+ssh -T -i $keypath git@${host}
 ## Initialize : git init
-git clone git@${server}:${path}.git && pushd $prj
+git clone git@${host}:${path}.git && pushd $prj
 ## Create/commit  main bran
 git switch --create main || git checkout main || git checkout -b main 
 touch README.md
@@ -240,7 +243,7 @@ git push --set-upstream origin main
 # git push -u origin main # initial
 # git push                # subsequent
 ```
-- The project (URI) must already exist at the Git-server (`$server`).
+- The project (URI) must already exist at the Git server (`$host`).
 
 ### Swap Modes (Protocols)
 
@@ -249,8 +252,8 @@ and for SSH using either `'git@'` or `'ssh://'`.
 
 ```bash
 proto='https://'
-git remote set-url origin ${proto}${server}:${path}.git
-git remote set-url origin git@gitlab.com:/sempernow/prj-abc.git # Example
+git remote set-url origin ${proto}${host}:${path}.git
+git remote set-url origin git@gitlab.com:/acct-y/prj-y.git # Example
 # Verify 
 git remote show origin
 ```
@@ -261,7 +264,7 @@ Setup secure comms enabling login sans password.
 
 ```bash
 # Generate key pair
-ssh-keygen [-t ed25519|rsa] -C "$email_addr" -f $keypath
+ssh-keygen [-t ed25519|ecdsa|rsa] -C "$email_addr" -f $keypath # ~/.ssh/gitlab
 
 # Fingerprint (fpr)
 # Show fpr of any key (public/private have common fpr)
