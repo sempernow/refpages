@@ -28,7 +28,7 @@
 with Azure services enabling hybrid scenarios maximizing existing investments.
 Create cloud native and modernize traditional apps using containers and micro-services.</p>
 
-<p>Installation options (2016/2019):</p>
+<h3>Installation options (2016/2019):</h3>
 
 <ul>
 <li><strong>Server Core</strong> (headless):<br>
@@ -40,7 +40,185 @@ and supports all server roles but <strong>does not include a local graphical use
 This is the complete installation and includes a full GUI for customers who prefer this option.</li>
 </ul>
 
-<p>Roles/Features</p>
+<h3>Three Versions</h3>
+
+<ul>
+<li><strong>Datacenter</strong> : Virtual Machine for Cloud environments
+
+<ul>
+<li><a href="https://1337x.to/torrent/4212270/Windows-Server-2019-DataCenter-3in1-ESD-en-US-DEC-2019-Gen2/">https://1337x.to/torrent/4212270/Windows-Server-2019-DataCenter-3in1-ESD-en-US-DEC-2019-Gen2/</a></li>
+</ul></li>
+<li><strong>Standard</strong> : Physical server or minimally-virtualized environments</li>
+<li><strong>Essentials</strong> : Small biz up to 25 users and 50 devices</li>
+</ul>
+
+<p>Requirements:</p>
+
+<ul>
+<li>CPU: 1 1.4 GHz</li>
+<li>RAM: 512 MB</li>
+<li>Disk: 32 GB</li>
+</ul>
+
+<h3><a href="https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview">Windows Admin Center</a> (WAC)</h3>
+
+<p>A locally-deployed, <strong>browser-based management tool</strong> set built to manage Windows Clients, Servers, and Clusters without needing to connect to the cloud. Windows Admin Center offers full control over all aspects of Windows-based server infrastructure and is <strong>particularly useful for managing on-prem servers</strong>.</p>
+
+<p>Windows Admin Center (WAC) is <strong>not a built-in feature</strong> of Windows Server 2019; it <strong>requires its own separate installation</strong>.
+While it is designed to manage Windows Server environments, WAC itself is a web-based management tool that must be downloaded and installed manually.</p>
+
+<p>Once installed, you can <strong>use WAC to manage multiple Windows Servers, Hyper-V hosts, clusters, and even Windows 10 and 11 PCs</strong> from a single web-based interface. It simplifies server management tasks by centralizing the management tools and offering a modern, unified experience.
+You can install WAC on a Windows Server or Windows client and access it via a web browser.
+It can also be deployed in a high-availability setup in larger environments.</p>
+
+<h2>Realm v. Domain v. Forest v. Tree</h2>
+
+<h3>🔹 <strong>Active Directory Terminology</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Domain</strong></td>
+<td>A logical grouping of objects (users, computers, etc.) under a single database and namespace (e.g., <code>example.com</code>).</td>
+</tr>
+
+<tr>
+<td><strong>Forest</strong></td>
+<td>A collection of one or more domains that share a common schema and global catalog, with implicit trust.</td>
+</tr>
+
+<tr>
+<td><strong>Tree</strong></td>
+<td>A collection of domains in a <strong>contiguous namespace</strong> within a forest.</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>Domains in a forest can trust each other automatically.</li>
+<li>A forest is the <strong>security boundary</strong>.</li>
+</ul>
+
+<hr>
+
+<h3>🔹 <strong>Kerberos Terminology</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Realm</strong></td>
+<td>A Kerberos concept, representing an authentication boundary—usually maps 1:1 to an AD domain and written in <strong>ALL CAPS</strong> (e.g., <code>EXAMPLE.COM</code>).</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>In practice, <strong>AD Domain = Kerberos Realm</strong> (case-insensitive match, but usually uppercase in Kerberos tools).</li>
+<li>When using Linux/SSSD/Kerberos to integrate with AD, you configure a <code>realm</code> like <code>EXAMPLE.COM</code>, which corresponds to the AD domain <code>example.com</code>.</li>
+</ul>
+
+<hr>
+
+<h3>🧭 Where They Intersect</h3>
+
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Found In</th>
+<th>Example</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Domain</strong></td>
+<td>AD</td>
+<td><code>ad.lan</code></td>
+</tr>
+
+<tr>
+<td><strong>Forest</strong></td>
+<td>AD</td>
+<td><code>ad.lan</code>, <code>corp.ad.lan</code> → part of the same forest</td>
+</tr>
+
+<tr>
+<td><strong>Realm</strong></td>
+<td>Kerberos</td>
+<td><code>AD.LAN</code> (used in krb5.conf, SSSD, etc.)</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><p><strong>In Linux config (e.g., <code>/etc/krb5.conf</code>, SSSD)</strong>:</p>
+
+<pre><code class="language-ini">[realms]
+AD.LAN = {
+  kdc = dc1.ad.lan
+  admin_server = dc1.ad.lan
+}
+</code></pre>
+
+<p>Here, the Kerberos <code>REALM</code> refers to the AD <strong>domain</strong>.</p></li>
+</ul>
+
+<hr>
+
+<h3>🧩 Summary</h3>
+
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Role</th>
+<th>Example</th>
+<th>Scope</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Domain</td>
+<td>Logical container</td>
+<td><code>example.com</code></td>
+<td>One namespace</td>
+</tr>
+
+<tr>
+<td>Forest</td>
+<td>Trust boundary</td>
+<td>multiple domains</td>
+<td>Entire AD</td>
+</tr>
+
+<tr>
+<td>Realm</td>
+<td>Auth boundary</td>
+<td><code>EXAMPLE.COM</code></td>
+<td>Often = Domain</td>
+</tr>
+</tbody>
+</table>
+
+<p>Let me know if you want to map this to a Linux config or see how realm joins work.</p>
+
+<h2>Roles/Features</h2>
 
 <p>Selectable by checkbox at the AD Installation Wizard of the Server Manager GUI</p>
 
@@ -106,43 +284,11 @@ This option is the most secure Kerberos option.</li>
 </ul></li>
 </ul>
 
-<p>Three Versions</p>
+<h2>Hyper-V Prep</h2>
 
-<ul>
-<li><strong>Datacenter</strong> : Virtual Machine for Cloud environments
+<p>Networking : Connectivity between WSL2 &amp; Hyper-V VMs</p>
 
-<ul>
-<li><a href="https://1337x.to/torrent/4212270/Windows-Server-2019-DataCenter-3in1-ESD-en-US-DEC-2019-Gen2/">https://1337x.to/torrent/4212270/Windows-Server-2019-DataCenter-3in1-ESD-en-US-DEC-2019-Gen2/</a></li>
-</ul></li>
-<li><strong>Standard</strong> : Physical server or minimally-virtualized environments</li>
-<li><strong>Essentials</strong> : Small biz up to 25 users and 50 devices</li>
-</ul>
-
-<p>Requirements:</p>
-
-<ul>
-<li>CPU: 1 1.4 GHz</li>
-<li>RAM: 512 MB</li>
-<li>Disk: 32 GB</li>
-</ul>
-
-<h3><a href="https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview">Windows Admin Center</a> (WAC)</h3>
-
-<p>A locally-deployed, browser-based management tool set built to manage Windows Clients, Servers, and Clusters without needing to connect to the cloud. Windows Admin Center offers full control over all aspects of Windows-based server infrastructure and is <strong>particularly useful for managing on-prem servers</strong>.</p>
-
-<p>Windows Admin Center (WAC) is not a built-in feature of Windows Server 2019; it requires its own separate installation. While it is designed to manage Windows Server environments, WAC itself is a web-based management tool that must be downloaded and installed manually.</p>
-
-<p>Once installed, you can use Windows Admin Center to manage multiple Windows Servers (including Windows Server 2019), Hyper-V hosts, clusters, and even Windows 10 and 11 PCs from a single web-based interface. It simplifies server management tasks by centralizing the management tools and offering a modern, unified experience.</p>
-
-<p>You can install Windows Admin Center on a Windows Server or Windows client and access it via a web browser. It can also be deployed in a high-availability setup in larger environments.</p>
-
-<h2>Preliminaries @ Hyper-V</h2>
-
-<p>Networking : Connectivity btwn WSL2 &amp; Hyper-V VMs</p>
-
-<h3><a href="https://chatgpt.com/share/67391a83-bdbc-8009-99fb-d69281826092" title="ChatGPT">Overview of best options</a></h3>
-
-<h3>The NAT subnet option</h3>
+<h3>The NAT subnet option : <a href="https://chatgpt.com/share/67391a83-bdbc-8009-99fb-d69281826092" title="ChatGPT">Overview of best options</a></h3>
 
 <p>@ <a href="network-nat.ps1"><code>network-nat.ps1</code></a></p>
 
@@ -320,7 +466,7 @@ See below: &quot;DNS Options&quot; WARNING under &quot;Domain Controller Options
 </ul></li>
 </ol>
 
-<h2>Activate @ &quot;Not Activated&quot;</h2>
+<h3>Activate @ &quot;Not Activated&quot;</h3>
 
 <p>How to <strong>Activate via KMS</strong> using <a href="https://github.com/massgravel/Microsoft-Activation-Scripts" title="GitHub.com">Microsoft Activation Scripts (MAS)</a> method at a PowerShell terminal:</p>
 
@@ -747,10 +893,10 @@ Rather it's just a default container for user accounts and groups created during
 <li><strong>Group</strong> name
 
 <ul>
-<li><code>linux-users</code> : Standard access</li>
-<li><code>linux-admins</code> : Host administrators</li>
-<li><code>linux-sudoers</code> : Users granted sudo access</li>
-<li><code>linux-operators</code> : Limited management of Linux hosts/services.</li>
+<li><code>[ad-]linux-users</code> : Standard access</li>
+<li><code>[ad-]linux-admins</code> : Host administrators</li>
+<li><code>[ad-]linux-sudoers</code> : Users granted sudo access</li>
+<li><code>[ad-]linux-operators</code> : Limited management of Linux hosts/services.</li>
 </ul></li>
 <li><strong>User</strong> name
 
@@ -901,7 +1047,11 @@ Enter those of an <strong>ADDS admin</strong> user:
 </blockquote>
 
 <ul>
-<li><code>sssd</code> (System Security Services Daemon (SSSD)) : For identity and authentication.</li>
+<li><code>sssd</code> (System Security Services Daemon (SSSD)) : For identity and authentication.
+
+<ul>
+<li>Manages Kerberos, yet more granular control may be required. See <code>/etc/krb5.conf</code></li>
+</ul></li>
 <li><code>realmd</code> : To detect available domains and configure the underlying systemd services.</li>
 </ul>
 
@@ -936,10 +1086,15 @@ systemctl is-active firewalld &amp;&amp;
     sudo firewall-cmd --reload
 </code></pre>
 
-<h3>Status (<code>discover</code>)</h3>
+<p>Also required for NFS to configure Kerberos security via AD:</p>
+
+<pre><code class="language-bash">dnf install -y krb5-workstation nfs-utils rpcbind
+</code></pre>
+
+<p>@ <strong><code>realm</code></strong> prior to join:</p>
 
 <pre><code class="language-bash">domain=lime.lan
-sudo hostnamectl set-hostname $(hostname).$domain
+#sudo hostnamectl set-hostname $(hostname).$domain
 
 dc=dc1.$domain
 realm discover $dc
@@ -961,11 +1116,13 @@ realm discover $dc
 
 <ul>
 <li>Note: <code>configured: no</code></li>
+<li>Note hostname should not be the host's FQDN,<br>
+but rather <code>FQDN=$(hostname).$domain</code></li>
 </ul>
 
 <h3>Join</h3>
 
-<p>Requires an ADDS admin-user creds</p>
+<p><strong>Requires an AD DS Administrator</strong> credentials</p>
 
 <pre><code class="language-bash">u1@a0 [15:39:28] [1] [#0] ~
 ☩ sudo realm join --user=Administrator $dc
@@ -975,6 +1132,109 @@ u1@a0 [15:39:51] [1] [#0] ~
 ☩
 </code></pre>
 
+<h4>Leave/Join (AD) Domain</h4>
+
+<p>Changes at AD to <strong>Service Principal Names</strong> (SPNs),
+which may be required, e.g.,
+<strong>adding an NFS server</strong> that uses Kerberos,
+are best <strong>handled by leaving and then rejoining</strong> the domain.
+<strong>Else the new SPNs are not recognized</strong> at RHEL hosts,
+as revealed at &quot;<code>klist -k /etc/krb.keytab</code>&quot;.</p>
+
+<p>There are other methods of adding the new entries to <code>*.keytab</code>,
+using PowerShell (<code>ktpass</code>) at AD server (below), but they are tedious,
+so use only if necessary.</p>
+
+<p>@ <code>u1@a0</code></p>
+
+<pre><code class="language-bash">domain=lime.lan
+dc=dc1.$domain
+realm discover $dc
+realm list
+sudo realm leave $domain
+sudo realm join --user=Administrator $dc
+#&gt; Password for u1:
+#&gt; Password for Administrator:
+realm discover $dc
+</code></pre>
+
+<pre><code class="language-bash">☩ realm list
+lime.lan
+  type: kerberos
+  realm-name: LIME.LAN
+  domain-name: lime.lan
+  configured: kerberos-member
+  server-software: active-directory
+  client-software: sssd
+  required-package: oddjob
+  required-package: oddjob-mkhomedir
+  required-package: sssd
+  required-package: adcli
+  required-package: samba-common-tools
+  login-formats: %U@lime.lan
+  login-policy: allow-realm-logins
+</code></pre>
+
+<p>Yet doing so <strong>resets all downstream configurations</strong>,
+e.g., <code>/etc/sssd/sssd.conf</code></p>
+
+<h4>Recreate Kerberos <code>*.keytab</code> having all SPNs</h4>
+
+<p>After adding an NFS server at host <code>a0</code>,
+Kerberos (<code>klist</code>) did not recognize the NFS server,
+so reconfigured RHEL/AD :</p>
+
+<ol>
+<li><code>realm leave</code> at all RHEL hosts that are NFS clients</li>
+<li>Run this PowerShell script at domain controller (Windows Server)</li>
+<li><code>realm join</code> at all RHEL hosts that are NFS clients</li>
+</ol>
+
+<p>@ AD server</p>
+
+<pre><code class="language-powershell">$Realm = &quot;LIME.LAN&quot;
+$Domain = &quot;LIME&quot;   # NetBIOS domain name
+$Machine = &quot;A0&quot;
+$KeytabPath = &quot;C:\$Machine.keytab&quot;
+
+# Get all SPNs assigned to the machine
+$SPNs = setspn -L &quot;$Machine$&quot; | Select-String -Pattern &quot;^\s+\S+&quot; | ForEach-Object { $_.ToString().Trim() }
+
+# Check if SPNs were found
+if (-not $SPNs) {
+    Write-Host &quot;No SPNs found for $Machine$ in domain $Realm&quot;
+    exit 1
+}
+
+# Generate keytab for the first SPN (without -append)
+$FirstSPN = $SPNs[0]
+$FirstPrincipal = &quot;$FirstSPN@$Realm&quot;
+Write-Host &quot;Adding $FirstPrincipal to keytab...&quot;
+ktpass -out &quot;$KeytabPath&quot; `
+    -princ $FirstPrincipal `
+    -mapuser &quot;$Domain\$Machine$&quot; `
+    -crypto AES256-SHA1 `
+    -ptype KRB5_NT_SRV_HST `
+    -pass +rndpass
+
+# Add remaining SPNs with -append
+$SPNs | Select-Object -Skip 1 | ForEach-Object {
+    $SPN = $_
+    $Principal = &quot;$SPN@$Realm&quot;
+    Write-Host &quot;Appending $Principal to keytab...&quot;
+    
+    ktpass -out &quot;$KeytabPath&quot; `
+        -princ $Principal `
+        -mapuser &quot;$Domain\$Machine$&quot; `
+        -crypto AES256-SHA1 `
+        -ptype KRB5_NT_SRV_HST `
+        -pass +rndpass `
+        -append
+}
+
+Write-Host &quot;Keytab generated at $KeytabPath&quot;
+</code></pre>
+
 <h3>Verify Join</h3>
 
 <ul>
@@ -982,7 +1242,9 @@ u1@a0 [15:39:51] [1] [#0] ~
 
 <pre><code class="language-bash">u1@a0 [15:39:51] [1] [#0] ~
 ☩ realm list
-lime.lan
+</code></pre>
+
+<pre><code class="language-plaintext">lime.lan
 type: kerberos
 realm-name: LIME.LAN
 domain-name: lime.lan
@@ -1012,18 +1274,6 @@ login-policy: allow-realm-logins
 </ul></li>
 </ul>
 
-<h3>Allow through firewall</h3>
-
-<pre><code class="language-bash">sudo firewall-cmd \
-    --add-service=kerberos \
-    --add-service=dns \
-    --add-service=ldap \
-    --add-service=samba \
-    --permanent
-
-sudo firewall-cmd --reload
-</code></pre>
-
 <h3>Enable Authn via SSSD</h3>
 
 <p>Enable and Start SSSD:<br>
@@ -1032,26 +1282,12 @@ Ensure SSSD is running <strong>to handle authentication</strong>:</p>
 <pre><code class="language-bash">sudo systemctl enable --now sssd
 </code></pre>
 
-<p>Allow Domain Users to Log In:<br>
-By default, only admins can log in.</p>
+<p>By default, only admins can log in.</p>
 
-<p>Allow all domain users:</p>
+<p><strong>Allow all AD users and groups of domain</strong>:</p>
 
 <pre><code class="language-bash">sudo realm permit --all
 </code></pre>
-
-<ul>
-<li>Ran this</li>
-</ul>
-
-<p>Allow specific AD groups:</p>
-
-<pre><code class="language-bash">sudo realm permit &quot;Domain Admins&quot;
-</code></pre>
-
-<ul>
-<li>Untested</li>
-</ul>
 
 <p>Optionally, configure <strong>Home Directory Creation</strong>:<br>
 If you want AD users to get home directories automatically on login:</p>
@@ -1059,139 +1295,163 @@ If you want AD users to get home directories automatically on login:</p>
 <pre><code class="language-bash">sudo systemctl enable --now oddjobd
 </code></pre>
 
+<h4><code>oddjob</code></h4>
+
+<p>Allows for other-than-default configuration AD users:</p>
+
 <ul>
-<li>Ran this.</li>
+<li><code>HOME</code> directory at <code>/home/&lt;user&gt;</code> v. <code>/home/&lt;user&gt;@&lt;doman&gt;</code></li>
+<li>SSH by &quot;<code>ssh &lt;user&gt;@&lt;host&gt;</code>&quot; v. &quot;<code>ssh &lt;user&gt;@&lt;domain&gt;@&lt;host&gt;</code>&quot;</li>
 </ul>
 
-<h3>Verify Authn against ADDS from RHEL host</h3>
-
-<p>From the newly-joined RHEL host of the domain:</p>
-
-<h5><code>ssh &quot;admin@lime.lan&quot;@localhost</code></h5>
-
-<p>Success!</p>
-
-<p>Note that <code>HOME</code> dir is created for user <code>admin</code></p>
-
-<pre><code class="language-bash">u1@a0 [15:59:31] [1] [#0] ~
-☩ ssh &quot;admin@lime.lan&quot;@localhost
-admin@lime.lan@localhost's password:
-
-[admin@lime.lan@a0 ~]$ ls -hal
-total 12K
-drwx------. 2 admin@lime.lan domain users@lime.lan  62 Nov 24 15:59 .
-drwxr-xr-x. 7 root           root                   78 Nov 24 15:59 ..
--rw-------. 1 admin@lime.lan domain users@lime.lan  18 Nov 24 15:59 .bash_logout
--rw-------. 1 admin@lime.lan domain users@lime.lan 141 Nov 24 15:59 .bash_profile
--rw-------. 1 admin@lime.lan domain users@lime.lan 492 Nov 24 15:59 .bashrc
-
-[admin@lime.lan@a0 ~]$ pwd
-/home/admin@lime.lan
-
-</code></pre>
-
-<p>Also note the RHEL host (<code>a0</code>) is now in the
-Domain Controller's DNS records.
-See DNS console at host <code>WinSrv2019</code>
-(Windows Server 2019).</p>
-
-<pre><code class="language-bash">Ubuntu [16:23:44] [1] [#0] ~
-☩ ssh admin@lime.lan@a0.lime.lan
-admin@lime.lan@a0.lime.lan's password:
-Last login: Thu Nov 28 16:23:42 2024 from 172.27.240.169
-[admin@lime.lan@a0 ~]$
-</code></pre>
-
-<p>Yet auth here fails:</p>
-
-<pre><code class="language-bash">Ubuntu [16:25:05] [1] [#0] ~
-☩ ssh admin@a0.lime.lan
-admin@a0.lime.lan's password:
-Permission denied, please try again.
-admin@a0.lime.lan's password: #... FAILing
-</code></pre>
-
-<p>So ...</p>
-
-<h3>AD-user reference : <code>admin@$host</code> v. <code>admin@$domain@host</code></h3>
-
-<p>The issue arises because the username <code>admin</code> alone is ambiguous on a system joined to an Active Directory (AD) domain. Without explicitly specifying the domain (e.g., <code>admin@lime.lan</code>), the RHEL system treats the username as a local account. Since there’s no local <code>admin</code> user, authentication fails.</p>
-
-<p>Note the default home dir created by <code>oddjob</code> has form <code>/home/$user@$domain</code></p>
-
-<pre><code class="language-bash">☩ ls /home
-total 8.0K
-drwx------.  2 admin@lime.lan domain users@lime.lan   83 Nov 24 16:29 admin@lime.lan
-drwx------.  3 gitops         gitops                 111 Sep 22 12:53 gitops
-drwx------.  2 testuser       testuser                83 Jun 28 07:35 testuser
-drwx------. 10 u1             u1                    4.0K Nov 28 16:32 u1
-drwx------.  5 u2             u2                    4.0K Nov 12 20:47 u2
-</code></pre>
-
-<h4><strong>FIX</strong></h4>
+<p>Configure</p>
 
 <p>@ <code>/etc/sssd/sssd.conf</code></p>
 
 <pre><code class="language-ini">...
 [domain/lime.lan]
 ...
-fallback_homedir            = /home/%u
-use_fully_qualified_names   = False
+fallback_homedir = /home/%u
+use_fully_qualified_names = False
 ...
 </code></pre>
 
-<p>So modify the <code>sssd</code> configuration file</p>
+<p>Verify</p>
 
-<pre><code class="language-bash">☩ sudo vi /etc/sssd/sssd.conf
+<pre><code class="language-bash">☩ ansibash sudo cat /etc/sssd/sssd.conf 2&gt;/dev/null \
+    |grep -e == -e use_fully_qualified_names -e fallback_
+=== u2@a0
+fallback_homedir = /home/%u
+use_fully_qualified_names = False
+=== u2@a1
+fallback_homedir = /home/%u
+use_fully_qualified_names = False
+=== u2@a2
+fallback_homedir = /home/%u
+use_fully_qualified_names = False
+=== u2@a3
+fallback_homedir = /home/%u
+use_fully_qualified_names = False
 </code></pre>
 
-<pre><code class="language-ini"># - If duplicate entries, the final (highest line number) setting wins.
-# - Order of blocks matters.
-# - Order of params does not matter.
-[sssd]
-domains             = lime.lan
-config_file_version = 2
-services            = nss, pam
+<pre><code class="language-bash">☩ ssh u2@a1
+Last login: Fri Mar 14 08:05:44 2025 from 172.24.217.171
+@ /home/u2/.bash_functions
+@ /home/u2/.bashrc_git
+@ /home/u2/.bashrc_k8s
+@ /home/u2/.bashrc_vim
+@ /home/u2/.bashrc
+@ /home/u2/.bash_profile
+u2@a1 [08:30:15] [1] [#0] ~
+</code></pre>
 
+<h3>Create AD User</h3>
+
+<p>Or add the existing RHEL user to AD (not advised).
+Either way, use <strong>Windows Server</strong> tool <strong>AD UAC</strong> (AD Users and Computers).</p>
+
+<h4>AD UAC</h4>
+
+<ul>
+<li>Verify host is joined into domain
+
+<ul>
+<li>AD UAC &gt; lime.lan &gt; Computers<br>
+Lists the hostname (uppercase) of all hosts in that AD realm (<code>lime.lan</code>)</li>
+</ul></li>
+<li>Create AD User
+
+<ul>
+<li>User: <code>u2</code></li>
+<li>Pass: <code>User!123</code></li>
+</ul></li>
+<li>Add to AD Group(s)
+
+<ul>
+<li>If AD DS users are also Linux users, then create groups and reset the user's primary AD group:
+
+<ul>
+<li><code>linux-sudoers</code></li>
+<li><strong><code>linux-users</code></strong></li>
+</ul></li>
+</ul></li>
+<li>Reset primary group of new AD User to <code>linux-users</code>
+
+<ul>
+<li>Default is &quot;Domain Users&quot;, which is not advised for users of Linux hosts.</li>
+</ul></li>
+</ul>
+
+<p>Then &hellip;</p>
+
+<p><strong>Allow SSH by &quot;<code>ssh $user@$host</code>&quot; instead of requiring &quot;<code>ssh $user@$domain@$host</code>&quot; for AD DC users</strong>:</p>
+
+<p>@ <code>/etc/sssd/sssd.conf</code></p>
+
+<pre><code class="language-ini">...
 [domain/lime.lan]
-default_shell                   = /bin/bash
-ad_domain                       = lime.lan
-ad_server                       = dc1.lime.lan
-krb5_realm                      = LIME.LAN
-krb5_store_password_if_offline  = True
-cache_credentials               = True
-realmd_tags = manages-system joined-with-adcli
-access_provider             = ad
-id_provider                 = ad
-ldap_id_mapping             = True
-#fallback_homedir            = /home/%u@%d
-fallback_homedir            = /home/%u
-use_fully_qualified_names   = False
-
+...
+fallback_homedir = /home/%u
+use_fully_qualified_names = False
+...
 </code></pre>
 
-<p>Untested/unnecessary:</p>
+<h4>Verify LDAP synchs Users/Groups with AD</h4>
 
-<pre><code class="language-bash">sudo sss_override user-add admin@lime.lan --name=admin
-</code></pre>
-
-<p>And then restart the service</p>
-
-<pre><code class="language-bash">sudo systemctl restart sssd
-</code></pre>
-
-<h4>Test/Verify</h4>
-
-<pre><code class="language-bash">☩ ssh admin@a0.lime.lan
-admin@a0.lime.lan's password:
-Last login: Thu Nov 28 17:29:01 2024 from 172.27.240.169
-[admin@a0 ~]$
+<pre><code class="language-bash">☩ ssh a0
+...
+u1@a0 [10:33:32] [1] [#0] ~
+☩ groups
+u1 wheel domain users linux-users linux-sudoers
 </code></pre>
 
 <p>If auth fails, check service logs</p>
 
 <pre><code class="language-bash">sudo journalctl -u sssd -f
 sudo tail -f /var/log/secure
+</code></pre>
+
+<h3>Verify Kerberos</h3>
+
+<p>@ <code>u1@a0</code></p>
+
+<pre><code class="language-bash">u1@a0 [08:05:27] [1] [#0] ~
+☩ kinit admin@LIME.LAN
+Password for admin@LIME.LAN:
+
+u1@a0 [08:06:40] [1] [#0] ~
+☩ klist
+Ticket cache: KCM:1000
+Default principal: admin@LIME.LAN
+
+Valid starting     Expires            Service principal
+03/02/25 08:06:36  03/02/25 18:06:36  krbtgt/LIME.LAN@LIME.LAN
+        renew until 03/09/25 09:06:14
+</code></pre>
+
+<pre><code class="language-bash">☩ kinit u1@LIME.LAN
+Password for u1@LIME.LAN:
+
+☩ klist
+Ticket cache: KCM:1000:28381
+Default principal: u1@LIME.LAN
+
+Valid starting     Expires            Service principal
+03/02/25 08:11:22  03/02/25 18:11:22  krbtgt/LIME.LAN@LIME.LAN
+        renew until 03/09/25 09:11:17
+
+☩ klist -l
+Principal name                 Cache name
+--------------                 ----------
+u1@LIME.LAN                    KCM:1000:28381
+admin@LIME.LAN                 KCM:1000
+</code></pre>
+
+<pre><code class="language-bash">☩ utc;utco;utcz;gmt
+2025-03-02T08:17:57 [EST]
+2025-03-02T08:17:57-0500
+2025-03-02T13:17:57Z
+2025-03-02T13:17:57Z
 </code></pre>
 
 <h3>SSH Auth using PKI</h3>
@@ -1405,7 +1665,7 @@ TLS_OU=ops
 ## Create the configuration file (CNF) : See man config
 ## See: man openssl-req : CONFIGURATION FILE FORMAT section
 ## https://www.openssl.org/docs/man1.0.2/man1/openssl-req.html
-cat &lt;&lt;EOH |tee $cn.cnf
+cat &lt;&lt;-EOH |tee $cn.cnf
 [ req ]
 prompt              = no        # Disable interactive prompts.
 default_bits        = 2048      # Key size for RSA keys. Ignored for Ed25519.
