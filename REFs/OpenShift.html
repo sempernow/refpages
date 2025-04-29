@@ -22,6 +22,155 @@
     <main>
         <h1><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/3.11/html/architecture/architecture-index#architecture-index" title="docs.redhat.com">OpenShift</a></h1>
 
+<h2>Chalenges of OpenShift in air-gapped network under ADDS?</h2>
+
+<table>
+<thead>
+<tr>
+<th align="left">Category</th>
+<th align="left">Issue</th>
+<th align="left">How serious?</th>
+<th align="left">Notes</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">User Authentication</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">You must properly integrate OpenShift OAuth into your Active Directory (SSO or LDAP).</td>
+</tr>
+
+<tr>
+<td align="left">UID/GID inside containers</td>
+<td align="left">✅</td>
+<td align="left">Medium</td>
+<td align="left">OpenShift <strong>randomizes user IDs inside containers</strong> (for security; &quot;arbitrary UID&quot;). Apps must run as <strong>non-root</strong> and tolerate <strong>any</strong> UID/GID.</td>
+</tr>
+
+<tr>
+<td align="left">SCC (Security Context Constraints)</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">You must configure the correct SCCs (e.g., <code>anyuid</code>, <code>restricted</code>) based on your app needs and security posture.</td>
+</tr>
+
+<tr>
+<td align="left">Persistent Volumes (NFS/Gluster/CSI)</td>
+<td align="left">✅</td>
+<td align="left">Medium</td>
+<td align="left">If external storage is involved, random pod UIDs must still be able to access the PVC. Needs careful permissions setup.</td>
+</tr>
+
+<tr>
+<td align="left">Certificate Management</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">Air-gapped OpenShift + Active Directory + TLS = need internal PKI for certs (e.g., internal CA, cluster-wide TLS bootstrapping).</td>
+</tr>
+
+<tr>
+<td align="left">Pull Secrets / Registries</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">OpenShift nodes must pull from private registries inside air-gapped setup (mirror registries, signature trust setup).</td>
+</tr>
+
+<tr>
+<td align="left">User shell access to nodes</td>
+<td align="left">✅</td>
+<td align="left">Medium</td>
+<td align="left">If AD users are supposed to SSH into OpenShift nodes (which is rare), you'd face the same UID challenges. But OpenShift itself doesn't rely on user SSH logins.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Problems of OpenShift under AD:</h2>
+
+<ol>
+<li><p><strong>Authentication</strong>:<br>
+OpenShift needs an OAuth provider config mapped to your AD or LDAP.</p>
+
+<ul>
+<li>Must configure <strong>OAuth</strong> with an <strong>LDAP Identity Provider</strong> against ADDS.</li>
+<li>Optionally, use SAML if available in your AD.</li>
+</ul></li>
+
+<li><p><strong>Authorization</strong>:<br>
+OpenShift RBAC is <em>separate</em> from AD groups. You must <strong>map</strong> AD groups into OpenShift roles.</p></li>
+
+<li><p><strong>UID/GID behavior inside Pods</strong>:<br>
+Applications <strong>cannot assume</strong> static UIDs. They must tolerate <strong>arbitrary UID/GID</strong>.<br>
+If an app refuses to run unless UID=1000 or UID=0, you must use a special SCC (e.g., <code>anyuid</code>).</p></li>
+
+<li><p><strong>Persistent Volumes</strong>:<br>
+If a Pod UID randomizes, and you’re mounting NFS storage or similar, you need to allow &quot;world-writable&quot; (<code>0777</code>) or use supplemental groups.</p></li>
+
+<li><p><strong>TLS Certificates</strong>:<br>
+OpenShift will want <strong>internal PKI</strong> — you can't rely on public Let's Encrypt, etc. Must bootstrap trust internally.</p></li>
+
+<li><p><strong>Mirrored Registries</strong>:<br>
+OpenShift nodes must pull images inside air-gap. You must mirror the full set of OpenShift and operator registries.</p></li>
+</ol>
+
+<hr>
+
+<h2>🚀 Summary</h2>
+
+<table>
+<thead>
+<tr>
+<th align="left">Statement</th>
+<th align="left">True or False</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">You’ll face identity and authorization work integrating OpenShift to AD</td>
+<td align="left">✅ True</td>
+</tr>
+
+<tr>
+<td align="left">You must adapt your apps to run with random UIDs</td>
+<td align="left">✅ True</td>
+</tr>
+
+<tr>
+<td align="left">You must carefully plan TLS and image pulls in air-gap</td>
+<td align="left">✅ True</td>
+</tr>
+
+<tr>
+<td align="left">OpenShift’s problems here are better documented and understood</td>
+<td align="left">✅ True</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h1>✅ Good News:</h1>
+
+<ul>
+<li><strong>OpenShift is built to handle corporate Identity Providers (IdPs)</strong> like AD.</li>
+<li><strong>Rootless user namespace mapping is not your problem</strong> in OpenShift. (Podman at user shell is a separate concern.)</li>
+<li><strong>Solutions exist and are official</strong> (e.g., OpenShift + AD integration is supported, documented, and tested.)</li>
+</ul>
+
+<h1>❗ Bad News:</h1>
+
+<ul>
+<li><strong>Apps must be OpenShift-compliant</strong> (arbitrary UID tolerant, non-root, etc.)</li>
+<li><strong>AD integration still needs careful planning</strong>.</li>
+<li><strong>TLS, DNS, and mirror registries must be air-gapped cleanly.</strong></li>
+</ul>
+
+<hr>
+
 <h2>External Load Balancer</h2>
 
 <p>OpenShift (Red Hat OpenShift Container Platform) typically uses <strong>external load balancers</strong> to distribute traffic to the OpenShift cluster's control plane (API and Ingress) and application workloads. The exact load balancer depends on the underlying infrastructure:</p>
