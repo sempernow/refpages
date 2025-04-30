@@ -119,6 +119,7 @@
 ## [GitLab.md](./REFs/GitLab.md)
 ## [GitLab.runner.md](./REFs/GitLab.runner.md)
 ## [GitLab.self-hosted.md](./REFs/GitLab.self-hosted.md)
+## [GitLab.self-hosted.restore.md](./REFs/GitLab.self-hosted.restore.md)
 ## [GitLab.self-hosted.synch-1.md](./REFs/GitLab.self-hosted.synch-1.md)
 ## [GitLab.self-hosted.synch-2.md](./REFs/GitLab.self-hosted.synch-2.md)
 ## [GitLab.Vault.integ.md](./REFs/GitLab.Vault.integ.md)
