@@ -91,11 +91,11 @@ helm status $release
 # Test and get useful info on an installed chart (release)
 helm test $release
 
-# Render chart templates locally and print resulting manifests of current config ($values)
+# Desired State : Render chart templates locally and print resulting manifest of current config ($values)
 helm template $chart --values $values --namespace $ns
 
-# Capture manifest of the running release from the K8s API
-helm get $release -n $ns
+# Running State : Capture manifest of the running release from the K8s API
+helm get manifest $release -n $ns
 
 # Show ... {chart,values} are YAML(ish)
 helm show {chart,readme,crds,values,all} $chart
