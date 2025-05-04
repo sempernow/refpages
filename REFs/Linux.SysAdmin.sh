@@ -406,7 +406,7 @@ exit 0
         id -G   # All groups of which $USER is a member : by GID
         id -Gn  # All groups of which $USER is a member : by group name
  
-    # Get MIN MAX values of UID:GID for REGULAR and SYSTEM accounts (users, groups)
+    # Get MIN MAX values of UID:GID for REGULAR and SYSTEM work (users, groups)
         cat /etc/login.defs
 
     # user, pass
@@ -426,19 +426,72 @@ exit 0
             # allowing only (ssh) key-based authtentication.
             # Each user would have to add their public key to this user's ~/.ssh/authorized_keys file,
             # and do so by some out-of-band (not ssh-copy-id) process requiring elevated privileges.
-            useradd -m -s /bin/bash $u
+            useradd -m -s /bin/bash $u 
+                -u, --uid
+                -g, --gid
+                -U, --user-group # Create group having user name and add user to it; default behavior lest -N, -g
+                -N, --no-user-group
+                -r, --system    # System user : Non-human user having UID < 1000. Okay for Service work too.
+                -s, --shell     # Login shell, e.g., /bin/bash, /bin/false, /sbin/nologin
+                -M, --no-create-home
+                -m, --create-home
+                -d, --home-dir  # Unless -M
+                -b, --base-dir  # Base dir; default is /home : Required by -d lest -m 
+                -c, --comment
+                --gecos         # GECOS (General Electric Comprehensive Operating System) field : Not all distros; Prefer --comment
+                -G, --groups    # CSV list of supplemental groups to which this user is added.
+                -p, --password 
+
             # Idempotent
-            id -un $u || sudo useradd -m -s /bin/bash $u
+            id -un $u || sudo useradd --create-home --shell /bin/bash $u
 
         # Add user:group ($u:$u) of declared IDs
             # having UID:GID 1001:1001, 
             # having NO HOME DIRECTORY
             groupadd --gid 1001 $u
-            adduser --uid 1001 --gid 1001 --gecos "" --disabled-password --no-create-home $u
+            adduser --uid 1001 --gid 1001 --gecos "Full Name,Room Number,Phone,Other" --disabled-password --no-create-home $u
 
-        # Add a SYSTEM (-r) user:group $u:$u having home directory and no login shell
+        # Add a SYSTEM (-r) user:group $u:$u having no home directory and no login shell
             groupadd -r $u
-            useradd -r -m -g $u -s /bin/false $u
+            useradd -r -M -s /sbin/nologin $u # Message on login attempt
+            useradd -r -M -s /bin/false $u    # Silent exit on login attempt
+
+        # Add user having ALT HOME DIR yet /home equivalence regarding SELinux
+            # Want to create a user account for podman, configure that for rootless podman in a large home dir, 
+            # so that many AD users (a developer team) have a stable, workable rootless podman configuration 
+            # in which to work on a designated RHEL host having SELinux enforced.
+
+            # 1. Provision a system user (podmaners) with alternate home directory 
+
+                # Create a local service account having no login shell
+                # yet a non-standard home dir (at a large partition)
+                u=podmaners
+                g=$u
+                alt=/work
+                d=$alt/home/$u
+
+                mkdir -p $alt/home
+
+                # Force SELinux to accept SELinux declarations REGARDLESS of current state of the targets' SELinux objects
+                semanage fcontext -d "$alt/home(/.*)?" 2>/dev/null # Okay if no rules exist
+                restorecon -Rv $alt/home
+                semanage fcontext -a -e /home $alt/home # FAILs by SELinux  "equivalence" rules
+                #semanage fcontext -a -t user_home_dir_t "$work(/.*)?"
+                restorecon -Rv $alt/home
+                id -un $u >/dev/null 2>&1 || useradd -r -m -d $d -s /sbin/nologin $u
+                restorecon -Rv $alt/home
+
+                # Verify
+                semanage fcontext -l | grep "$alt" |grep "$alt/home = /home" ||
+                    echo FAILed @ SELinux
+
+
+            # ELSE : Create in standard /home/$u, and then bind mount /work/home/$u into it.
+            mkdir -p /home/$u
+            mount --bind $d /home/$u
+            # Make it permanent
+            grep $d /etc/fstab ||
+                echo "$d /home/$u none bind 0 0" |tee -a /etc/fstab
 
         # Get entitites (GID, name, ...) from Name Service Switch library
             # Useful to test for existence of subject
@@ -447,7 +500,7 @@ exit 0
 
         # Add user to group
             usermod -aG $g $u 
-            newgrp docker # Supposedly to take effect now, but side effects linger. Better to logout/login 
+            newgrp docker # Supposedly to take effect now, but side effects linger. Better to relog.
             # OR
             gpasswd -a $u group 
 
@@ -461,9 +514,11 @@ exit 0
             passwd -l $u
         # Unlock user account
             passwd -u $u 
+        # Unlock user in faillock
+            faillock --user $u --reset 
 
         # List groups to which user has membership
-        groups foo
+        groups $u   # Of declared else current user
 
         # List : group / members 
         cat /etc/group 
@@ -487,7 +542,7 @@ exit 0
             passwd $u 
             # Set non-interactively : 
              echo "$pw" |sudo passwd $u --stdin
-            # Set to unknowable password :
+            # Set to unknowable password : -base64|-hex :
             openssl rand -base64 33 |sudo passwd $u --stdin
             # Batch password change
                 chpasswd  # non-interactive/batch; must be root user 
@@ -511,11 +566,21 @@ exit 0
                     env_keep 
                     # a whitelist for environment variables.
 
-    # sudo / su 
-        sudo su 
-        sudo -E su  # preserve environment 
-        sudo -l     # List commands allowed a sudoer
+        # sudo -u v. su : Shell requirements
+            Command      Requires Login Shell?   Works with nologin?         Best For
+            sudo -u $u   ❌ No                   ✅ Yes (ignores shell)      Service accounts
+            su - $u      ✅ Yes (/bin/bash)      ❌ No (nologin fails)       Interactive sessions
 
+            sudo -l                 # List commands allowed a sudoer
+            sudo -u $u $command     # Run $command as user $u, sans shell
+            sudo su $u              # Shell at PWD
+            sudo su - $u            # Login shell
+            sudo -i su $u           # Login shell and PWD at /root   
+            sudo su -s /bin/bash $u # Force login shell
+            sudo -E su $u           # Preserve environment 
+            su $u                   # Switch User : to $u 
+            su - $u                 # Switch User : to $u's login shell
+    
     # sudoers FILE
         /etc/sudoers # The baseline sudoers file
             sudo visudo /etc/sudoers # To edit, but don't. Rather:
