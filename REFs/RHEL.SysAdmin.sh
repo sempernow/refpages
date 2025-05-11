@@ -195,13 +195,13 @@ systemctl restart sssd  # Restart sssd (to apply changes)
 
     dnf  # RHEL 8+
         dnf [options] COMMAND
-        provides $pkg 
+        provides $pkg   # Versioninng reported here is often misleading; not the app version
         upgrade  $pkg 
         install  $pkg --disablerepo=* --enablerepo=$localrepo
         install  $pkg --nobest --allowerasing 
         download $pkg --archlist x86_64,noarch --alldeps --resolve
         remove   $pkg 
-        info     $pkg
+        info     $pkg   # Application details; version and such
 
         repolist
         repodiff --repo-old old1 --repo-new new1

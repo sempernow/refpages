@@ -19,7 +19,7 @@
 
 __Components__/__Features__:
 
-- __Horizon Connection Server__: 
+- Horizon __Connection Server__: 
     This is the core component of the Horizon VDI architecture. It manages session brokering, authentication, and directs incoming VDI connection requests from users to their respective virtual desktops or published applications.
 - __ESXi Hosts__ (Physical Servers): 
     These are the servers where the VMs or desktops are hosted. They run the VMware ESXi hypervisor, which allows multiple VMs to share physical hardware resources.
@@ -90,6 +90,154 @@ These tools ensure that you have near-real-time interaction with the VMs,
 enabling tasks such as configuring operating systems, installing applications, 
 and monitoring operations directly from the console window.
 
+## Guest VM Networking
+
+    [VM1] ----\
+    [VM2] ----> [vSwitch0] ---[vmnic0]--- [Physical Switch] --- [Router/Gateway]
+    [VM3] ----/
+
+
+- __vSwitch__ is a Layer 2 switch
+    - It connects VMs to each other (on the same ESXi host).
+    - It connects VMs to physical networks if it has one or more uplinks; physical NICs (vmnic0).
+    - It does not provide Layer 3 routing — no default gateway lives "in" the vSwitch.
+- __Router/Gateway__ is the default gateway for the subnet.
+    - If on isolated NAT subnet, this may be merely the NAT device AKA "subnet address",
+      whereof ping test is expected to fail.
+
+### Verify Connectivity from a Guest VM
+
+From inside a host (RHEL) of a **guest VM**, 
+we can gather useful clues to infer 
+whether the **vSwitch has an uplink** 
+and whether the **default gateway is reachable**.
+
+---
+
+### ✅ **Check 1: Routing table**
+
+```bash
+☩ ip route show
+default via 192.168.11.1 dev eth0 proto dhcp src 192.168.11.100 metric 100
+192.168.11.0/24 dev eth0 proto kernel scope link src 192.168.11.100 metric 100
+
+```
+* This shows the **default gateway** (here, `192.168.11.1`).
+* If it's missing, the VM won’t be able to route off its subnet.
+
+---
+
+### ✅ **Check 2: Ping the default gateway**
+
+```bash
+☩ ping -c 3 -W 1  192.168.11.1
+PING 192.168.11.1 (192.168.11.1) 56(84) bytes of data.
+
+--- 192.168.11.1 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2056ms
+```
+* If this fails **but other VMs on the same ESXi host are reachable**, as is the case here,
+then the vSwitch likely **has no uplink** to the gateway. 
+
+If on a NAT-isolated subnet, as this host is, 
+then failure on `ping` of that NAT device (AKA subnet) address is normal.
+Yet we can verify connectivity to an upstream gateway on another subnet:
+
+```bash
+☩ ping -c 3 -W 1  192.168.28.1
+PING 192.168.28.1 (192.168.28.1) 56(84) bytes of data.
+64 bytes from 192.168.28.1: icmp_seq=1 ttl=63 time=4.22 ms
+64 bytes from 192.168.28.1: icmp_seq=2 ttl=63 time=6.67 ms
+64 bytes from 192.168.28.1: icmp_seq=3 ttl=63 time=4.35 ms
+
+--- 192.168.28.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 4.217/5.080/6.672/1.126 ms
+```
+---
+
+### ✅ **Check 3: Trace the path to an external host**
+
+```bash
+# To gateway router of another subnet
+☩ traceroute 192.168.28.1
+traceroute to 192.168.28.1 (192.168.28.1), 30 hops max, 60 byte packets
+ 1  _gateway (192.168.11.1)  0.345 ms  0.319 ms  0.304 ms
+ 2  192.168.28.1 (192.168.28.1)  4.150 ms  4.545 ms  4.108 ms
+
+# To internet host
+☩ traceroute 8.8.8.8
+traceroute to 8.8.8.8 (8.8.8.8), 30 hops max, 60 byte packets
+ 1  _gateway (192.168.11.1)  0.515 ms  0.488 ms  0.473 ms
+ 2  192.168.28.1 (192.168.28.1)  5.500 ms  5.616 ms  5.452 ms
+ 3  172.27.219.3 (172.27.219.3)  15.673 ms 172.27.219.2 (172.27.219.2)  22.335 ms  19.875 ms
+ 4  po-53-317-rur201.gambrills.md.bad.comcast.net (68.86.252.33)  19.809 ms po-53-318-rur202.gambrills.md.bad.comcast.net (68.86.252.69)  17.724 ms *
+ 5  * * *
+ 6  po-200-xar01.gambrills.md.bad.comcast.net (96.216.84.61)  22.059 ms  26.977 ms  26.948 ms
+ 7  ae-99-rar01.capitolhghts.md.bad.comcast.net (162.151.61.121)  20.781 ms  25.308 ms  25.283 ms
+ 8  be-3-arsc1.capitolhghts.md.bad.comcast.net (96.110.235.69)  25.220 ms  16.551 ms  21.570 ms
+ 9  be-31421-cs02.beaumeade.va.ibone.comcast.net (96.110.40.21)  19.398 ms be-3104-pe04.ashburn.va.ibone.comcast.net (96.110.37.130)  19.331 ms be-3311-pe11.ashburn.va.ibone.comcast.net (96.110.32.130)  17.314 ms
+10  * * be-3312-pe12.ashburn.va.ibone.comcast.net (96.110.34.122)  18.597 ms
+11  * * *
+12  * * dns.google (8.8.8.8)  21.271 ms
+```
+* If it **hangs immediately**, the VM can’t reach the gateway.
+* If it reaches the gateway but fails further, your upstream routing or firewall may be blocking.
+
+---
+
+### ✅ **Check 4: Interface and ARP info**
+
+```bash
+# Does public interface (here, eth0) have (DHCP) assigned IP address
+☩ ip -4 addr show dev eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    inet 192.168.11.100/24 brd 192.168.11.255 scope global dynamic noprefixroute eth0
+       valid_lft 200397sec preferred_lft 200397sec
+
+# Is gateway IP in ARP table
+☩ ip neigh show
+192.168.11.2 dev eth0 lladdr 00:15:5d:1c:2f:01 REACHABLE
+192.168.11.1 dev eth0 lladdr 00:15:5d:1c:2f:00 REACHABLE
+```
+* Confirm the public interface (`eth0`) has an IP address in the expected subnet.
+* See whether the gateway IP appears in ARP (if it doesn’t, try pinging it first).
+    - Our NAT subnet has no gateway router.
+
+---
+
+### ✅ **Optional: Check DNS resolution**
+
+```bash
+☩ dig google.com
+
+; <<>> DiG 9.16.23-RH <<>> google.com
+;; global options: +cmd
+;; Got answer:
+...
+;; ANSWER SECTION:
+google.com.             117     IN      A       142.251.163.138
+...
+;; Query time: 18 msec
+;; SERVER: 192.168.11.2#53(192.168.11.2)
+;; WHEN: Fri May 09 07:55:10 EDT 2025
+;; MSG SIZE  rcvd: 135
+```
+* If DNS fails but `ping 8.8.8.8` works, your network might be OK,
+but your `/etc/resolv.conf` is misconfigured.
+* If both fail, it’s likely a routing or uplink issue.
+
+---
+
+### ❌ What you **cannot** see from the VM:
+
+* Whether the **vSwitch has a physical uplink** (vmnic) attached.
+* Whether the **port group** is on a trunked VLAN.
+* The actual **vSwitch configuration** on ESXi.
+
+You’ll need access to **vSphere or ESXi host CLI** to see those.
+
+---
 
 ## Virtual Desktop Infrastructure (VDI) 
 
@@ -107,7 +255,7 @@ to the VMware __Horizon Connection Server__.
 
 Here's how the sequence usually unfolds:
 
-- __Horizon Client Initialization__: When the thin client is powered on and the VMware Horizon Client is launched, the initial screen usually __prompts the user to enter the server address__ (the Horizon Connection Server) and possibly other connection parameters. This step is necessary for the thin client to know where to direct its authentication request and subsequent virtual desktop session traffic.
+- __Horizon Client Initialization__: When the thin client is powered on and the VMware Horizon Client is launched, the initial screen usually __prompts the user to enter the server address__ (the Horizon __Connection Server__) and possibly other connection parameters. This step is necessary for the thin client to know where to direct its authentication request and subsequent virtual desktop session traffic.
 - __Login Screen__: After the server address is provided and successfully reached by the Horizon Client, the next screen typically presented is the login screen. Here, the user is asked to provide their credentials, which might include a username and password. Additional layers of security such as two-factor authentication (2FA) may also be part of this process depending on the organization's security policies.
 - __Session Broker__: Once the credentials are entered and validated by the Connection Server, 
 it acts as a session broker, determining which resources (virtual desktops or applications) 
