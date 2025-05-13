@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 ###############################################################################
 # Linux System Administration Basics
-# https://www.linode.com/docs/tools-reference/linux-system-administration-basics/   
+# https://www.linode.com/docs/tools-reference/linux-system-administration-basics/
 ###############################################################################
 exit 0
 ######
@@ -12,7 +12,7 @@ exit 0
 # BOOT CONFIGURATION FILES
     /etc/sysconfig/*
 
-# NETWORK 
+# NETWORK
 
     # Host
     hostname    # hostname of this machine
@@ -23,7 +23,7 @@ exit 0
     vim /etc/resolv.conf    # nameserver 172.56.0.1
 
     # Connectivity
-    ping $remote_ip_or_domain       # Connectivity to remote; RTT/Average, packet loss 
+    ping $remote_ip_or_domain       # Connectivity to remote; RTT/Average, packet loss
     traceroute $remote_ip_or_domain # Path taken node to node (per hop)
     sudo apt install inetutils-traceroute  # Install traceroute
     mtr $remote_ip_or_domain        # ~ ping + traceroute
@@ -31,11 +31,11 @@ exit 0
     # TIME : Network SYNCHRONIZATION
         timedatectl # newer; replces ntpq; FAILS to synch if behind SOCKS5 proxy
         ntpq        # older; more robust; synchs even if behind SOCKS5 proxy
-        
-        # timedatectl : https://www.man7.org/linux/man-pages/man1/timedatectl.1.html 
-            # List all USA Time Zones 
+
+        # timedatectl : https://www.man7.org/linux/man-pages/man1/timedatectl.1.html
+            # List all USA Time Zones
             timedatectl list-timezones | grep America
-            # Set Time Zone 
+            # Set Time Zone
             timedatectl set-timezone 'America/New_York'
             # Set the Time Zone Manually on a Linux System
             ln -sf /usr/share/zoneinfo/UTC /etc/localtime           # GMT
@@ -48,51 +48,51 @@ exit 0
             # Reset time service
             service ntpd restart
 
-            # Install 
+            # Install
             sudo apt update
             sudo apt install ntp
 
-            # Enable (per timedatectl) 
+            # Enable (per timedatectl)
             sudo timedatectl set-ntp true
 
         # ntpq : https://linux.die.net/man/8/ntpq : https://doc.ntp.org/archives/3-5.93e/ntpq/
-            # Vital @ private-subnet nodes whereof network synch is required yet 
+            # Vital @ private-subnet nodes whereof network synch is required yet
             # their web access is only thru SOCKS5 proxy; timedatectl FAILs thereof.
             sudo apt update
-            sudo apt install ntp  
+            sudo apt install ntp
 
             # Inspect settings : pool of servers
             ntpq -p
 
-            # Enable per timedatectl 
+            # Enable per timedatectl
             sudo timedatectl set-ntp true  # disable per `false`
 
 # MACHINE RESOURCES
 
-    # Storage 
-        lsblk 
-        df -hT      # Per device    
+    # Storage
+        lsblk
+        df -hT      # Per device
         du -h       # Disk usage per directory under PWD
         du -hs $dir # Disk usage summary of all folders thereunder (default is PWD)
 
     # CPU info
         lscpu    # YAML : Architecture, Model name, CPU(s), Thread(s) per Core, ...
         lscpu -J # JSON : Different structure : {lscpu: [{field: "Architecture", data: "x86_64"},...]}
-        
-        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.  
+
+        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.
             cat /proc/cpuinfo # Per-thread (redundant) info
-        
+
     # Memory info
-        free -mh  # Units of Mi 
+        free -mh  # Units of Mi
         top -e m -E m # Memory units in MiB : At both Task (-e) and Summary (-E) areas.
         htop # F5 (Tree view), SHIFT+M (Sort by Memory), F4 (Filter; enter name of command), F1 (Help)
             # RSS (Resident Set Size) : Actual physical memory used by a process
-            # - Total physical memory of machine *must* exceed sum of all RSS across all running processes. 
+            # - Total physical memory of machine *must* exceed sum of all RSS across all running processes.
             # VIRT (VIRTual memory size) : Total virtual memory a process may access;
             # - Includes memory swapped out, memory mapped but not used, and shared memory.
-        ps -aux --sort=-%mem |head -n 10 
+        ps -aux --sort=-%mem |head -n 10
             # RSS (Resident Set Size) : Actual physical memory used by the process
-            # - Total physical memory must be greater than sum of all RSS across all running processes. 
+            # - Total physical memory must be greater than sum of all RSS across all running processes.
             # VSZ (Virtual-memory SiZe) in KiB; equivalent to VIRT of htop. (See above.)
 
             # Example:
@@ -103,11 +103,11 @@ exit 0
                 # VSZ (Virtual-memory SiZe) is 2097152 KB (roughly 2GiB).
                 # RES (Resident Memory Size) is 43152 KB (roughly 42MiB).
 
-            # psrss : RSS top ($1 else 12) or declared-command ($1) usage in MiB 
+            # psrss : RSS top ($1 else 12) or declared-command ($1) usage in MiB
             psrss(){
                 e=-e
                 [[ "$1" =~ ^-?[0-9]+$ ]] && n=$1 || {
-                    n=12;[[ $1 ]] && unset e 
+                    n=12;[[ $1 ]] && unset e
                 }
                 ps -o pid,comm,rss,pmem,pcpu --sort=-rss \
                     |awk '{ printf "%-8s %-22s %s[MiB]   %5s %5s\n", $1, $2, $3, $4,$5}' |head -1
@@ -119,12 +119,12 @@ exit 0
 
         # Process tree
             ps -ejH --sort=-rss
-            pstree 
+            pstree
 
-        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.  
-            # List RSS of a PID 
-            pid=285 
-            cat /proc/$pid/status |grep Vm 
+        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.
+            # List RSS of a PID
+            pid=285
+            cat /proc/$pid/status |grep Vm
                 # VmPeak:  6115804 kB # Peak virtual memory size.
                 # VmSize:  6095096 kB # Virtual memory size.
                 # VmHWM:    670232 kB # Peak resident set size (RSS) : "High Water Mark" : .67 GB
@@ -154,17 +154,17 @@ exit 0
     # - Is this issue affecting many users, or only one?
 
         uptime      # Complex metric of processes running or waiting for resources:
-                    # System "load average" (per cpu): @1min, @5min, @15min 
+                    # System "load average" (per cpu): @1min, @5min, @15min
                     # So, 1 means 100% of 1 CPU (core), or 75% idle if system has 4 CPU cores
         top/htop    # Dynamic view of resources (CPU/MEM) usage
         sar         # System Activity Report : Historical stats : Configure to collect periodically
-    
+
     # I/O
-        vmstat -SM  # processes (r) blocked (b), memory, paging, 
+        vmstat -SM  # processes (r) blocked (b), memory, paging,
                     # block IO rcv(bi) sent(bo), traps, disks and cpu activity
         vmstat -d   # Per disk
         iostat      # ..., iowait, ... per device
-        netstat     # Monitor network connections 
+        netstat     # Monitor network connections
         netstat -a  # Active connections; open ports
         netstat -an |grep ':80'  # Number of active connections on a port
         netstat -l  # Listening ports
@@ -173,7 +173,7 @@ exit 0
         /boot/firmware/     # Configuration file(s), e.g., to enable PCIe
 
 # OS : Get/Set hostname/info
-    hostnamectl 
+    hostnamectl
     # OS info
     cat /etc/os-release
     alias os='cat /etc/os-release'
@@ -181,15 +181,15 @@ exit 0
 # SERVICEs
 
     # @ NOT systemd
-        service $service status|start|stop|enable|disable 
+        service $service status|start|stop|enable|disable
 
     # @ systemd : See man systemd.service
         systemctl status|is-active|start|stop|enable|disable $service
 
         # Enable and start
-        systemctl enable --now $service 
+        systemctl enable --now $service
 
-        # Verify service STATUS is 'active'|'activating' : $? is 0|3 respectively. 
+        # Verify service STATUS is 'active'|'activating' : $? is 0|3 respectively.
         systemctl is-active [--quiet] $service # --quite prints nothing
 
         # Verify service STATUS is 'failed' : $? is 0 if one or more in 'failed' state, else non-zero.
@@ -198,8 +198,8 @@ exit 0
         # Disable and stop
         systemctl disable --now $service
 
-        # List all unit files and their status 
-        systemctl list-unit-files 
+        # List all unit files and their status
+        systemctl list-unit-files
 
         /etc/systemd/system # Location of all unit (service) files
 
@@ -210,23 +210,23 @@ exit 0
 
         # Create : Example : ssh-user-sessions.service
             sudo vi /etc/systemd/system/ssh-sessions.service # Edit:
-            
+
                 [Unit]
                 Description=Shutdown all ssh sessions before network
                 After=network.target
                 Before=sleep.target
-                
+
                 [Service]
                 TimeoutStartSec=0
                 Type=oneshot
                 RemainAfterExit=yes
                 ExecStart=/bin/true
                 ExecStop=/usr/bin/killall sshd
-                
+
                 [Install]
                 WantedBy=multi-user.target
                 RequiredBy=sleep.target
-            
+
         # Create : Example : keepAwake.service
             sudo vi /etc/systemd/system/keepAwake.service # Edit:
 
@@ -243,12 +243,12 @@ exit 0
 
             # LECAGCY METHODS (RHEL 6)
                 # ... runs all executables (hooks) @ ...
-                /etc/pm/sleep.d 
+                /etc/pm/sleep.d
 
                 # SUSPENSION IS PREVENTED if any script returns [$?] non-zero exit status.
                 # So, e.g., to prevent sleep during SSH session, create a file ...
                     /etc/pm/sleep.d/05_ssh_keepawake
-                    
+
                     vi /etc/pm/sleep.d/05_ssh_keepawake # => edit ...
                         #!/bin/sh
                         # check for SSH sessions, and prevent suspending:
@@ -258,60 +258,60 @@ exit 0
                             exit 1
                         else
                             exit 0
-                        fi 
+                        fi
                     # save [ZZ]; then set perms; executable
                     chmod +x /etc/pm/sleep.d/05_ssh_keepawake
-                
+
     # https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-power
         /sys/power/state # file controls system sleep states.
-        
-        # READING from this file returns the available sleep state labels, 
-        #  which may be "mem" (suspend), "standby" (power-on suspend), 
+
+        # READING from this file returns the available sleep state labels,
+        #  which may be "mem" (suspend), "standby" (power-on suspend),
         #  "freeze" (suspend-to-idle) and "disk" (hibernation).
-        
-        # WRITING one of the above strings to this file causes the system 
+
+        # WRITING one of the above strings to this file causes the system
         #  to transition into the corresponding state, if available.
 
-            echo standby > /sys/power/state # go into standby mode 
+            echo standby > /sys/power/state # go into standby mode
             echo mem > /sys/power/state # go into suspend mode
 
         # set to auto standby|mem when idle ...
         echo standby > /sys/power/autosleep # CentOS 6 : 'no such file or dir'
         echo mem     > /sys/power/autosleep
-        echo off     > /sys/power/autosleep # disable autosleep 
+        echo off     > /sys/power/autosleep # disable autosleep
 
 # PACKAGE MANAGERs
-    # RHEL 
+    # RHEL
         # See REF.RHEL.SysAdmin.sh
-        yum  
+        yum
         dnf  # RHEL 8+
             repolist
             repodiff --repo-old old1 --repo-new new1
             provides $pkg
-            upgrade 
-            makecache 
-            download 
+            upgrade
+            makecache
+            download
             install $pkg [--nobest --allowerasing]
-            remove $pkg 
-            info $pkg 
+            remove $pkg
+            info $pkg
 
             rpm -qa # List all installed packages
 
     # Ubuntu/Debian
-        apt 
-            update        # Refresh repo index 
+        apt
+            update        # Refresh repo index
             upgrade       # Upgrade ALL upgradable pkgs (DON'T)
             upgrade PKG   # Upgrade PKG
             install -y PKG1 PKG2 ...
-            autoremove    # Remove unnecessary packages 
-            remove        # Remove pkg 
+            autoremove    # Remove unnecessary packages
+            remove        # Remove pkg
             purge         # Remove pkg +config   ** NICE
             list          # List pkgs +criteria  ** NEW
             edit-sources  # Edit sources list    ** NEW
             search|show PKG
 
         # List installed packages
-        sudo dpkg -l 
+        sudo dpkg -l
         # List all possible residue
         sudo dpkg --get-selections | grep deinstall
 
@@ -321,16 +321,16 @@ exit 0
         # Remove all configuration residue that `apt remove` fails to remove.
         sudo dpkg --purge $(dpkg --get-selections | grep deinstall | cut -f1)
 
-# SYSTEM 
+# SYSTEM
 
     uname -a  # All system info
-        -rsv    # kernel release, name, version 
+        -rsv    # kernel release, name, version
         -nmpio  # node (hostname), machine , processor, hardware, os
 
     # Kernel Modules
         lsmod                   # List all loaded kernel modules
         sudo modprobe $module   # Load a kernel module now (ephemeral)
-        # Load a set (containerd.conf) of kernel modules on boot : 
+        # Load a set (containerd.conf) of kernel modules on boot :
         ## @ /etc/modules-load.d/
         kernel_modules='
             overlay
@@ -341,20 +341,20 @@ exit 0
         printf "%s\n" $kernel_modules |xargs -IX sudo modprobe X
 
 # STORAGE / FILESYSTEM
-    lsblk -o SIZE,LABEL,NAME,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID 
+    lsblk -o SIZE,LABEL,NAME,MAJ:MIN,TYPE,FSTYPE,MOUNTPOINT,UUID
 
     df -hT # Disk space per device/mount : human-readable + type
     du -sh # Disk Usage : summary (all therunder) + human-readable
-    
+
     # Create symlink : Removing (rm) symlink does not affect the actual (target) file
     ln -s /path/to/target/file [/path/to/sym/link] # Default symlink path is $(pwd)/file
-    
+
     # FILE OWNER
-        chown USER:GRP FILE 
+        chown USER:GRP FILE
         chown -R USER:GRP DIR  # Recurse; all thereunder
 
     # FILE MODE : PERMISSIONs ("0" prefix is optional)
-        chmod 0755 DIR   drwxr-xr--  
+        chmod 0755 DIR   drwxr-xr--
         chmod 0744 FILE  -rwxr--r--
         chmod 0644 FILE  -rw-r--r--
         chmod 0400 FILE  -r--------
@@ -369,12 +369,12 @@ exit 0
             1 Execute     run       cd
 
         # PERMISSIONs MASK : File Mode Creation Mask
-            umask $mask # Set file mode creation mask; default: 022 
+            umask $mask # Set file mode creation mask; default: 022
             umask -S    # Display file mode creation mask in Symbolic Form
 
             # Default file-mode permissions
-            # Linux sets all new files and folders 
-            # using defaults mode and umask defaults 
+            # Linux sets all new files and folders
+            # using defaults mode and umask defaults
             # So, with default umask (0022), the resulting perms are:
             # Final: Sans   Umask
             # ----   ----   ----
@@ -383,8 +383,8 @@ exit 0
 
             # Change per SESSION; to persist, edit @ ~/.profile
             umask 0022  # Default; e.g.,  0755  u=rwx,g=rx,o=rx
-            umask 0077  # User only;      0700 
-            
+            umask 0077  # User only;      0700
+
             # Symbolic Mode Permissions
             umask -S u=rwx,g=rx,o=rx # 0022 => 0755
 
@@ -405,28 +405,28 @@ exit 0
         id -g   # Group GID
         id -G   # All groups of which $USER is a member : by GID
         id -Gn  # All groups of which $USER is a member : by group name
- 
+
     # Get MIN MAX values of UID:GID for REGULAR and SYSTEM work (users, groups)
         cat /etc/login.defs
 
     # user, pass
         # Add user, and set password interactively
             adduser $user            # create new user
-            passwd $user             # (re)set user's password  
+            passwd $user             # (re)set user's password
             # (Re)Set password non-interactively
                 echo  "$user:$pass" |sudo chpasswd
-            
+
         # Get username from uid
             uname_uid(){ cat /etc/passwd |grep ":x:${1}:" |awk -F ':' '{print $1}'; }
             uname_uid $uid
 
         # Add a secure SSH-users account (user:group) at target machines.
             # Add user:group foo:foo having no password, and so disabling password-based shell login.
-            # This is useful for remote user(s) to login as this user by ssh; 
+            # This is useful for remote user(s) to login as this user by ssh;
             # allowing only (ssh) key-based authtentication.
             # Each user would have to add their public key to this user's ~/.ssh/authorized_keys file,
             # and do so by some out-of-band (not ssh-copy-id) process requiring elevated privileges.
-            useradd -m -s /bin/bash $u 
+            useradd -m -s /bin/bash $u
                 -u, --uid
                 -g, --gid
                 -U, --user-group # Create group having user name and add user to it; default behavior lest -N, -g
@@ -436,17 +436,17 @@ exit 0
                 -M, --no-create-home
                 -m, --create-home
                 -d, --home-dir  # Unless -M
-                -b, --base-dir  # Base dir; default is /home : Required by -d lest -m 
+                -b, --base-dir  # Base dir; default is /home : Required by -d lest -m
                 -c, --comment
                 --gecos         # GECOS (General Electric Comprehensive Operating System) field : Not all distros; Prefer --comment
                 -G, --groups    # CSV list of supplemental groups to which this user is added.
-                -p, --password 
+                -p, --password
 
             # Idempotent
             id -un $u || sudo useradd --create-home --shell /bin/bash $u
 
         # Add user:group ($u:$u) of declared IDs
-            # having UID:GID 1001:1001, 
+            # having UID:GID 1001:1001,
             # having NO HOME DIRECTORY
             groupadd --gid 1001 $u
             adduser --uid 1001 --gid 1001 --gecos "Full Name,Room Number,Phone,Other" --disabled-password --no-create-home $u
@@ -457,11 +457,11 @@ exit 0
             useradd -r -M -s /bin/false $u    # Silent exit on login attempt
 
         # Add user having ALT HOME DIR yet /home equivalence regarding SELinux
-            # Want to create a user account for podman, configure that for rootless podman in a large home dir, 
-            # so that many AD users (a developer team) have a stable, workable rootless podman configuration 
+            # Want to create a user account for podman, configure that for rootless podman in a large home dir,
+            # so that many AD users (a developer team) have a stable, workable rootless podman configuration
             # in which to work on a designated RHEL host having SELinux enforced.
 
-            # 1. Provision a system user (podmaners) with alternate home directory 
+            # 1. Provision a system user (podmaners) with alternate home directory
 
                 # Create a local service account having no login shell
                 # yet a non-standard home dir (at a large partition)
@@ -495,33 +495,33 @@ exit 0
 
         # Get entitites (GID, name, ...) from Name Service Switch library
             # Useful to test for existence of subject
-            getent group foo 
+            getent group foo
             getent passwd foo
 
         # Add user to group
-            usermod -aG $g $u 
+            usermod -aG $g $u
             newgrp docker # Supposedly to take effect now, but side effects linger. Better to relog.
             # OR
-            gpasswd -a $u group 
+            gpasswd -a $u group
 
         # Delete a user
-            userdel -r $u 
+            userdel -r $u
             userdel -r -Z $u
         # Remove a user from a group
             gpasswd -d $u $g
-        
+
         # Lock user account
             passwd -l $u
         # Unlock user account
-            passwd -u $u 
+            passwd -u $u
         # Unlock user in faillock
-            faillock --user $u --reset 
+            faillock --user $u --reset
 
         # List groups to which user has membership
         groups $u   # Of declared else current user
 
-        # List : group / members 
-        cat /etc/group 
+        # List : group / members
+        cat /etc/group
         getent group NAME
 
         # Change owner (UID:GID) recursively
@@ -529,7 +529,7 @@ exit 0
         # Change owner to current user:group
         chown -R $(id -u):$(id -g) /top/path
 
-        # Sudoers GROUP : Add USER | sudoers(5) https://linux.die.net/man/5/sudoers   
+        # Sudoers GROUP : Add USER | sudoers(5) https://linux.die.net/man/5/sudoers
         usermod -aG wheel $u  # RHEL/CentOS/Fedora (wheel group)
         usermod -aG sudo $u   # Ubuntu/Debian      (sudo group)
 
@@ -539,13 +539,13 @@ exit 0
             groupmod -n $new $old
         # Change PASSWORD
             # Set interactively
-            passwd $u 
-            # Set non-interactively : 
+            passwd $u
+            # Set non-interactively :
              echo "$pw" |sudo passwd $u --stdin
             # Set to unknowable password : -base64|-hex :
             openssl rand -base64 33 |sudo passwd $u --stdin
             # Batch password change
-                chpasswd  # non-interactive/batch; must be root user 
+                chpasswd  # non-interactive/batch; must be root user
                 # E.g.,
                 echo  "$user:$pass" |sudo chpasswd
                 # @ multiple users
@@ -556,14 +556,14 @@ exit 0
         # LOCK user ACCOUNT to prevent login by password (SSH by key okay).
         sudo passwd -l $u
         # CHANGE : HOME dir : default is /home/$USER
-            sudo vim /etc/passwd  
-            # sudo(8)  https://linux.die.net/man/8/sudo 
+            sudo vim /etc/passwd
+            # sudo(8)  https://linux.die.net/man/8/sudo
             # ... edit @ username, then reboot
-                sudo COMMAND # has very limited PATH; TERM, PATH, HOME, SHELL, LOGNAME, USER, USERNAME 
-                # ... to add more paths, modify: | sudoers(5) https://linux.die.net/man/5/sudoers   
-                /etc/sudoers.d 
+                sudo COMMAND # has very limited PATH; TERM, PATH, HOME, SHELL, LOGNAME, USER, USERNAME
+                # ... to add more paths, modify: | sudoers(5) https://linux.die.net/man/5/sudoers
+                /etc/sudoers.d
                     env_check
-                    env_keep 
+                    env_keep
                     # a whitelist for environment variables.
 
         # sudo -u v. su : Shell requirements
@@ -575,23 +575,23 @@ exit 0
             sudo -u $u $command     # Run $command as user $u, sans shell
             sudo su $u              # Shell at PWD
             sudo su - $u            # Login shell
-            sudo -i su $u           # Login shell and PWD at /root   
+            sudo -i su $u           # Login shell and PWD at /root
             sudo su -s /bin/bash $u # Force login shell
-            sudo -E su $u           # Preserve environment 
-            su $u                   # Switch User : to $u 
+            sudo -E su $u           # Preserve environment
+            su $u                   # Switch User : to $u
             su - $u                 # Switch User : to $u's login shell
-    
+
     # sudoers FILE
         /etc/sudoers # The baseline sudoers file
             sudo visudo /etc/sudoers # To edit, but don't. Rather:
-            # - Best practice is to leave that file untouched, 
+            # - Best practice is to leave that file untouched,
             #   and rather add/edit file(s) at /etc/sudoers.d/.
             #   Each of which is named and scoped to a group or user.
             # - The visudo utility is a safety net against user lockout due to wrong syntax,
             #   yet it does *not* protect context-specific errors.
             #   Such errors are uncaught, and fail to apply without hint as to why.
 
-        # ALLOW per file(s) of sudoers statements at /etc/sudoers.d/ 
+        # ALLOW per file(s) of sudoers statements at /etc/sudoers.d/
             sudo visudo /etc/sudoers.d/$USER  # Create/Edit.
             # - All files under /etc/sudoers.d/ are invoked automatically.
             # - Changes take effect immediately.
@@ -637,29 +637,29 @@ exit 0
 
 1            # Set TTL on sudo PASSWORD ENTRY
                 # Defaults timestamp_timeout=-1 # Once per terminal session
-                # Defaults timestamp_timeout=60 # 60 minutes 
+                # Defaults timestamp_timeout=60 # 60 minutes
                 ## Scoped to user
                 # Defaults:u1 timestamp_timeout=-1
                 ## Scoped to group
                 # Defaults:%ops timestamp_timeout=60
         # Set default editor
             sudo update-alternatives --config $editor
-    
+
     # MONITOR users
-        users # print user names of users currently logged in @ current host 
+        users # print user names of users currently logged in @ current host
             # E.g., monitor if user $1 logged in; send email to root on login
-            until users | grep $1 > /dev/null 
-            do; sleep 15; done 
+            until users | grep $1 > /dev/null
+            do; sleep 15; done
             mail -s "$1 just logged in" root < .
 
-    # TEST if user has elevated privileges 
-    ls /root 
+    # TEST if user has elevated privileges
+    ls /root
     # Show perms/owner
     ls -lh
-    # Logout of GUI from terminal 
+    # Logout of GUI from terminal
     pkill -u $user
 
-    who  # who is logged in; USER TTY TIME 
+    who  # who is logged in; USER TTY TIME
     w    # who is logged in; USER TTY FROM LOGIN@ IDLE JCPU PCPU WHAT
     # from HOST1 @ ssh foo@HOST2 =>
             [foo@HOST2 ~]$ w
@@ -672,43 +672,43 @@ exit 0
     (sleep 2 && tail --pid=$( pidof $_program ) -f /dev/null && rm ./$_program &)
     go build -o $_program && ./$_program
 
-    stress  # stress test; artificial load  
+    stress  # stress test; artificial load
         -c, --cpu N      # spawn N workers spinning on sqrt()
         -i, --io N       # spawn N workers spinning on sync()
         -m, --vm N       # spawn N workers spinning on malloc()/free()
 
-    strace  # trace system calls and signals; man strace (1) 
+    strace  # trace system calls and signals; man strace (1)
         # trace `aCommand` and send strace output to file 'aCommand.strace'
         strace -o COMMAND.strace -f COMMAND ARGs
-        strace -c COMMAND  # stats 
-    
+        strace -c COMMAND  # stats
+
     top # Dynamic real-time view of a running linux system : processes/threads
         # Memory units in MiB at Task (-e) and Summary (-E) areas : Sort by Resident Set Size (RES)
-        top -em -Em -oRES 
+        top -em -Em -oRES
     htop    # Newer/nicer top
     pstree  # Shows parent/child tree structure of processes
     ps      # Snapshot of current processes [syntax:UNIX|BSD|GNU]
         # List all process sorted by RSS (Resident Set Size; actual phy mem used) [KB]
         ps -aux --sort=-rss |head
-        ps -aux |wc -l # get the number of running processes 
+        ps -aux |wc -l # get the number of running processes
         ps -ax --sort=-rss -o user,pid,rss,pmem,pcpu,command # command (full statement); comm (command only)
             # all (a); incl processes external to shell (x)
                 # Fields
-                USER   
+                USER
                 PID      # Process ID
-                %CPU 
-                %MEM     # https://povilasv.me/go-memory-management/ 
+                %CPU
+                %MEM     # https://povilasv.me/go-memory-management/
                 VSZ      # Bytes of RAM reserved (Virtual Memory Size)
                 RSS      # Resident Set Size : Actual physical memory [KB] used by the process
                 TTY      # current-terminal:'pts/0', background-process:'?'
                 STAT     # status : sleep:'S', running:'R'
-                START  
-                TIME 
+                START
+                TIME
                 COMMAND  # the command that lauched it
-                
+
         # monitor process $1; show/stream its `ps` status @ tty11; write to syslog on stop
-            while ps -aux | grep $1 | grep -v grep | grep -v bash > /dev/tty11 
-            do; sleep 1; done 
+            while ps -aux | grep $1 | grep -v grep | grep -v bash > /dev/tty11
+            do; sleep 1; done
             logger $1 has stopped.  # send to syslog; `/var/log/messages`
 
         ps -ejH # Process tree
@@ -721,11 +721,11 @@ exit 0
     pstree # all processes per parent-child tree [graph]
 
     # SHELL JOBs : process launched from shell
-        COMMAND & # start as a BACKGROUND PROCESS 
+        COMMAND & # start as a BACKGROUND PROCESS
         CTRL+C    # TERMINATE job
         CTRL+Z    # PAUSE job
         bg [N]    # MOVE process TO BACKGROUND, per JOB NUMBER (N); default: N=1
-        fg [N]    # MOVE process TO FORE, per JOB NUMBER (N); default: N=1 
+        fg [N]    # MOVE process TO FORE, per JOB NUMBER (N); default: N=1
 
     # PROCESS SIGNALs (NAMES & NUMBERS)
         Name      Number    Effect
@@ -738,11 +738,11 @@ exit 0
 
     # SENDING SIGNALS [man 7 signal]
         #  terminate/kill : SIGTERM[15]/SIGKILL[9] : politely/NOW
-        #  do NOT use SIGKILL [9] on file process; can destroy file[s] 
+        #  do NOT use SIGKILL [9] on file process; can destroy file[s]
         top             # send signals: 'k'=kill, 'r'=renice [increment!]
         kill 0          # kill ALL JOBS except current shell
         kill %N         # kill per JOB NUMBER; get job number per `jobs`
-        kill PID        # kill per PID; does NOT kill STOPPED JOB 
+        kill PID        # kill per PID; does NOT kill STOPPED JOB
         kill $!         # kill last background job, per its PID [$!]
         kill -n 15 1234 # politely kill PID number 1234
         kill -n SIGNUM  PID  # by number
@@ -752,22 +752,22 @@ exit 0
 
         # LIST/KILL per NAME and other attributes
             pgrep [options] pattern  # LIST processes
-            pkill [options] pattern  # SIGNAL processes 
+            pkill [options] pattern  # SIGNAL processes
             pkill pattern            # Terminate per SIGTERM (15); DEFAULT
-            # E.g., 
+            # E.g.,
             pkill -KILL NAME    # kill process per name, per SIGKILL (9)
             pgrep -u root sshd  # list the processes called sshd AND owned by root
             pgrep -u uZer,foo   # list the processes owned by uZer OR foo.
             pkill -u USERNAME   # LOGOUT a user per SIGTERM (15)
 
-        # LIST/KILL per JOB NUMBER, `N`, which is NOT the PID. 
+        # LIST/KILL per JOB NUMBER, `N`, which is NOT the PID.
             jobs # show BACKGROUND shell jobs by JOB NUMBER number; `[N]` NAME ARGs
             kill PID  # kill PID
             kill %N   # kill JOB NUMBER (N); use to kill STOPPED JOBs
             kill $!   # kill last background job, per its PID [$!]
-            nohup COMMAND & # no-hangup; don't terminate upon logout  
+            nohup COMMAND & # no-hangup; don't terminate upon logout
 
-    # MEASURE script RUNTIME [executes script] 
+    # MEASURE script RUNTIME [executes script]
         time SCRIPT
 
         time ps -aux
@@ -775,7 +775,7 @@ exit 0
             user    0m0.002s # @ user-mode time
             sys     0m0.003s # @ kernel-mode time
 
-    # PERFORMANCE LOAD 
+    # PERFORMANCE LOAD
     #  runqueue     : PIDs [stack] => scheduler => cpu0/1/2/...
     #  load average : number of process in the runqueue @ 1min,5min,15min
     #  CPU(s) user-space:us, system:sy, idle:id, waiting:wa
@@ -783,41 +783,41 @@ exit 0
 
         top # PID USER PR NI VIRT RES SHR S %CPU %MEM TIME+ COMMAND
             top -e m -E m # Memory units in MiB : At both Task (-e) and Summary (-E) areas.
-             #  LIVE list of processes & info; default sort per CPU usage; 
+             #  LIVE list of processes & info; default sort per CPU usage;
              #  toggle: '1' toggles CPU% per cores/total
              #  send signal: 'k'=kill per SIGTERM[15]/SIGKILL[9]
              #  send signal: 'r'=niceness [increment!]
-             #  change sort collumn: '<' or '>' 
- 
-        free # memory; total,used,free,...; RAM/buffers/cache/Swap; 
+             #  change sort collumn: '<' or '>'
+
+        free # memory; total,used,free,...; RAM/buffers/cache/Swap;
             -m  # MB
-            -g  # GB 
+            -g  # GB
             # system stores/frees @ cache as needed
             # '-/+ buffers/cache:' shows this 'extra' used/free memory
             # Swap; dormant used-memory constantly moved between RAM & swap
 
-        # Swap 
+        # Swap
             swapon --show # Summary of usage
             swapon -s #... same but depricated; less readable
             swapoff -a # Disable ALL swaps devices/files of /proc/swaps
             # Verify current swap(s)
             cat /proc/swaps
-            # Disable all swaps 
+            # Disable all swaps
             sudo swapoff -a
             sudo systemctl --now disable swap.target
-        
+
          # BENCHMARK [de]compression performance/speed [7-zip app]
-            /bin/7za b 
+            /bin/7za b
 
     # SPAWN PROCESSes : Fork Bomb
-        # infinitely spawn forked processes using colon function, `:` (alias of true) 
-        :() { : | : & }; :  
+        # infinitely spawn forked processes using colon function, `:` (alias of true)
+        :() { : | : & }; :
             # then inspect numbers of running processes and tasks ...
             cat pids.current # total number of processes
-            cat tasks 
+            cat tasks
 
-# LOGGING 
-    # legacy 
+# LOGGING
+    # legacy
         aSERVICE |--> rsyslog
                  |--> internal/independently log
 
@@ -825,7 +825,7 @@ exit 0
             /var/log/
 
     # systemd
-        servicectl <--> aSERVICE --> journald 
+        servicectl <--> aSERVICE --> journald
         servicectl <--> journald
 
     # Integrate journald/rsyslogd : rcv other's logs; one or both direction
@@ -836,7 +836,7 @@ exit 0
         journalctl # CLI for journald (BINARY log files)
             -u NAME     # Of declared service (unit) NAME
             -e          # Jump to end (most recent)
-            -x          # Augment with useful meta info 
+            -x          # Augment with useful meta info
             --no-pager  # Full message (else truncates each)
             -b                  # boot logs
             --system            # System journal
@@ -865,15 +865,15 @@ exit 0
             # its config files are scattered about
             # rpms can automatically 'drop shell scripts in cron'
             # users can create their own cron jobs
-    
+
     at  # atd daemon; for jobs to execute at a certain time
             # use to 'add jobs'
-    
+
     # CRON CONFIG FILEs : CREATE CRON JOB
 
         # create cron job [crontab file]
-            #  all STORED @ [CentOS 6] ... 
-                /var/spool/cron/  
+            #  @ RHEL, see:
+                /var/spool/cron/
                     -rw-------. 1 foo  foo  36 Jan 30 13:28 foo
                     -rw-------. 1 root root 27 Jan 30 13:25 root
             # @ other distros: https://www.cyberciti.biz/faq/where-is-the-crontab-file/
@@ -886,54 +886,54 @@ exit 0
                     30 14 * * * logger hello
                     # run backup /etc to root home dir ea day @ 04:00
                     0 4 * * * tar -czf /root/etc.tgz /etc
-                    
-            # METHOD 2 
+
+            # METHOD 2
             # create cron job @ /etc/cron.d DIRectory
             vim /etc/cron.d/foo
             # E.g., 'sysstat' cron job
-            cat /etc/cron.d/sysstat # => 
+            cat /etc/cron.d/sysstat # =>
                 # Run system activity accounting tool every 10 minutes
                 */10 * * * * root /usr/lib/sa/sa1 1 1
                 # 0 * * * * root /usr/lib/sa/sa1 600 6 &
                 # Generate a daily summary of process accounting at 23:53
                 53 23 * * * root /usr/lib/sa/sa2 -A
-        
-        # Prototype cron config file 
+
+        # Prototype cron config file
         /etc/crontab # don't use; not protected
-        
+
         # list all ...
         ls -1 /ect/cron* # used by rpms to drop shell scripts to be executed hourly/daily/...
-        
+
             /etc/cron.deny
             /etc/crontab   # don't use; managed by rpm;
 
             # cron jobs DIR; contains cron jobs [files]
             # USER-CREATED CRON JOBS GO HERE
-            /etc/cron.d     
+            /etc/cron.d
                 0hourly
                 raid-check
                 sysstat
                 unbound-anchor
             # DIRs containing shell scripts dropped by rpm / pkg install scipts
             # Do NOT put here; can't control; managed by rpm
-            /etc/cron.daily 
+            /etc/cron.daily
             /etc/cron.hourly
             /etc/cron.monthly
             /etc/cron.weekly
-    
+
     # at : STATUS of atd daemon ...
     systemctl status atd -l # CentOS 7 [systemd]
-    system atd status      # CentOS 6 
-    
-    # at : LOCATION 
+    system atd status      # CentOS 6
+
+    # at : LOCATION
         /var/spool/at/
-    
-    # at : CREATE 
+
+    # at : CREATE
         at 14:30  # time; 24hr
         # => [typed @ at's prompt]
         > logger hello at 2:30 from at
         CTRL+D
-    
+
     # logs written to ...
         /var/log/messages
         /var/log/secure
@@ -942,20 +942,20 @@ exit 0
          .
     # at : SHOW JOBS
         atq
-    
-    # at : DELETE JOB[s]
-        atrm 2 # remove job #2 
 
-    # Cron Utility @ AsusWRT/Merlin router 
+    # at : DELETE JOB[s]
+        atrm 2 # remove job #2
+
+    # Cron Utility @ AsusWRT/Merlin router
         cru  # front-end script for `crontab`, written by Merlin
          # E.g., install/run, then update every 6 hours per `cru`
-            /jffs/scripts/ya-malware-block.sh  
+            /jffs/scripts/ya-malware-block.sh
             cru a UpdateYAMalwareBlock "0 */6 * * * /jffs/scripts/ya-malware-block.sh"
             # https://github.com/RMerl/asuswrt-merlin/wiki/How-to-block-scanners,-bots,-malware,-ransomware
 
 # PRIORITIES & NICENESS [ps + grep]
-    #  Nice Levels [niceness], -20 to +19; 
-    #  lower Nice Level, higher priority 
+    #  Nice Levels [niceness], -20 to +19;
+    #  lower Nice Level, higher priority
     nice -n 10 COMMAND # set nice-level of a process
     nice -n -20 COMMAND # set low nice-level of a process
     renice 15 -p {PID}    # renice a running process per its PID
@@ -964,11 +964,11 @@ exit 0
 # POWER MANAGEMENT  pm-action (8)
     legacy              systemd
 
-    halt                systemctl halt  
-    poweroff            systemctl poweroff  
-    reboot              systemctl reboot 
+    halt                systemctl halt
+    poweroff            systemctl poweroff
+    reboot              systemctl reboot
     pm-suspend          systemctl suspend
-    pm-hibernate        systemctl hibernate  
+    pm-hibernate        systemctl hibernate
     pm-suspend-hybrid   systemctl hybrid-sleep
 
     # SYSTEM SHUTDOWN
@@ -977,17 +977,17 @@ exit 0
     # reboot per menu entry #3 [systemd] ...
     grub2-reboot 2 && systemctl reboot
 
-    # suspend ... 
+    # suspend ...
     /etc/systemd/
         logind.conf # => edit ...
             IdleAction=suspend
             IdleActionSec=30min
     /usr/lib/systemd/system/
-        suspend.target  
+        suspend.target
     /usr/lib/systemd/system/
-    
-        systemd-suspend.service # runs all executables PRE|POST @ 
-        
+
+        systemd-suspend.service # runs all executables PRE|POST @
+
             /usr/lib/systemd/system-sleep/ [pre/post]
 
                 #!/bin/sh
@@ -998,29 +998,29 @@ exit 0
 
 
 # UEFI [firmware] altering files.
-    /sys/firmware/efi/efivars 
+    /sys/firmware/efi/efivars
     # a special filesystem that presents the configuration settings for the computer's underlying UEFI firmware to the user. These configuration variables are used to control the way the motherboard firmware starts up the system and boots your operating system. CHANGING THE FILES IN THIS DIRECTORY THEREFORE CHANGES THESE RESPECTIVE VARIABLES IN THE FIRMWARE. http://www.theregister.co.uk/2016/02/02/delete_efivars_linux/
 
 # INIT kernel
-    # "kernel" the operating system proper, in memory. 
-    /vmlinuz # the operating system proper, on disk. 
-    # Contains all the functions that make everything go. 
+    # "kernel" the operating system proper, in memory.
+    /vmlinuz # the operating system proper, on disk.
+    # Contains all the functions that make everything go.
 
-    systemd [systemctl...] # https://en.wikipedia.org/wiki/Systemd  
-        # https://coreos.com/os/docs/latest/getting-started-with-systemd.html 
+    systemd [systemctl...] # https://en.wikipedia.org/wiki/Systemd
+        # https://coreos.com/os/docs/latest/getting-started-with-systemd.html
         # 1. Unit/Service files; config files that describe the process/service; fnames: NAME.service
-        # 2. Target; a grouping mechanism that allows systemd to start up groups of processes at the same time. 
+        # 2. Target; a grouping mechanism that allows systemd to start up groups of processes at the same time.
         # An init system; bootstraps the user space and manage all processes subsequently;
         # Replaced the UNIX System V or Berkeley Software Distribution (BSD) init systems @ 2014.
-        systemctl # CLI for systemd 
+        systemctl # CLI for systemd
         systemctl --now $action $unit       # action: status|reload|start|stop|enable|disable
         systemctl list-sockets              # List socket units currently in memory
         systemctl list-units                # List units currently in memory
-        systemctl list-unit-files           # List all installed 
+        systemctl list-unit-files           # List all installed
         systemctl list-dependencies $unit   # Recusively list all units required of this one
-        systemctl is-active $unit           # Exit 0 if "active" 
+        systemctl is-active $unit           # Exit 0 if "active"
         # users shell scripts; <fname>.sh
-        /usr/local/bin               
+        /usr/local/bin
 
         # startup (init) scripts
         /etc/rc.d/init.d
@@ -1029,23 +1029,23 @@ exit 0
 # VIRTUAL CONSOLE LOGIN
     CTRL+ALT+<F1-F7>
 
-    CTRL+ALT+F1  # console 
-    CTRL+ALT+F7  # GUI  
+    CTRL+ALT+F1  # console
+    CTRL+ALT+F7  # GUI
 
     # The Linux console is a SYSTEM CONSOLE internal to the Linux kernel. (A system console is the device which receives all kernel messages and warnings and which allows logins in SINGLE USER MODE). The Linux console provides a way for the kernel and other processes to send text output to the user, and to receive text input from the user. The user typically enters text with a computer keyboard and reads the output text on a computer monitor. The Linux kernel SUPPORTS VIRTUAL CONSOLES - consoles that are logically separate, but which access the same physical keyboard and display. The Linux console (and Linux virtual consoles) are implemented by the VT subsystem of the Linux kernel, and do not rely on any user space software. This is in contrast to a terminal emulator, which is a user space process that emulates a terminal, and is typically used in a graphical display environment.  https://en.wikipedia.org/wiki/Linux_console
 
 # GRUB : Protect using unique username and password
 
-    # Generate password 
+    # Generate password
     sudo dnf install grub2-tools # Is *not* in grub2-tools-minimal @ RHEL 8.
-    grub2-mkpasswd-pbkdf2 
+    grub2-mkpasswd-pbkdf2
     # Set string
     pw_str='grub.pbkdf2.sha512.10000.FFC...CED.F30...0D1'
 
 	# Verify boot partition is hd0 or whatever
     lsblk
     df -hT
-        # And mapping is : 
+        # And mapping is :
         /dev/sda1 -> (hd0,msdos1)
         /dev/sda2 -> (hd0,msdos2)
 
@@ -1057,7 +1057,7 @@ exit 0
         #     (hd0,1): This is a shorthand notation. It refers to the first partition on the first hard disk.
         #     (hd0,msdos1): This is a more explicit notation that also refers to the first partition on the first hard disk, indicating it's an MBR (Master Boot Record) partitioning scheme.
 
-    # Create/Edit grub config 
+    # Create/Edit grub config
 	cat <<-EOH |tee sudo /etc/grub.d/40_custom
 	set superusers="grubadmin"
 	password_pbkdf2 grubadmin $pw_str
@@ -1076,21 +1076,21 @@ exit 0
     sudo reboot
 
 
-# MAINENTANCE MODE 
-    # a.k.a. "Single User Mode" a.k.a. "runlevel 1"  
+# MAINENTANCE MODE
+    # a.k.a. "Single User Mode" a.k.a. "runlevel 1"
 
     # @ ONLINE terminal; if system boots
-    # http://www.linfo.org/change_to_single_user.html  
+    # http://www.linfo.org/change_to_single_user.html
         su /sbin/init 1  # change to runlevel 1
-        # show current runlevel 
+        # show current runlevel
         /sbin/runlevel
 
     # @ GRUB (bootloader); if boot fails
         # Boot into Single User Mode
         # https://www.tecmint.com/boot-into-single-user-mode-in-centos-7/
-        # 1. Select kernel version 
-        # 2. press `e` to edit that line 
-        # 3. down-arrow to line with `linux16` 
+        # 1. Select kernel version
+        # 2. press `e` to edit that line
+        # 3. down-arrow to line with `linux16`
         #    and change `ro` to `rw init=/sysroot/bin/sh`
         # 4. CTRL+X, or F10
         # 5. Mount root filesystem per
@@ -1098,7 +1098,7 @@ exit 0
         # When finished ...
             reboot -f
 
-    # FIX LOGIN FAILs 
+    # FIX LOGIN FAILs
         # Login from console
             <ALT>+<CTL>+<F1-7
 
@@ -1112,11 +1112,11 @@ exit 0
     # switch to single-user-mode ...
     su /sbin/init 1
 
-        # @ HOME 
+        # @ HOME
             find /home/uZer -type d -print0 | xargs -0 chmod 0755
             find /home/uZer -type f -print0 | xargs -0 chmod 0644
 
-    # Reset/Restore all packages 
+    # Reset/Restore all packages
         # RPM:
              for p in $(rpm -qa); do rpm --setperms $p; rpm --setugids $p; done
 
@@ -1130,22 +1130,22 @@ exit 0
              mtree -U -f /etc/mtree/BSD.sendmail.dist
              mtree -U -f /etc/mtree/BSD.usr.dist
 
-# AD 
+# AD
     # LDAP
         ldapsearch # Query AD and check if RFC 2307 attributes are present for a user or group.
         ldapsearch -x -H ldap://$ad_host -D "$sld.$tld" -W -b "dc=$sld,dc=$tld" "(sAMAccountName=$user)" uidNumber gidNumber
 
-    # SSSD 
-        # sssd.service 
+    # SSSD
+        # sssd.service
         sudo systemctl enable --now sssd.service
 
-        # sssd logs 
+        # sssd logs
         cat /var/log/sssd/sssd_$sld.$tld.log
 
-        # sssd config 
+        # sssd config
         cat /etc/sssd/sssd.conf
-            # To use RFC 2037 
-                # ldap_id_mapping = False 
+            # To use RFC 2037
+                # ldap_id_mapping = False
                 # ldap_user_object_class  = posixAccount
                 # ldap_group_object_class = posixGroup
             # To *not* use RFC 2037
@@ -1153,17 +1153,17 @@ exit 0
                 ## Range for UID:GID mapped from AD SID must not conflict with local
                 # ldap_idmap_range_min = 10000
                 # ldap_idmap_range_max = 20000
-            # Note "simple" access control provider allows LOGIN 
-            # per whitelist(s) of users and/or groups, 
+            # Note "simple" access control provider allows LOGIN
+            # per whitelist(s) of users and/or groups,
             # but does not affect file access of authenticated user
                 # [domain/example.com]
                 # id_provider = ad
                 # auth_provider = ad
                 # access_provider = simple
                 # simple_allow_groups = admins, developers, support
-                    # UPN (User Principal Name) format may be used : 
+                    # UPN (User Principal Name) format may be used :
                     # admins@<REALM>, e.g., admins@EXAMPLE.COM
-            # @ Kerberos in use for authentication in SSSD 
+            # @ Kerberos in use for authentication in SSSD
                 # auth_provider = krb5
                 # krb5_server   = <KDC server>
                 # krb5_realm    = EXAMPLE.COM
@@ -1171,11 +1171,11 @@ exit 0
         # ssd cache : Clear
         sudo sss_cache -E
 
-    # KERBEROS : https://chatgpt.com/c/670f0f6c-d81c-8009-b437-30f0009a613c 
+    # KERBEROS : https://chatgpt.com/c/670f0f6c-d81c-8009-b437-30f0009a613c
         # Verify SSSD is using Kerberos for authentication:
 
         # Check for active tickets
-        klist # The presence of a TGT (Ticket Granting Ticket) for krbtgt/REALM@REALM 
+        klist # The presence of a TGT (Ticket Granting Ticket) for krbtgt/REALM@REALM
             # indicates that Kerberos is in use for authenticating users.
             #=>
             # Ticket cache: FILE:/tmp/krb5cc_1000
@@ -1184,19 +1184,19 @@ exit 0
             # Valid starting       Expires              Service principal
             # 10/17/2022 08:01:32  10/17/2022 18:01:32  krbtgt/REALM@REALM
 
-        /etc/sssd/sssd.conf 
+        /etc/sssd/sssd.conf
             # [domain/example.com]
             # auth_provider = krb5
             # krb5_server   = <KDC server>
             # krb5_realm    = EXAMPLE.COM
 
-        # See : REF.Network.LDAP.sh 
+        # See : REF.Network.LDAP.sh
 
-# SECURITY/AUDIT 
+# SECURITY/AUDIT
 
     auditd # Linux Audit Daemon : CLIs : auditctl, ausearch, aureport
-        # Enable/start now 
-            systemctl enable --now auditd.service 
+        # Enable/start now
+            systemctl enable --now auditd.service
         # Summary report
             aureport # "Number of ..." : All the Things (itemized)
             aureport --help
@@ -1204,21 +1204,21 @@ exit 0
                      --auth
                      --failed
                      --syscall
-                     --executable 
+                     --executable
         # View audit logs
             cat /var/log/audit/audit.log
         # List the active auditd rules
-            auditctl -l 
+            auditctl -l
         # Search for specified event
             ausearch -k $id
         # Create TEMPORARY audit rules (does not survive reboot)
             # Monitor actions by specific user:
                 id=user-1001-watch
                 auditctl -a always,exit -F uid=1001 -S all -k $id
-            # Monitor a file : `-p rwxa` : read (r), write (w), execute (x), and attr changes 
+            # Monitor a file : `-p rwxa` : read (r), write (w), execute (x), and attr changes
                 id=file-etc.shadow-watch
                 auditctl -w /etc/shadow -p rwxa -k $id
-            # Monitor "execve" system calls 
+            # Monitor "execve" system calls
                 auditctl -a exit,always -F arch=b64 -S execve -k syscall-execve-watch
             # Monitor logins by specific user
                 auditctl -a always,exit -F uid=1000 -S execve -k user-1000-login-watch
@@ -1229,7 +1229,7 @@ exit 0
 # SECURITY PROFILE
 
     oscap # OpenSCAP CLI : OpenSCAP : SCAP Security Guide (SSG)
-        # SCAP is "Security Content Automation Protocol" 
+        # SCAP is "Security Content Automation Protocol"
         # Install
         dnf install scap-security-guide openscap-utils -y
         # Evaluate OS against a profile:
@@ -1237,12 +1237,12 @@ exit 0
         ssg=/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml    # RHEL 9 consolidates these into *-ds.xml (Data Stream) files, which include XCCDF, OVAL, and other necessary components in a single package. This makes it easier to manage and apply security content.
         id=cis
         oscap xccdf eval --profile $id $ssg
-        # Remediate : Apply a profile's remediation script 
+        # Remediate : Apply a profile's remediation script
         oscap xccdf eval --profile $id --remediate $ssg
-        
+
         # Check compliance state by running scan against specific profile by "Id" :
         oscap xccdf eval --profile $id $ssg
-        # List all available security profiles 
+        # List all available security profiles
         oscap info $ssg #... @ RHEL 9:
             # Document type: Source Data Stream
             # Imported: 2024-08-15T09:54:02
@@ -1293,4 +1293,3 @@ exit 0
             # Overview: ISO 27001 is an international standard for managing information security. It includes requirements for establishing, implementing, maintaining, and improving an information security management system (ISMS).
             # Purpose: Focused on managing risk to information assets by implementing security controls. It’s a widely recognized standard for compliance across industries.
             # Applicable Industries: General purpose, adopted across industries like finance, healthcare, IT services, and manufacturing.
-

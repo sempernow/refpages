@@ -1,5 +1,9 @@
 # GitLab on-prem Backups
 
+```bash
+/opt/gitlab/bin/gitlab-backup create
+```
+
 ## @ `/etc/gitlab/gitlab.rb`
 
 ```ruby
@@ -12,7 +16,7 @@ gitlab_rails['backup_exclude'] = ['artifacts', 'lfs', 'uploads'] # Optional excl
 
 Backup parameters in `/etc/gitlab/gitlab.rb` strictly configure **how** backups are created when the `gitlab-backup` command is run (e.g., paths, retention policy, exclusions), but **they do not configure any schedule**. There is **no internal scheduler** within GitLab Omnibus for backups.
 
-Backups must be scheduled **externally**. 
+Backups must be scheduled **externally**.
 There are only a few possible mechanisms to initiate backups from the host.
 
 #### ✅ 1. **Cron Job**
@@ -43,7 +47,7 @@ systemctl list-timers --all | grep gitlab
 grep -r gitlab-backup /etc/systemd/system/
 ```
 
-GitLab does **not** ship with a built-in timer, 
+GitLab does **not** ship with a built-in timer,
 but a local admin might have added one.
 
 #### ✅ 3. **Manual Script (Ansible/Puppet)**
@@ -153,7 +157,7 @@ journalctl -u gitlab-backup.service
 
 ---
 
-<!-- 
+<!--
 
 # Markdown Cheatsheet
 
