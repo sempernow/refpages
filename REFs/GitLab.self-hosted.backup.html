@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>GitLab.self-hosted.Backups</title>
+    <title>GitLab.self-hosted.backup</title>
     <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
     <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
@@ -21,6 +21,9 @@
 <body>
     <main>
         <h1>GitLab on-prem Backups</h1>
+
+<pre><code class="language-bash">/opt/gitlab/bin/gitlab-backup create
+</code></pre>
 
 <h2>@ <code>/etc/gitlab/gitlab.rb</code></h2>
 
@@ -164,7 +167,7 @@ sudo systemctl enable --now gitlab-backup.timer
 
 <hr>
 
-<!-- 
+<!--
 
 # Markdown Cheatsheet
 
