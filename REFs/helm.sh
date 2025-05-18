@@ -11,18 +11,27 @@
 
 # Install Helm : https://helm.sh/docs/intro/install/
 ## Releases    : https://github.com/helm/helm/releases
+
+## Install the latest release binary by trusted script:
 ok(){
-    arch=amd64
-    ver=3.15.3
-    curl -sSL https://get.helm.sh/helm-v${ver}-linux-$arch.tar.gz |tar -xzf -
-    sudo cp linux-$arch/helm /usr/local/bin/helm && rm -rf linux-$arch
-    helm version |grep $ver && return 0
-    ## Else install the latest release by trusted script:
-    curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
-        |/bin/bash 
-    helm version || return 1
+    url=https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    curl -sSL $url |/bin/bash 
+    which helm && helm version || return 1
 }
-ok #|| exit $?
+## Install declared version binary if not exist (idempotent)
+ok(){
+    v=v3.17.3
+    what=linux-amd64
+    url=https://get.helm.sh/helm-$v-$what.tar.gz
+    type -t helm > /dev/null 2>&1 &&
+        helm version |grep x$v > /dev/null 2>&1 || {
+            echo '  INSTALLing helm'
+            curl -sSfL $url |tar -xzf - &&
+                sudo install $what/helm /usr/local/bin/ &&
+                    rm -rf $what &&
+                        echo ok || return $?
+        }
+}
 
 # Repos
 ## Add repo of ArtifactHUB.io 
@@ -102,4 +111,3 @@ helm show {chart,readme,crds,values,all} $chart
 
 # Teardown : Aliases: uninstall, del, delete, un
 helm uninstall $release
-

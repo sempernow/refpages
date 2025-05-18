@@ -248,18 +248,20 @@ Thus, the total number of possible configurations is:
             - Prometheus `blackbox-exporter`
             - Prometheus Adapter for Kubernetes Metrics APIs
             - `kube-state-metrics`; replacment for `metrics-server`
-            - Install using one of two very similar projects:
-                - Manifest method : [prometheus-operator/kube-prometheus](https://github.com/prometheus-operator/kube-prometheus "GitHub") 
-                - Helm method : [prometheus-community/kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack "GitHub") 
-        - [Thanos](https://thanos.io/ "Thanos.io") @ [GitHub](https://github.com/thanos-io/thanos "GitHub") : Prometheus HA + long-term storage ([MinIO](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html "Min.io")) : CNCF project; can "seamlessly upgrade" on top of an existing Prometheus deployment.
-    - [Grafana](https://grafana.com/) : Web UI : Dashboards
-        - [Grafana Tempo](https://github.com/grafana/tempo) : Tracing backend; scales and integrates with Jaeger, Zipkin, and OpenTelemetry; fixes Jaeger shortcommings
-    - [Jaeger](https://www.jaegertracing.io/docs/1.18/opentelemetry/ "JaegerTracing.io") : Tracing collector that integrates with OpenTelemetry
+            - __Install using__ one of _two very similar projects_:
+                - __`kube-prometheus`__  
+                Manifest method : [`prometheus-operator/kube-prometheus`](https://github.com/prometheus-operator/kube-prometheus "GitHub") 
+                - __`kube-prometheus-stack`__  
+                Helm method : [`prometheus-community/kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack "GitHub") 
+        - [__Thanos__](https://thanos.io/ "Thanos.io") @ [GitHub](https://github.com/thanos-io/thanos "GitHub") : Prometheus HA + long-term storage ([MinIO](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html "Min.io")) : CNCF project; can "seamlessly upgrade" on top of an existing Prometheus deployment.
+    - [__Grafana__](https://grafana.com/) : Web UI : Dashboards
+        - [__Grafana Tempo__](https://github.com/grafana/tempo) : Tracing backend; scales and __integrates with OpenTelemetry__, Zipkin, and __Jaeger__; fixes Jaeger shortcomings.
+    - [__Jaeger__](https://www.jaegertracing.io/docs/1.18/opentelemetry/ "JaegerTracing.io") : Tracing collector that integrates with OpenTelemetry
         - [Jaeger Operator](https://www.jaegertracing.io/docs/1.60/operator/ "JaegerTracing.io") @ [GitHub](https://github.com/jaegertracing/jaeger-operator "GitHub")
             - Requires [`cert-manager`](https://cert-manager.io/docs/)
-    - [OpenTelemetry](https://opentelemetry.io/docs/collector/) (OTEL)
-      Vendor-agnostic tracing library; 
-      app library (almost all languages covered) for generating traces
+    - [__OpenTelemetry__](https://opentelemetry.io/docs/collector/) (OTEL)  
+      Vendor-agnostic tracing library for generating traces.   
+      Its app library covers almost all languages.
         - [OpenTelemetry Operator](https://opentelemetry.io/docs/kubernetes/operator/ "OpenTelemetry.io") @ [GitHub](https://github.com/open-telemetry/opentelemetry-operator "GitHub") : 
         K8s Operator to manage collectors ([OpenTelemetry Collector](https://github.com/open-telemetry/opentelemetry-collector "GitHub")) and auto-instrumentation of workloads using OTEL libraries.
     - [VictoriaMetrics](https://victoriametrics.com/products/open-source/) : 
@@ -500,4 +502,3 @@ A compact, URL-friendly unique string generator with a similar collision probabi
 <a name="foo"></a>
 
 -->
-
