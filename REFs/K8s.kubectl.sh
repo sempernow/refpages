@@ -98,7 +98,7 @@ kubectl exec -it $pod -- cat /etc/resolv.conf
         exit            # if shell NOT @ PID 1
         CTRL p;CTRL q   # if shell @ PID 1
 
-# Get environment of all pods of current namespace
+# Get per-pod environment of every pod in current namespace
 for pod in $(kubectl get po --output=jsonpath={.items..metadata.name})
 do 
     echo "=== $pod" && kubectl exec -it $pod -- env
@@ -120,19 +120,22 @@ kubectl expose $kind $name --port=80
     kubectl get svc $dname -o=yaml
     kubectl get ep # endpoints
 
-# PORT FORWARDING : Forward from cluster network to host network
-# Expose a resource (svc, pod, deploy) to node (host) network 
-# - Listen on 5555 (of host's loopback interface) forwarding to port 8080 of pod "$any":
-kubectl port-forward pod $any 5555:8080
+# PORT FORWARDING : Forward from cluster (pod) network (pCTNR) to host (node) network (pHOST)
+# Expose a resource (svc, pod, deploy) to node (host) network via port map: Syntax is pHOST:pCTNR .
+# - Listen on 5555 (of host's loopback interface), forwarding to port 8080 of pod ($any) :
+kubectl port-forward pod $any 5555:8080 & #... as background process.
 # - Listen on port 8443 locally (@ all interfaces; making available to another VM), 
-#   forwarding to service targetPort named "https"; 
-#   matches port name at Pod(s) selected by this service:
+#   forwarding to *Service* ports[].name "https":
+#   - Where Service ports[].targetPort.name MATCHES containerPort.name of its upstream Pod(s).
+#   - Not as reliable as forwarding a declared Pod.
 kubectl port-forward svc $any 8443:https --address='0.0.0.0'
 
 # PROXY : Create proxy server (cluster to host) : Default exposes K8s API to localhost:8001
 kubectl proxy -h |less # See options
 # - Proxy the entire K8s API, running the proxy as a backround process 
 kubectl proxy & # Proxy to http://localhost:8001 : To kill, type fg then CTRL+C
+# - Use that to GET running-state of kubelet configuration : See `systemctl cat kubelet.service`
+curl -sX GET http://localhost:8001/api/v1/nodes/$name/proxy/configz |yq -P . #. Converts from JSON to YAML
 # - Proxy some of the API and serve static files from host ~/.local/web
 kubectl proxy --port=5555 --www=~/.local/web --www-prefix=/static/ --api-prefix=/api/ &
 #… make requests of either the API endpoints, or of static files on host:
@@ -141,7 +144,7 @@ curl http://localhost:5555/{api/v1/pods/,api/}
 # GET file existing # host ~/.local/web/ 
 curl http://localhost:5555/static/$file # Sans $file returns directory listing (HTML)       
 
-# PULL file from container to (local) host path 
+# PULL a file from container to (local) host path 
 ctnr=ngx-7bb6f649c6-stl26
 from=/usr/share/nginx/html/index.html
 to_local=index.pulled.html
@@ -480,4 +483,3 @@ kubectl config view --raw \
     #     DNS:kubernetes
     # notBefore=Jan  5 22:09:55 2025 GMT
     # notAfter=Jan  3 22:14:55 2035 GMT
-

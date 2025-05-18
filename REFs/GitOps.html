@@ -398,21 +398,23 @@ The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operato
 <li>Prometheus <code>blackbox-exporter</code></li>
 <li>Prometheus Adapter for Kubernetes Metrics APIs</li>
 <li><code>kube-state-metrics</code>; replacment for <code>metrics-server</code></li>
-<li>Install using one of two very similar projects:
+<li><strong>Install using</strong> one of <em>two very similar projects</em>:
 
 <ul>
-<li>Manifest method : <a href="https://github.com/prometheus-operator/kube-prometheus" title="GitHub">prometheus-operator/kube-prometheus</a></li>
-<li>Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub">prometheus-community/kube-prometheus-stack</a></li>
+<li><strong><code>kube-prometheus</code></strong><br>
+Manifest method : <a href="https://github.com/prometheus-operator/kube-prometheus" title="GitHub"><code>prometheus-operator/kube-prometheus</code></a></li>
+<li><strong><code>kube-prometheus-stack</code></strong><br>
+Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub"><code>prometheus-community/kube-prometheus-stack</code></a></li>
 </ul></li>
 </ul></li>
-<li><a href="https://thanos.io/" title="Thanos.io">Thanos</a> @ <a href="https://github.com/thanos-io/thanos" title="GitHub">GitHub</a> : Prometheus HA + long-term storage (<a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html" title="Min.io">MinIO</a>) : CNCF project; can &quot;seamlessly upgrade&quot; on top of an existing Prometheus deployment.</li>
+<li><a href="https://thanos.io/" title="Thanos.io"><strong>Thanos</strong></a> @ <a href="https://github.com/thanos-io/thanos" title="GitHub">GitHub</a> : Prometheus HA + long-term storage (<a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html" title="Min.io">MinIO</a>) : CNCF project; can &quot;seamlessly upgrade&quot; on top of an existing Prometheus deployment.</li>
 </ul></li>
-<li><a href="https://grafana.com/">Grafana</a> : Web UI : Dashboards
+<li><a href="https://grafana.com/"><strong>Grafana</strong></a> : Web UI : Dashboards
 
 <ul>
-<li><a href="https://github.com/grafana/tempo">Grafana Tempo</a> : Tracing backend; scales and integrates with Jaeger, Zipkin, and OpenTelemetry; fixes Jaeger shortcommings</li>
+<li><a href="https://github.com/grafana/tempo"><strong>Grafana Tempo</strong></a> : Tracing backend; scales and <strong>integrates with OpenTelemetry</strong>, Zipkin, and <strong>Jaeger</strong>; fixes Jaeger shortcomings.</li>
 </ul></li>
-<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io">Jaeger</a> : Tracing collector that integrates with OpenTelemetry
+<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io"><strong>Jaeger</strong></a> : Tracing collector that integrates with OpenTelemetry
 
 <ul>
 <li><a href="https://www.jaegertracing.io/docs/1.60/operator/" title="JaegerTracing.io">Jaeger Operator</a> @ <a href="https://github.com/jaegertracing/jaeger-operator" title="GitHub">GitHub</a>
@@ -421,9 +423,9 @@ The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operato
 <li>Requires <a href="https://cert-manager.io/docs/"><code>cert-manager</code></a></li>
 </ul></li>
 </ul></li>
-<li><a href="https://opentelemetry.io/docs/collector/">OpenTelemetry</a> (OTEL)
-Vendor-agnostic tracing library;
-app library (almost all languages covered) for generating traces
+<li><a href="https://opentelemetry.io/docs/collector/"><strong>OpenTelemetry</strong></a> (OTEL)<br>
+Vendor-agnostic tracing library for generating traces.<br>
+Its app library covers almost all languages.
 
 <ul>
 <li><a href="https://opentelemetry.io/docs/kubernetes/operator/" title="OpenTelemetry.io">OpenTelemetry Operator</a> @ <a href="https://github.com/open-telemetry/opentelemetry-operator" title="GitHub">GitHub</a> :
