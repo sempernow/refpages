@@ -1706,6 +1706,9 @@ exit
         sed 's/[][]//g'   FILE  # Strip square-brackets
         printf "%s" "$@" |sed 's/[][]//g' # `[foo[.bar]z[oo]too` => `foo.barzootoo`
 
+        # STRIP all COMMENTS (appended-inline too) and EMPTY LINES from a Bash file
+            ... |sed -E '/^[[:space:]]*#/d; s/[[:space:]]+#.*$//' |sed '/^[[:space:]]*$/d'
+
         # REPLACE LINEs having matching PATTERN
             sed '/PATTERN/s/.*/REPLACEMENT/' FILE
                 # E.g., 
@@ -2828,4 +2831,3 @@ exit
 
     # gzip all html files in current dir and all subdirs 
     find . -type f -name '*.html' -print |parallel gzip
-

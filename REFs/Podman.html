@@ -20,17 +20,11 @@
 </head>
 <body>
     <main>
-        <h1>Podman : Rootless Containers | <a href="https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7" title="ChatGPT.com">Chat 2</a> | <a href="https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c" title="ChatGPT.com">Chat 3</a></h1>
+        <h1>Podman : Rootless Containers | <a href="https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7" title="ChatGPT.com">Chat 2</a> | <a href="https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c" title="ChatGPT.com">Chat 3</a> | <a href="https://chatgpt.com/share/6817bc76-62bc-8009-8003-baf013ec9781">Chat 4</a></h1>
 
 <blockquote>
 <p>In rootless Podman, the container’s root user is actually a non-root user on the host, mapped via user namespaces.</p>
 </blockquote>
-
-<h2>Storage Issues</h2>
-
-<pre><code class="language-bash">podman system reset
-rm -rf ~/.local/share/containers
-</code></pre>
 
 <h3>Namespace and UID</h3>
 
@@ -44,7 +38,7 @@ rm -rf ~/.local/share/containers
 </ul></li>
 </ul>
 
-<p><del><strong>Create</strong> <code>subuid</code>/<code>subgid</code> range <strong>per user</strong></del> This should be handles automatically by Podman, except for users create prior to Podman install. Also, see additional configuration if users are non-local, as with AD users.</p>
+<p><strong>Create</strong> <code>subuid</code>/<code>subgid</code> range <strong>per user</strong></p>
 
 <pre><code class="language-bash">sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
 </code></pre>
@@ -58,61 +52,6 @@ because each user must have their own unique range of <code>subuid</code>/<code>
 </ul></li>
 </ul>
 
-<p><strong>Persist per-user Namespaces</strong> : <code>kernel.unprivileged_userns_clone=1</code></p>
-
-<pre><code class="language-bash"># Add entry to sysctl via drop-in method
-echo 'kernel.unprivileged_userns_clone=1' |sudo tee /etc/sysctl.d/00-local-userns.conf
-sudo service procps restart
-# Load the new settings without requiring a restart:
-sudo sysctl -p /etc/sysctl.d/00-local-userns.conf
-</code></pre>
-
-<p><strong>Configure SSSD for Automatic SubUID/GID Assignment</strong></p>
-
-<pre><code class="language-bash">sudo dnf install podman sssd-ad oddjob-mkhomedir
-
-</code></pre>
-
-<p>@ <code>/etc/sssd/sssd.conf</code></p>
-
-<pre><code class="language-ini">[domain/your.domain]
-...
-auto_private_groups = True
-subdomains_provider = ad
-override_homedir = /home/%d/%u
-ad_gpo_map_interactive = +podman-user
-</code></pre>
-
-<pre><code class="language-bash">sudo dnf install shadow-utils-subid-sssd
-sudo authselect enable-feature with-subid
-sudo systemctl restart sssd
-</code></pre>
-
-<p><strong>Enable Lingering for AD Users</strong></p>
-
-<pre><code class="language-bash">sudo tee /etc/pam.d/system-login &lt;&lt;'EOF'
-#%PAM-1.0
-...
-session optional pam_exec.so /usr/bin/loginctl enable-linger
-EOF
-
-# Verfify linger on next login
-loginctl show-user $USER | grep Linger
-</code></pre>
-
-<p>SELinux Considerations</p>
-
-<pre><code class="language-bash">sudo setsebool -P container_manage_cgroup true
-sudo semanage boolean --modify --on container_use_devices
-sudo restorecon -R -v /home # If permission errors
-</code></pre>
-
-<p>Verfiy on per-user login</p>
-
-<pre><code class="language-bash">grep $USER /etc/subuid
-grep $USER /etc/subgid
-</code></pre>
-
 <h3><code>Dockerfile</code> mods</h3>
 
 <pre><code class="language-dockerfile">RUN useradd -m auser
@@ -122,10 +61,7 @@ RUN chown -R auser /path/to/app
 
 <h3>Host : User Namespaces</h3>
 
-<p>In Podman rootless mode, a <strong>container runs in a separate user namespace</strong>,
-which isolates the user and group IDs inside the container from the ones on the host.
-Even though a process may run as <strong><code>UID 0</code> (<code>root</code>) inside the container</strong>,
-it is actually <strong>mapped to a non-root user ID on the host</strong>.</p>
+<p>In Podman rootless mode, a <strong>container runs in a separate user namespace</strong>, which isolates the user and group IDs inside the container from the ones on the host. Even though a process may run as <strong><code>UID 0</code> (<code>root</code>) inside the container</strong>, it is actually <strong>mapped to a non-root user ID on the host</strong>.</p>
 
 <h3>Customizing UID/GID Mappings</h3>
 
