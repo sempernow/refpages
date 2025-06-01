@@ -3,14 +3,22 @@
 
 ## Overview
 
-Windows Server 2019 is the operating system that bridges on-premises environments 
+Windows Server remains the industry standard domain controller for IdP (AD DS), IdM (AD UAC), X.509 (AD CS), DNS and DHCP. Linux (RHEL) hosts join into its domain via realm and SSSD.
+
+However, engineers quickly learn that its prominence is due to clever vendor lock-in rather than any technological edge. In fact, WS2019 does not allow for any sort of automation, nonetheless DevOps/GitOps methods. Every domain becomes a handcrafted boutique; a once-per-universe configuration that will never, indeed can never, be repeated again. And the man hours required to craft one, even only to the point that it is tolerably sufficient, is gargantuan. As is its maintenance.
+
+Vendor marketing:
+
+_&hellip; the operating system that bridges on-premises environments 
 with Azure services enabling hybrid scenarios maximizing existing investments. 
-Create cloud native and modernize traditional apps using containers and micro-services.
+Create cloud native and modernize traditional apps using containers and micro-services._
+
+That last sentence is laughable. Enterprises are slowly escaping the Windows hellscape, and moving to a purely K8s-based infra. Though very slowly.
 
 ### Installation options (2016/2019):
 
 - __Server Core__ (headless):  
-    This is the recommended installation option. 
+    This is the __recommended__ installation option. 
     It’s a smaller installation that includes the core components of Windows Server 
     and supports all server roles but __does not include a local graphical user interface__ (GUI). 
     _Managed remotely_ through __Windows Admin Center__, PowerShell, or other server management tools.
@@ -34,7 +42,7 @@ Requirements:
 
 A locally-deployed, __browser-based management tool__ set built to manage Windows Clients, Servers, and Clusters without needing to connect to the cloud. Windows Admin Center offers full control over all aspects of Windows-based server infrastructure and is __particularly useful for managing on-prem servers__.
 
-Windows Admin Center (WAC) is __not a built-in feature__ of Windows Server 2019; it __requires its own separate installation__. 
+WAC __requires its own separate installation__.WAC is not a built-in feature of WS2019.  
 While it is designed to manage Windows Server environments, WAC itself is a web-based management tool that must be downloaded and installed manually.
 
 Once installed, you can __use WAC to manage multiple Windows Servers, Hyper-V hosts, clusters, and even Windows 10 and 11 PCs__ from a single web-based interface. It simplifies server management tasks by centralizing the management tools and offering a modern, unified experience.
@@ -105,11 +113,12 @@ Selectable by checkbox at the AD Installation Wizard of the Server Manager GUI
 - DHCP Server
 - DNS Server
 - __Active Directory__ | [Directory data store](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc736627(v=ws.10)) | [Manage by PowerShell AD Module](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/powershell/active-directory-replication-and-topology-management-using-windows-powershell)
-    - __Domain Services__ ([ADDS](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview)) | [Operations](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/ad-ds-operations)
-    - __Federation Services__ ([ADFS](https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/ad-fs-overview))  
+    - __Domain Services__ ([AD DS](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview)) | [Operations](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/ad-ds-operations)
+    - __Federation Service__ ([AD FS](https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/ad-fs-overview))  
     AD FS enables __Federated Identity__ and __Access Management__ by securely sharing digital identity and entitlements rights across security and enterprise boundaries. Implements OIDC, and OAuth Grant flows. Successor is Microsoft Entra ID.
         - [AD FS OIDC/OAuth Flows v. App Scenarios](https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/overview/ad-fs-openid-connect-oauth-flows-scenarios)
-    - __Certificate Services__ ([ADCS](https://learn.microsoft.com/en-us/windows-server/identity/ad-cs/active-directory-certificate-services-overview#key-features))  
+        - DEPRICATED : Microsoft is hard selling its cloud service [Entra ID](https://learn.microsoft.com/en-us/entra/fundamentals/whatis) which mates to its labyrinth of proprietary apps, each designed to superglue customers to Microsoft Corporation.
+    - __Certificate Services__ ([AD CS](https://learn.microsoft.com/en-us/windows-server/identity/ad-cs/active-directory-certificate-services-overview#key-features))  
       Issue and manages TLS certificates via web UI. Provides Public Key Infrastructure (PKI) 
       for cryptography, digital certificates and signature capabilities.
 - PowerShell Desired State Configuration (DSC) in Windows Management Framework (WMF) 5  

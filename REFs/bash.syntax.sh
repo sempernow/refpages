@@ -909,7 +909,12 @@ exit
 
         # U+2627, or e2, 98, a7 in 2-digit hex : glyph is "☧" : name is "CHI RHO"
             echo $'\u2627'          # in 4-digit hex
+            echo -e '\u2627'        # in 4-digit hex
             echo -e '\xE2\x98\xA7'  # in 2-digit hex
+            echo -e  '\U26A0\UFE0F' # ⚠️
+            echo -e '\U1F6E0\UFE0F' # 🛠️
+                # U+1F6E0 → \U1F6E0 : 🛠 (wrench emoji)
+                # U+FE0F  → \UFE0F  : variation selector (colorful, if supported)
 
 # COMPOUND COMMANDS [BUILT-IN STUCTURES]
     # https://www.gnu.org/software/bash/manual/bashref.html#Compound-Commands
