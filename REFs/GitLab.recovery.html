@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.recovery</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>GitLab omnibus upgrade unhealthy</h1>
+
+<p>GitLab omnibus is in unhealthy state three days after upgrade from 17.8 to 18.0, with over 500,000 failed background jobs and gitlab-rake advising &quot;... git bundle ... db:migrate&quot;. The command sudo -u git bundle ...  fails by what appears a file owner/access issue, &quot;rake ... not found&quot;. This is production service used by devs. What is advised recovery strategy from here?</p>
+
+<p>Critical situation — production GitLab Omnibus 18.0 with a large backlog of background jobs and incomplete migration post-upgrade.</p>
+
+<p>Here's a focused and staged <strong>recovery strategy</strong>:</p>
+
+<hr>
+
+<h3>🔍 Step 1: <strong>Assess Current State and Log Everything</strong></h3>
+
+<ol>
+<li><p><strong>Confirm GitLab health checks</strong>:</p>
+
+<pre><code class="language-bash">sudo gitlab-rake gitlab:check SANITIZE=true
+sudo gitlab-rake gitlab:env:info
+</code></pre></li>
+
+<li><p><strong>Identify which background jobs are failing</strong>:</p>
+
+<pre><code class="language-bash">sudo gitlab-rake sidekiq:queue_stats
+</code></pre></li>
+
+<li><p><strong>Check logs</strong>:</p>
+
+<pre><code class="language-bash">tail -n 100 /var/log/gitlab/gitlab-rails/sidekiq.log
+tail -n 100 /var/log/gitlab/gitlab-rails/production.log
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3>⚠️ Step 2: <strong>Diagnose the <code>rake ... not found</code> Error</strong></h3>
+
+<p>This implies your <code>PATH</code> or <code>BUNDLE_GEMFILE</code> is not correctly set, usually due to:</p>
+
+<ul>
+<li>Running the command as the wrong user</li>
+<li>Not using the correct GitLab environment</li>
+</ul>
+
+<h4>✅ Use this pattern to ensure correct context:</h4>
+
+<pre><code class="language-bash">sudo gitlab-rake db:migrate
+</code></pre>
+
+<p>or</p>
+
+<pre><code class="language-bash">sudo -u git -H bundle exec rake db:migrate RAILS_ENV=production
+</code></pre>
+
+<p>If <code>bundle</code> is missing or misconfigured:</p>
+
+<pre><code class="language-bash">cd /opt/gitlab/embedded/service/gitlab-rails
+sudo -u git -H /opt/gitlab/embedded/bin/bundle exec rake db:migrate RAILS_ENV=production
+</code></pre>
+
+<hr>
+
+<h3>🧼 Step 3: <strong>Clear the Obstruction (Run <code>db:migrate</code>)</strong></h3>
+
+<p>If <code>db:migrate</code> hasn't completed, GitLab cannot enqueue or process jobs properly.</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl stop sidekiq
+sudo gitlab-rake db:migrate
+</code></pre>
+
+<p>If this fails, record the error. You might need to restore from a backup (see below) or rerun the upgrade with <code>--skip-auto-reconfigure</code> and step manually.</p>
+
+<hr>
+
+<h3>🧯 Step 4: <strong>Fail-Safe Options</strong></h3>
+
+<p>If migration or the bundle command cannot run:</p>
+
+<ol>
+<li><strong>Create a snapshot or full VM backup immediately.</strong></li>
+<li><strong>Check if a pre-18.0 backup exists</strong> in <code>/var/opt/gitlab/backups/</code> or your storage.</li>
+<li>Restore to 17.8 <strong>on a staging VM</strong> and retry upgrade carefully.</li>
+</ol>
+
+<hr>
+
+<h3>🧽 Step 5: <strong>Queue Cleanup (Only After Data Integrity is Assured)</strong></h3>
+
+<p>If background jobs are beyond recovery:</p>
+
+<pre><code class="language-bash">sudo gitlab-rails console
+Sidekiq::Queue.all.each(&amp;:clear)
+Sidekiq::RetrySet.new.clear
+Sidekiq::ScheduledSet.new.clear
+</code></pre>
+
+<p><strong>⚠️ Dangerous!</strong> Only do this if you're certain no important jobs are in queue.</p>
+
+<hr>
+
+<h3>🔁 Step 6: <strong>Restart and Monitor</strong></h3>
+
+<pre><code class="language-bash">sudo gitlab-ctl reconfigure
+sudo gitlab-ctl restart
+sudo gitlab-rake gitlab:check SANITIZE=true
+</code></pre>
+
+<p>Use:</p>
+
+<pre><code class="language-bash">watch sudo gitlab-ctl status
+</code></pre>
+
+<hr>
+
+<h3>🔒 Production-Safe Recommendation</h3>
+
+<p>If you're uncertain or logs show database issues:</p>
+
+<ol>
+<li>Restore from latest working backup (or snapshot).</li>
+<li>Rehearse the 17.8→18.0 upgrade in a staging clone.</li>
+<li>Fix permission, run migrations, verify background jobs <em>before</em> retrying production upgrade.</li>
+</ol>
+
+<hr>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

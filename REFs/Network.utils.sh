@@ -509,10 +509,11 @@ exit
     whois HOSTNAME # regsitry ID, registrar, registrar server, update/creation/expiration dates
 
     nslookup
-        nslookup HOSTNAME         # returns IP Address
-        nslookup IP               # returns Domain Name
-
-            # @ Docker container
+        nslookup HOSTNAME|FQDN              # returns IP Address
+        nslookup -type=CNAME HOSTNAME|FQDN  # returns IP and canonincal name (Apex record to which CNAME point)
+        nslookup IP                         # returns FQDN aka "Domain Name"
+        
+            # @ OCI Container
                 nslookup $(hostname)
                 # Server:         127.0.0.11
                 # Address:        127.0.0.11:53
@@ -530,8 +531,8 @@ exit
                 hostname -i
                 10.0.37.5
 
-        getent hosts HOSTNAME     # IPv6
-        getent ahostsv4 HOSTNAME  # IPv4
+    getent ahostsv4 HOSTNAME  # IPv4
+    getent hosts HOSTNAME     # IPv6
 
     dnsdomainname        # show LAN domain
 

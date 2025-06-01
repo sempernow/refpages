@@ -34,7 +34,7 @@ openssl genpkey -genparam -algorithm EC -pkeyopt ec_paramgen_curve:$curve -out $
 ## Create the configuration file (CNF) : See man config
 ## See: man openssl-req : CONFIGURATION FILE FORMAT section
 ## https://www.openssl.org/docs/man1.0.2/man1/openssl-req.html
-cat <<EOH |tee $cn.cnf
+tee $cn.cnf <<EOH
 [ req ]
 prompt              = no
 default_bits        = 2048
@@ -106,7 +106,8 @@ openssl req -x509 -newkey rsa:$len -sha256 -days 3650 -noenc \
 # https://www.ssl.com/how-to/manually-generate-a-certificate-signing-request-csr-using-openssl/
 # See : FIPS 186-4 / 186-5
 #
-## @ RSA (Rivest-Shamir-Adleman):
+## @ RSA (Rivest-Shamir-Adleman) : Most common and compatible :
+## Required at AD CS (WS2019) :
 #
 ### 1. Generate RSA private key 
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:$len -out $cn.key
@@ -122,7 +123,8 @@ openssl req -new -newkey rsa:$len -extensions v3_req -config $cn.cnf -noenc -key
 #### With passphrase/prompt 
 openssl req -new -newkey rsa:$len -extensions v3_req -config $cn.cnf -keyout $site.key -out $site.csr
 #
-## @ ECDSA (Elliptic Curve Digital Signature Algorithm):
+## @ ECDSA (Elliptic Curve Digital Signature Algorithm; is not EdDSA)
+## FIPS compliant :
 #
 ### 1.a Generate ECDSA private key using parameters file
 ### 1.a.1 Generate parameters file : See man openssl-genpkey
@@ -140,7 +142,8 @@ openssl req -newkey ec:$ecparam.pem -keyout $cn.key -out $cn.csr
 ### 1. All as a one-liner statement
 openssl req -newkey ec:<(openssl genpkey -genparam -algorithm ec -pkeyopt ec_paramgen_curve:P-256)  -extensions v3_req -config $cn.cnf -keyout $cn.key -out $cn.csr
 #
-## @ ED25519 : simplest and server needs no params file
+## @ ED25519 : Edwards-curve (EdDSA) using SHA-512 (SHA-2) and (elliptic curve) Curve25519 : 
+## Simplest, fastest, most secure, and server needs no params file :
 #
 ### Private key
 openssl genpkey -algorithm ed25519 -out $cn.key
@@ -200,7 +203,7 @@ openssl s_server -accept $h:$p -cert $cn.crt -key $cn.key -CAfile $ca.crt
 openssl s_client -showcerts -connect $h:$p -CAfile $ca.crt
 ### - Signals: Q (quit), ... : See "man openssl-s_client"
 ### - Omit "-CAfile $ca.crt" to use "Trusted CA Store" /etc/ssl/certs/
-### - If self-signed cert, use site (cn) cert as CA : "-CAfile $cn.crt"
+### - If self-signed cer, use site (cn) cert as CA : "-CAfile $cn.crt"
 ### - On DNS-resolution error : "...:Name or service not known".
 ###   To add local DNS resolution : echo "127.0.0.1 $h" >>/etc/hosts
 

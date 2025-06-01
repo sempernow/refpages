@@ -524,7 +524,7 @@ exit
             tar -xaf ARCH_PATH.EXT [OPTIONS]         
           
             # CREATE archive of SOURCE where PARENT of SOURCE is archive root
-            tar -C PARENT -caf ARCH_PATH.EXT [OPTIONS] SOURCE_FOLDER_OR_FILE_NAME
+            tar -C PARENT -caf ARCH_PATH.EXT [OPTIONS] PARENT_SUB_FOLDER_OR_FILE_NAME
             # EXTRACT archive to PARENT
             tar -C PARENT -xaf ARCH_PATH.EXT [OPTIONS]         
  
@@ -2769,19 +2769,24 @@ exit
                 content: B0:CF:2B:3D:84:2B:05:5F:06:D3:66:9F:D4:81:53:83
                         (no semantics: random data only)
 
-    # v5 is non-random, unique, namespaced
+    # v5 is non-random, unique, namespaced : Use to map a name to its namespaced UUID
     uuid -v5 $namespace $name # namespace is a preset (ns:DNS|URL|OID|X500) or UUID
-    uuid -v5 ns:OID $(</etc/machine-id)
-    uuid -v5 '441fd472-a7e4-4ca0-8ab0-a83f0e104aac' 'uqrate.org'
+    uuid -v5 ns:X500 "CN=Test User,OU=Engineering,DC=example,DC=com" # Valid X.500 DN
+    uuid -v5 ns:OID 1.3.6.1.4.1.8072 # Valid ISO OID : SNMP MIB, LDAP
+        #... The 1.3.6.1.4.1 node of OID tree is for IANA enterprise numbers
+        #... See https://en.wikipedia.org/wiki/Object_identifier
+    uuid -v5 ns:URL https://foo.bar  # Valid URL
+    ns=$(uuid -v4)                   # Any UUID
+    uuid -v5 $ns /a/b/c;uuid -v5 $ns /a/b/x
 
 # RANDOM 
-    mktemp --dry-run XXXXXXXX.abc   # gV4cFS2O.abc, lBsZSFD4.abc, ...
-    $RANDOM  # bash Env. Var.; built-in random number generator
-    $(printf "%05d" $RANDOM)-FNAME  # 04858-FNAME, 26544-FNAME, ...
-    # ... can use @ SERIALIZEr  
+    openssl rand -hex 32 # 64 hex characters
+    mktemp --dry-run ns-XXXXX.abc   # ns-jJoqt.abc, ns-Cqh56.abc, ...
+    $RANDOM  # Bash env. var. is built-in random number generator.
+    printf "ns-%05d-abc" $RANDOM # ns-34858-abc, ns-26544-abc, ...
     # SHA1 | UUID 
-    _sha1=$(date "+%F %a %H.%M.%S.%N" |openssl sha1 |awk '{print $2}')  # MINGW|Linux
-    _sha1=$( dd if=/dev/urandom bs=512 count=1 |& openssl sha1 |awk '{print $2}' )
+    date "+%F %a %H.%M.%S.%N" |openssl sha1 |awk '{print $2}'  # MINGW|Linux
+    dd if=/dev/urandom bs=512 count=1 |& openssl sha1 |awk '{print $2}'
     # ee3199afc2ac07e2011e7b2d7d983d64082af656 (40 chars)
 
     # fill disk with random ASCII
