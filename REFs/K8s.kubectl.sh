@@ -23,6 +23,10 @@ kubectl api-resources --verbs=create --namespaced=false #…only those create(ab
 kubectl get $kind -o json |jq -Mr [.items[]] |yq eval .[] -P - |sed '1!s/^apiVersion/---\napiVersion/'
 
 # DEBUG : Get cluster-level info 
+# - Verify core control-plane (etcd and API server) health
+kubectl get componentstatuses
+kubectl get --raw=/healthz
+kubectl get --raw='/healthz?verbose'
 # - Events log across all Namespace
 kkubect get events -A 
 # - Cluster control-plane URL
@@ -31,6 +35,8 @@ kubectl cluster-info
 kubectl cluster-info dump
 # - Display cluster endpoints and services 
 kubectl -n kube-system get ep,svc -l 'kubernetes.io/cluster-service=true'
+# - Logs of a deployment, e.g., calico-kube-controllers
+kubectl -n kube-system logs deploy/calico-kube-controllers
 
 # MANAGE WORKLOADS
 # - Declarative commands
