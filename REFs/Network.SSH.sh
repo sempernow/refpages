@@ -34,16 +34,18 @@ man ssh_config
 
         # Generate key pair : Default type (-t) is 'rsa' : No passphrase prompt (-N '')
             # Instead of using default key names (id_rsa, id_ecdsa, id_ed25519),
-                # use a naming convention that allows for rotations per context (account,domain)
-                # E.g., ~/.ssh/local_$(id -un) for a key to all hosts on the same (local) subdomain:
-                key=~/.ssh/${domain}_$account 
+                # Use a naming convention that allows for rotations per context (domain, account)
+                # E.g., ~/.ssh/local_$(id -un) for a key to all hosts on an RFC1918 (local) network:
+                key=~/.ssh/${domain}_$account
+
             # Elliptical
                 # Use ed25519 variant; best, though not yet FIPS-compliant
                 ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f $key
-                # Else use NIST-approved & FIPS compliant
-                ssh-keygen -t ecdsa -b 384 -C "$(id -un)@$(hostname)" -N '' -f $key
-            # RSA : use bit length option with (at least) `-b 2048` (OpenSSL default)
-                ssh-keygen -t rsa -b 2048 -C "$(id -un)@$(hostname)" -N '' -f $key
+                # Else use NIST-approved & FIPS compliant : bits: 256, 384 or 521
+                ssh-keygen -t ecdsa -b 521 -C "$(id -un)@$(hostname)" -N '' -f $key
+
+            # RSA : use bit length option with at least 2048 (OpenSSL default) else 4096
+                ssh-keygen -t rsa -b 2048 -C "$(id -un)@$(hostname)" -N '' -f $key 
 
             # Re(Set) key's passphrase (local security)
                 ssh-keygen -p -P $old -P $new -f $_KEY_PATH 

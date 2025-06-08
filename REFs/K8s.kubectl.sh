@@ -151,10 +151,10 @@ curl http://localhost:5555/{api/v1/pods/,api/}
 curl http://localhost:5555/static/$file # Sans $file returns directory listing (HTML)       
 
 # PULL a file from container to (local) host path 
-ctnr=ngx-7bb6f649c6-stl26
-from=/usr/share/nginx/html/index.html
-to_local=index.pulled.html
-kubectl cp $ctnr:$from $to_local
+ctnr_host=ngx-7bb6f649c6-stl26
+ctnr_path=/usr/share/nginx/html/index.html
+local_path=index.pulled.html
+kubectl cp -p $ctnr_host:$ctnr_path $local_path
 
 # PATCH : https://chatgpt.com/share/a45d346d-270e-4919-94a7-dccabb1e1246
 # JSON Patch (RFC 6902) : Modify an existing resource in-place (cluster's data-store content)
@@ -463,29 +463,26 @@ kubectl get $kindObj -o json |jq -Mr '.items[]
     # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
 # Parse TLS certificate and extract subject
 user=kubernetes-admin # See config.users[] at `kubectl config view` 
-    # Note we can (re)set kubeconfig "name" keys at our whim; 
-    # the name keys are client-side references only; 
-    # does not affect (X.509) "subject" seen by K8s API server.
-    # @ yq (here for syntax reference only)
-    kubectl config view --raw -o yaml \
-        |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data' #…
-    # @ JsonPath
-    kubectl config view --raw \
-        -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
-        |base64 -d |openssl x509 -noout -issuer -subject -ext subjectAltName -startdate -enddate
-        # issuer=CN = kubernetes
-        # subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
-        # No extensions in certificate
-        # notBefore=Jan  5 22:09:55 2025 GMT
-        # notAfter=Jan  5 22:14:57 2026 GMT
+    # Note we can (re)set kubeconfig "name" keys as desired; 
+    # the name keys are client-side references *only*; 
+    # does not affect the (X.509) "subject" seen by the K8s API server.
+        # @ yq (here for syntax reference only)
+        kubectl config view --raw -o yaml \
+            |yq '.users[] |select(.name == "'$user'") |.user.client-certificate-data' 
+        # @ JsonPath
+        kubectl config view --raw \
+            -o jsonpath='{.users[?(@.name=="'$user'")].user.client-certificate-data}' \
+            |base64 -d \
+            |openssl x509 -noout -subject
+            # subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
 # Parse TLS certificate and extract CA info
 kubectl config view --raw \
     -o jsonpath='{.clusters[].cluster.certificate-authority-data}' \
     |base64 -d \
-    |openssl x509 -noout -issuer -subject -ext subjectAltName -startdate -enddate
-    # issuer=CN = kubernetes
+    |openssl x509 -noout -subject -issuer -startdate -enddate -ext subjectAltName
     # subject=CN = kubernetes
-    # X509v3 Subject Alternative Name:
-    #     DNS:kubernetes
+    # issuer=CN = kubernetes
     # notBefore=Jan  5 22:09:55 2025 GMT
     # notAfter=Jan  3 22:14:55 2035 GMT
+    # X509v3 Subject Alternative Name:
+    #     DNS:kubernetes

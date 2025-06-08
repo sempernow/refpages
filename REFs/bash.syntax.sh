@@ -59,6 +59,7 @@ exit
             set [+abefhkmnptuvxBCEHPT] [+o option-name] [--] [-] [argument …] # UNset ootion-name (+)
 
             set -e          # Exit on fail; on non-zero exit ($?) of command or pipe
+                            #... WARNing: This command : "ls /foo/bar || echo NOT EXIST" would trigger exit from script.
             set -a          # Export all
             set +a          # End export all
             set +o posix    # Abide non-POSIX syntax.
@@ -67,9 +68,10 @@ exit
             # or any environment where reliability and transparency are critical.
             # It forces scripts to fail fast, exposes issues clearly,
             # and helps developers debug problems efficiently.
-            set -euxo pipefail # Enable strict error handling and debugging
+            set -uo pipefail # Enable strict error handling and debugging
 
-                -e  # Exits the script immediately if any command fails (non-zero exit status),
+                -e  # Exits the script immediately if any command fails (non-zero exit status)
+                    #... WARNing: This command : "ls /foo/bar || echo NOT EXIST" would trigger exit from script.
                 -u  # Treat unset variables as errors and exit the script.
                 -x  # Verbose; print each command and its arguments to the terminal before execution
                 -o pipefail # Ensures that a pipeline fails if any command in the pipeline fails.

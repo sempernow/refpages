@@ -1644,12 +1644,19 @@ exit
     yq  # jq for YAML : https://github.com/mikefarah/yq 
 
         # Convert JSON to YAML
-            cat a.json |yq eval -P -o yaml |tee a.yaml >/dev/null # Quietly lest error  
-        # Access key having spaces, hyphens and/or such
+            yq eval -P -o yaml $a.json |tee $a.yaml
+        # Access a key name having spaces, hyphens and/or such
             lscpu |yq  '.["Vulnerability Spectre v1"]'
-        # Convert items[] to "---" delimited YAML documents
-            # Example has 1st-order per-el key "apiVersion"
-            cat $yaml |yq '.items | .[]' |sed '1!s/^apiVersion/---\napiVersion/'
+        # Convert items[] to "---" delimited YAML documents 
+            # If 1st 1st-order key is "apiVersion" 
+            yq '.items | .[]' $yaml |sed '1!s/^apiVersion/---\napiVersion/'
+            # E.g., Capture all ConfigMaps (cm) of a Namespace
+            yq '.items | .[]' <(kubectl get cm -o yaml) |sed '1!s/^apiVersion/---\napiVersion/'
+        # Extract one YAML document (.kind) from a (K8s) manifest having many 
+            kind=DaemonSet;yq 'select(.kind == "'$kind'")' $manifest 
+            # E.g., Compare app versions at a particular resource (kind) 
+                doc (){ yq 'select(.kind == "'$1'")' $2; }
+                diff <(doc $kind $blue) <(doc $kind $green)
 
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command
@@ -2558,45 +2565,74 @@ exit
     mysqldump -u root -p --all-databases > $path # mySQL DB backup 
     mkpasswd $pw $salt # generate password from $pw; salt must be 2 chars
 
-    # DATE/TIME (current)
+    # Clocks : RTC (real-time; hardware) v. System (software) : Two independent clocks
+        ## RTC clock may use either UTC (recommended) or local
+        hwclock # RTC clock utility : See kernel interface : man rtc
+        hwclock --show
+        ## (Re)Initialize clocks : set one to the other (currently; not kept in sync).
+        hwclock --hctosys # Set System clock to current RTC clock time
+        hwclock --systohc # Set RTC clock to current System clock time
+            # When chronyd (the default NTP client) is running, 
+            # it periodically synchronizes the system clock with NTP servers. 
+            # By default, the RTC is updated from the system clock every 11 minutes 
+            # if the system clock is synchronized. (See timedatectl output).
+            # The rtcsync directive in /etc/chrony.conf enables kernel-based 
+            # synchronization of the RTC with the system clock. 
+        chronyc tracking
+        cat /etc/crony.conf
+        ## System clock is:
+        ## - Initialized by RTC clock
+        ## - Managed by kernel
+        ## - Synched to UTC 
+        # TIMEZONE : systemd-timedated.service : of System Clock
+            timedatectl [status] # Show current settings
+            timedatectl list-timezones 
+            timedatectl set-ntp $bool # yes|no : yes to synch with NTP (chronyd|ntpd); no to not.
+            timedatectl set-timezone $tz # America/New_York (is *not* EST5EDT), US/Mountain, America/Los_Angeles,
+            # Europe/Rome, Europe/Budapest, Europe/Moscow, Japan, Indian/Maldives, Asia/Shanghai, Asia/Macau, ...
+            timedatectl set-time HH:MM:SS
+            timedatectl set-local-rtc $bool # no|yes : no (UTC; recommended) OR yes (local)
+                ## ... That command updates both the system time and the hardware clock. 
+                ##     The result is similar to executing both "date --set" and "hwclock --systohc".
+            systemctl restart systemd-timedated.service
+        # DATE/TIME (current)
+            date --iso-8601=s # 2020-01-07T08:28:50-04:00
+            date --rfc-3339=s # 2020-01-07 08:29:00-04:00
+            # Offset +/- is WRT Zulu (GMT) : -04:00 is GMT minus 4 hours (add 4 to get GMT).
+            date --rfc-3339=date    # 2020-01-07
+            date '+%F'              # 2022-01-23
+            date --rfc-email        # Sun, 23 Jan 2022 11:44:16 -0500
+            
+            date -r $file  # mtime of file
+            # ISO8601/RFC3339 "specifications" allow for "date" that ... 
+                ##... may (not) include whitespace(s),
+                ##... may (not) include 'T',
+                ##... may (not) include 'Z',
+                ##... may (not) incl Timezone abbr name (EST, CET, UTC, ...).
+                ## Fix:
+                date -u +"%Y-%m-%dT%H:%M:%SZ"   # 2022-01-05T14:34:01Z 
+                #... is Golang UTC Zulu format : aTime.Format(time.RFC3339)
+                date --iso-8601=s -u            # 2022-01-05T14:34:01+00:00     (UTC Zulu)
+                date --iso-8601=s               # 2022-01-05T09:34:01-05:00     (UTC offset) 
 
-        date --rfc-email      # Sun, 23 Jan 2022 11:44:16 -0500
-        date --rfc-3339=s     # 2022-01-23 11:44:16-05:00 
-        date --rfc-3339=date  # 2022-01-23 
-        date +%F              # 2022-01-23
+                date --rfc-3339=s               # 2022-01-05 09:35:39-05:00
+                date +"%Y-%m-%dT%H:%M:%S%:z"    # 2022-01-05T09:36:25-05:00 
 
-        # File mtime
-        date -r $file '+%Y-%m-%dT%H:%M:%S'  # YYYY-MM-DDTHH:MM:SS
-        date -r $file '+%F %a %H.%M.%S.%N'  # YYYY-MM-DD DAY HH.MM.SS.nnnnnnnnn
+                date --rfc-3339=ns              # 2022-01-05 09:37:00.770083200-05:00
+                date +"%Y-%m-%dT%H:%M:%S.%N%:z" # 2022-01-05T09:37:00.770083200-05:00 
 
-    # ISO8601/RFC3339 "specifications" allow for "date" that ... 
-        ##... may (not) include whitespace(s),
-        ##... may (not) include 'T',
-        ##... may (not) include 'Z',
-        ##... may (not) incl Timezone abbr name (EST, CET, UTC, ...).
-
-        date -u '+%Y-%m-%dT%H:%M:%SZ'   # 2022-01-05T14:34:01Z 
-        #... For this UTC Zulu @ Golang : aTime.Format(time.RFC3339)
-        date --iso-8601=s -u            # 2022-01-05T14:34:01+00:00     (UTC Zulu)
-        date --iso-8601=s               # 2022-01-05T09:34:01-05:00     (UTC offset) 
-
-        # +/- is w.r.t. GMT, so -04:00 means add four to get Zulu time (GMT).
-
-        date --rfc-3339=s               # 2022-01-05 09:35:39-05:00
-        date '+%Y-%m-%dT%H:%M:%S%:z'    # 2022-01-05T09:36:25-05:00 
-
-        date --rfc-3339=ns              # 2022-01-05 09:37:00.770083200-05:00
-        date '+%Y-%m-%dT%H:%M:%S.%N%:z' # 2022-01-05T09:37:00.770083200-05:00 
-
-        date '+%Y-%m-%dT%H:%M:%S.%N %Z' # 2021-12-01T14:09:26.358308700 EST
-        date '+%F_[%H.%M.%S] %a %Z'     # 2020-12-01_[14.09:26] Sun EST
-        $(date +%F)                     # 2020-12-01
-
-    # Epoch : UNIX timestamp 
-        date '+%s'    # Seconds        1643918591
-        date '+%s%N'  # Nanoseconds    1643918591674370200
-                      # Milliseconds   1643918591674
-        date '+%s%N' |awk '{printf "%.13s", $1}' # Milliseconds 
+                date +"%Y-%m-%dT%H:%M:%S.%N %Z" # 2021-12-01T14:09:26.358308700 EST
+                date +"%F_[%H.%M.%S] %a %Z"     # 2020-12-01_[14.09:26] Sun EST
+                date +"%F"                      # 2020-12-01
+                    ## %z     +hhmm
+                    ## %:z    +hh:mm
+                    ## %::z   +hh:mm:ss
+                    ## %Z     alphabetic TZ abbr (e.g., EDT)
+        # Epoch : UNIX timestamp 
+            date +"%s"    # Seconds        1643918591
+            date +"%s%N"  # Nanoseconds    1643918591674370200
+                        # Milliseconds   1643918591674
+            date +"%s%N" |awk '{printf "%.13s", $1}' # Milliseconds 
 
 # SCRIPTING COMMANDS
     :      # do nothing; $? => 0
