@@ -2,12 +2,92 @@
 
 ## Troubleshoot
 
+Verify it's an SELinux issue:
+
+1. Set to Permissive
+2. Restart the problemed service or whatever
+3. If the problem goes away, then it's an SELinux issue.
+
+__Troubleshoot SELinux__:
+
 ```bash
-sudo ausearch -m avc -ts recent | audit2why
+
+getenforce  # Shows: Enforcing, Permissive, or Disabled
+sestatus    # More detailed output
+
+# Install/Verify SELinux troubleshooting tools are available
+dnf install -y selinux-policy-targeted libselinux-utils policycoreutils setroubleshoot-server policycoreutils-python-utils
+
+# Automatically Diagnose via sealert 
+sudo sealert -a /var/log/audit/audit.log
+# List all known SELinux alerts that the setroubleshoot daemon has logged and categorized.
+sudo sealert -l "*"
+
+# 1. Most recent AVC denials
+sudo ausearch -m avc -ts recent 
+# 2. All recent SELinux audit messages:
+sudo journalctl -t setroubleshoot --since "1 hour ago"
+# 3. Explain Denials with audit2why
+sudo ausearch -m avc -ts recent |audit2why
+# 4. Suggest Allow Rules with audit2allow : USE WITH CAUTION
+sudo ausearch -m avc -ts recent |sudo audit2allow -a
+# 5. Fix Wrong File Contexts
+ls -Z $file                 # Show current SELinux context of a file (path)
+sudo restorecon -v $file    # Restore expected context @ file
+ls -Z $dir                  # Show current SELinux context of dir (path)
+sudo restorecon -vR $dir    # Restore expected context @ dir (recursively)
+# 6. Check File’s Expected Context
+sudo matchpathcon $file
+# 7. Set to permissive (temporarily)
+sudo setenforce 0
+# 8. Rebuild or Reload Policies
+sudo semodule -l        # List installed modules
+sudo semodule -B        # Rebuild and reload policy modules
+
+# Clear audit log
+sudo logrotate -f /etc/logrotate.d/audit
+sudo truncate -s 0 /var/log/audit/audit.log
 
 ```
 
-## Solutions
+## Policies
+
+RHEL's  default policy is `selinux-policy-targeted`
+
+
+__Check policy__:
+
+```bash
+☩ sestatus 
+SELinux status:                 enabled
+SELinuxfs mount:                /sys/fs/selinux
+SELinux root directory:         /etc/selinux
+Loaded policy name:             targeted
+Current mode:                   enforcing
+Mode from config file:          enforcing
+Policy MLS status:              enabled
+Policy deny_unknown status:     allowed
+Memory protection checking:     actual (secure)
+Max kernel policy version:      33
+```
+
+This misleading report, "`Policy MLS status:      enabled`",  
+wrongly implies the system has __Multi-Level Security__ (MLS) enabled.
+    
+- MLS is __extremely strict__ and __rarely used outside classified environments__ 
+      (military, government, etc.).
+- Many tools and daemons assume the targeted policy and may misbehave or log extra AVCs under MLS.
+- Some policy modules may not behave the same under mls as they do under targeted.
+
+MLS is not enforced, even though the policy has MLS support enabled.
+
+This just allows contexts like `s0:c123,c456` to exist and be meaningful 
+(common in containers and multi-tenant environments).
+It does not mean you're in a DoD-style sensitivity hierarchy.
+
+## FS (folder/file) Solutions
+
+### `fcontext` : `cotnainer_file_t`
 
 ```bash
 # Set context
@@ -17,6 +97,15 @@ docker run --mount type=bind,source=$host_path,target=$ctnr_path,z ...
 # 
 podman ... --security-opt label=type:container_file_t
 ```
+
+### `fcontext` : `public_content_rw_t`
+
+```bash
+# Fix at NFS server export /srv/nfs/k8s
+sudo semanage fcontext -a -t public_content_rw_t '/srv/nfs/k8s(/.*)?'
+sudo restorecon -Rv /srv/nfs/k8s
+```
+
 
 ## Container Bind Mount
 

@@ -7,12 +7,56 @@
 exit 0
 ######
 
-# TROUBLESHOOTING; turn it off, restart the problematic service; problem fixed?
-    yum install -y selinux-policy-targeted libselinux-utils policycoreutils setroubleshoot-server
+# TROUBLESHOOTING : SELinux fcontext: USER:ROLE:TYPE
+    # Set to permissive, restart the problemed service; problem fixed?
+
+    getenforce  # Shows: Enforcing, Permissive, or Disabled
+    sestatus    # More detailed output
+
+    # Automatically Diagnose via sealert 
+    sudo sealert -a /var/log/audit/audit.log
+    # List all known SELinux alerts that the setroubleshoot daemon has logged and categorized.
+    sudo sealert -l "*"
+
+    # 1. Most recent AVC denials
+    sudo ausearch -m avc -ts recent 
+    # 2. All recent SELinux audit messages:
+    sudo journalctl -t setroubleshoot --since "1 hour ago"
+    # 3. Explain Denials with audit2why
+    sudo ausearch -m avc -ts recent |audit2why
+    # 4. Suggest Allow Rules with audit2allow : USE WITH CAUTION
+    sudo ausearch -m avc -ts recent |sudo audit2allow -a
+    # 5. Fix Wrong File Contexts
+    ls -Z $file                 # Show current SELinux context of a file (path)
+    sudo restorecon -v $file    # Restore expected context @ file
+    ls -Z $dir                  # Show current SELinux context of dir (path)
+    sudo restorecon -vR $dir    # Restore expected context @ dir (recursively)
+    # 6. Check File’s Expected Context
+    sudo matchpathcon $file
+    # 7. Set to permissive (temporarily)
+    sudo setenforce 0
+    # 8. Rebuild or Reload Policies
+    sudo semodule -l        # List installed modules
+    sudo semodule -B        # Rebuild and reload policy modules
+
+    # Clear audit log
+    sudo logrotate -f /etc/logrotate.d/audit
+    sudo truncate -s 0 /var/log/audit/audit.log
+
+    # NFS SRV:EXPORT v. K8s nfs PV (Pod/Containers) : Fix access denials 
+    # Allow rw at container path mounted under NFS export /srv/nfs/k8s : See `man semanage-fcontext` 
+    sudo semanage fcontext --add --type public_content_rw_t '/srv/nfs/k8s(/.*)?' 
+    sudo restorecon -Rv /srv/nfs/k8s # Export path at (remote) host of NFS server
+
+# INSTALL
+    # Install/Verify all the SELinux troubleshooting tools are available
+    dnf install -y selinux-policy-targeted libselinux-utils policycoreutils setroubleshoot-server policycoreutils-python-utils
+
+# CONFIGURE
 
     # View status
-        getenforce      # Enforcing|Permissive
-        sestatus        # Status and info of SELinux 
+        getenforce  # Enforcing|Permissive
+        sestatus    # Status and info of SELinux 
 
     # Set mode temporarily : Toggle to troubleshoot : Does not survive reboot
         setenforce 0|1 # permissive|enforcing
@@ -23,8 +67,13 @@ exit 0
         # SELINUXTYPE=targeted
 
         ## Automate (idempotent)
+        ## Set to Permissive
         sudo sed -i -e 's/^SELINUX=disabled/SELINUX=permissive/' /etc/selinux/config
         sudo sed -i -e 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+        ## Set to Enforcing
+        sudo sed -i -e 's/^SELINUX=disabled/SELINUX=enforcing/' /etc/selinux/config
+        sudo sed -i -e 's/^SELINUX=permissive/SELINUX=enforcing/' /etc/selinux/config
+
 
         ## Manual
         sudo vim /etc/selinux/config
@@ -94,10 +143,10 @@ exit 0
     # Examine http
         semanage port -l |grep http
         # Change the SELinux type of port 3131 to match port 80: 
-        semanage port -a -t http_port_t -p tcp 3131
+        semanage port --add --type http_port_t -p tcp 3131
 
-    # Change SELinux type of /new content to that of /old
-        semanage fcontext -a -e /old /new
+    # Change SELinux type of /target content to that of /source
+        semanage fcontext --add --equal /target /source # See `man semanage-fcontext`
 
     # Identify SELinux booleans relevant for NFS, CIFS, and Apache:
         semanage boolean -l |grep 'nfs\|cifs' |grep httpd
@@ -273,4 +322,3 @@ exit 0
         grep AVC /var/log/audit/audit.log
         
         less /var/log/messages
-

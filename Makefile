@@ -17,7 +17,7 @@ menu:
 	@echo '	getrefs   : Copy all REF* files to a tmp folder at ${TEMP}/$$( mktemp -d ).'
 	@echo '	index     : Process MD files into HTML and create index.html'
 	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
-	@echo '	gitpush   : git commit ... && git push ...'
+	@echo '	commit    : git commit ... && git push ...'
 
 build : getrefs index normalize
 
@@ -30,5 +30,5 @@ index :
 normalize :
 	bash make.recipes.sh normalize
 
-gitpush push :
+commit :
 	bash make.recipes.sh gitpush
