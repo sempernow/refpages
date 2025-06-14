@@ -148,6 +148,12 @@ It specifies how to encode data for signing or encryption with RSA.</p>
 <p>One or more Base64 ASCII certificates are stored in a <strong><code>.p7b</code></strong> or <code>.p7c</code> file.
 Commonly used in <strong>Windows</strong> and <strong>Java</strong> applications.</p>
 
+<p>Windows Server's Certificate Services (<strong>AD CS</strong>) returns the <strong>fullchain certificate</strong> (per approved CSR) in P7B format.</p>
+
+<pre><code class="language-bash">## Convert from P7B to PEM
+openssl pkcs7 -print_certs -in input.p7b -out output.pem
+</code></pre>
+
 <h5><a href="https://en.wikipedia.org/wiki/PKCS_8">PKCS#8</a></h5>
 
 <p>Specifies the <strong>private key</strong> information syntax, which is a format for storing private keys;

@@ -265,6 +265,8 @@ exit
         # The NetworkManager daemon attempts to make networking configuration and operation as painless and automatic as possible by managing the primary network connection and other network interfaces, like Ethernet, Wi-Fi, and Mobile Broadband devices. NetworkManager will connect any network device when a connection for that device becomes available, unless that behavior is disabled. Information about networking is exported via a D-Bus interface to any interested application, providing a rich API with which to inspect and control network settings and operation.
         NetworkManager --print-config 
         man NetworkManager.conf 
+        
+        systemctl status NetworkManager.service
 
         # UNMANAGED DEVICEs # Configuring NetworkManager to IGNORE some devices : manage them by nftables & firewall-cmd
             # By default, NetworkManager manages all devices except the loopback (lo) device; 
@@ -556,4 +558,3 @@ exit
         # deny … 
             ufw deny 53/udp  # deny UDP packets on port 53 
             ufw deny ssh     # deny all SSH connections
-

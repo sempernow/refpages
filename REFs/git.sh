@@ -7,14 +7,20 @@ exit
 # https://github.com/git-for-windows/git/blob/master/Documentation/gittutorial.txt
 
 # Migrate project
-git clone --mirror https://github.com//group-a/sub-1/project-x.git
+# 1. Pull
+source_host=gitlab.lime.lan
+source_namespace=group-a/sub-1/project-x
+git clone --mirror https://$source_host/$source_namespace.git
+# 2. Push
 cd repository.git
-git remote add gitlab https://gitlab.com//group-b/sub-2/project-x.git
-git push --mirror gitlab
-# @ GitLab, check for existence of target project using API
-GET /api/v4/projects/group-b%2Fsub-2%2Fproject-x
+target_host=gitlab.rasp.lan
+target_namespace=group-b/sub-2/project-y
+git remote add origin https://$target_host/$target_namespace.git
+git push --mirror origin
+# 3. Verify using GitLab API
+GET /api/v4/projects/$target_namespace
 # Get ID if namespace exist
-GET /api/v4/namespaces?search=sub-b
+GET /api/v4/namespaces?search=$target_namespace 
 # Create if not
 POST /api/v4/projects
 {
@@ -23,25 +29,16 @@ POST /api/v4/projects
     "visibility": "private" // or "public" or "internal"
 }
 
-# By scenario
-## Create a new local branch from a remote branch
-git checkout --track origin/feature-branch-name # So subsequent pull needs no args
-## Combine checkout and pull to assure latest remote included
-git checkout $branch && git pull
-## Rebase instead of pull for linear commit history
-## Do this prior to MR of feature into main
-## - Pulls latest changes from origin/main.
-## - Reapplies local feature branch commits on top of latest main.
-## - Updates feature branch to reflect the changes.
-git checkout feature-branch-name
-git fetch # Updates meta but does not affect local branches
-git rebase origin/origin
-git push --force # Required unless first push of feature.
+# Pattern for clean history
+# Rebasing feature branch onto main, then merge back into main
+# That's a fast-forward merge with clean, linear history; no merge commits, no forks, no clutter.
+git checkout feature
+git rebase main # Affects only feature branch (commit history is linear : main-feature)
+# test, then merge feature into main:
+git checkout main
+git merge feature  # fast-forward
 
-## Update local feature branch with the changes (made by others) at remote 
-## by rebase of current branch onto latest state of remote origin/feature-branch-name.
-git diff origin/main 
-git rebase origin/feature-branch-name
+
 
 ## When local is BEHIND/DIVERGED from remote, ...
 git checkout $branch
@@ -100,9 +97,14 @@ git stash apply
     git config user.project ${PWD##*/}
     # Initialize
     git init --initial-branch=main
+    # Order matters:
     git add -u
     git add .
     git commit -C "Init @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    
+    # Commit pattern:
+    git add -u && git add . && git commit -m "$msg @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    
     # Add origin : SSH mode 
     git_at_host=gitlab # If so conf'd @ ~/.ssh else, e.g., git@gitlab.com (*not* $USER@)
     git remote add origin $git_at_host:$(git config user.account)/$prj.git
@@ -205,62 +207,37 @@ git stash apply
         # Prepend line numbers @ grep search
         git config --global grep.lineNumber true  
 
-# MERGE main into feature : non-destructive, but history of feature includes all commits of main.
-    git merge $feature $main
-    # Is equiv to:
+# REBASE feature such that its history follows main 
     git checkout $feature
-    git merge $main  
+    git rebase $main
+    # Use interactive rebase to squash (all) feature commits, else all are preserved.
+    git rebase -i $main 
 
-# MERGE feature into main : optionally (preferably) squashing all feature commits to one
-    git checkout $main          # Switch to main branch.
-    git pull origin $main       # Pull latest main from origin (optional, but to be sure we're in sync).
-    git merge --squash $feature # Merge latest commit of feature branch into main, leaving feature branch unchanged.
-    git push origin $main       # Push updated (merged) main to origin.
-    #... merge with squash has same affect as rebase with squash.
+# ORPHAN : Create a new br based on current br yet having no commit history
+    git checkout --orphan $a_new_branch # New branch has no commit history
+    git add -A
+    git commit -m "Year Zero. This is the 1st commit."
 
-# REBASE feature onto main (@ HEAD; newest commit) : cleaner project history
-    ## Use only on your own, yet to be pushed, feature branch.
-    git checkout $feature
-    git rebase -i $main # Interactive rebase allows for squashing (all) feature commits, else all are preserved.
+# LOCAL WORKFLOW 
 
-# WORKFLOW to MINIMIZE repo HISTORY (noise) when modifying Master  
+    # 1. Create feature branch
+    git checkout -b $feature # create AND checkout temp development branch
+    # 2. Do work : Many commit okay, but DO NOT PUSH any.
+    # 3. REBASE interactively:
+    # If you had 5 commits, then "HEAD~4" to squash all into one:
+    git rebase -i HEAD~4
+    #... in the editor, set the oldest (1st-listed) commit to "pick" and all others (below) to "squash" ("s")
 
-    # NEVER PUSH (unless change is significant) : to push is to PUBLISH. 
-    # Save local versions per new branching and/or out-of-band process;
-    # work @ branches dev1, dev2, ...; leave master unchanged (until end/merge).
-        git checkout -b dev1 # create AND checkout temp development branch
-        # OR
-        git pull origin dev1
-        git commit #... now in synch with remote dev1
-        # ... do work ..., then ...
-        _max_squash=$(( $( git rev-list --count HEAD ) - 1 )) # commits count less 1.
-        git add .*;git add -A;git commit -m 'x'
-        
-        # Merge into main (at HEAD)
-        git rebase main
-        git rebase -i HEAD~$_max_squash 
-        # Example command+syntax @ vim (automatic edit, during rebase) 
-        :2,7s/pick/s/g  #... to squash commits 2-7
-            # LONG WAY ...
-                # SQUASH commit history/log; (re)write summary commit message (@ dev br)
-                # per `HEAD~N` or HASH of `pick`; see `SQUASH per REBASE` section for details 
-                git rebase -i HEAD~N  # all commits/log-entries back to original  (@ dev1); 
-                #... may fail depending on the infinite labyrinth of Git-repo states.
-                # WANT: keep 1st (oldest) entry; `pick`; change all others (newer) to `s` (squash); 
-                # The 2nd menu is vim/edit of the squashed rebase-commit message. 
-                git checkout master; git merge dev1  # adds merge-commit history to master
-
-        # SHORTer WAY ...
-        # ... for zero additional history, from a clean branch, 
-        # delete then recreate TARGET (locally) 
-        git branch -d $target    # Delete local if fully merged
-        git branch -D $target    # Delete local regardless
-        git checkout -b $target  # Create anew
-        git push origin $target --force-with-lease  # safely force; 
-        # need to force because origin (remote) will be "ahead" after squashing commits 
-        # ALTernative to --force-with-lease :
-        git push origin --delete $target  # Remote
-        git push origin $target 
+    # Programmatically:
+    _max_squash=$(( $( git rev-list --count HEAD ) - 1 )) # commits count less 1.
+    git add .*;git add -A;git commit -m 'x'
+    # Merge into main (at HEAD)
+    git rebase $main
+    git rebase -i HEAD~$_max_squash 
+    # Example command+syntax @ vim (automatic edit, during rebase) 
+    :2,7s/pick/s/g  #... to squash commits 2-7
+    git checkout $main
+    git merge $feature # Adds the merge-commit history to master
 
 # CI/CD WORKFLOW 
     # MODIFY @ feature branch, NOT master branch  
@@ -524,4 +501,3 @@ git stash apply
     # Git Concepts   https://zwischenzugs.com/2018/03/14/five-key-git-concepts-explained-the-hard-way/
         # Reference: a string that points to a commit.
         # 4 main types: HEAD, Tag, Branch, Remote Reference
-
