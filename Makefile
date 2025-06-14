@@ -17,7 +17,7 @@ menu:
 	@echo '	index     : Process MD files into HTML and create index.html'
 	@echo '	normalize : Strip fname prefix and reset internal links (of file-protocol)'
 	@echo '	links     : Reset md2html-configured links'
-	@echo '	gitpush   : gc && git push && gl'
+	@echo '	commit    : gc && git push && gl'
 
 build : getrefs index normalize links
 
@@ -33,6 +33,6 @@ normalize :
 links :
 	bash make.recipes.sh links
 
-gitpush push :
+commit :
 	bash make.recipes.sh gitpush
 
