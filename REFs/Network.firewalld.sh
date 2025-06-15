@@ -165,7 +165,8 @@ exit
                 # ICMP : Unblock all types
                 firewall-cmd --remove-icmp-block-inversion
                 # ICMP : Unblock a specific type
-                firewall-cmd --remove-icmp-block=echo-request
+                firewall-cmd --query-icmp-block=echo-request ||
+                    firewall-cmd --remove-icmp-block=echo-request
                 # ICMP : Allow all 
                 firewall-cmd --add-protocol=icmp
 
