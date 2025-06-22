@@ -48,6 +48,7 @@
 ## [AWS.VPC.txt](./REFs/AWS.VPC.txt)
 ## [AWS.WhitePapers.txt](./REFs/AWS.WhitePapers.txt)
 ## [AWS.Wordpress.txt](./REFs/AWS.Wordpress.txt)
+## [backup-strategies.md](./REFs/backup-strategies.md)
 ## [bash.commands.sh](./REFs/bash.commands.sh)
 ## [bash.LearnXinYMinutes.sh](./REFs/bash.LearnXinYMinutes.sh)
 ## [bash.Special-Characters.sh](./REFs/bash.Special-Characters.sh)
