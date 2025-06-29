@@ -535,14 +535,10 @@ exit
         {...}{...}                    # combine  echo {A..Z}{0..9}  =>  A0 A1 A2 ... Z7 Z8 Z9  (260 strings)
 
         # Globbing is FAST; bash is designed to stream-process (pipeline) data
-        # E.g., for-loop vs. command-GLOB
-            for i in $( seq 10  900 ); do printf "%03d\t" "$i"; done  # time ... real  0m0.008s
-            printf "%03d\t" {10..900}                                 # time ... real  0m0.001s
-            # EACH produces IDENTICAL stdOUT =>
-            010     011     012     013 ...     900
-
-        # E.g., concatenate several VOB files (DVD-ripped) into one file
-            cat VTS_01_{1..8}.VOB > VTS_01_ALL.VOB  # works better than ffmpeg.exe
+            printf '%03d\n'  {10..100} # 010\n...100\n
+            printf '%s\n'  {c..q} # c\n...q\n
+            # Concatenate ripped video files of a sequence into one
+            cat VTS_01_{1..8}.VOB > VTS_01_ALL.VOB 
 
     # PARAMETER EXPANSION
         $$     # PID [Process ID] of current shell

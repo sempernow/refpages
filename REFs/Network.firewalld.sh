@@ -35,7 +35,7 @@ exit
     
     firewall-cmd # CLI for firewalld.service
 
-        # Policy targets:
+        # Policy TARGETs:
             #################################################################################################
             # The DEFAULT BEHAVIOR of the Linux firewall is to 
             # DENY all INCOMING traffic and ALLOW all OUTGOING traffic.
@@ -44,21 +44,22 @@ exit
             # - A rule typically affects INCOMING traffic unless its param(s) indicate otherwise.
             # - Underlying processes may (dynamically) override/reset firewalld behavior, per configuration.
             #   See iptables, nftables (successor to iptables), and/or NetworkManager (nmcli).
+            #   NetworkManager (nmcli) wins/overrules ALL CONFICTS against firewalld (firewall-cmd).
             #################################################################################################
             default     # Process by rules of THIS ZONE ONLY, then by firewalld's default behavior. (See above.)
             CONTINUE    # Continue processing by rules of OTHER ZONEs (order by zone priority) 
                         # after processing rules of this zone, then by firewalld's default behavior.
-            ACCEPT      # Allow all (incoming/outgoing) traffic not explicitly denied.
-            DROP        # Deny all INCOMING traffic not explicitly allowed; source is not notified.
-            REJECT      # Deny all INCOMING traffic not explicitly allowed; source is notified.
+            ACCEPT      # Blacklist : Allow all (incoming/outgoing) traffic NOT EXPLICITLY DENIED.
+            DROP        # Whitelist : Deny all INCOMING traffic NOT EXPLICITLY ALLOWED; source is not notified.
+            REJECT      # Whitelist : Deny all INCOMING traffic NOT EXPLICITLY ALLOWED; source is notified.
 
             sudo firewall-cmd --list-all 
 
         # List ALL settings of a zone
             zone=k8s
-            # A zone is ACTIVE if it has any network INTERFACE bound to it
-            # Multiple interfaces may be bound to one zone
-            # Zone param "target: default|CONTINUE|ACCEPT|DROP|REJECT" is its behavior.
+            # A zone is ACTIVE if it is assigned (bound) to any network INTERFACE
+            # A zone may be bound (assigned) to MANY INTERFACES
+            # target: <TARGET> : Zone parameter declaring its BEHAVIOR : "target: default|CONTINUE|ACCEPT|DROP|REJECT".
             firewall-cmd --zone=$zone --list-all    # Service ports and such are *not* listed here
             firewall-cmd --direct --get-all-rules   # Direct Rules are *not* scoped to zone or service
             # List all ports and such for EVERY SERVICE of declared zone.
@@ -109,10 +110,10 @@ exit
                 sudo firewall-cmd --reload
                 sudo firewall-cmd --set-log-denied=off --permanent # Turn it off
     
-            # BIND (change) interface to a zone UNLESS CONFLICT w/ NetworkManager
+            # BIND (change) zone to interface UNLESS CONFLICT w/ NetworkManager
                 firewall-cmd --change-interface=$ifc --zone=$zone --permanent
                 firewall-cmd --reload
-                #… if interface was bound to another zone, that would be the equivalent of:
+                #… is the equivalent of:
                 firewall-cmd --remove-interface=$ifc --zone=$old --permanent
                 firewall-cmd --add-interface=$ifc --zone=$new --permanent
 
@@ -124,14 +125,14 @@ exit
                     nmcli con down "$ifc" # Toggle the interface to apply the change;
                     nmcli con up "$ifc"   # toggle is preferable to `systemctl restart NetworkManager`
                 # ELSE firewall-cmd may report false positive "success",
-                # yet NetworkManager later removes and binds again to prior ($old) zone (SILENTLY).
+                # yet NetworkManager later removes that zone and (re)binds prior ($old) zone (SILENTLY).
 
                 # Verify/Get zone to which interface (AKA device AKA connection) is bound:
                 firewall-cmd --get-zone-of-interface=$ifc # config @ firewalld
                 nmcli con show $ifc |grep connection.zone # config @ NetworkManager
                 #… WANT match (firewalld v. NetworkManager). 
 
-                # Bind MULTIPLE INTERFACES to a zone
+                # Bind (assign) zone to MULTIPLE INTERFACES
                 firewall-cmd --zone=k8s --add-interface=eth+ 
                 firewall-cmd --zone=k8s --add-interface=ens+
                 #… else by Direct Rule (See section on that)
@@ -154,14 +155,22 @@ exit
                 # Enable forwarding
                 sudo firewall-cmd --zone=trusted --add-forward
 
-            # Create (define) service (having ports) 
+            # Add a new service 
                 svc=istiod
+                    # Delete if already exist (optionally):
+                    # 1. Must first remove from all zones having it
+                    firewall-cmd --remove-service=$svc --zone=$zone --permanent
+                    # 2. Delete it
+                    firewall-cmd --delete-service=$svc 
+                # Create
                 firewall-cmd --new-service=$svc
+                # Configure
                 firewall-cmd --service=$svc --set-description="Istio control plane"
-                # Add port(s) to service 
                 firewall-cmd --service=$svc --add-port=15010/tcp 
                 firewall-cmd --service=$svc --add-port=15014/tcp 
-                #…
+                # Add to a zone, persistently
+                firewall-cmd --permanent --zone=$zone --add-service=$svc
+
             # Add/Remove service to currently-active zone
                 firewall-cmd --add-service=$svc
                 firewall-cmd --remove-service=$svc
@@ -175,11 +184,11 @@ exit
                 # ICMP : Unblock a specific type
                 firewall-cmd --query-icmp-block=echo-request ||
                     firewall-cmd --remove-icmp-block=echo-request
-                # ICMP : All ping request/reply only : Inversion *required* if target is DROP 
+                # ICMP : All ping request/reply only : Inversion is REQUIRED IF target is DROP 
                 firewall-cmd --add-icmp-block-inversion    # Invert so block allows
                 firewall-cmd --add-icmp-block=echo-request # block (allow) request 
                 firewall-cmd --add-icmp-block=echo-reply   # block (allow) reply
-                    ## This does *not* allow ping request/reply if target is DROP.
+                    # # Example: This does *not* allow ping request/reply IF target is DROP.
                     # firewall-cmd --remove-icmp-block-inversion
                     # firewall-cmd --remove-icmp-block=echo-request
                     # firewall-cmd --remove-icmp-block=echo-reply
@@ -329,7 +338,8 @@ exit
         nmcli con show $dev # Network/interface info
         nmcli con show --active # All
 
-        # Change interface-zone binding
+        # Change zone-interface binding : Assign (bind) zone to a different interface 
+            # (Interface AKA Device AKA Connection)
             firewall-cmd --zone=$zone --change-interface=$ifc --permanent
             firewall-cmd --reload
             # DECONFLICT NetworkManager INTERFERENCE with firewalld:
@@ -339,9 +349,9 @@ exit
                 nmcli con down "$ifc" # Toggle the interface to apply the change;
                 nmcli con up "$ifc"   # toggle is preferable to `systemctl restart NetworkManager`
                 # ELSE firewall-cmd may report false positive "success",
-                # yet NetworkManager later removes and binds again to $old zone (silently).
+                # yet NetworkManager later removes the zone and (re)binds the prior zone (silently) to that interface.
 
-                # Verify/Get zone to which interface (AKA device AKA connection) is bound:
+                # Verify/Get zone bound (assigned) to an interface
                 firewall-cmd --get-zone-of-interface=$ifc # config @ firewalld
                 nmcli con show $ifc |grep connection.zone # config @ NetworkManager
                 #… WANT match (firewalld v. NetworkManager). 

@@ -29,6 +29,24 @@ POST /api/v4/projects
     "visibility": "private" // or "public" or "internal"
 }
 
+# Reset : Branch Re-pointing : Promote source to target, so target is bit-for-bit identical to source (incl history)
+# "This (target) is a release commit : Don't care how we got there."
+git checkout $target
+git reset --hard $source
+git push --force
+
+# Merge source into target
+git checkout $target 
+git merge $source   # -s recursive -X ours : Polite
+                    # --strategy=ours : Destroy everything of target not in source
+
+    # Show you the common ancestor (merge base):
+    git merge-base $target $source
+    # Then diff each side from that:
+    git diff <merge-base>..source
+    git diff <merge-base>..target
+    # Demo : https://chatgpt.com/share/685f4353-2090-8009-bcb8-6f646190e5c0 
+
 # Pattern for clean history
 # Rebasing feature branch onto main, then merge back into main
 # That's a fast-forward merge with clean, linear history; no merge commits, no forks, no clutter.
@@ -37,8 +55,6 @@ git rebase main # Affects only feature branch (commit history is linear : main-f
 # test, then merge feature into main:
 git checkout main
 git merge feature  # fast-forward
-
-
 
 ## When local is BEHIND/DIVERGED from remote, ...
 git checkout $branch

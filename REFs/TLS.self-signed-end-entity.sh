@@ -5,25 +5,21 @@
 # REF : https://docs.docker.com/engine/swarm/configs/
 # -----------------------------------------------------------------------------
 # Params
-len=2048
+len=4096
 cn=${TLS_CN:-site.local} 
-#ip=${TLS_IP:-192.168.1.26}
+#ip=${TLS_IP:-192.168.11.109}
 
 ## For setting params per -subj "$subj" : NOT configured for WILDCARD cert
-c=${TLS_C:-US};st=${TLS_ST:-NY};l=${TLS_L:-Gotham};o=${TLS_O:-Foobar Inc};ou=${TLS_OU:-DevOps}
-subj="/C=$c/ST=$st/L=$l/O=$o/OU=$ou/CN=$cn"
+o=${TLS_O:-Penguin Inc}
+ou=${TLS_OU:-gotham.gov}
+c=${TLS_C:-US}
 
 # DH Parameters file : Used by server to speed up the (encrypt/decrypt) calculations.
 dhparam='dhparam'   # RSA 
 ecparam='ecparam'   # ECDSA
 
-# Root CA of Self-signed Certificate is self
+# Issuer of Root CA is self (Self-signed)
 ca='root-ca'
-# This is THE web-server "certificate"
-## Concat of site cert and CA cert(s) all the way to root-CA cert
-## Speeds up TLS handshake by providing the full chain (hierarchy) of CAs, 
-## so client needn't search and gather this from its Trusted-CAs store (/etc/ssl/certs/).
-fullchain=${cn}-fullchain
 
 # *.key     # Web-server param      : SECRET key
 # *.crt     # Web-server param      : PUBLIC certificate
@@ -36,7 +32,7 @@ openssl req -new -newkey rsa:$len -noenc -out $ca.csr -keyout $ca.key
 openssl req \
     -new -key "$ca.key" \
     -out "$ca.csr" -sha256 \
-    -subj "/C=$c/ST=$st/L=$l/O=$o/CN=$cn"
+    -subj "$subj"
 
 # Configure root CA
 cat <<EOR > $ca.cnf
@@ -64,14 +60,14 @@ distinguished_name = req_dn
 req_extensions = req_ext
 [req_dn]
 CN = $cn
-C  = ${TLS_C:-US}
-ST = ${TLS_ST:-NY}
-L  = ${TLS_L:-Gotham}
-O  = ${TLS_O:-Foobar Inc}
+O  = ${TLS_O:-Penguin Inc}
 OU = ${TLS_OU:-DevOps}
+L  = ${TLS_L:-Gotham}
+ST = ${TLS_ST:-NY}
+C  = ${TLS_C:-US}
 [req_ext]
 subjectAltName = @alt_names
-keyUsage = digitalSignature
+keyUsage = critical,digitalSignature
 extendedKeyUsage = serverAuth
 [alt_names]
 DNS.1 = $cn
