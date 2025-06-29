@@ -9,17 +9,18 @@
 exit 
 
 # Common Name (CN) is a Fully Qualified Domain Name (FQDN) to which a TLS certificate is bound.
-cn=${TLS_CN:-site.local} 
+cn=${TLS_CN:-example.org} 
 # Key/Cert bit lengths
-len=2048
+len=4096
 
+## Store private keys in compliance with FIPS 140-2 Level 3+ HSM
 
 ####################
 # DH Parameters file
 ## RSA
 dhparam=dhparam_$len
 openssl dhparam -out $dhparam.pem $len 
-## EC : Note that ED25519 (X25519) type key/cert does not require any params file
+## EC : ED25519 (X25519) type key/cert does not require any params file
 curve='secp384r1' # p-256|p-384|secp384r1  
 ecparam=ecparam_$curve
 openssl genpkey -genparam -algorithm EC -pkeyopt ec_paramgen_curve:$curve -out $ecparam.pem
@@ -40,47 +41,112 @@ prompt              = no
 default_bits        = 2048
 default_md          = sha256
 distinguished_name  = req_distinguished_name 
-req_extensions      = v3_req
+req_extensions      = req_ext
 [ req_distinguished_name ]
 CN              = $cn
-C               = ${TLS_C:-US}
-ST              = ${TLS_ST:-NY}
+O               = ${TLS_O:-Penguin Inc}
+OU              = ${TLS_OU:-DevOps}
 L               = ${TLS_L:-Gotham}
-O               = ${TLS_O:-Foobar Inc}
-OU              = ${TLS_OU:-GitOps}
+ST              = ${TLS_ST:-NY}
+C               = ${TLS_C:-US}
 emailAddress    = admin@$cn
-[ v3_req ]
-subjectAltName      = @alt_names
-keyUsage            = digitalSignature
-extendedKeyUsage    = serverAuth
+[ req_ext ]
+subjectAltName          = @alt_names
+keyUsage                = critical, digitalSignature
+extendedKeyUsage        = serverAuth
+subjectKeyIdentifier    = hash
 [ alt_names ]
 DNS.1 = $cn
 DNS.2 = *.$cn
+IP.1  = 10.0.11.11
 EOH
 
-# @ Self-signed cert, replace v3_req with
+## Enterprise grade extensions : TLS 1.3, NIST, PCI DSS  
 [ req_ext ]
-subjectAltName = @alt_names
-[ v3_ca ]
-basicConstraints    = CA:FALSE
-keyUsage            = digitalSignature, keyEncipherment
-extendedKeyUsage    = serverAuth, clientAuth
-subjectAltName      = @alt_names
-
-# @ CA Certificate
-[ v3_ca ]
-basicConstraints        = CA:TRUE
-keyUsage                = cRLSign, keyCertSign
+subjectAltName          = @alt_names
+# @ Server (TLS)
+basicConstraints        = critical, CA:FALSE # Leaf certificate
+keyUsage                = critical,
+    digitalSignature,   # Required for TLS, signing
+    keyEncipherment,    # For RSA key exchange : Obsolete : TLS 1.2 
+    keyAgreement        # For ECDHE (if using EC keys)
+extendedKeyUsage        = serverAuth        # HTTPS standard
+subjectKeyIdentifier    = hash              # Optional unique fingerprint; usually added by CA regardless.
+authorityInfoAccess     = 
+    caIssuers;URI:http://ca.pki.example.org/intermediate-ca.crt, # Publish Intermediate CA endpoint
+    OCSP;URI:http://ocsp.example.org        # Publish OCSP endpoint (HTTP not HTTPS)
+# @ Server/Client (mTLS) 
+basicConstraints        = critical, CA:FALSE 
+keyUsage                = critical,
+    digitalSignature,   # Required for TLS, signing
+    keyEncipherment,    # For RSA key exchange : Obsolete : TLS 1.2 
+    keyAgreement        # For ECDHE (if using EC keys)
+extendedKeyUsage        = serverAuth, clientAuth    # mTLS : Must be present (RFC 5280)  
+subjectKeyIdentifier    = hash              # Optional unique fingerprint; usually added by CA regardless.
+# @ Root CA 
+basicConstraints        = critical,
+    CA:TRUE             # Is a Certificate Authority (CA) certificate. 
+    #,pathlen:1         # Limit chain to N intermediates, append (pathlen:N), else omit
+keyUsage                = critical,         # CA key usage
+    keyCertSign,        # Allows cert to sign other certificates.
+    cRLSign             # Allows cert to sign Certificate Revocation Lists (CRLs)
+authorityKeyIdentifier  = keyid:always,issuer # For robust certificate-chain building
 subjectKeyIdentifier    = hash
-authorityKeyIdentifier  = keyid:always,issuer
+# @ Intermediate CA 
+basicConstraints        = critical,
+    CA:TRUE,            # Is a Certificate Authority (CA) certificate
+    pathlen:0           # Limit cert signing to leaf (end-entity) only; disallow signing any (subordinate) CA
+keyUsage                = critical,         # CA key usage
+    keyCertSign,        # Allows cert to sign other certificates.
+    cRLSign             # Allows cert to sign Certificate Revocation Lists (CRLs)
+authorityKeyIdentifier  = keyid:always,issuer # For robust certificate-chain building
+subjectKeyIdentifier    = hash              # Chain validation
+certificatePolicies     = 1.3.6.1.4.1.$PEN  # Compliance (OID)
+nameConstraints         = critical,     # Spaces, newlines, and inline comments ok, yet must not at ";DNS:"
+    permitted;IP:192.168.11.0/24,       # Whitelist CIDR
+    permitted;DNS:.example.org,         # Whitelist all subs of domain
+    permitted;DNS:cdn.example.io,       # Whitelist domain sans sub(s)
+    excluded;DNS:.boo.example.org       # Blacklist sub domain and all its subs
+authorityInfoAccess     = 
+    caIssuers;URI:http://ca.pki.example.org/intermediate-ca.crt,    # Publish Intermediate CA endpoint
+    OCSP;URI:http://ocsp.example.org                                # Publish OCSP endpoint for revocation status (HTTP not HTTPS)
+crlDistributionPoints   = URI:http://crl.pki.example.org/intermediate-ca.crl # Published CRL endpoint (HTTP not HTTPS)
+# @ S/MIME (Email Encryption)
+keyUsage            = digitalSignature  # For email signing  
+extendedKeyUsage    = emailProtection   # For S/MIME encryption (uses modern ECDH, not RSA) 
+# @ Code-signing cert
+keyUsage            = digitalSignature  # For signing binaries  
+extendedKeyUsage    = codeSigning       # Required for code trust  
 
-# @ mTLS : CSR sections (instead of, or in addition to, v3_req containing other k-v pairs):
-[ server_cert ]
-keyUsage            = critical, digitalSignature, keyEncipherment
-extendedKeyUsage    = serverAuth
-[ client_cert ]
-keyUsage            = critical, digitalSignature
-extendedKeyUsage    = clientAuth
+## OIDs
+certificatePolicies     = 1.3.6.1.4.1.$PEN
+# IANA assigns a Private Enterprise Numbers (PEN) having OID 1.3.6.1.4.1.x 
+# Apply for PEN @ https://pen.iana.org/pen/PenApplication.page 
+# 1.3.6.1.4.1.32473           # Your organization's PEN
+# 1.3.6.1.4.1.32473.1.1       # PKI sub-tree
+# 1.3.6.1.4.1.32473.1.1.1001  # "High Assurance TLS Policy" for servers (manually) verified otherwise
+# 1.3.6.1.4.1.32473.1.1.1002  # "Low Assurance Client Policy" for automated certs
+# A certificate policy is a formal document (and an associated OID) that defines:
+# - How a certificate was issued
+# - What it's allowed to be used for
+# - What security, identity, and validation procedures were followed
+# - What level of trust relying parties can assume
+# It is not enforced by the certificate itself, but rather by relying parties 
+# (e.g., browsers, OS trust stores, internal systems) 
+# that know how to interpret or require specific policies.
+# CP : Certificate Policy : 
+# - Defines what the certificate is supposed to represent and under what conditions it may be issued.
+# - Publish @ http://pki.example.org/policies/cp.html
+# CPS : Certification Practice Statement : 
+# - Defines how your CA enforces the CP; operational procedures, audits, key management, etc.
+# - Publish @ http://pki.example.org/policies/cp.html
+# OID                           Meaning
+# ---                           -------
+# 2.23.140.1.2.1                CA/Browser Forum Domain Validated (DV) TLS
+# 2.23.140.1.2.2                Organization Validated (OV) TLS
+# 2.23.140.1.2.3                Extended Validation (EV) TLS
+# 1.3.6.1.4.1.32473.1.1.1       Your internal Device Auth Policy @ IANA-assigned PEN 32473
+# 1.3.6.1.4.1.32473.1.1.1001    Your internal Human-Issued S/MIME Cert Policy @ IANA-assigned PEN 32473
 
 ## Sign server cert
 openssl ca -config $cn.cnf -extensions server_cert -in server.csr -out server.crt
@@ -88,8 +154,8 @@ openssl ca -config $cn.cnf -extensions server_cert -in server.csr -out server.cr
 openssl ca -config $cn.cnf -extensions client_cert -in client.csr -out client.crt
 
 ## Else set params using -subj "$subj" : NOT configured here for WILDCARD cert
-c=${TLS_C:-US};st=${TLS_ST:-NY};l=${TLS_L:-Gotham};o=${TLS_O:-Foobar Inc};ou=${TLS_OU:-DevOps}
-subj="/C=$c/ST=$st/L=$l/O=$o/OU=$ou/CN=$cn"
+cn=${TLS_CN:-example.org};o=${TLS_O:-Riddler 8132};ou=${TLS_OU:-Ops};l=${TLS_L:-Gotham};st=${TLS_ST:-NY};c=${TLS_C:-US}
+subj="/CN=$cn/O=$o/OU=$ou/L=$l/ST=$st/C=$c"
 
 ## Generate RSA site cert and key : Use -noenc else -nodes (depricated)
 openssl req -x509 -newkey rsa:$len -sha256 -days 3650 -noenc \
