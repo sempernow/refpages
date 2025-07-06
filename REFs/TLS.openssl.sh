@@ -10,6 +10,7 @@ exit
 
 # Common Name (CN) is a Fully Qualified Domain Name (FQDN) to which a TLS certificate is bound.
 cn=${TLS_CN:-example.org} 
+ip=10.0.11.11
 # Key/Cert bit lengths
 len=4096
 
@@ -52,13 +53,14 @@ C               = ${TLS_C:-US}
 emailAddress    = admin@$cn
 [ req_ext ]
 subjectAltName          = @alt_names
-keyUsage                = critical, digitalSignature
+keyUsage                = critical, digitalSignature, keyEncipherment
 extendedKeyUsage        = serverAuth
 subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid:always,issuer
 [ alt_names ]
 DNS.1 = $cn
 DNS.2 = *.$cn
-IP.1  = 10.0.11.11
+IP.1  = $ip
 EOH
 
 ## Enterprise grade extensions : TLS 1.3, NIST, PCI DSS  

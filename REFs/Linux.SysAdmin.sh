@@ -461,30 +461,29 @@ exit 0
             # so that many AD users (a developer team) have a stable, workable rootless podman configuration
             # in which to work on a designated RHEL host having SELinux enforced.
 
-            # 1. Provision a system user (podmaners) with alternate home directory
+            # 1. Provision a system user having an alternate (non-standard) home directory
 
                 # Create a local service account having no login shell
-                # yet a non-standard home dir (at a large partition)
-                u=podmaners
-                g=$u
-                alt=/work
-                d=$alt/home/$u
+                alt=/srv/git
+                mkdir -p $alt/repos
+                sudo adduser --system --shell /usr/bin/git-shell -d $alt git
 
-                mkdir -p $alt/home
-
-                # Force SELinux to accept SELinux declarations REGARDLESS of current state of the targets' SELinux objects
-                semanage fcontext -d "$alt/home(/.*)?" 2>/dev/null # Okay if no rules exist
-                restorecon -Rv $alt/home
-                semanage fcontext -a -e /home $alt/home # FAILs by SELinux  "equivalence" rules
-                #semanage fcontext -a -t user_home_dir_t "$work(/.*)?"
-                restorecon -Rv $alt/home
-                id -un $u >/dev/null 2>&1 || useradd -r -m -d $d -s /sbin/nologin $u
-                restorecon -Rv $alt/home
-
-                # Verify
-                semanage fcontext -l | grep "$alt" |grep "$alt/home = /home" ||
-                    echo FAILed @ SELinux
-
+                ## Configure a non-standard ($alt) HOME for local user that SELinux treats as it would those of /home
+                ## - Idempotent
+                seVerifyHome(){
+                    ## Verify SELinux fcontext EQUIVALENCE
+                    semanage fcontext --list |grep "$1" |grep "$1 = /home"
+                }
+                export -f seVerifyHome
+                mkdir -p $alt
+                seVerifyHome $alt || {
+                    ## Force SELinux to accept SELinux declarations REGARDLESS of current state of SELinux objects at target(s)
+                    semanage fcontext --delete "$alt(/.*)?" 2>/dev/null # Delete all rules; is okay if no rules exist.
+                    restorecon -Rv $alt # Apply the above purge (now).
+                    ## Declare SELinux fcontext EQUIVALENCE : "$alt = /home"
+                    semanage fcontext --add --equal /home $alt
+                    restorecon -Rv $alt # Apply the above rule (now).
+                }
 
             # ELSE : Create in standard /home/$u, and then bind mount /work/home/$u into it.
             mkdir -p /home/$u

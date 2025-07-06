@@ -123,7 +123,10 @@ subjects:
 # View certificate text
 kubectl config view --raw -o jsonpath='{.users[].user.client-certificate-data}' \
     |base64 -d \
-    |openssl x509 -text -noout
+    |openssl x509 -noout -text 
+    # Else declared fields only : Much more readable : See `man x509v3_config` for all extensions
+    x509v3='subjectAltName,issuerAltName,basicConstraints,keyUsage,extendedKeyUsage,authorityInfoAccess,subjectKeyIdentifier,authorityKeyIdentifier,crlDistributionPoints,issuingDistributionPoints,policyConstraints,nameConstraints'
+... |openssl x509 -noout -subject -issuer -startdate -enddate -ext "$x509v3"
 
 # Send GET request to the protected API server using TLS certificate and key
 curl -k \
