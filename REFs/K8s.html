@@ -30,7 +30,67 @@
 
 <ul>
 <li>Admin: <a href="K8s.kubeadm.sh"><code>K8s.kubeadm.sh</code></a></li>
-<li>Client: <a href="K8s.kubectl.sh"><code>K8s.kubectl.sh</code></a></li>
+
+<li><p>Client: <a href="K8s.kubectl.sh"><code>K8s.kubectl.sh</code></a></p></li>
+
+<li><p><strong>Pod Network</strong> is the <em>underlay network</em> where actual Pod-to-Pod communication happens. Managed by CNI plugin.</p>
+
+<ul>
+<li><p>Cluster-wide <strong>Pod CIDR</strong>:</p>
+
+<pre><code class="language-bash"># Declared upon init: 
+$ kubeadm init --pod-network-cidr=10.244.0.0/16
+# Declared thereafter (state of etcd):
+$ kubectl -n kube-system get cm kubeadm-config -o yaml | grep podSubnet
+podSubnet: 10.244.0.0/16
+</code></pre></li>
+
+<li><p>Per-Node <strong>CIDRs</strong> managed by CNI are declared at :</p>
+
+<pre><code class="language-bash"># By jsonpath
+$ kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}'
+10.244.0.0/24 10.244.1.0/24 10.244.2.0/24
+
+# By yq 
+$ kubectl get nodes -o yaml |yq .items[].spec.podCIDR
+10.244.0.0/24
+10.244.1.0/24
+10.244.2.0/24
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>Service Network</strong> is a <em>virtual overlay</em> for service discovery.</p>
+
+<ul>
+<li><p><strong>CIDR</strong> declared at <code>pod.spec.containers[].command</code><br>
+of <strong><code>kube-apiserver</code></strong> : <code>--service-cluster-ip-range</code></p>
+
+<pre><code class="language-bash">$ kubectl -n kube-system get pod -o yaml \
+    |grep -- --service-cluster-ip-range
+    - --service-cluster-ip-range=10.96.0.0/12
+    ... (repeated)
+</code></pre></li>
+
+<li><p><strong>Service Discovery</strong></p>
+
+<ul>
+<li><p>Tracks Pods belonging to a Service<br>
+based on <strong>Label Selectors</strong>.</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+name: a-service
+spec:
+selector:
+    app: x  # Matches Pods having this label
+</code></pre></li>
+
+<li><p><strong>Dynamically updates</strong> the Service’s <strong>load-balancing rules</strong> as Pods are created, deleted, or rescheduled.</p></li>
+
+<li><p>Kubernetes automatically creates an <strong>Endpoints</strong> (or EndpointSlice) object for the Service. This object holds <strong>the current list of healthy Pod IPs</strong> matching the selector.</p></li>
+</ul></li>
+</ul></li>
 </ul>
 
 <h2>Vanilla Cluster</h2>

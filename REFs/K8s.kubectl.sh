@@ -203,14 +203,14 @@ kubectl -n kube-system ep,svc -l 'kubernetes.io/cluster-service=true'
 kubectl get pods -o wide # Monitor the startup process including node
 # Get all pod names of this namespace
 kubectl get po -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-# Get all images running in the cluster, across all namespaces, one per line.
-kubectl get po -A -o jsonpath='{range .items[*]}{.spec.containers[*].image}{"\n"}{end}' |sort -u
+# Get all images running in the cluster, across all namespaces. (Either method outputs a flat list.)
+kubectl get po -A -o jsonpath='{range .items[*]}{range .spec.initContainers[*]}{.image}{"\n"}{end}{range .spec.containers[*]}{.image}{"\n"}{end}{end}' |sort -u
+kubectl get po -A -o yaml |yq '.items[] | (.spec.initContainers[].image,.spec.containers[].image)' |sort -u
 # Get all Pods having (selector) label 'type' set to 'canary'
 kubectl get po -l type=canary
-# Get 'name' and 'podID' of those Pods
-kubectl get po -l type=canary -o jsonpath='{.metadata.name}{"\n"}{.status.podIP}'
-# Same, but as valid JSON
-kubectl get po -l type=canary -o json |jq -Mr '{name: .metadata.name,podIP: .status.podIP}'
+# Get 'name' and 'podID' of those Pods as valid JSON
+kubectl get po -l type=canary -o json \
+    |jq -Mr '.items[] | {name: .metadata.name,podIP: .status.podIP}' |jq . --slurp
 # Get node names only, one per line.
 kubectl get no -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
 # Capture a manifest
@@ -218,9 +218,9 @@ kubectl get deploy $any -o yaml # |tee /save/to/here.yaml
 # Capture a dynamically-generated (e.g., kustomize) manifest
 kubectl apply -k "github.com/minio/operator?ref=v6.0.4" --dry-run=client -o yaml
 # Get all (subset of all objects) of current namespace
-kubectl get all       
+kubectl get all 
 kubectl get all -A # All namespaces; --all-namespaces
-all='po,deploy,ds,sts,ep,svc,ingress,pvc,pv'
+all='po,deploy,ds,sts,ep,svc,ingress,pvc'
 kubectl get $all # Larger subset of all K8s objects
 
 # NODES

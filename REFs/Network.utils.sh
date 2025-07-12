@@ -237,6 +237,10 @@ exit
     # cURL is a tool to transfer data between client (itself) and server
         curl [options] URL         # Okay to omit protocol
 
+            -k, --insecure         # Skip TLS certificate verification
+            --ca-native            # Use OS-native CA trust store to verify TLS cert of "peer" (in TLS context)
+            --cacert PATH          # Path to CA cert or FILE containing bundle of CA certs
+            --capath PATH          # Path to DIR of CA cert(s) 
             -H, --header HEADER    # set HTTP request header(s); one per `-H '...'` switch
             -X, --request METHOD   # set request method; GET|POST|PUT|DELETE; default is GET
             -I, --head             # Show headers ONLY
@@ -267,19 +271,28 @@ exit
 
         # TLS : CURL_CA_BUNDLE | --cacert
             # Linux
-                # CLI
-                --cacert=$path_to_ca_bundle_crt_pem
-                export CURL_CA_BUNDLE=$path_to_ca_bundle_crt_pem
+                # Requires CA certs in PEM format
+                --cacert=/path/to/the-signing-root-ca.crt
+                --cacert=/path/to/bundle/file/ca.bundle
+                --capath=/dir/containing/the-signing-root-ca.crt
+                export CURL_CA_BUNDLE=/path/to/ca.bundle
                 # Install internet's CA bundle
                     # Debian/Ubuntu
                     sudo apt update && sudo apt install -y ca-certificates
                     # RHEL/CentOS/Fedora
                     sudo dnf install -y ca-certificates
-                # Add custom CA
-                    custom=/usr/local/share/ca-certificates/
+                # Add custom CA certificate(s) : file(s) MUST HAVE EXTENSION .crt
+                    # Ubuntu  
+                    custom=/usr/local/share/ca-certificates/ # Debian/Ubuntu custom certs dir
+                    custom=/etc/pki/ca-trust/source/whitelist/  # RHEL
                     sudo mkdir -p $custom
-                    sudo cp $ca_crt_pem $custom
-                    sudo update-ca-certificates
+                    sudo cp $ca_cert $custom/any-root-ca.crt
+                    # Install it : Creates link to /etc/ssl/certs/
+                    sudo update-ca-certificates # Should report something like "... add 1 ..."
+                    sudo update-ca-trust # FAILing to update
+                    # Updates both (but doesn't)
+                    # /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+                    # /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt
             # Windows
                 --cacert C:\path\to\cacert.pem
                 setx CURL_CA_BUNDLE C:\path\to\cacert.pem
