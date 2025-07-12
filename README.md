@@ -121,6 +121,8 @@
 ## [git.sh](./REFs/git.sh)
 ## [Git.v.CICD.decoupled.md](./REFs/Git.v.CICD.decoupled.md)
 ## [GitHub.sh](./REFs/GitHub.sh)
+## [GitLab.gitlab-runner.RBAC.md](./REFs/GitLab.gitlab-runner.RBAC.md)
+## [GitLab.KAS.v.ArgoCD.md](./REFs/GitLab.KAS.v.ArgoCD.md)
 ## [GitLab.md](./REFs/GitLab.md)
 ## [GitLab.project.export-import.md](./REFs/GitLab.project.export-import.md)
 ## [GitLab.recovery.md](./REFs/GitLab.recovery.md)

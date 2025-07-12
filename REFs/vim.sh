@@ -49,6 +49,11 @@ exit
     n                # Finds NEXT occurence of STR 
     N                # Finds PREVIOUS occurence of STR
     :noh             # CLEAR highlighted SEARCH 
+    / STR /          # Match exactly one space on both sides
+    /\sSTR\s/        # Match any space/tab on either side
+    /\cSTR/          # Ignore case
+
+    :set ignorecase  # Persistently; all subsequent patterns. 
 
     # Search & Replace (sed syntax)
     

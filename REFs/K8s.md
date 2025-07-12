@@ -9,6 +9,52 @@ Kubernetes is a universal control plane that is most commonly used to build plat
 - Admin: [`K8s.kubeadm.sh`](K8s.kubeadm.sh)
 - Client: [`K8s.kubectl.sh`](K8s.kubectl.sh) 
 
+
+- __Pod Network__ is the _underlay network_ where actual Pod-to-Pod communication happens. Managed by CNI plugin.
+    - Cluster-wide __Pod CIDR__: 
+        ```bash
+        # Declared upon init: 
+        $ kubeadm init --pod-network-cidr=10.244.0.0/16
+        # Declared thereafter (state of etcd):
+        $ kubectl -n kube-system get cm kubeadm-config -o yaml | grep podSubnet
+        podSubnet: 10.244.0.0/16
+        ```
+    - Per-Node __CIDRs__ managed by CNI are declared at :
+        ```bash
+        # By jsonpath
+        $ kubectl get nodes -o jsonpath='{.items[*].spec.podCIDR}'
+        10.244.0.0/24 10.244.1.0/24 10.244.2.0/24
+
+        # By yq 
+        $ kubectl get nodes -o yaml |yq .items[].spec.podCIDR
+        10.244.0.0/24
+        10.244.1.0/24
+        10.244.2.0/24
+        ```
+- __Service Network__ is a _virtual overlay_ for service discovery.  
+    - __CIDR__ declared at `pod.spec.containers[].command`   
+    of __`kube-apiserver`__ : `--service-cluster-ip-range`
+        ```bash
+        $ kubectl -n kube-system get pod -o yaml \
+            |grep -- --service-cluster-ip-range
+            - --service-cluster-ip-range=10.96.0.0/12
+            ... (repeated)
+        ```
+    - __Service Discovery__ 
+        - Tracks Pods belonging to a Service   
+        based on __Label Selectors__.
+            ```yaml
+            apiVersion: v1
+            kind: Service
+            metadata:
+            name: a-service
+            spec:
+            selector:
+                app: x  # Matches Pods having this label
+            ```
+        - __Dynamically updates__ the Service’s __load-balancing rules__ as Pods are created, deleted, or rescheduled.
+        - Kubernetes automatically creates an __Endpoints__ (or EndpointSlice) object for the Service. This object holds __the current list of healthy Pod IPs__ matching the selector.
+
 ## Vanilla Cluster
 
 [Install a production-environment cluster using `kubeadm`.](https://kubernetes.io/docs/setup/production-environment/)
@@ -1376,4 +1422,3 @@ kubectl create|run --dry-run=client -o yaml > app.yaml
 <a name="foo"></a>
 
 -->
-
