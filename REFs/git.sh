@@ -37,7 +37,16 @@ exit
         # -s recursive Default merge : Recursively merges branches with complex histories
         # -X theirs : Polite : Attempts normal merge; selects $source only on conflict
         # --strategy=theirs : Destroy everything of $target not in $source
-
+        #
+        vi $a_conflicted_file
+        # Resolve conflicts per file:
+        # <<<<<<< HEAD
+        # your changes from target branch
+        # =======
+        # incoming changes from source branch
+        # >>>>>>> source
+        git add $the_resolved_conflict
+        git commit 
     # Test normal merge
     git merge $source
     # Inspect conflicts...
@@ -103,10 +112,17 @@ exit
     # Pattern for clean history
     # That's a fast-forward merge with clean, linear history; no merge commits, no forks, no clutter.
     git checkout $source
-    git rebase $target # Affects only source branch (commit history is linear : target-source)
+    git rebase $target # Affects only source branch; commit history is linear
+
+        # On conflict, resolve as with merge, but added --confinue
+        vi $conflicted_file 
+        git add $conflicted_file
+        git commit 
+        git rebase|cherry-pick|revert --continue
+
     # test, then merge source into target:
     git checkout $target
-    git merge $source  # fast-forward
+    git merge $source  # "Updating..." so target commit is that of latest source; Fast-forward
     git push origin $target # Push the merge
 
     ## When local is BEHIND/DIVERGED from remote, ...
