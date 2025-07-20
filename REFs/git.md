@@ -59,19 +59,17 @@ Then/Else
 
 ```bash
 ## Create SSH tunnel sans terminal allocation 
-ssh -T git@github.com
+ssh -T git@$host
 git config --list # List all
 # (Re)Set identity globally
-git config --global user.name "John Doe"
-git config --global user.email johndoe@example.com
+git config --global user.name "$(id -un)"
+git config --global user.email $(id -un)@$(hostname -f)
 project=${PWD##*/} # If at project root
 # Add origin (once)
 git remote add origin $account/$project.git 
 # (Re)Set access mode : HTTPS|SSH(prefer)
-git remote set-url origin git@github.com:$account/$project.git          # SSH
-# Else if "Host github" and "User git" is so configured for this host at ~/.ssh/config
-git remote set-url origin github:$account/$project.git                  # SSH
-git remote set-url origin https://github.com/$account/${PWD##*/}.git    # HTTPS
+git remote set-url origin git@$host:$account/$project.git       # SSH
+git remote set-url origin https://$host/$account/${PWD##*/}.git # HTTPS
 
 ```
 
@@ -150,4 +148,3 @@ git push --force-with-lease
 <a name="foo"></a>
 
 -->
-

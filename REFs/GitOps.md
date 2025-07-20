@@ -25,6 +25,10 @@ How many possible configurations are there for __3 hosts__,
 each having __6 services__, each having __6 parameters__, 
 __each having only two possible settings__?
 
+This scenario is an artificially simple infrastructure 
+to steelman the argument *against* DevOps/GitOps/IaC.
+So, let's see what we may see &hellip;
+
 ### A: 
 
 1. **Parameters per service**: Each service has 6 parameters, and each parameter has 2 settings. 
@@ -37,14 +41,28 @@ So, the number of configurations for one service is:
 3. **Total hosts**: There are 3 hosts, so the total number of configurations is:  
 `(68,719,476,736)^3` = `(2^36)^3` = `2^108`
 
+4. **Final calculation**: `(2^36)^3` = `2^108`
 
-4. **Final calculation**: Compute `2^108`:  
-`2^108` 
+So, the number of possible configurations is:  
+`324,518,553,658,426,726,783,156,020,576,256`  
+(`~ 3.2 x 10^32`) 
 
+That's many more than a trillion trillion possible configurations.  
+More than the estimated number of stars in the Universe.
+Not the galaxy. The entire Universe.
 
-Thus, the total number of possible configurations is:  
-`324,518,553,658,426,726,783,156,020,576,256`  (`~ 3.2 x 10^32`)
+And only one of those is the one you want. 
+All the others are some kind of misconfiguration. 
 
+Do you like those odds?
+
+DevOps/GitOps/IaC is an upfront cost that pays dividends each time it is applied.
+And the more your infa builds out, the larger those per-build dividends grow.
+
+Conversely, absent DevOps/GitOps/IaC, 
+every stage of the build out is levied a tax dwarfing that of the prior stage. 
+The non-linear explosion of misconfigurations is merciless. 
+It grinds down morale along with productivity.
 
 ### Principles
 

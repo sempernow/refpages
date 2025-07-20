@@ -21,17 +21,17 @@ exit
     git status # Ensure working dir is clean; no uncommitted changes
     git checkout $target    
     git pull origin $target # Pull latest changes from its remote 
-    # OPTIONAL :  Previews
-    git merge --no-commit --no-ff $source   # Preview the merge
-    git merge-base $target $source          # Find point of divergence 
-    # OPTIONAL : Visualize the divergence
-    git log --graph --oneline $(git merge-base main $source)..$target
-    git log --graph --oneline $(git merge-base main $source)..$source
-    # OPTIONAL : Show how many commits each branch has since diverging
-    git rev-list --count main..$source      # commits only in source
-    git rev-list --count $source..$target   # commits only in target
-    # OPTIONAL : Show the actual changes that would be merged
-    git diff $(git merge-base main feature-branch)..feature-branch
+        # OPTIONAL :  Previews
+        git merge --no-commit --no-ff $source   # Preview the merge
+        git merge-base $target $source          # Find point of divergence 
+        # OPTIONAL : Visualize the divergence
+        git log --graph --oneline $(git merge-base main $source)..$target
+        git log --graph --oneline $(git merge-base main $source)..$source
+        # OPTIONAL : Show how many commits each branch has since diverging
+        git rev-list --count main..$source      # commits only in source
+        git rev-list --count $source..$target   # commits only in target
+        # OPTIONAL : Show the actual changes that would be merged
+        git diff $(git merge-base main feature-branch)..feature-branch
     # Merge (actually) source into target
     git merge $source 
         # -s recursive Default merge : Recursively merges branches with complex histories
@@ -46,12 +46,12 @@ exit
     # Test -X theirs strategy
     git merge -X theirs $source
     # Inspect result...
-    git reset --hard HEAD~1 # Undo last commit (merge)
+    git reset --hard HEAD~1 # Undo last commit (the merge)
 
     # Test -s theirs strategy
     git merge -s theirs $source
     # Inspect result...
-    git reset --hard HEAD~1 # Undo last commit (merge)
+    git reset --hard HEAD~1 # Undo last commit (the merge)
 
     # Check out main's version
     git checkout --ours $conflicted_file
@@ -88,9 +88,18 @@ exit
     git diff <merge-base>..target
     # Demo : https://chatgpt.com/share/685f4353-2090-8009-bcb8-6f646190e5c0 
 
+## Merge source (of another project) into target
+    git clone $target
+    cd /to/target/project
+    git remote add upstream $source_url
+    git fetch upstream $source_branch
+    git checkout -b $new_target_local_branch
+    git merge upstream/$source_branch
+    git push -u origin $new_target_local_branch
+
 ###############################################################
 ## Rebase source branch onto target, then merge back into target
-    ## ours/theirs flips meaning !!! ours is branch rebasing into; their is working branch
+    ## ours/theirs flips meaning !!! ours is branch rebasing into; theirs is working branch
     # Pattern for clean history
     # That's a fast-forward merge with clean, linear history; no merge commits, no forks, no clutter.
     git checkout $source
