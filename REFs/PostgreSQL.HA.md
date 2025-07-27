@@ -25,6 +25,22 @@
 
 # TL;DR 
 
+## Streaming Replication : Symmetric Servers
+
+Streaming Replication with Replication Slots implemented on a symmetrical pair of containerized PostgreSQL servers running in a Docker swarm stack. This is a native PostgreSQL (v12/13) implementation, sans external dependencies. The servers are stateless. State is maintained in the peristent data store mounted thereto.
+
+The functional difference between the two servers is that one is in primary (read/write) mode and the other is in hot standby (read-only). The primary is continuously archiving, and the standby is continuously recovering; both per WAL (file) shipping. Separately, point-in-time recovery (PITR) and cluster backup (base backup) are available ad-hoc, imperatively, while the servers are online. All such functionality is per canonical PostgreSQL implementation. 
+
+The symmetrical arrangement is robust and simple to configure. The distinctions between the two servers amount to a zero-byte signal file (`standby.signal`) existing exclusively in the `$PGDATA` directory of whichever is in standby mode; that and the requisite anti-symmetrical settings of replication-connection parameters. Beyond that, they are identical. Each server has a unique host name, and each its own data and archive stores. Extending the scheme to multiple standby servers requires only cloning the one and the processes to configure it.
+
+> Note that _primary_/_standby_ are ___operational___ declarations, whereas each server/service is configured per ___hardware___ declarations and its relevant identity and connection parameters. The point being the former are swappable, while the latter must remain immutable; the (operational) role of a server/service is what toggles, not the server-service-hardware associations. All relevant code must abide the distinction. In a containerized deployment, each PostgreSQL server is a named service, constrained (tethered) to its (configured) hardware regardless of its container(s) popping in and out of existence to provide the services. 
+
+Bootstrapping and ad hoc backup (tarball) processes both utilize the same PostgreSQL utility (`pg_basebackup`); both operating on the `$PGDATA` directory. After servers' initialization and bootstrap, failover(s) are performed by merely adding the `standby.signal` file to the former (demoted) primary, and deleting same from the former (promoted) standy. PITR is performed similarly. Though the servers can swap modes on demand at any time, the scheme is primarily for automated failover. Total transition time is set by application latency; there should never be two primary servers, so the demote/promote duration should be sufficient to assure this. Lest the PostgreSQL servers are spread across the globe, this is typically tens of milliseconds. That's the duration over which clients would lose write access on failover (or any other change of primary).
+
+Routing requests to the appropriate server is an external responsibility. According to PostgreSQL documentation, best performance is achieved when the (hot) standby services all read requests, lightening the load of the primary as it services all write requests. The idea there is the anti-symmetrical nature of such processes; the former being relatively greater in number and lower in computational intensity per, and the latter being the reverse of those two metrics.
+
+## Features / Functions / Modes / Topologies
+
 - Write-Ahead Log Shipping; Streaming Replication (SR) with Replication Slots (RS) assures replica integrity, yet sacrifices limitation on required storage size.
 - Shared-Disk Failover; the simplest HA topology; implement with a lone server (sans SR) as a Docker service; under Docker swarm other topologies are available, scaling out from this one server/storage; multiple nodes/storage schemes.
 - Continuous Archiving (CA) works with SR/RS~~, but for ephemeral IPs~~ UPDATE: Accepts Docker hostnames.
@@ -308,4 +324,3 @@ When the standby is started and `primary_conninfo` is set correctly, the standby
 <a name="foo"></a>
 
 -->
-
