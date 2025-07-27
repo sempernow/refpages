@@ -387,10 +387,17 @@ exit
     git push origin :refs/tags/$tag  # Delete remote; equivalent
  
 ## FILESYSTEM COMMANDs  
-    git mv foo.bar baz.bar     # Renaming a file.  
-    git mv foo.bar ./foo/baz.b # Moving a file.  
-    git mv -f fileA fileB      # Replaces a file.  
+    git mv foo.bar baz.bar          # Renaming a file.  
+    git mv foo.bar ./foo/baz.b      # Moving a file.  
+    git mv -f fileA fileB           # Replaces a file.  
 
+## Git content
+    # List Tracked Files in the Repository (in HEAD)
+    git ls-tree -r HEAD --name-only # 
+    # List Untracked files
+    git ls-files --others   # All untracked
+    git ls-files --others --exclude-standard # Any not of .gitignore 
+ 
 ## REMOTEs (ORIGIN/UPSTREAM); TRACKED BY LOCAL branch(es)
     origin    # REMOTE repo associated with the local/current/working/tracking folder
     upstream  # Original repo if remote is FORK, else origin.
