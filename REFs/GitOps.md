@@ -61,8 +61,9 @@ And the more your infa builds out, the larger those per-build dividends grow.
 
 Conversely, absent DevOps/GitOps/IaC, 
 every stage of the build out is levied a tax dwarfing that of the prior stage. 
-The non-linear explosion of misconfigurations is merciless. 
-It grinds down morale along with productivity.
+This non-linear explosion of misconfigurations is merciless. 
+It grinds down productivity along with morale,
+and does so ever more with each iteration.
 
 ### Principles
 
@@ -86,7 +87,8 @@ It grinds down morale along with productivity.
 ## Methods
 
 - __Declarative Configuration__:  
-    Use declarative configurations (YAML files) for all resources and store them in a Git repository. 
+    Use declarative configurations (YAML files) 
+    for all resources and store them in a Git repository. 
     This approach ensures that the desired state of your cluster is version-controlled and auditable.
     - __Branching Strategies__:  
         [Trunk-based](https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development) 
@@ -217,12 +219,12 @@ It grinds down morale along with productivity.
     - [Grafana Loki](https://grafana.com/oss/loki/) | [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") ([Install](https://grafana.com/docs/loki/latest/setup/install/)) : "*Prometheus, but for logs*". A lightweight alternative to Elastic stack.
         - __Does not provide full-text indexing__ of logs; indexes only the logs' metadata (__labels__).
         - No viable installation method is available (2024-08), contrary to project claims. 
-- __Observability__ : Distributed __Tracing__ and __Metrics__
+- __Observability__ : Distributed __Metrics__ and __Tracing__
     - [Prometheus](https://prometheus.io/ "Prometheus.io") : TSDB and monitoring system optimized for telemetry (metrics and tracing). 
     The defacto standard, but does not scale, and has horrible alerts (Alertmanager). So popular that projects provide workarounds to manage scaling. Provision using [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1) :
         - [prometheus-operator/prometheus-operator](https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator "GitHub") :   
         The bare operator ([`bundle.yaml`](https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml "GitHub"))
-        - __`kube-prometheus`__ : *A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; __end-to-end Kubernetes cluster monitoring__ with Prometheus using the Prometheus Operator.* 
+        - __`kube-prometheus`__ : *A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; __end-to-end Kubernetes cluster monitoring__ with Prometheus using the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1).* 
             - The Prometheus Operator
             - Grafana
             - Highly available Prometheus
@@ -236,10 +238,11 @@ It grinds down morale along with productivity.
                 Manifest method : [`prometheus-operator/kube-prometheus`](https://github.com/prometheus-operator/kube-prometheus "GitHub") 
                 - __`kube-prometheus-stack`__  
                 Helm method : [`prometheus-community/kube-prometheus-stack`](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack "GitHub") 
+                ChatGPT 5(See [k8s-vanilla-ha-rhel9](https://github.com/sempernow/k8s-vanilla-ha-rhel9 "GitHub : sempernow/k8s-vanilla-ha-rhel9"))
         - [__Thanos__](https://thanos.io/ "Thanos.io") @ [GitHub](https://github.com/thanos-io/thanos "GitHub") : Prometheus HA + long-term storage ([MinIO](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html "Min.io")) : CNCF project; can "seamlessly upgrade" on top of an existing Prometheus deployment.
     - [__Grafana__](https://grafana.com/) : Web UI : Dashboards
         - [__Grafana Tempo__](https://github.com/grafana/tempo) : Tracing backend; scales and __integrates with OpenTelemetry__, Zipkin, and __Jaeger__; fixes Jaeger shortcomings.
-    - [__Jaeger__](https://www.jaegertracing.io/docs/1.18/opentelemetry/ "JaegerTracing.io") : Tracing collector that integrates with OpenTelemetry
+    - [__Jaeger__](https://www.jaegertracing.io/docs/1.18/opentelemetry/ "JaegerTracing.io") : __Tracing__ collector that integrates with OpenTelemetry
         - [Jaeger Operator](https://www.jaegertracing.io/docs/1.60/operator/ "JaegerTracing.io") @ [GitHub](https://github.com/jaegertracing/jaeger-operator "GitHub")
             - Requires [`cert-manager`](https://cert-manager.io/docs/)
     - [__OpenTelemetry__](https://opentelemetry.io/docs/collector/) (OTEL)  
@@ -370,14 +373,15 @@ It grinds down morale along with productivity.
         - [OPA/Gatekeeper](https://open-policy-agent.github.io/gatekeeper/website/docs/)  (3.7K): Automated policy enforcement 
         - [Kubearmor](https://kubearmor.io)  (1.6K): Runtime Security Enforcement : Policy-based controls : a runtime Kubernetes security engine that uses eBPF and Linux Security Modules (LSM) for fortifying workloads based on Cloud Containers, IoT/Edge, and 5G networks.
     - __Secrets__
-        - [Vault](https://github.com/hashicorp/vault) : 
-          [`vault-helm`](https://github.com/hashicorp/vault-helm "GitHub") : [`vault-secrets-operator`](https://github.com/hashicorp/vault-secrets-operator "GitHub")
-          provides for [various implementations](https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79 "ChatGPT"):
-            - Vault Agent Sidecar Injection : Most secure (rest/transit) : 
+        - [__Hashicorp Vault__](https://github.com/hashicorp/vault) : [__OpenBao__](https://openbao.org/) (OSS fork)
+            - [Implementations](https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79 "ChatGPT"):
+                - [`vault-helm`](https://github.com/hashicorp/vault-helm "GitHub")
+                - [`vault-secrets-operator`](https://github.com/hashicorp/vault-secrets-operator "GitHub")
+                - Vault Agent Sidecar Injection : Most secure (rest/transit) : 
               Transparent encrypt/decrypt of K8s `Secret` objects (`data`)
-            - Vault CSI Driver :  Fetch secrets on container init and mount as files in the container.
-            - External Secrets Operator : Integrates with external secret stores (Vault, AWS Secrets Manager, Google Cloud Secret Manager); syncs secrets from Vault into K8s `Secret` objects.
-            - Direct API Calls to Vault : Configured per app.
+                - Vault CSI Driver :  Fetch secrets on container init and mount as files in the container.
+                - External Secrets Operator : Integrates with external secret stores (Vault, AWS Secrets Manager, Google Cloud Secret Manager); syncs secrets from Vault into K8s `Secret` objects.
+                - Direct API Calls to Vault : Configured per app.
         - [External Secrets Operator](https://external-secrets.io/latest/) : 
           Pull/Push secrets; sync K8s `Secret` objects (decrypted) with external store (encrypted).
         - [Teller](https://github.com/tellerops/teller) : Like External Secretes Operator; local CLI secrets manager for developers.
@@ -411,8 +415,18 @@ It grinds down morale along with productivity.
     - __Signing__
         - Sigstore Cosign
         - Notary
-    - __TLS__
-        - [cert-manager](https://cert-manager.io/ "cert-manager.io") : _&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry._
+    - __TLS__ : [Automated TLS Management (Enterprise Grade)](https://chatgpt.com/share/6897a869-d390-8009-b873-da33b20e8e0b "ChatGPT 5")
+        - __cert-manager__ ([cert-manager.io](https://cert-manager.io/ "cert-manager.io")|[GitHub](https://github.com/cert-manager)): _&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry._
+            - Private Issuers (Backends):
+                - Smallstep [__`step-ca`__](https://smallstep.com/docs/step-ca/ "smallstep.com")  
+                An online CA for secure, automated X.509 and SSH certificate management. It's the server counterpart to `step` CLI. Run step-ca (internal ACME) + `step-issuer` or use `cert-manager`’s ACME issuer pointed at `step-ca`. Provides air-gapped ACME + tight Kubernetes integration.
+                    - Generate TLS certificates for private infrastructure using the ACME protocol.
+                    - Automate TLS certificate renewal.
+                    - Add Automated Certificate Management Environment (ACME) support to a legacy subordinate CA.
+                    - Issue short-lived SSH certificates via OAuth OIDC single sign on.
+                    - Issue customized X.509 and SSH certificates.
+                - __Hashicorp Vault PKI__ | [__OpenBao PKI__](https://openbao.org/docs/secrets/pki/)
+                - __Venafi TLS Protect for Kubernetes__ (the commercial successor to __Jetstack__ Secure): central policy/visibility across clusters and CAs (public or private). If you want enterprise governance and inventory at scale, this is the “batteries-included” option.
 - __Storage__
     - [__MinIO__](file:///D:/1%20Data/IT/Container/Kubernetes/Storage/MinIO/MinIO.html "MinIO.html") : a Kubernetes-native high performance object store with an __S3-compatible API__; 
       supports deploying MinIO Tenants onto private and public cloud infrastructures AKA Hybrid Cloud.

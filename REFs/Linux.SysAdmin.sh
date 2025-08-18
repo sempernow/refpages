@@ -12,11 +12,25 @@ exit 0
 # BOOT CONFIGURATION FILES
     /etc/sysconfig/*
 
+# OS : Get/Set hostname/info
+    # System info
+    uname --all # --help
+    hostnamectl
+
+    # OS info
+    cat /etc/os-release
+    alias os='cat /etc/os-release'
+
 # NETWORK
 
     # Host
-    hostname    # hostname of this machine
-    hostname -f # FQDN
+    hostname    # Get hostname of this machine
+    hostname -d # Get domain
+    hostname -f # Get FQDN
+
+    # (Re)Set hostname
+    hostnamectl set-hostname $newHostName
+    systemctl restart systemd-hostnamed.service # static
 
     # DNS Resolution (locally)
     vim /etc/hosts          # 198.51.100.30   example.com
@@ -78,9 +92,37 @@ exit 0
     # CPU info
         lscpu    # YAML : Architecture, Model name, CPU(s), Thread(s) per Core, ...
         lscpu -J # JSON : Different structure : {lscpu: [{field: "Architecture", data: "x86_64"},...]}
-
         /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.
             cat /proc/cpuinfo # Per-thread (redundant) info
+
+            cpuinfo(){
+                echo -e "arch\t\t: $(echo $HOSTTYPE |cut -d'"' -f2)"
+                cat /proc/cpuinfo \
+                    |grep -e name -e MHz -e cores -e siblings \
+                    |sed 's/siblings/threads   /' \
+                    |sort -u
+            }
+            alias cpu=cpuinfo
+
+    # Process 
+        pstree
+        ps -ejH --sort=-rss
+        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.
+            # List RSS of a PID
+            pid=285
+            cat /proc/$pid/status |grep Vm
+                # VmPeak:  6115804 kB # Peak virtual memory size.
+                # VmSize:  6095096 kB # Virtual memory size.
+                # VmHWM:    670232 kB # Peak resident set size (RSS) : "High Water Mark" : .67 GB
+                # VmRSS:    670188 kB # Resident set size (INNACURATE @ Linux 4.5+) : Sum of "Rss*:"
+
+        # ps : Process info of declared pattern (command, PID, ...), else all of current user
+        psp (){
+            ps -axo user,pid,rss,pmem,pcpu,command \
+                |grep -v grep \
+                |grep -v 'ps -' \
+                |grep -e PID -e "${@:-$USER}"
+        }
 
     # Memory info
         free -mh  # Units of Mi
@@ -103,8 +145,7 @@ exit 0
                 # VSZ (Virtual-memory SiZe) is 2097152 KB (roughly 2GiB).
                 # RES (Resident Memory Size) is 43152 KB (roughly 42MiB).
 
-            # psrss : RSS top ($1 else 12) or declared-command ($1) usage in MiB
-            psrss(){
+            psrss(){ # RSS usage [MiB] of declared command ($1) else top 12
                 e=-e
                 [[ "$1" =~ ^-?[0-9]+$ ]] && n=$1 || {
                     n=12;[[ $1 ]] && unset e
@@ -117,33 +158,20 @@ exit 0
                     |awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |head -$n
             }
 
-        # Process tree
-            ps -ejH --sort=-rss
-            pstree
-
-        /proc # Mount of proc; process information pseudo-filesystem; interface to kernel data structures.
-            # List RSS of a PID
-            pid=285
-            cat /proc/$pid/status |grep Vm
-                # VmPeak:  6115804 kB # Peak virtual memory size.
-                # VmSize:  6095096 kB # Virtual memory size.
-                # VmHWM:    670232 kB # Peak resident set size (RSS) : "High Water Mark" : .67 GB
-                # VmRSS:    670188 kB # Resident set size (INNACURATE @ Linux 4.5+) : Sum of "Rss*:"
-
-            # List RSS of a command
-            rss(){
-                pid_of_cmd(){
-                    ps -C $1 --sort=-rss |grep $1 |awk '{print $1}' |head -1
-                }
-                [[ $1 ]] || { echo '  USAGE: rss COMMAND';return 1; }
-                pid=$(pid_of_cmd $1)
-                [[ $pid ]] && cat /proc/$pid/status |grep Vm \
-                    |awk '{ printf "%-8s %5.0f %4s\n", $1, $2/1024,"MiB" }' |grep -v ' 0 '
+        rss(){ # Show actual (phyical) memory usage (RSS, HWM, etc.) of a process by its command ($1)
+            pid_of_cmd(){
+                ps -C $1 --sort=-rss |grep $1 |awk '{print $1}' |head -1
             }
-
-            meminfo(){
-                cat /proc/meminfo |awk '{ printf "%-16s %10.2f %4s\n", $1, $2/1024/1024,"GiB" }' |grep -v 0.00
-            }
+            [[ $1 ]] || { echo '  USAGE: rss COMMAND';return 1; }
+            pid=$(pid_of_cmd $1)
+            [[ $pid ]] && cat /proc/$pid/status |grep Vm \
+                |awk '{ printf "%-8s %5.0f %4s\n", $1, $2/1024,"MiB" }' |grep -v ' 0 '
+        }
+        meminfo(){
+            cat /proc/meminfo \
+                |awk '{ printf "%-16s %10.2f %4s\n", $1, $2/1024/1024,"GiB" }' \
+                |grep -v 0.00
+        }
 
 # PERFORMANCE
     # @ ISSUE, Step 1 is ASK:
@@ -172,11 +200,6 @@ exit 0
         lspci               # PCIe specs
         /boot/firmware/     # Configuration file(s), e.g., to enable PCIe
 
-# OS : Get/Set hostname/info
-    hostnamectl
-    # OS info
-    cat /etc/os-release
-    alias os='cat /etc/os-release'
 
 # SERVICEs
 
@@ -294,8 +317,15 @@ exit 0
             install $pkg [--nobest --allowerasing]
             remove $pkg
             info $pkg
+            list --showduplicates COMMAND   # List ALL versions
+            list available COMMAND          # List NEWER versionS (vs. that already installed)
+            repolist
+            repodiff --repo-old old1 --repo-new new1
+            config-manager --disable $repo 
+            makecache  # Create cache of all enabled repo data
 
             rpm -qa # List all installed packages
+            rpm -q COMMAND # RPM package + version
 
     # Ubuntu/Debian
         apt

@@ -202,11 +202,12 @@ systemctl restart sssd  # Restart sssd (to apply changes)
         download $pkg --archlist x86_64,noarch --alldeps --resolve
         remove   $pkg 
         info     $pkg   # Application details; version and such
-
+        list --showduplicates COMMAND   # List ALL versions
+        list available COMMAND          # List NEWER versionS (vs. that already installed)
         repolist
         repodiff --repo-old old1 --repo-new new1
         config-manager --disable $repo 
-        makecache 
+        makecache  # Create cache of all enabled repo data
 
     # Modules are part of Application Stream (AppStream) of RHEL8+;
     # collections of software packages grouped together and managed as a unit. They contain a set of RPM packages and metadata that define their default versions and available streams (app versions)
@@ -229,12 +230,13 @@ systemctl restart sssd  # Restart sssd (to apply changes)
         alternatives --config python # List configured versions
         alternatives --list          # List all  
 
-    # List all packages installed 
-        rpm -qa 
-        #... rpm is a low-level utility; does not catch/manage conflicts/dependencies
+    rpm # A low-level utility; does not catch/manage conflicts/dependencies
         # Useful to access repo/pkg meta
+        rpm -q COMMAND # RPM package + version
+        rpm -qa # List all installed packages
+        rpm -q COMMAND # RPM package + version
 
-        # List meta of all packages installed
+        # List meta of ALL PACKAGES installed
             for p in $(rpm -qa); do dnf info $p; done 
 
     # CVEs / PATCHes 

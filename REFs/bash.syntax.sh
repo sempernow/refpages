@@ -205,6 +205,7 @@ exit
     (( expr1 ))  # ARITHMETIC
     #... man test (1) https://linux.die.net/man/1/test
 
+    [[ -v $any ]]  && echo "Variable is SET"
     [[ $var ]]     && echo 'True'  || echo 'False' # Zero-character string is False.
     (( $? ))       && echo 'Error' || echo 'Okay'
     (( $a - $b ))  && echo 'Not 0' || echo 'Zero'
@@ -216,8 +217,11 @@ exit
         (( $a <= $b )) && echo T || echo F # True if a <= b
 
     # STRING COMPARISONS http://tldp.org/LDP/abs/html/comparison-ops.html#ICOMPARISON1
-        [[ "$a" < "$b" ]]  # less than in ASCII alphabetical order
-        [ "$a" \< "$b" ]   # less than in ASCII alphabetical order
+        [[ "$a" < "$b" ]]  # less than in ASCII alphabetical order (lexicographically)
+        [ "$a" \< "$b" ]   # less than in ASCII alphabetical order (lexicographically)
+
+        [[ -z $str ]] && echo "String length is ZERO"
+        [[ -n $str ]] && echo "String length is NOT zero"
 
     # MIXED EXPRESSION & EVALUATION ( Arithmetic & String )
         [[ (( $? > 0 )) || "$1" == "x" ]]
