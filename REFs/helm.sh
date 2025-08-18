@@ -54,7 +54,7 @@ helm search hub $repo |grep $chart
 helm search repo $chart 
 # Charts : Install/Upgrade : Methods (*)
 ## * Pull and install a chart : Creating a release (Helm lingo)
-release=a$chart
+release=$chart
 helm update $release $repo/$chart --install
 ## * Pull and install a chart : Override chart settings using LOCAL values.yaml file
 helm show values $repo/$chart --version $ver |tee $values    # 1. Pull (values.yaml only) then edit.
@@ -64,14 +64,15 @@ helm update $release $repo/$chart --install --values https://$domain/path/$value
 ## * Pull and install a chart : OFFLINE-INSTALL method
 values=values.yaml
 ## 1. Pull chart for subsequent local install
-helm pull $repo/$chart --version $ver 
+helm pull $chart --version $ver --repo $url # Ref remote repo
+helm pull $repo/$chart --version $ver       # Ref local repo @ `helm repo add` 
 tar -xaf ${chart}-${ver}.tgz # Charts *should* extract to a folder named "$chart"
 ## 2. Copy and edit chart's values.yaml file
 cp $chart/values.yaml .
 vi values.yaml
 ## OR Copy by pull
 helm show values $repo/$chart --version $ver |tee $values
-## 3. Modify values to fit your environment
+## 3. Modify values to fit your environment : Ok to delete all k-v pairs except for those differing from default values.yaml
 vim $values
 ## 4. Install/Upgrade the local chart, overriding default values with those of $values file.
 helm upgrade $release $chart --install --values $values 

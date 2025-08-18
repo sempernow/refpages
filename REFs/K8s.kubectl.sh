@@ -194,8 +194,8 @@ kubectl rollout history $any
 # GET 
 kubectl -n $ns get $kind $name # [-o yaml|json|jsonpath|wide|…] [-A] 
 kubectl get all -n kube-system # 'all' is *not* all : See `kubectl api-resources` 
-all='pod,deploy,ds,sts,svc,ingress,cm,secret,pvc,pv'
-kubectl get $all -A # Across all namespaces
+all='sa,role,rolebinding,pod,deploy,ds,sts,svc,ingress,cm,secret,pvc'
+kubectl get $all,pv -A -l $key=$val # Use to capture every resource having a label key[=val]
 # Get IP address of node (the first one listed)
 kubectl get node -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'
 # Get endpoints and services having a label key and value

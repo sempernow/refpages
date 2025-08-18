@@ -85,8 +85,9 @@ And the more your infa builds out, the larger those per-build dividends grow.</p
 
 <p>Conversely, absent DevOps/GitOps/IaC,
 every stage of the build out is levied a tax dwarfing that of the prior stage.
-The non-linear explosion of misconfigurations is merciless.
-It grinds down morale along with productivity.</p>
+This non-linear explosion of misconfigurations is merciless.
+It grinds down productivity along with morale,
+and does so ever more with each iteration.</p>
 
 <h3>Principles</h3>
 
@@ -114,7 +115,8 @@ Software agents continuously observe actual system state and attempt to apply th
 
 <ul>
 <li><strong>Declarative Configuration</strong>:<br>
-Use declarative configurations (YAML files) for all resources and store them in a Git repository.
+Use declarative configurations (YAML files)
+for all resources and store them in a Git repository.
 This approach ensures that the desired state of your cluster is version-controlled and auditable.
 
 <ul>
@@ -328,7 +330,7 @@ supports automated or manual syncing of changes.
 <li>No viable installation method is available (2024-08), contrary to project claims.</li>
 </ul></li>
 </ul></li>
-<li><strong>Observability</strong> : Distributed <strong>Tracing</strong> and <strong>Metrics</strong>
+<li><strong>Observability</strong> : Distributed <strong>Metrics</strong> and <strong>Tracing</strong>
 
 <ul>
 <li><a href="https://prometheus.io/" title="Prometheus.io">Prometheus</a> : TSDB and monitoring system optimized for telemetry (metrics and tracing).
@@ -337,7 +339,7 @@ The defacto standard, but does not scale, and has horrible alerts (Alertmanager)
 <ul>
 <li><a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator" title="GitHub">prometheus-operator/prometheus-operator</a> :<br>
 The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml" title="GitHub"><code>bundle.yaml</code></a>)</li>
-<li><strong><code>kube-prometheus</code></strong> : <em>A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; <strong>end-to-end Kubernetes cluster monitoring</strong> with Prometheus using the Prometheus Operator.</em>
+<li><strong><code>kube-prometheus</code></strong> : <em>A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; <strong>end-to-end Kubernetes cluster monitoring</strong> with Prometheus using the <a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1">Prometheus Operator</a>.</em>
 
 <ul>
 <li>The Prometheus Operator</li>
@@ -354,7 +356,8 @@ The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operato
 <li><strong><code>kube-prometheus</code></strong><br>
 Manifest method : <a href="https://github.com/prometheus-operator/kube-prometheus" title="GitHub"><code>prometheus-operator/kube-prometheus</code></a></li>
 <li><strong><code>kube-prometheus-stack</code></strong><br>
-Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub"><code>prometheus-community/kube-prometheus-stack</code></a></li>
+Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub"><code>prometheus-community/kube-prometheus-stack</code></a>
+ChatGPT 5(See <a href="https://github.com/sempernow/k8s-vanilla-ha-rhel9" title="GitHub : sempernow/k8s-vanilla-ha-rhel9">k8s-vanilla-ha-rhel9</a>)</li>
 </ul></li>
 </ul></li>
 <li><a href="https://thanos.io/" title="Thanos.io"><strong>Thanos</strong></a> @ <a href="https://github.com/thanos-io/thanos" title="GitHub">GitHub</a> : Prometheus HA + long-term storage (<a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html" title="Min.io">MinIO</a>) : CNCF project; can &quot;seamlessly upgrade&quot; on top of an existing Prometheus deployment.</li>
@@ -364,7 +367,7 @@ Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/
 <ul>
 <li><a href="https://github.com/grafana/tempo"><strong>Grafana Tempo</strong></a> : Tracing backend; scales and <strong>integrates with OpenTelemetry</strong>, Zipkin, and <strong>Jaeger</strong>; fixes Jaeger shortcomings.</li>
 </ul></li>
-<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io"><strong>Jaeger</strong></a> : Tracing collector that integrates with OpenTelemetry
+<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io"><strong>Jaeger</strong></a> : <strong>Tracing</strong> collector that integrates with OpenTelemetry
 
 <ul>
 <li><a href="https://www.jaegertracing.io/docs/1.60/operator/" title="JaegerTracing.io">Jaeger Operator</a> @ <a href="https://github.com/jaegertracing/jaeger-operator" title="GitHub">GitHub</a>
@@ -627,16 +630,20 @@ Python tool for finding known vulnerabilities in software, using data from the  
 <li><p><strong>Secrets</strong></p>
 
 <ul>
-<li><a href="https://github.com/hashicorp/vault">Vault</a> :
-<a href="https://github.com/hashicorp/vault-helm" title="GitHub"><code>vault-helm</code></a> : <a href="https://github.com/hashicorp/vault-secrets-operator" title="GitHub"><code>vault-secrets-operator</code></a>
-provides for <a href="https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79" title="ChatGPT">various implementations</a>:
+<li><a href="https://github.com/hashicorp/vault"><strong>Hashicorp Vault</strong></a> : <a href="https://openbao.org/"><strong>OpenBao</strong></a> (OSS fork)
 
 <ul>
+<li><a href="https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79" title="ChatGPT">Implementations</a>:
+
+<ul>
+<li><a href="https://github.com/hashicorp/vault-helm" title="GitHub"><code>vault-helm</code></a></li>
+<li><a href="https://github.com/hashicorp/vault-secrets-operator" title="GitHub"><code>vault-secrets-operator</code></a></li>
 <li>Vault Agent Sidecar Injection : Most secure (rest/transit) :
 Transparent encrypt/decrypt of K8s <code>Secret</code> objects (<code>data</code>)</li>
 <li>Vault CSI Driver :  Fetch secrets on container init and mount as files in the container.</li>
 <li>External Secrets Operator : Integrates with external secret stores (Vault, AWS Secrets Manager, Google Cloud Secret Manager); syncs secrets from Vault into K8s <code>Secret</code> objects.</li>
 <li>Direct API Calls to Vault : Configured per app.</li>
+</ul></li>
 </ul></li>
 <li><a href="https://external-secrets.io/latest/">External Secrets Operator</a> :
 Pull/Push secrets; sync K8s <code>Secret</code> objects (decrypted) with external store (encrypted).</li>
@@ -684,10 +691,29 @@ age -d -i $key $src.tgz.age &gt; $src.tgz
 <li>Notary</li>
 </ul></li>
 
-<li><p><strong>TLS</strong></p>
+<li><p><strong>TLS</strong> : <a href="https://chatgpt.com/share/6897a869-d390-8009-b873-da33b20e8e0b" title="ChatGPT 5">Automated TLS Management (Enterprise Grade)</a></p>
 
 <ul>
-<li><a href="https://cert-manager.io/" title="cert-manager.io">cert-manager</a> : <em>&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry.</em></li>
+<li><strong>cert-manager</strong> (<a href="https://cert-manager.io/" title="cert-manager.io">cert-manager.io</a>|<a href="https://github.com/cert-manager">GitHub</a>): <em>&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry.</em>
+
+<ul>
+<li>Private Issuers (Backends):
+
+<ul>
+<li>Smallstep <a href="https://smallstep.com/docs/step-ca/" title="smallstep.com"><strong><code>step-ca</code></strong></a><br>
+An online CA for secure, automated X.509 and SSH certificate management. It's the server counterpart to <code>step</code> CLI. Run step-ca (internal ACME) + <code>step-issuer</code> or use <code>cert-manager</code>’s ACME issuer pointed at <code>step-ca</code>. Provides air-gapped ACME + tight Kubernetes integration.
+
+<ul>
+<li>Generate TLS certificates for private infrastructure using the ACME protocol.</li>
+<li>Automate TLS certificate renewal.</li>
+<li>Add Automated Certificate Management Environment (ACME) support to a legacy subordinate CA.</li>
+<li>Issue short-lived SSH certificates via OAuth OIDC single sign on.</li>
+<li>Issue customized X.509 and SSH certificates.</li>
+</ul></li>
+<li><strong>Hashicorp Vault PKI</strong> | <a href="https://openbao.org/docs/secrets/pki/"><strong>OpenBao PKI</strong></a></li>
+<li><strong>Venafi TLS Protect for Kubernetes</strong> (the commercial successor to <strong>Jetstack</strong> Secure): central policy/visibility across clusters and CAs (public or private). If you want enterprise governance and inventory at scale, this is the “batteries-included” option.</li>
+</ul></li>
+</ul></li>
 </ul></li>
 </ul></li>
 

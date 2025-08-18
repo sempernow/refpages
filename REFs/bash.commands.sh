@@ -499,6 +499,7 @@ exit
             -f ARCHIVE # Path to target archive (source or result)
             -c, --create
             -x, --extract
+            -O, --to-stdout
             -t, --list
             -v, --verbose
             -f, --file=ARCHIVE
@@ -506,7 +507,7 @@ exit
             -j, --bzip2         # .tar.bz2 is .tbz2
             -z, --gz            # .tar.gz  is .tgz
             -J, --xz            # .tar.xz  is .txz
-            -C PARENT # IIF flag is placed FIRST, 
+            -C PARENT # IIF flag is placed FIRST (on create), 
                       # then change to PARENT path before processing, 
                       # so arch root is PARENT;
                       # unnecessary if working dir (PWD) is parent of target.
@@ -552,6 +553,9 @@ exit
             tar -Cxavf $target_parent $tarball 
             # Better semantics:
             tar -C $target_parent -xavf $tarball
+
+        # EXTRACT a SINGLE FILE or DIR to $(pwd)/relpath/
+            tar -xaf $tarball relpath/in/archive
 
         # PIPEd input per `-` (stdin)
         ... |tar [OPTIONS] -
@@ -1658,6 +1662,23 @@ exit
                 doc (){ yq 'select(.kind == "'$1'")' $2; }
                 diff <(doc $kind $blue) <(doc $kind $green)
 
+    envsubst # Substitutes environment variables : Better than sed method
+        # Use to process templates safely (sans regex) and declaratively.
+        envsubst < /path/to/template > /path/to/result  # See `man envsubst` 
+        # E.g., Process a YAML file that has environment variables as values
+        export key=22
+        tee a.yaml.tpl <<-'EOH'
+		creds:
+		  user: $USER
+		  home: $HOME
+		k: $key
+		EOH
+        envsubst < a.yaml.tpl
+        # creds:
+        #   user: u1
+        #   home: /home/u1
+        # k: 22
+
     sed  # Stream EDitor; line-oriented text-file editor; "non-interactive", i.e., source file is unaffected 
          # MANUAL      https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html#The-_0022s_0022-Command
          # CheatSheet  https://gist.github.com/ssstonebraker/6140154 
@@ -2596,7 +2617,12 @@ exit
                 ##     The result is similar to executing both "date --set" and "hwclock --systohc".
             systemctl restart systemd-timedated.service
         # DATE/TIME (current)
-            date --iso-8601=s # 2020-01-07T08:28:50-04:00
+            date -Id          # 2020-01-07
+            date -Ih          # 2020-01-07T08-04:00    
+            date -Im          # 2020-01-07T08:28-04:00    
+            date -Is          # 2020-01-07T08:28:50-04:00 # UTC Local : Local (offset) is Zulu -4
+            date -Is -u       # 2020-01-07T12:28:50+00:00 # UTC Zulu (GMT)
+            date --iso-8601=s # 2020-01-07T08:28:50-04:00 # Same as -Is
             date --rfc-3339=s # 2020-01-07 08:29:00-04:00
             # Offset +/- is WRT Zulu (GMT) : -04:00 is GMT minus 4 hours (add 4 to get GMT).
             date --rfc-3339=date    # 2020-01-07
