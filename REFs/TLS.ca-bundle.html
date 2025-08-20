@@ -37,13 +37,13 @@ openssl x509 -in $ca$.der -inform DER -out $ca.crt -outform PEM
 <h2>RHEL/Fedora : <code>/etc/pki/ca-trust/source/anchors/</code></h2>
 
 <pre><code class="language-bash"># Install the package
-dnf install -y p11-kit-trust
+dnf install -y p11-kit-trust ca-certificates
 # Create the source dir
 mkdir -p /etc/pki/ca-trust/source/anchors/
 # Copy the CA cert(s) to the source dir
 cp -p lime-dc1-ca.crt /etc/pki/ca-trust/source/anchors/
 # Add : Process source CAs by creating symlinks and hash (c_rehash)
-update-ca-trust
+update-ca-trust extract
 # Verify
 openssl x509 -subject -issuer -noout -in /etc/pki/tls/certs/ca-bundle.crt
 # Validate
