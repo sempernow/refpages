@@ -577,8 +577,8 @@ exit
         # Optionally setup git config : Requires Git 2.10+
         git config core.sshCommand "ssh -o IdentitiesOnly=yes -i $keypath -F /dev/null"
 
-#################################################
-## Bundle : git bundle : Migrate repo to new host
+###########################################################
+## Bundle : git bundle : Migrate repo : Capture as ONE FILE
 # 1. At source : Create bundle file from source host.
 git bundle create $repo.bundle --all # All branches (refs) and tags
 # 1.b. Verify 
@@ -588,6 +588,8 @@ git bundle list-heads $repo.bundle # Smoke test : List bundle content else fail
 git clone $repo.bundle $repo
 cd $repo
 git remote add origin https://new-remote.example.com/$repo.git
+# If "Host githostx" params declared at ~/.ssh/config, then ...
+git remote add origin githostx:$repo.git #... using SSH mode.
 git push -u origin --all
 git push origin --tags
 
@@ -601,10 +603,10 @@ git pull ../$repo_updates.bundle main
 
 ##########################################################
 ## Mirror : git clone --mirror : Backup/Sync/Mirror a repo
-# 1. At source
-git clone --mirror https://example.com/$repo.git
+# 1. At source 
+git clone --mirror host1:$repo.git # --bare instead here does about same (less ancillary objects)
 # 2. At destination 
-git remote set-url origin https://new-remote.example.com/$repo.git
+git remote set-url origin host2:$repo.git
 git push --mirror origin 
 
 ############################################

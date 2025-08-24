@@ -14,6 +14,21 @@ mount="${5:-/srv/nfs/k8s}" # Export if NFS
     USAGE : ${BASH_SOURCE##*/} {create,delete} DEVICE VG LV MOUNT || inspect [ DEVICE [VG] ] 
 "
 
+## UPDATE :
+
+# Create a partition (safely) : Single partition on raw block device
+dev=/dev/sdb
+# 0. Partition if raw           (Partition)
+blkid $dev |grep TYPE || {
+    sudo parted -s $dev mklabel gpt
+    sudo parted -s $dev mkpart pv 1MiB 100%
+    sudo parted -s $dev set 1 lvm on
+}
+# Then create LVM Physical Volume:
+pvcreate ${dev}1   
+
+## PRIOR :
+
 inspect(){
     [[ $1 ]] && {
         # Verbose, per : DEVICE [VG]

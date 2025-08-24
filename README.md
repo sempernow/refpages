@@ -364,6 +364,7 @@
 ## [VirtualBox.md](./REFs/VirtualBox.md)
 ## [VirtualBox.txt](./REFs/VirtualBox.txt)
 ## [VMware.md](./REFs/VMware.md)
+## [vSphere.IO.Trap.md](./REFs/vSphere.IO.Trap.md)
 ## [Vue.js.README.md](./REFs/Vue.js.README.md)
 ## [Web.Tech.txt](./REFs/Web.Tech.txt)
 ## [WebP.md](./REFs/WebP.md)
