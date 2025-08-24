@@ -334,6 +334,17 @@ exit
     # PARTITIONs + LVM 
         /proc/partitions
 
+        # Create a partition (safely) : Single partition on raw block device
+        dev=/dev/sdb
+        # 0. Partition if raw           (Partition)
+        blkid $dev |grep TYPE || {
+            sudo parted -s $dev mklabel gpt
+            sudo parted -s $dev mkpart pv 1MiB 100%
+            sudo parted -s $dev set 1 lvm on
+        }
+        # Then create LVM Physical Volume:
+        pvcreate ${dev}1   
+
     # BLOCK DEVICES
 
         # List all block devices
@@ -349,6 +360,7 @@ exit
 
         blkid # block device attribs; man page advises use 'lsblk' utility instead
             blkid # list all (may be silent lest root access)
+            blkid /dev/sdb || echo no partition exists
             blkid /dev/sda1 
             blkid /dev/sda1 -sUUID -ovalue 
             blkid -g  # Do garbage collect on blkid cache; rm device if not exist.

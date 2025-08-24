@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #------------------------------------------------------------------------------
-# kubectl : K8s client CLI
+# kubectl : K8s-API client utility (CLI)
 # https://kubernetes.io/docs/reference/kubectl/quick-reference/
 # https://github.com/kubernetes/website/blob/main/content/en/docs/reference/kubectl/quick-reference.md
 # -----------------------------------------------------------------------------
 exit # >>>  DO NOT RUN THIS SCRIPT  <<<
-# Shell config : kubectl completion 
+# Bash config : kubectl completion 
 set +o posix # else redirect of process substitution (@script) fails.
 source <(kubectl completion bash)
 # Shell config : k completion 
@@ -28,15 +28,20 @@ kubectl get componentstatuses
 kubectl get --raw=/healthz
 kubectl get --raw='/healthz?verbose'
 # - Events log across all Namespace
-kkubect get events -A 
+kubectl get events -A --sort-by=.lastTimestamp |less # Or ... |tail -n 50
 # - Cluster control-plane URL
 kubectl cluster-info
 # - Debug/diagnostic dump of cluster store
-kubectl cluster-info dump
+kubectl cluster-info dump # TMI though
 # - Display cluster endpoints and services 
 kubectl -n kube-system get ep,svc -l 'kubernetes.io/cluster-service=true'
-# - Logs of a deployment, e.g., calico-kube-controllers
-kubectl -n kube-system logs deploy/calico-kube-controllers
+
+# LOGS : Examine container logs
+kubectl logs $any # If multi-container pod, TAB/select for (required) ctnr name  
+kubectl -n kube-system logs pod/etcd-a1 --since=20m |jq '. |select(.level != "info")'
+kubectl -n kube-system logs deploy/calico-kube-controllers --since=1h |grep -v INFO
+kubectl -n kube-system logs pod/kube-apiserver-a1 --timestamps
+kubectl -n ingress-nginx logs ds/ingress-nginx-controller |tail # {W,E}MMDD HH:MM:SS : Warning/Error 
 
 # MANAGE WORKLOADS
 # - Declarative commands
@@ -259,10 +264,6 @@ kubectl describe pod $any |less
     #    State: Waiting
     #      Reason: PodInitializing
     #  Events:
-
-# LOGS : Examine container logs
-kubectl logs $any # If multi-container pod, 
-#… then TAB/select for (required) ctnr name  
 
 # NAMESPACES 
 # Namespaces MUST be valid DNS Label (RFC 1123/1035) : 0-9, a-Z and dash (-)
