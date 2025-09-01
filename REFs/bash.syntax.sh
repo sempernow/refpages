@@ -765,9 +765,14 @@ exit
             # copy all files having declared extension excluding declared pattern.
             cp !(04*).$ext /to/here/
 
-            # TRIM leading and trailing WHITESPACE from string or concat of strings
-            trim(){ local x="${@##+([[:space:]])}"; x="${x%%+([[:space:]])}"; printf "%s" "$x"; }
-            trim '  foo bar '      ' 2 3 ' #> 'foo bar  2 3'
+            # TRIM leading and trailing WHITESPACE from string
+                # Using extglob
+                shopt -s extglob # REQUIREd @ non-interactive (e.g., scripts)
+                trim(){ local x="${@##+([[:space:]])}"; x="${x%%+([[:space:]])}"; printf "%s" "$x"; }
+                # Using awk : multiple spaces between words are *not* preserved
+                trim() { awk '{$1=$1; print}' <<< "$*"; }
+
+                trim '  foo bar ' #> 'foo bar'
 
 # QUOTING AND ESCAPING  http://wiki.bash-hackers.org/syntax/quoting
     foo=bar
