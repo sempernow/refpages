@@ -10,6 +10,16 @@
 	## More robust, per xhere; launches @ current path
 	C:\cygwin\bin\mintty.exe -i /Cygwin-Terminal.ico -e /bin/xhere /bin/bash.exe
 
+# Windows Terminal Settings 
+
+If installed by Chocolatey
+   
+## Command:   
+C:\tools\cygwin\bin\bash.exe --login  
+
+## Icon:
+C:\tools\cygwin\Cygwin.ico
+
 # Install per Chocolatey
 	2018.04 @ Win10 RS3 
 	per Chocolatey, @ CMD.exe 

@@ -399,8 +399,8 @@ exit
     git ls-files --others --exclude-standard # Any not of .gitignore 
  
 ## REMOTEs (ORIGIN/UPSTREAM); TRACKED BY LOCAL branch(es)
-    origin    # REMOTE repo associated with the local/current/working/tracking folder
-    upstream  # Original repo if remote is FORK, else origin.
+    # origin    # REMOTE repo associated with the local/current/working/tracking folder
+    # upstream  # Original repo if remote is FORK, else origin.
     # See "ADD UPSTREAM" section for fork corroboration.
     git remote -v  # Print remote(s) incl protocol (mode)
     # READ loacl config setting for remote 
@@ -676,9 +676,8 @@ git push --force
             origin  # Declared, usually during project setup: `git remote add origin URL.git`
 
         # Plumbing (lower-level) commands
-            git cat-file -p HEAD
-            git ls-tree -r HEAD
-            git ls-files -s
+            git ls-tree -r HEAD --name-only # List all files of HEAD 
+            git ls-files # Files in index and working tree 
 
         # Git Internal Environment Variables
         ## https://git-scm.com/book/en/v2/Git-Internals-Environment-Variables
