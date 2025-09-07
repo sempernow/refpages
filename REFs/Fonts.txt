@@ -1,0 +1,50 @@
+MONOSPACE
+=========
+
+  Light 
+  -----
+    M+
+      M+N fork mod melds 'M+ M" and 'M+ MN'
+    
+    Iosevka 
+      S09 is Source Code style [centered asterisk];
+      very nice and many permutations, 
+      but fails @ mintty per line-height 
+      [e.g., chops off tops of sq-brackets]
+    
+SERIF
+=====
+
+  Light 
+  -----
+    Source Serif 
+    BioRhyme
+
+  OSF 
+  ---
+  Source Serif     + TOSF
+  Linux Libertine  + TOSF
+  Linux Biolinium  + TOSF
+  Biolilbert       + TOSF
+  Junction         default; not tabular 
+
+    The tabular versions [TOSF] of Old Style Figures allign vertically, as if monospace. 
+    Invoke using CSS `font-variant-numeric`. Alternately, regenerate the font, copying the 
+    `tosf` glyphs to their respective default number glyphs. Also, copy any 
+    changes made there back to the original tablular glyph, so that `font-variant-numeric`
+    CSS setting [override] renders same.
+
+    Note on CSS `font-variant-numeric`
+    
+    `tabular-nums` VERSUS `oldstyle-nums`
+    
+      font-variant-numeric: tabular-nums;
+      font-variant-numeric: oldstyle-nums;
+    
+    Use `oldstyle-nums`; tends to invoke the tabular glyphs, 
+    and is alligned with more typeface designs. E.g., use ...
+
+      body {
+        font-variant-numeric: oldstyle-nums stacked-fractions;
+      }
+   

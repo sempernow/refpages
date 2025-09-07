@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WSLtty</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>WSLtty (<a href="https://github.com/mintty/wsltty" title="@ GitHub"><code>mintty/wsltty</code></a>)</h1>
+
+<blockquote>
+<p>UPDATE : WSLtty <strong><em>does not support</em></strong> WSL v2</p>
+</blockquote>
+
+<pre><code class="language-powershell">%USERPROFILE%\AppData\Local\wsltty\bin\mintty.exe --WSL=&quot;Ubuntu-18.04&quot; --configdir=&quot;%USERPROFILE%\AppData\Roaming\wsltty&quot; -
+</code></pre>
+
+<ul>
+<li>At &quot;Target&quot; of distro Shortcut file(s) pinned to Start Menu.</li>
+</ul>
+
+<h2>Integrated into Windows File Explorer</h2>
+
+<p><strong>Folder Context menu</strong> items per Registry keys referencing a central batch script,
+handling both <code>WSLtty</code> and <code>ConEmu</code> modes,
+per environment variable; <code>WSL_MODE</code>, <code>WSL_DISTROS</code> (See <code>config.bat</code>).</p>
+
+<h3><a href="file:///c:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd" title="@ cmd_library"><code>LinuxHere.cmd</code></a></h3>
+
+<h3>Registry keys @ <code>HKCR</code></h3>
+
+<pre><code class="language-reg">[HKEY_CLASSES_ROOT\Directory\Background\shell\LinuxUbuntu]
+@=&quot;Linux Ubuntu&quot;
+&quot;Icon&quot;=&quot;C:\\ICONS\\Apps\\Linux.Ubuntu.ico,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\LinuxUbuntu\command]
+@=&quot;C:\\windows\\system32\\cmd.exe /c \&quot;C:\\Program Files\\_unregistered\\cmd_library\\LinuxHere.cmd\&quot; ubuntu&quot;
+</code></pre>
+
+<ul>
+<li>Per distro.</li>
+<li>Issue: No such keys set @ <code>HKCR\Directory\shell\...</code> because starts at <em>parent folder</em>, not selected folder. Need to pass selected folder to this script. (<code>Directory\Background</code> handles user select inside any folder, whereas <code>Directory\shell</code> handles user select at a selected folder.)</li>
+</ul>
+
+<h2>Install</h2>
+
+<pre><code class="language-bat">choco install wsltty
+</code></pre>
+
+<ul>
+<li>@ <code>%LOCALAPPDATA%\wsltty</code></li>
+</ul>
+
+<h3>Installation process generates batch/shortcut scripts:</h3>
+
+<pre><code class="language-bat">%LOCALAPPDATA%\wsltty\bin\mintty.exe -i &quot;%ICONpath%&quot; --WSL=&quot;%DISTROname%&quot; --configdir=&quot;%APPDATA%\wsltty&quot; -
+</code></pre>
+
+<ul>
+<li><p>Two for each installed Linux distro.</p>
+
+<ul>
+<li>One starting at <code>$HOME</code> dir</li>
+<li>One staring at <code>%USERPROFILE%</code> dir
+<br></li>
+</ul>
+
+<p>E.g., <a href="file:///c:/Users/X1/AppData/Local/wsltty/Ubuntu-18.04.bat" title="@ %LOCALAPPDATA%\wsltty"><code>Ubuntu.bat</code></a></p></li>
+
+<li><p>If not distro name, then default distro is used.</p></li>
+</ul>
+
+<blockquote>
+<p>The batch/shortcut file generations require user to manually launch a post-install batch script. See <code>choco</code> report on install.</p>
+</blockquote>
+
+<h2>Commandline options for <code>mintty.exe</code>:</h2>
+
+<ul>
+<li>See <a href="man.mintty.html"><code>man mintty</code></a> (At batch, not bash, terminal.)</li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Nexus.NXRM</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Sonatype Nexus : NXRM</h1>
+
+<h2>Helm Charts</h2>
+
+<ul>
+<li>OSS : <a href="https://artifacthub.io/packages/helm/stevehipwell/nexus3" title="ArtifactHUB.io/.../stevehipwell/nexus3"><strong><code>nexus3</code></strong></a></li>
+<li>Pro : <a href="https://github.com/sonatype/nxrm3-ha-repository/tree/main/nxrm-ha" title="nxrm3-ha"><strong><code>nxrm3-ha-repository</code></strong></a></li>
+</ul>
+
+<h2>URL Rewrite : <code>/</code> &rarr; <code>/nexus</code></h2>
+
+<h3>Request &rarr; App</h3>
+
+<p>To configure <strong>Nexus Repository Manager (NXRM)</strong> running in <strong>Kubernetes</strong> with <strong>Ingress-Nginx</strong>, while ensuring the <code>/nexus</code> context path is preserved, follow these steps:</p>
+
+<h3><strong>1. Update Nexus Configuration (Set Context Path)</strong></h3>
+
+<p>Since NXRM requires <code>/nexus</code> in its backend URLs, ensure the <code>nexus-context-path</code> is set correctly in the Pod.</p>
+
+<h4><strong>Option A: Using <code>nexus.properties</code> (ConfigMap or Volume Mount)</strong></h4>
+
+<ol>
+<li><p><strong>Create a ConfigMap</strong> with <code>nexus.properties</code>:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+ name: nexus-config
+data:
+ nexus.properties: |
+   nexus-context-path=/nexus  # Keep `/nexus` for backend compatibility
+</code></pre></li>
+
+<li><p><strong>Mount it in the Nexus Pod</strong> (in your Deployment/StatefulSet):</p>
+
+<pre><code class="language-yaml">volumes:
+ - name: nexus-config
+   configMap:
+     name: nexus-config
+volumeMounts:
+ - mountPath: /nexus-data/etc/nexus.properties
+   subPath: nexus.properties
+   name: nexus-config
+</code></pre></li>
+</ol>
+
+<h4><strong>Option B: Use Environment Variable (For NXRM 3.30+)</strong></h4>
+
+<p>If your Nexus version supports it, override the context path via:</p>
+
+<pre><code class="language-yaml">   env:
+     - name: NEXUS_CONTEXT_PATH
+       value: /nexus
+</code></pre>
+
+<hr>
+
+<h3><strong>2. Configure Ingress-Nginx</strong></h3>
+
+<p>Use <strong>rewrite annotations</strong> to ensure <code>/nexus</code> is added to backend requests while hiding it from users.</p>
+
+<h4><strong>Example Ingress YAML</strong></h4>
+
+<pre><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nexus-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /nexus/$2
+    nginx.ingress.kubernetes.io/proxy-redirect-from: &quot;http://$host/nexus/&quot;
+    nginx.ingress.kubernetes.io/proxy-redirect-to: &quot;http://$host/&quot;
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: nexus.lime.lan
+    http:
+      paths:
+      - path: /(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: nexus-service  # Your Nexus Service name
+            port:
+              number: 8081      # Nexus default port
+</code></pre>
+
+<h4><strong>Key Annotations Explained</strong>:</h4>
+
+<ul>
+<li><code>rewrite-target: /nexus/$2</code><br>
+Rewrites requests from <code>/</code> → <code>/nexus/</code> internally.</li>
+<li><code>proxy-redirect-from/to</code><br>
+Fixes redirects (e.g., when Nexus sends a <code>Location: /nexus/foo</code> header, it’s rewritten to <code>/foo</code>).</li>
+</ul>
+
+<hr>
+
+<h3><strong>3. Verify Nexus Pod &amp; Service</strong></h3>
+
+<p>Ensure your Nexus <strong>Service</strong> is correctly targeting the Pod:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-service
+spec:
+  ports:
+  - port: 8081
+    targetPort: 8081
+  selector:
+    app: nexus
+</code></pre>
+
+<hr>
+
+<h3><strong>4. Test the Setup</strong></h3>
+
+<ol>
+<li><strong>Access Nexus</strong> at <code>http://nexus.lime.lan/</code> (no <code>/nexus</code> visible).</li>
+
+<li><p><strong>Check Backend Requests</strong>:</p>
+
+<pre><code class="language-bash">kubectl logs -l app.kubernetes.io/name=ingress-nginx --tail=100
+</code></pre>
+
+<p>Look for requests to <code>/nexus/...</code> (rewrite working).</p></li>
+</ol>
+
+<hr>
+
+<h3><strong>Troubleshooting</strong></h3>
+
+<ul>
+<li><strong>404 Errors</strong>: Ensure <code>nexus-context-path</code> is set to <code>/nexus</code> in the Pod.</li>
+
+<li><p><strong>Broken CSS/JS</strong>: Add this annotation to fix static resources:</p>
+
+<pre><code class="language-yaml">nginx.ingress.kubernetes.io/configuration-snippet: |
+sub_filter '/nexus/' '/';
+sub_filter_once off;
+</code></pre></li>
+
+<li><p><strong>Redirect Loops</strong>: Adjust <code>proxy-redirect-*</code> annotations or disable Nexus’s own redirects.</p></li>
+</ul>
+
+<hr>
+
+<h3><strong>Final Notes</strong></h3>
+
+<ul>
+<li>If Nexus still generates <code>/nexus</code>-prefixed links, consider patching its UI (advanced) or using a <strong>custom reverse proxy</strong> (e.g., Nginx sidecar).</li>
+<li>For Helm users (e.g., <code>sonatype/nexus-repository-manager</code>), override <code>nexusProperties</code> in <code>values.yaml</code>.</li>
+</ul>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

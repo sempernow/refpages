@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.kops</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://kops.sigs.k8s.io/" title="kops.sigs.k8s.io"><code>kops</code></a> (Kubernetes OPerationS) | <a href="https://github.com/kubernetes/kops" title="kubernetes/kops">GitHub</a></h1>
+
+<p>A CLI for deploying a cluster to certain cloud vendors.
+A wrapper for Kubernetes tools and cloud-provider APIs.
+Create, destroy, upgrade and maintain production-grade Kubernetes clusters.</p>
+
+<p>Currently available for AWS, GCP, DigitalOcean, and Hetzner.</p>
+
+<p>Using this tool, expect a highest-cost implementation.
+That is, wherever there is a choice between a premium option
+and a lesser-cost option of any cloud-service dependency,
+expect it to select the former.</p>
+
+<h2><a href="kops.sh">Install @ Ubuntu (<code>kops.sh</code>)</a></h2>
+
+<h2>Install @ <a href="https://app.vagrantup.com/boxes/search?provider=hyperv&amp;q=ubuntu&amp;sort=downloads&amp;utf8=%E2%9C%93" title="Vagrant Boxes : Ubuntu @ hyperv">Vagrant box</a> (VM)</h2>
+
+<ul>
+<li><p><a href="kops.sh">See <code>kops.sh</code></a><br>
+@ <code>Vagrantfile</code> per <strong>Script Provisioner</strong></p>
+
+<pre><code class="language-ruby">config.vm.provision &quot;shell&quot;, path: &quot;kops.sh&quot;, privileged: false
+</code></pre></li>
+</ul>
+
+<h2>Project(s)</h2>
+
+<ul>
+<li><code>PRJ.K8s.kops@AWS</code> (<a href="li>
+</ul>
+
+<h2>References</h2>
+
+<ul>
+<li><p><a href="https://github.com/kubernetes/kops/tree/master/docs/cli" title="GitHub/kops/.../cli"><code>kops</code> commands reference (<code>.md</code> docs)</a></p></li>
+
+<li><p><a href="https://github.com/kubernetes/kops/tree/master/addons/ingress-nginx" title="GitHub/kubernetes/kops/ingress-nginx"><code>kops</code>/<code>ingress-nginx</code></a></p></li>
+
+<li><p><a href="https://kubernetes.io/docs/concepts/services-networking/service/#connection-draining-on-aws">AWS-ELB-specific <code>LoadBalancer</code> configurations</a>.</p></li>
+</ul>
+
+<h2><a href="https://github.com/kubernetes/kops/blob/master/docs/aws.md" title="GitHub/Kubernetes/kops">Getting Started</a></h2>
+
+<h3>Create</h3>
+
+<pre><code class="language-bash">export NAME='k8s01.example.com'
+export KOPS_STATE_STORE=s3://foo.com-abc123-state-store
+# Create (builds within ASGs, so monitored/rebuilt on fail)
+kops create cluster --zones 'us-east-1e' $NAME
+# Edit (loads from S3 state store bucket)
+kops edit cluster $NAME  # per $EDITOR
+# Build (resources)
+kops update cluster $NAME --yes
+</code></pre>
+
+<ul>
+<li><p>Another kops Env.Var.</p>
+
+<pre><code class="language-bash"># Export, so needn't include NAME @ every command
+export KOPS_CLUSTER_NAME=$NAME
+</code></pre></li>
+</ul>
+
+<h3>View</h3>
+
+<pre><code class="language-bash"># kops generates creds for kubectl
+cat ~/.kube/config
+
+# Validate
+kops validate cluster
+# List all clusters 
+kops get clusters
+# List  machines (master + workers)
+kops get instancegroups
+# List nodes
+kubectl get nodes
+# List system components
+kubectl -n kube-system get po
+</code></pre>
+
+<h3>Delete</h3>
+
+<pre><code class="language-bash"># View resources to be destroyed
+kops delete cluster --name ${NAME}
+# Delete everything (all cluster resources)
+kops delete cluster --name ${NAME} --yes
+</code></pre>
+
+<h3><a href="https://github.com/kubernetes/kops/blob/master/docs/commands.md#other-interesting-modes" title="GitHub/kops">Other interesting modes</a></h3>
+
+<pre><code class="language-bash"># Build a terraform model: 
+    --target=terraform 
+# Build a Cloudformation model: 
+    --target=cloudformation # json @ 'out/cloudformation'
+# Specify k8s build: 
+    --kubernetes-version=1.2.2
+# Run nodes in multiple zones: 
+    --zones=us-east-1b,us-east-1c,us-east-1d
+# Run with a HA master: 
+    --master-zones=us-east-1b,us-east-1c,us-east-1d
+# Specify the number of nodes: 
+    --node-count=4
+# Specify the node size: 
+    --node-size=m4.large
+# Specify the master size: 
+    --master-size=m4.large
+# Override the default DNS zone: 
+    --dns-zone=$_DOMAIN
+</code></pre>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

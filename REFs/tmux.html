@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>tmux</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://tmuxguide.readthedocs.io/en/latest/tmux/tmux.html" title="tmuxguide.readthedocs.io"><code>tmux</code></a></h1>
+
+<h2>Usage</h2>
+
+<pre><code>tmux                            start tmux
+tmux new -s &lt;name&gt;              start tmux with &lt;name&gt;
+tmux ls                         shows the list of sessions 
+
+tmux a #                        attach the detached-session
+tmux a -t &lt;name&gt;                attach the detached-session to &lt;name&gt;
+
+tmux kill-session –t &lt;name&gt;     kill the session &lt;name&gt;
+tmux kill-server                kill the tmux server
+
+exit #                          end tmux session  
+</code></pre>
+
+<h2><code>CTRL+B</code>, <strong><em>then</em></strong> &hellip;</h2>
+
+<pre><code>&quot;               horizontal split
+%               vertical split
+
+x               kill pane
+
+o               go to next pane
+</code></pre>
+
+<h2>Version</h2>
+
+<p>tmux -V</p>
+
+<h2>Copy/Paste</h2>
+
+<p><code>CTRL+SHIFT+C</code> / <code>CTRL+SHIFT+V</code></p>
+
+<h2>Config <a href="file:///c:/HOME/.tmux.conf">@ <code>~/.tmux.conf</code></a></h2>
+
+<h1>Install</h1>
+
+<pre><code class="language-bash"># tmux
+sudo apt-get install tmux
+
+# tmux-next (an alternative ???)
+sudo add-apt-repository ppa:pi-rho/dev
+sudo apt-get update
+sudo apt-get install tmux-next
+# Rename tmux-next to tmux:
+sudo mv /usr/bin/tmux-next /usr/bin/tmux
+</code></pre>
+
+<h2>Reference</h2>
+
+<ul>
+<li><p><a href="https://tmuxguide.readthedocs.io/en/latest/tmux/tmux.html">TMUX Guide</a></p></li>
+
+<li><p><a href="https://hackernoon.com/a-gentle-introduction-to-tmux-8d784c404340" title="HackerNoon.com">A Gentle Introduction to tmux</a></p></li>
+
+<li><p><a href="https://nickjanetakis.com/blog/who-else-wants-to-boost-their-productivity-with-tmux" title="NickJanetakis.com">&quot;...Boost ...Terminal Productivity With tmux&quot;</a></p></li>
+
+<li><p><a href="https://tmuxcheatsheet.com/" title="TmuxCheatSheet.com">Tmux Cheat Sheet &amp; Quick Reference</a></p></li>
+
+<li><p><a href="https://gist.github.com/andreyvit/2921703" title="GitHubGist">tmux cheat sheet</a></p></li>
+
+<li><p><a href="https://gist.github.com/MohamedAlaa/2961058" title="GitHubGist">tmux shortcuts &amp; cheatsheet</a></p></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Go.db</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Golang &amp; PostgreSQL | <a href="http://go-database-sql.org/modifying.html"><code>sql</code></a> |  <a href="https://jmoiron.github.io/sqlx/"><code>sqlx</code></a> (<a href="https://jmoiron.github.io/sqlx/#transactions">Transactions</a>) | <a href="https://www.alexedwards.net/blog/practical-persistence-sql" title="Practical Persistence in Go ... 2018 @ AlexEdwards.net">&copy;</a> | <a href="https://www.alexedwards.net/blog/practical-persistence-sql" title="... Organising ... 2018 @ AlexEdwards.net">&copy;</a></h1>
+
+<h2>See Labs</h2>
+
+<ul>
+<li><code>$GOPATH/f06ygo/db/postgres/...</code></li>
+<li><code>$DEV/go/labs/4-sql/...</code></li>
+</ul>
+
+<h2>Prepared Statements</h2>
+
+<p><a href="http://go-database-sql.org/prepared.html">Use or Avoid?</a></p>
+
+<h2>Nullable (<code>db</code>) Field Values | SQL <a href="http://go-database-sql.org/nulls.html">Null Types</a> | <a href="https://marcesher.com/2014/10/13/go-working-effectively-with-database-nulls/" title="... Working with Database NULLs 2016 @ marcesher.com">&copy;</a> | <a href="https://medium.com/aubergine-solutions/how-i-handled-null-possible-values-from-database-rows-in-golang-521fb0ee267" title="2017 @ medium.com">&copy;</a></h2>
+
+<h2>TL;DR</h2>
+
+<p>Use pointer field types (<code>*T</code>) for any <strong><em>nullable</em></strong> field. That way the end-to-end interface is <code>NULL</code> to/from <a href="https://stackoverflow.com/questions/21120999/representing-null-in-json" title="2015 @ StackOverflow.com">JSON <code>null</code></a>, while at Golang (struct) the value is whatever the type's zero value (and <code>nil</code> at the pointer itself). Optionally, additionally, use the <code>json</code> tag, <code>json:&quot;foo,omitempty&quot;</code>, to omit any of zero-value from the JSON result upon <code>json.Marshal()</code>.</p>
+
+<h3>Guidelines:</h3>
+
+<ul>
+<li>Avoid db <code>NULL</code>able keys.</li>
+<li>Use pointer if db key is <code>NULL</code>able.</li>
+<li>Use pointer if JSON key is optional and data layer requires distinction between <code>null</code>/(no key) and zero-value cases; or client requires such between <a href="https://developer.mozilla.org/en-US/docs/Glossary/Falsy" title="MDN"><code>false</code><em>y</em></a> and <code>null</code>/(no key).</li>
+</ul>
+
+<h2>Roundtrip Data-type Flow (<code>Type</code> vs <code>*Type</code>)</h2>
+
+<p>JSON  &lt;==&gt;  Golang  &lt;==&gt;  DB/SQL</p>
+
+<p>From <code>json.Decode</code> to <code>INSERT</code>, to <code>SELECT</code>, to <code>json.Marshal</code>, <strong><em>per case</em></strong> (no-key vs zero-value).</p>
+
+<p>Database field <code>Foo *string</code> type scans to Golang <code>nil</code>, and so JSON-marshals to missing key if <code>json:&quot;foo,omitempty&quot;</code>, else to <code>&quot;foo&quot;:null</code>. <strong><em>This is the cleanest scheme</em></strong>; db <code>NULL</code> to/from <a href="https://stackoverflow.com/questions/21120999/representing-null-in-json" title="2015 @ StackOverflow.com">JSON <code>null</code></a> (or absent key).</p>
+
+<h3>Handling Schemes</h3>
+
+<p><em>From best to worst:</em></p>
+
+<ol>
+<li><p><code>Foo *string</code> type scans (<code>sql</code> pkg) and decodes (<code>json</code> pkg) to Golang <code>nil</code>, and so JSON-marshals to missing key if <code>json:&quot;foo,omitempty&quot;</code>, else to <code>&quot;foo&quot;:null</code>. <strong><em>This is the cleanest scheme</em></strong>; db <code>NULL</code> to/from <a href="https://stackoverflow.com/questions/21120999/representing-null-in-json" title="2015 @ StackOverflow.com">JSON <code>null</code></a> (or absent key); no need for <a href="https://tools.ietf.org/html/rfc4122#section-4.1.7" title="RFC4122 2005 @ IETF.org">Nil UUID</a> values in its database table (which fail versioned UUID <code>validator</code> constraints, e.g., <code>uuid4</code>, though validate as <code>uuid</code>).</p></li>
+
+<li><p><code>Foo string</code> type <strong><em>fails</em></strong> on <code>SELECT</code> scan of <code>NULL</code> to <code>string</code></p>
+
+<ul>
+<li>Use <a href="https://tools.ietf.org/html/rfc4122#section-4.1.7" title="RFC4122 2005 @ IETF.org">Nil UUID</a> (and <code>NOT NULL</code> constraint) as a proxy for <code>NULL</code>.</li>
+
+<li><p>Handle at (un)marshal. E.g.,</p>
+
+<pre><code class="language-golang">// @ Unmarshal
+if got.ID3 == &quot;&quot; {
+    got.ID3 = dbUNIL.String
+}
+// @ Marshall
+if s.ID3 == dbUNIL.String {
+    s.ID3 = &quot;&quot;
+}
+
+var (
+    // Insert dbUNIL as proxy for NULL (validates as `uuid`, but not `uuid4`)
+    // @ Golang: `uuid.Nil`; @ Postgres &quot;uuid-oosp&quot; extension: `uuid_nil()`
+    dbUNIL sql.NullString = sql.NullString{String: fmt.Sprintf(&quot;%s&quot;, uuid.Nil), Valid: true}
+)
+</code></pre></li>
+
+<li><p>This is a workaround, not a genuine solution, since it prohibits (<code>db</code>) <code>NULL</code>. If no <code>NULL</code> fields, then simplify:</p>
+
+<pre><code class="language-golang">dbUNIL := fmt.Sprintf(&quot;%s&quot;, uuid.Nil)
+</code></pre></li>
+</ul></li>
+
+<li><p><code>Foo sql.NullString</code> type is itself a struct, and so JSON-marshals as such:</p>
+
+<ul>
+<li><code>NULL</code> marshals to <code>&quot;id3&quot;: {&quot;String&quot;: &quot;&quot;,&quot;Valid&quot;: false}</code></li>
+<li>Else marshals to <code>&quot;id3&quot;: {&quot;String&quot;: &quot;1aad24fd-cf8a-4051-8863-0200f8a26616&quot;,&quot;Valid&quot;: true}</code></li>
+</ul></li>
+</ol>
+
+<ul>
+<li><code>Foo sql.NullString</code> type <strong><em>fails</em></strong> on unmarshal of <code>POST</code>/<code>PUT</code> (from client), unless JSON is of the proper structure (above). I.e.,  <code>&quot;id3&quot;:&quot;1aad24fd-cf8a-4051-8863-0200f8a26616&quot;</code> fails to unmarshal, so would require similar (un)marshal code as &quot;<code>Foo string</code>&quot; case, else client-side (Javascript) modifications.</li>
+</ul>
+
+<h3>SQL <a href="http://go-database-sql.org/nulls.html">Null Types</a> ::  <code>sql.NullString</code> and <code>sql.NullFloat64</code></h3>
+
+<pre><code class="language-golang">type Book struct {
+    isbn  string
+    title  string
+    author string
+    price  float32
+}
+</code></pre>
+
+<blockquote>
+<p>&hellip; we set <code>NOT NULL</code> constraints on the columns &hellip; <strong><em>If the table contained nullable fields</em></strong> we would need to use the <code>sql.NullString</code> and <code>sql.NullFloat64</code> types instead.</p>
+</blockquote>
+
+<pre><code class="language-golang">type Book struct {
+    Isbn  string
+    Title  sql.NullString
+    Author sql.NullString
+    Price  sql.NullFloat64
+}
+</code></pre>
+
+<h3>Roundtrip Data-type Flow (<code>Type</code> vs <code>*Type</code>)</h3>
+
+<p>From <code>json.Decode</code> to <code>INSERT</code>, to <code>SELECT</code>, to <code>json.Marshal</code>, <strong><em>per case</em></strong> (no-key vs zero-value).</p>
+
+<h4><code>string</code> (<code>NOT NULL</code>able)</h4>
+
+<ul>
+<li><p><code>json:&quot;foo&quot;</code></p>
+
+<table>
+<thead>
+<tr>
+<th>JSON</th>
+<th>Go</th>
+<th>db</th>
+<th>JSON</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>no <code>foo</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td><code>&quot;&quot;</code></td>
+</tr>
+
+<tr>
+<td><code>null</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td><code>&quot;&quot;</code></td>
+</tr>
+
+<tr>
+<td><code>&quot;&quot;</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td><code>&quot;&quot;</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong><em>No distinction.</em></strong></li>
+</ul></li>
+
+<li><p><code>json:&quot;foo,omitempty&quot;</code></p>
+
+<table>
+<thead>
+<tr>
+<th>JSON</th>
+<th>Go</th>
+<th>db</th>
+<th>JSON</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>no <code>foo</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td>no <code>foo</code></td>
+</tr>
+
+<tr>
+<td><code>null</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td>no <code>foo</code></td>
+</tr>
+
+<tr>
+<td><code>&quot;&quot;</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td>no <code>foo</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong><em>No distinction.</em></strong></li>
+</ul></li>
+</ul>
+
+<h4><code>*string</code> (<code>NULL</code>able)</h4>
+
+<ul>
+<li><p><code>json:&quot;foo&quot;</code></p>
+
+<table>
+<thead>
+<tr>
+<th>JSON</th>
+<th>Go</th>
+<th>db</th>
+<th>JSON</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>no <code>foo</code></td>
+<td><code>nil</code></td>
+<td><code>NULL</code></td>
+<td><code>null</code></td>
+</tr>
+
+<tr>
+<td><code>null</code></td>
+<td><code>nil</code></td>
+<td><code>NULL</code></td>
+<td><code>null</code></td>
+</tr>
+
+<tr>
+<td><code>&quot;&quot;</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td><code>&quot;&quot;</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong><em>No mutation</em></strong> <em>(Nearly).</em></li>
+</ul></li>
+
+<li><p><code>json:&quot;foo,omitempty&quot;</code></p>
+
+<table>
+<thead>
+<tr>
+<th>JSON</th>
+<th>Go</th>
+<th>db</th>
+<th>JSON</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>no <code>foo</code></td>
+<td><code>nil</code></td>
+<td><code>NULL</code></td>
+<td>no <code>foo</code></td>
+</tr>
+
+<tr>
+<td><code>null</code></td>
+<td><code>nil</code></td>
+<td><code>NULL</code></td>
+<td>no <code>foo</code></td>
+</tr>
+
+<tr>
+<td><code>&quot;&quot;</code></td>
+<td><code>&quot;&quot;</code></td>
+<td><code>''</code></td>
+<td><code>&quot;&quot;</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><strong><em>No mutation</em></strong> <em>(Nearly).</em></li>
+</ul></li>
+</ul>
+
+<h4>&hellip; <em>choose the desired API dynamic (per key).</em></h4>
+
+<h2>Pairing types across app boundaries</h2>
+
+<table>
+<thead>
+<tr>
+<th>PostgreSQL</th>
+<th>Golang</th>
+<th>Javascript</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>BIGINT</code></td>
+<td><code>int</code></td>
+<td><code>integer</code></td>
+</tr>
+
+<tr>
+<td><code>UUID</code></td>
+<td><code>string</code></td>
+<td><code>string</code></td>
+</tr>
+
+<tr>
+<td><code>NUMERIC(5,2)</code></td>
+<td>???</td>
+<td>???</td>
+</tr>
+
+<tr>
+<td><code>TIMESTAMPTZ</code></td>
+<td><code>time.Time</code></td>
+<td><code>string</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>@ Golang, <strong><em>currency</em></strong> may be <code>float32</code> or <a href="https://godoc.org/golang.org/x/text/currency#Unit" title="godoc.org"><code>currency.Unit{USD}</code></a></li>
+</ul>
+
+<h2>&nbsp;</h2>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

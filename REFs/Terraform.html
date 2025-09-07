@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Terraform</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://learn.hashicorp.com/terraform">Terraform</a> | <a href="https://www.terraform.io/docs/providers/index.html">Providers</a> | <a href="https://registry.terraform.io/browse/modules">Modules</a> | <a href="https://www.terraform.io/downloads.html">Download</a></h1>
+
+<h2>TL;DR</h2>
+
+<ul>
+<li>Transform IaC code into a provider's API requests.</li>
+<li>Modules per provider (cloud vendor)
+
+<ul>
+<li>Work must be repeated for each provider.</li>
+</ul></li>
+</ul>
+
+<p>Workflow:</p>
+
+<pre><code class="language-bash">terraform init
+terraform plan [-out 'terraform.plan.out']
+terraform apply ['terraform.plan.out'] [--auto-approve]
+
+# List resources under terraform management
+terraform state list
+# Release a declared resource (from state management)
+terraform state rm $resource.$name
+# Import state (of a declared resource)
+terraform import $resource.$name $id
+
+# List outputs
+terraform show 
+</code></pre>
+
+<ul>
+<li><a href="https://www.terraform.io/docs/cli/config/config-file.html">Config</a> @
+
+<ul>
+<li><code>%APPDATA%\terraform.rc</code> (Win)</li>
+<li><code>~/.terraformrc</code> (Linux/MINGW64/WSL)</li>
+</ul></li>
+</ul>
+
+<h2>Usage notes</h2>
+
+<ul>
+<li><p>Module var(s) declared at project root (<code>main.tf</code>) bind to module per associated declaration(s) at the module, e.g., at <code>./modules/sg/variables.tf</code></p>
+
+<ul>
+<li><p>@ <code>./main.tf</code> (@ project root)</p>
+
+<pre><code class="language-conf">module &quot;sg&quot; {
+  source          = &quot;./modules/sg&quot;
+  vpc_id          = module.vpc.vpc_id
+  vpc_cidr        = module.vpc.vpc_cidr_block 
+  ssh_client_ip   = &quot;73.172.25.116/32&quot;
+  wan_ip_whitelist  = var.wan_ip_whitelist
+}
+</code></pre></li>
+
+<li><p>Modules are ignored lest declared at project root</p>
+
+<ul>
+<li>Unless already exist in state (<code>terraform.tfstate</code>).</li>
+</ul></li>
+</ul></li>
+
+<li><p>Import state</p>
+
+<pre><code class="language-bash"># Import state : aws_route53_record
+module_name='route53'
+zone_id='Z2H0UGL4BNA5BN'
+domain='sempernow.com'
+type='NS'
+# If a module
+terraform import module.${module_name}.aws_route53_record.${domain}-${type} ${zone_id}_${domain}_${type}
+# If NOT a module
+terraform import aws_route53_record.${domain}-${type} ${zone_id}_${domain}_${type}
+</code></pre>
+
+<ul>
+<li>Once state is imported, removing the module declaration at <code>main.tf</code> of main folder does NOT ignore; terraform will DESTROY resource if not declared thereafter.</li>
+</ul></li>
+</ul>
+
+<h2>Configuration Organization</h2>
+
+<pre><code class="language-plaintext">☩ tree               
+├── main.tf                                 
+├── modules                                 
+│   ├── dns                                 
+│   │   └── main.tf                         
+│   ├── route53                             
+│   │   ├── main.tf                         
+│   │   ├── outputs.tf                      
+│   │   ├── r53r.tf                         
+│   │   ├── r53z.tf                         
+│   │   └── variables.tf                    
+│   ├── sg                                  
+│   │   ├── main.tf                         
+│   │   ├── outputs.tf                      
+│   │   └── variables.tf                    
+│   └── swarm                               
+│       ├── main.tf                         
+│       ├── outputs.tf                      
+│       └── variables.tf                    
+├── outputs.tf                              
+├── terraform.tfstate                       
+├── terraform.tfstate.backup                
+└── variables.tf                            
+                                            
+5 directories, 21 files                     
+</code></pre>
+
+<h2>Install</h2>
+
+<h4>@ Windows / MINGW64 / Cygwin</h4>
+
+<pre><code class="language-shell">choco install terraform
+</code></pre>
+
+<h4>@ Linux / WSL</h4>
+
+<p><a href="https://releases.hashicorp.com/terraform/">Terraform Releases</a></p>
+
+<pre><code class="language-bash"># Declare
+export VER='1.0.1'
+ARCH='amd64'
+export PKG=&quot;terraform_${VER}_linux_${ARCH}.zip&quot;
+# Fetch
+wget https://releases.hashicorp.com/terraform/${VER}/${PKG}
+# Extract
+unzip $PKG
+# Install
+sudo mv terraform /usr/bin/
+sudo chmod 775 /usr/bin/terraform
+# Validate
+terraform -version
+</code></pre>
+
+<h4>Dockerize</h4>
+
+<ul>
+<li>@ <code>./terraform-dockerized</code>
+
+<ul>
+<li><a href="terraform-dockerized/Makefile"><code>Makefile</code></a></li>
+<li><code>Dockerfile</code> (<a href="terraform-dockerized/tf.alpine.Dockerfile"><code>Alpine</code></a>|<a href="terraform-dockerized/tf.ubuntu.Dockerfile"><code>Ubuntu</code></a>)</li>
+</ul></li>
+</ul>
+
+<p>This allows for ad-hoc commands from host shell, or persistent bash session in the container; both are configured to the host, and bind-mount both <code>$HOME</code> (for terraform cache directory) and the <strong>delcared workspace</strong> (<code>TF_WORKSPACE</code>). Both Ubuntu (<code>224MB</code>) and Alpine (<code>87MB</code>) versions are tested and operational.</p>
+
+<p>Do not use <code>hashicorp/terrform</code> image from Docker Hub:</p>
+
+<pre><code class="language-bash">docker run --rm -v $PWD:/workspace -w /workspace hashicorp/terraform init
+</code></pre>
+
+<ul>
+<li>Whatever the image is using for <code>$HOME</code> etal is a well kept secret (ZERO documentation), so subsequent commands (<code>plan</code>, <code>apply</code>) fail due to lack of credentials.</li>
+<li><a href="https://www.mrjamiebowman.com/software-development/docker/running-terraform-in-docker-locally/">Can muck with it</a></li>
+</ul>
+
+<h5>Plugin Cache Directory</h5>
+
+<p>Set a centralized directory for the (<code>N00 MB</code>) plugin(s) cache (per <em>Provider</em>, per OS) at &hellip;</p>
+
+<pre><code class="language-shell">mkdir %APPDATA%\terraform.d\plugin-cache
+mkdir C:\HOME\.terraform.d\plugin-cache
+</code></pre>
+
+<pre><code class="language-bash">mkdir -p ~/.terraform.d/plugin-cache
+</code></pre>
+
+<h5><a href="https://www.terraform.io/docs/cli/config/config-file.html">Config</a></h5>
+
+<p>To reference the <code>plugin-cache</code> directory</p>
+
+<ul>
+<li><code>%APPDATA%\terraform.rc</code> (Win)</li>
+
+<li><p><code>~/.terraformrc</code> (Linux/MINGW64/WSL)</p>
+
+<pre><code class="language-conf">plugin_cache_dir   = &quot;$HOME/.terraform.d/plugin-cache&quot;
+disable_checkpoint = true
+</code></pre></li>
+</ul>
+
+<p><del>UPDATE 2021-06-30 @ <code>v0.13+</code>:</del></p>
+
+<p>Symlinks are unreadable by terraform at WSL. (<a href="https://en.wikipedia.org/wiki/NTFS_reparse_point">NTFS Reparse Point</a>)</p>
+
+<pre><code class="language-shell">mkdir %APPDATA%\terraform.d\plugin-cache
+symlink.bat d C:\HOME\.terraform.d %APPDATA%\terraform.d
+symlink.bat h %APPDATA%\terraform.rc C:\HOME\.terraformrc
+</code></pre>
+
+<h2><a href="https://registry.terraform.io/browse/providers">Providers</a> | <a href="https://registry.terraform.io/browse/modules">Modules</a></h2>
+
+<h2>Resources :: <a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs">AWS</a></h2>
+
+<h2><a href="https://www.terraform.io/docs/cli/index.html">CLI :: <code>terraform {init,plan,apply}</code></a></h2>
+
+<pre><code class="language-bash"># @ Project dir
+terraform init  # Downloads provider(s) plugin(s), per project file (.tf)
+terraform 0.13upgrade . #.... if install FAILs, then repeat above (init)
+terraform fmt   # format the .tf file (2-space indent)
+# Create/Modify 
+terraform plan  # Analysis; -out=terraform.plan.out
+terraform apply # Build it; &quot;terraform.plan.out&quot; -auto-approve
+# ... make edits to .tf file ...
+# Modify 
+terraform taint aws_ec2_instance.foo # Mark resource for destruction/replacement on next apply
+terraform plan  # Analysis; -out=terraform.plan.out
+terraform plan -no-color -target=aws_instance.{aa1,aa2,aa3}
+terraform apply # Build it; --auto-approve
+
+# Variables
+TF_VAR_foo='The apply command auto-injects any environment variables (e.g., foo) so prefixed'
+
+terraform apply \
+    -var 'region=us-west-1' \
+    -var-file=&quot;secret.tfvars&quot; \
+    -var-file=&quot;prod.tfvars&quot;
+#... if var(s) unset, will query user 
+
+# Query (Get) a variable 
+terraform output $name_of_output_var
+#... returns its value 
+
+# Inspect state 
+terraform show
+
+terraform state list
+terraform state show $NAME_OF_ITEM_FROM_LIST
+
+terraform refresh
+
+# Delete (EVERYTHING; all resources in the file)
+terraform destroy
+</code></pre>
+
+<h4><code>/.terraform</code> dir</h4>
+
+<p>Everything therein is cache. Build per declarations in the <code>*.tf</code> file(s) upon <code>init</code> command; deletable.</p>
+
+<h2><a href="https://www.terraform.io/docs/configuration/index.html">Configuration Language</a> :: <a href="https://www.terraform.io/docs/configuration/resources.html">Blocks</a> | <a href="https://www.terraform.io/docs/configuration/syntax.html">Syntax</a></h2>
+
+<ul>
+<li><p>Data Sources</p>
+
+<ul>
+<li><p>An existing resource</p>
+
+<pre><code class="language-tf">data &quot;aws_s3_bucket&quot; &quot;abucket&quot; {
+bucket = &quot;existing-bucket-x&quot;
+}
+</code></pre></li>
+</ul></li>
+
+<li><p>Interpolation Syntax &mdash; expression to reference the existing resource.</p>
+
+<ul>
+<li><code>&quot;data.&lt;resource_type&gt;.&lt;resoruce_name&gt;.&lt;exported_attribute&gt;</code>
+
+<ul>
+<li>E.g., <code>&quot;data.aws_s3_bucket.abucket.arn&quot;</code></li>
+</ul></li>
+
+<li><p>DEPRICATED</p>
+
+<ul>
+<li><code>&quot;${data.&lt;resource_type&gt;.&lt;resoruce_name&gt;.&lt;exported_attribute&gt;}&quot;</code></li>
+
+<li><p>E.g., <code>&quot;${data.aws_s3_bucket.abucket.arn}&quot;</code></p>
+
+<pre><code class="language-bash">Template interpolation syntax is still used to construct strings from
+expressions when the template includes multiple interpolation sequences or a
+mixture of literal strings and interpolations. This deprecation applies only
+to templates that consist entirely of a single interpolation sequence.
+</code></pre></li>
+</ul></li>
+</ul></li>
+
+<li><p>Conditional Expressions</p>
+
+<pre><code>resource &quot;aws_instance&quot; &quot;ubuntu&quot; {
+  count                       = (var.high_availability == true ? 3 : 1)
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = &quot;t2.micro&quot;
+  associate_public_ip_address = (count.index == 1 ? true : false)
+  subnet_id                   = aws_subnet.my_subnet.id
+  tags                        = merge(local.common_tags)
+}
+</code></pre></li>
+
+<li><p><a href="https://www.terraform.io/docs/configuration/functions.html">Functions</a> :: <a href="https://www.terraform.io/docs/configuration/functions/templatefile.html"><code>templatefile(tmpl_file_path, {vars_csv})</code></a></p>
+
+<ul>
+<li><p><code>main.tf</code></p>
+
+<pre><code class="language-bash">resource &quot;aws_instance&quot; &quot;web&quot; {
+    ami            = data.aws_ami.ubuntu.id
+    instance_type  = &quot;t2.micro&quot;
+    user_data      = templatefile(&quot;user_data.tmpl&quot;, { dept = var.user_dept, name = var.user_name })
+    #...
+}
+</code></pre></li>
+
+<li><p><code>user_data.tmpl</code></p>
+
+<pre><code class="language-bash">#!/bin/bash
+echo &quot;Imported variable :: name: ${name}&quot;
+echo &quot;Imported variable :: dept: ${dept}&quot;
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h2>CLI :: <code>terraform import &lt;RSRC_TYPE&gt;.&lt;RSRC_NAME&gt; &lt;ID&gt;</code></h2>
+
+<p>Terraform can import per resource <em>address</em> (<code>TYPE.NAME</code>); <strong><em>state</em></strong>, but not configuration. Thus the need for <code>terraforming</code> and such utilities to &quot;export&quot; from infra providers into Terraform config files (<code>.tf</code>). Terraform (<code>plan</code>/<code>apply</code>) functions relative to its knowledge of infra state (<code>terraform.tfstate</code>; a JSON file). So, if state (<code>.tfstate</code>) of a resource is unknown, then  <code>plan</code>/<code>apply</code> commands, for example, (try to) add it per resource declarations (<code>.tf</code>) even though it already exists (as infrastructure at the provider).</p>
+
+<ol>
+<li><p>Create <code>main.tf</code></p>
+
+<pre><code class="language-bash">#... provider etal ...
+
+# This is the resource (type and name) we want to import 
+resource &quot;aws_security_group&quot; &quot;vpc-3d0-WebDMZ&quot; {
+    # Needn't include any resource arguments, 
+    # but must include the parent declaration.
+}
+</code></pre></li>
+
+<li><p>Get the resource ID</p>
+
+<pre><code class="language-bash">aws ec2 describe-security-groups \
+    --query 'SecurityGroups[].[GroupName,GroupId]'  
+</code></pre></li>
+
+<li><p>Run ...</p>
+
+<pre><code class="language-bash">terraform init
+terraform import aws_security_group.WebDMZ sg-02503f3bd74bdb2b4
+</code></pre>
+
+<ul>
+<li>Generates <code>terraform.tfstate</code>, which is a JSON file describing the current state of all resource(s) targeted per the resource-declarations file (<code>.tf</code>).</li>
+</ul></li>
+</ol>
+
+<h2><code>terraforming</code> :: <a href="https://github.com/dtan4/terraforming" title="dtan4 @ GitHub">GitHub</a> | <a href="https://blog.ndk.name/import-existing-aws-infrastructure-into-terraform/" title="blog.ndk.name">Article 2019</a></h2>
+
+<p>A reverse terraform tool (ruby) to import existing infrastructure and state, per provider, as <code>.tf</code> and <code>.tfstate</code> file(s).</p>
+
+<h4>Use @ Docker container</h4>
+
+<pre><code class="language-bash">################################################################
+# Docker : terraforming
+################################################################
+docker pull $image
+
+aws_access_key='GET_FROM_~/.aws/credentials'
+aws_access_secret='GET_FROM_~/.aws/credentials'
+aws_region='us-east-1'
+image='quay.io/dtan4/terraforming'
+image='gd9h/terraforming' #... re-tagged &amp; pushed
+rsrc='s3'
+
+docker run --rm --name tfing \
+    -e AWS_ACCESS_KEY_ID=$aws_access_key \
+    -e AWS_SECRET_ACCESS_KEY=$aws_access_secret \
+    -e AWS_REGION=$aws_region \
+    $image terraforming $rsrc &gt; $rsrc.tf
+</code></pre>
+
+<h4>Install</h4>
+
+<pre><code class="language-bash">sudo apt update
+sudo apt install ruby-full
+sudo gem install terraforming
+</code></pre>
+
+<ul>
+<li>@ Windows CMD: <code>gem install terraforming</code></li>
+</ul>
+
+<h4>Usage</h4>
+
+<h5>Step 1.</h5>
+
+<p>Initialize per provider (infra vendor), e.g., AWS. Create and push to working directory, and get list of <code>terraforming</code>'s import options &hellip;</p>
+
+<pre><code class="language-bash"># Working dir
+mkdir aws-resources
+pushd aws-reources
+# Initialize
+cat &lt;&lt;EOF &gt; init.tf
+provider &quot;aws&quot; {  
+    profile = &quot;devops&quot;
+    region = &quot;us-east-1&quot;
+}
+EOF
+terraform init 
+
+# List the resource-import options
+terraforming --help 
+</code></pre>
+
+<h5>Step 2.</h5>
+
+<p>Export existing <a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl" title="registry.terriform.io/providers/.../aws/.../resources/...">resource</a> definitions to HCL (<code>.tf</code> files)</p>
+
+<pre><code class="language-bash">terraforming ec2 --profile=devops &gt; ec2.tf
+#... or, per provider's DEFAULT profile (@ ~/.aws/), ...
+
+terraforming ec2  &gt; ec2.tf   # EC2                      aws_instance
+terraforming iamu &gt; iamu.tf  # IAM User                 aws_iam_user
+terraforming iamg &gt; iamg.tf  # IAM Group                aws_iam_group
+terraforming iamp &gt; iamp.tf  # IAM Policy               aws_iam_policy
+terraforming iamr &gt; iamr.tf  # IAM Role                 aws_iam_role
+terraforming nacl &gt; nacl.tf  # NACL                     aws_network_acl
+terraforming r53r &gt; r53r.tf  # Route53 record           aws_route53_record
+terraforming r53z &gt; r53z.tf  # Route53 Hosted Zone      aws_route53_zone
+terraforming rt   &gt; rt.tf    # Route table              aws_route_table
+terraforming rta  &gt; rta.tf   # Route table association  aws_route_table_association
+terraforming s3   &gt; s3.tf    # S3 Bucket                aws_s3_bucket
+terraforming sg   &gt; sg.tf    # Security Group           aws_security_group
+terraforming sn   &gt; sn.tf    # Subnet                   aws_subnet
+terraforming vpc  &gt; vpc.tf   # VPC                      aws_vpc
+</code></pre>
+
+<h5>Step 3.</h5>
+
+<p>Export existing state</p>
+
+<pre><code class="language-bash">terraforming &lt;resource&gt; --tfstate  [--profile PROFILE] &gt; terraform.tfstate
+</code></pre>
+
+<ul>
+<li><code>&lt;resource&gt;</code> is <code>iamg</code>, <code>iamu</code>, <code>ec2</code>, &hellip;</li>
+<li>Fails on &quot;<code>--merge</code>&quot; option if merging into an empty state file.</li>
+</ul>
+
+<p>So, to export all resources (for future restore/change/synch) &hellip;</p>
+
+<pre><code class="language-bash">tfstate=terraform.tfstate
+#touch $tfstate
+rsrc=ec2 
+terraforming $rsrc --tfstate &gt; $tfstate 
+#... because the `--merge` option results in failure if merging with an empty state file.
+for rsrc in {iamg,iamp,iamr,iamu,nacl,r53r,r53z,rt,rta,s3,sg,sn}; do 
+    terraforming $rsrc --tfstate --merge=$tfstate --overwrite 
+done 
+</code></pre>
+
+<h5>Fix/Upgrade <code>terraform.state</code></h5>
+
+<p>Replace json keys:</p>
+
+<pre><code class="language-json">{
+  &quot;version&quot;: 1,
+  &quot;serial&quot;: 25,
+</code></pre>
+
+<p>&hellip; with &hellip;</p>
+
+<pre><code class="language-json">{
+  &quot;terraform_version&quot;: &quot;0.15.3&quot;,
+  &quot;serial&quot;: 220,
+  &quot;lineage&quot;: &quot;230f12a2-1012-f40e-a21e-fbaacb18942e&quot;,
+</code></pre>
+
+<h1>For future change/synch &hellip;</h1>
+
+<p>Add to the folder a <code>main.tf</code> to include provider and aws creds, then &hellip;</p>
+
+<pre><code class="language-bash">terraform plan 
+terraform apply
+</code></pre>
+
+<p>State can also be imported using <code>terraform import</code>. I.e., map <strong><em>each EC2 instance</em></strong> definition to its id.</p>
+
+<pre><code class="language-bash"># Get IDs 
+aws ec2 describe-instances --query 'Reservations[*].Instances[*].{IP:PublicIpAddress,ID:InstanceId,State:State.Name,Name:KeyName,AZ:Placement.AvailabilityZone,Arch:Architecture,AMI:ImageId,Type:InstanceType,VPC:VpcId,SubNet:SubnetId,SG:NetworkInterfaces[0].Groups[*],Storage:RootDeviceType}' | jq .
+
+# Import instance IDs, per definition, into Terraform state
+terraform import aws_instance.aa1 i-091fe07e70f5b0e4b
+terraform import aws_instance.aa2 i-04f90a2d6f4cfd721
+terraform import aws_instance.aa3 i-0d10be74a61c2e5e9
+</code></pre>
+
+<h5>Step 4.</h5>
+
+<p>Validate per <code>plan</code></p>
+
+<pre><code class="language-bash">terraform plan
+</code></pre>
+
+<pre><code class="language-plaintext">...
+No changes. Infrastructure is up-to-date.
+...
+</code></pre>
+
+<ul>
+<li>Also, per <code>terraform validate</code>; a much less critical validation.</li>
+</ul>
+
+<h4>Option :: Merge with existing state (<code>terraform.tfstate</code>)</h4>
+
+<pre><code class="language-bash">terraforming $resource --tfstate --merge=/path/to/tfstate
+</code></pre>
+
+<h2><a href="https://github.com/GoogleCloudPlatform/terraformer#installation" title="GoogleCloudPlatform @ GitHub"><code>terraformer</code></a></h2>
+
+<p>A reverse terraform tool (Golang) to import existing infrastructure, per provider, as <code>.tf</code> file(s).</p>
+
+<ul>
+<li>Does not support EC2.</li>
+<li>Flakey; corrupts data</li>
+
+<li><p>Must perform the usual copy of provider plugins:</p>
+
+<ul>
+<li>FROM: <code>./terraform/plugins/.../windows_amd64</code></li>
+<li>TO: <code>~/.terraform.d/plugins/windows_amd64</code>
+
+<ul>
+<li>Do the same for <code>/linux_amd64</code></li>
+</ul></li>
+
+<li><p>Then DELETE <code>./terraform</code> dir</p>
+
+<pre><code class="language-bash">cat &lt;&lt;EOF &gt; init.tf
+provider &quot;aws&quot; {  
+region = &quot;us-east-1&quot;
+}
+EOF
+
+terraform init 
+
+terraformer import aws --resources=vpc,subnet,iam
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h2>Terraform : About</h2>
+
+<p>Terraform is an ambitious infrastructure-management a.k.a. configuration-management (CM) project of <strong>Hashicorp</strong>; a tool that works toward an explicitly defined end-state; <em>declarative</em> and <em>idempotent</em>.</p>
+
+<ul>
+<li>Utilized as a kind of replacement for vendor tools. For example, it can do much of what the <code>aws</code> CLI may otherwise accomplish imperatively.</li>
+<li>Syntax and functionality change per Provider (vendor); unavoidable given the scope of the tool.
+
+<ul>
+<li>Tricky and varying syntax to create the required variables for those cross-referenced resources that are part of the build and so don't yet exist.</li>
+</ul></li>
+<li>Syntax changes per context (standard vs module) and version, and not all standard declarations are available to modules; documentation is sketchy.</li>
+<li>@ Windows, use only the Windows version (at <code>MINGW64</code> terminal); <code>terraform_0.13.5_windows_amd64</code>.
+
+<ul>
+<li>Linux version fails at WSL (<code>terraform_1.13.5_linux_amd64</code>); fails to find its own default plugin, even immediately after installing it (<code>terraform init &amp;&amp; terraform plan</code>).</li>
+</ul></li>
+</ul>
+
+<h2>Terraform : Issues</h2>
+
+<blockquote>
+<p>Project initialization downloads the requisite &quot;Provider plugins&quot; (hundreds of megabytes; binary) to a local directory (<code>.terraform</code>), yet the subsequent commands requiring them are invariably unable to &quot;find&quot; them. That's right, each module gets its own copy of the identical hundreds of megabytes pile of plugins. Ironically, this most essential of all paths is not declarable, or if it is, such is one of the best kept of all their secrets. A workaround for some providers is to copy these massive plugin files from the useless local folder to the undocumented one (<code>~/.terraform.d/</code>) which may or may not be auto-created under the user's home directory, depending on installation method (for which documentation is but a link to a binary) but that works only per chance. UPDATE: Linux binary fails most often; Windows binary works a bit better (<code>v0.13.5</code>).</p>
+
+<p>Docker is a &quot;provider&quot; according to some of Terraform's own &quot;documentation&quot; sites, and yet is entirely unmentioned and nonexistent at others. Regardless, <a href="https://learn.hashicorp.com/tutorials/terraform/state-import?in=terraform/state#create-a-docker-container">their own Docker tutorial</a> fails at initialization (<code>terraform init</code>), and then again (after applying the workaround) upon <code>plan</code>/<code>apply</code>.</p>
+
+<p>I'm guessing the oligarchs pay these guys for such a honeypot of time-sucking &quot;automation&quot; code to hamper the competition. Perhaps this is why such crap is hawked by the otherwise-starving &quot;tech&quot; bloggers.</p>
+</blockquote>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

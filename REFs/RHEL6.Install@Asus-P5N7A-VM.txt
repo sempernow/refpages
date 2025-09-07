@@ -1,0 +1,82 @@
+CentOS @ Asus-P5N7A-VM
+======================
+
+2016-12-20
+
+	Use Rufus to make bootable install USB per downloaded ISO
+
+	@ CentOS 7 :: no NIC driver 
+
+		THE install issue is the network [NIC] driver. 
+
+		If 'eth0' not installed/loaded on OS-install, then gone forever. 
+		No way to install post OS-install; it's some magical/mystical driver install/load process, with a zillion unrelated suggestions for 'help' on the issue.
+		The 'official' CentOS Documentation site ENDS @ CentOS-5.
+	 
+	@ CentOS 6.8  
+
+		CentOS 6.8 is latest w/ drivers that install/load eth0;
+		
+			MUST have physical ethernet connection on boot/install.
+			
+			CentOS-6.8-i386-LiveDVD.iso		[1.85GB]
+				
+				Downloaded per torrent @ ...
+				
+					http://mirrors.cat.pdx.edu/centos/6.8/isos/i386/
+			
+			Installed w/ connectivity !!! [eth0] 
+			
+		Try w/ CentOS 7 64-bit
+			
+			CentOS 7, 32 bit only available by alt (AltArch SIG) repository 
+			https://wiki.centos.org/SpecialInterestGroup/AltArch
+			
+			CentOS-7-i386-DVD-1511.ISO  
+			
+			(unavailable per torrent)
+			
+			FAILs to install/load eth0
+		
+	
+2016-12-18
+
+
+	Tried CentOS-7, 64 bit [x86_64]
+
+	CentOS-7-x86_64-DVD-1511.iso 
+	
+	Downloaded per torrent @ ...
+	
+		http://mirrors.cat.pdx.edu/centos/7.2.1511/isos/x86_64/
+	
+	Installed, but no network; no drivers for anything.
+	
+	[Was NOT physically connected to router; try w/ connection @ install]
+	
+	Asus has only 32-bit linux drivers
+	
+		NVIDIA-Linux-x86-173.14.09-pkg1.run
+	
+	So, tried CentOS-6, 32-bit [i386]
+	(CentOS 7, 32 bit unavailable per torrent)
+	
+		CentOS-6.8-i386-LiveCD.iso
+		
+		Downloaded per torrent @ ...
+		
+			http://mirrors.cat.pdx.edu/centos/6.8/isos/i386/
+	
+		Installed w/ connectivity !!! [eth0] 
+		
+		Was physically connected [ethernet] to router on install.
+	
+
+	Asus Linux [32-bit] drivers ... 
+	
+	Install per Readme @ Asus/Linux driver folder 
+	
+		cd <ydriver-directory>
+		sh NVIDIA-Linux-x86-173.14.09-pkg1.run
+		
+		

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ansible</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Ansible <a href="https://docs.ansible.com/ansible/latest/" title="docs.ansible.com">Documentation</a> | <a href="https://docs.ansible.com/ansible/latest/getting_started/index.html">Getting Started</a></h1>
+
+<p>Agentless Push Automation : <a href="ansible-topology.png"><code>ansible-topology.png</code></a></p>
+
+<pre><code class="language-bash">ansible-playbook \
+    -i inventory.file \
+    -u ssh_user \
+    playbook.yml
+
+</code></pre>
+
+<h2>Summary</h2>
+
+<p>Ansible is the property of RedHat, Inc.</p>
+
+<p>Ansible is a highly versatile tool for remotely provisioning and confuguring declared sets of target machines. It is designed for targets well beyond Linux; network appliances of many vendors. That is its strong point, and explains its lack of sensible defaults for Linux.</p>
+
+<p>Referred to as &quot;agentless&quot; because the app itself has no process running on targets, unlike other provisioning tools. Ansible connects to targets via their SSH server (<code>sshd</code>), though its default behavior is to ignore the user's SSH configurations (on the control node).</p>
+
+<p>Ansible is written in Python, with an ecosystem of modules for a vast range of tasks and target types. Python must also be installed on all targets for all but the most trivial use cases; a version compatible with that of Ansible (installed only on the control node).</p>
+
+<p>Each target environment and task has its own set of Python modules and its own set of configuration (YAML or INI) requirements.</p>
+
+<p>Ansible makes no attempt to abide any existing GNU/POSIX/Bash conventions or configurations. So, manhours consumed in declaring IaC of any real-world environment is significant. If all targets are Linux, however, that cost may be significantly lowered by using Ansible only as a bash-script runner; avoiding its labyrinth of per-module syntax and configurations.</p>
+
+<p>Running ansible in verbose mode (<code>-vvv</code>) prints its (attempted) SSH connection statement:</p>
+
+<pre><code class="language-bash">ssh -C -o ControlMaster=auto -o ControlPersist=60s -o KbdInteractiveAuthentication=no -o PreferredAuthentications=gssapi-with-mic,gssapi-keyex,hostbased,publickey -o PasswordAuthentication=no -o 'User=&quot;u1&quot;' -o ConnectTimeout=10 -o 'ControlPath=&quot;/c/HOME/.ansible/cp/975de6127e&quot;' $ip '/bin/sh -c '&quot;'&quot;'hostname'&quot;'&quot;''
+</code></pre>
+
+<ul>
+<li>This fails on WSL2 due to Ansible's default <code>ControlMaster</code> (connection sharing) option to reuse an already-established connection, which requires a socket.</li>
+</ul>
+
+<h2>Install</h2>
+
+<pre><code class="language-bash"># Install Python 3
+sudo dnf -y install python3
+# Set Python 3 as default
+alternatives --set python /usr/bin/python3
+# Install Python pip
+sudo dnf -y install python3-pip
+# Install ansible for current user (@ ~/.local or %APPDATA%Python)
+python3 -m pip install --user ansible 
+# Or 
+python3 -m pip install --include-deps --user ansible
+# Or just the core
+python3 -m pip install ansible-core
+
+# Upgrade
+python3 -m pip install --upgrade --user ansible
+
+# Add Autocomplete
+python -m pip install --user argcomplete 
+
+# Verify
+ansible --version
+</code></pre>
+
+<ul>
+<li><a href="https://pip.pypa.io/en/stable/cli/pip_install/" title="pip.pypa.io"><code>pip install</code></a></li>
+</ul>
+
+<h2>Configuration : <a href="ansible.cfg"><code>ansible.cfg</code></a> : <a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html" title="docs.ansible.com">Configuration Settings</a></h2>
+
+<p>Format is a particular <code>INI</code> variant:</p>
+
+<pre><code class="language-ini"># Comment
+; Comment
+foo = bar ; Comment inline
+</code></pre>
+
+<p>Search order:</p>
+
+<ul>
+<li><code>ANSIBLE_CONFIG</code></li>
+<li><code>$(pwd)/ansible.cfg</code></li>
+<li><code>~/.ansible.cfg</code></li>
+<li><code>/etc/ansible/ansible.cfg</code></li>
+</ul>
+
+<p>(None are created upon installation.)</p>
+
+<h3>Create</h3>
+
+<p>The <code>ansible-config</code> command provides all the configuration settings available,
+their defaults, how to set them and where their current value comes from.</p>
+
+<pre><code class="language-bash"># Defaults
+ansible-config init &gt; ansible.cfg
+# Zero config : everything commented out
+ansible-config init --disabled &gt; ansible.cfg
+# Include those of all &quot;existing&quot; plugins
+ansible-config init -t all &gt; ansible.cfg
+</code></pre>
+
+<ul>
+<li><a href="ansible-config.init-t.all.cfg"><code>ansible-config.init-t.all.cfg</code></a></li>
+</ul>
+
+<h3>Project Structure</h3>
+
+<pre><code class="language-bash">mkdir -p {inventory/{dev/{group_vars,host_vars},pro/{group_vars,host_vars}},playbooks/roles/{common/{tasks,handlers,templates,files,vars,defaults,meta,library},role-a/{tasks,files},role-b/{tasks,files,templates,vars}}}
+touch ansible.cfg inventory/dev/hosts inventory/pro/hosts
+</code></pre>
+
+<pre><code class="language-plaintext">☩ tree
+.
+├── inventory
+│   ├── dev
+│   │   ├── group_vars
+│   │   ├── host_vars
+│   │   └── hosts
+│   └── pro
+│       ├── group_vars
+│       ├── host_vars
+│       └── hosts
+├── playbooks
+│   └── roles
+│       ├── common
+│       │   ├── defaults
+│       │   ├── files
+│       │   ├── handlers
+│       │   ├── library
+│       │   ├── meta
+│       │   ├── tasks
+│       │   ├── templates
+│       │   └── vars
+│       ├── role-a
+│       │   ├── files
+│       │   └── tasks
+│       └── role-b
+│           ├── files
+│           ├── tasks
+│           ├── templates
+│           └── vars
+└── ansible.cfg
+
+</code></pre>
+
+<p>@ <strong><code>ansible.cfg</code></strong> | <a href="https://docs.ansible.com/ansible/latest/reference_appendices/config.html" title="docs.ansible.com">Configuration Settings</a></p>
+
+<pre><code class="language-ini">[defaults]
+inventory = ./inventory/hosts
+</code></pre>
+
+<p>@ <strong><code>inventory/hosts</code></strong> | <a href="https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html" title="docs.ansible.com">Inventory Guide</a></p>
+
+<p>Note it's typically named <code>hosts</code>, not <code>hosts.yml</code>.</p>
+
+<pre><code class="language-yaml">all:
+  children:
+    cluster:
+      vars:
+        cluster_scope: All hosts of all groups under cluster group
+      children:
+        master:
+          hosts:
+            a: a.lan
+            b: b.lan
+          vars:
+            master_scope: All hosts of master group 
+        worker:
+          hosts:
+            c: 192.168.1.10
+            d: 
+             hostname: d.lan
+             port: 5555
+    local:
+      hosts:
+        localhost:
+      vars:
+        ansible_connection: local
+  vars:
+    all_scope: All hosts of all groups, local and remote
+    ansible_python_interpreter: /usr/bin/env python
+
+</code></pre>
+
+<ul>
+<li>Variables may be set here and/or in variables files (YAML) under <code>host_vars/</code> and/or <code>group_vars/</code>, with each file having name of host or group to which it is scoped.</li>
+</ul>
+
+<p>Target multiple groups and/or hosts with an ad-hoc command:</p>
+
+<pre><code class="language-bash">ansible master,c -a 'ip -4 addr'
+</code></pre>
+
+<p>@ <strong><code>playbooks/site.yml</code></strong> (Playbook AKA Playbook file)</p>
+
+<pre><code class="language-yaml">- hosts: all
+  roles:
+    - role: myrole  # This will run `roles/myrole/tasks/main.yml`
+
+</code></pre>
+
+<p>@ <strong><code>roles/</code></strong> (Roles folder)</p>
+
+<pre><code class="language-plaintext">roles/
+├── myrole/
+│   ├── tasks/
+│   │   └── main.yml
+│   ├── files/
+│   │   └── example_file.txt
+│   ├── templates/
+│   │   └── example_template.j2
+│   └── vars/
+│       └── main.yml
+playbooks/
+└── site.yml
+</code></pre>
+
+<p>@ <strong><code>myrole/tasks/main.yml</code></strong> (Task file)</p>
+
+<pre><code class="language-yaml">- name: Copy file from role's files directory
+  copy:
+    src: example_file.txt   # This references roles/myrole/files/example_file.txt
+    dest: /destination/path/on/remote
+
+- name: Deploy configuration file from template
+  template:
+    src: example_template.j2   # This references roles/myrole/templates/example_template.j2
+    dest: /etc/config.conf
+
+</code></pre>
+
+<h3>Common <a href="https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#connection-variables">Connection variables</a></h3>
+
+<p>Connection variables are normally used to set the specifics on how to execute actions on a target. Some are (required) per module. Here are common ones:</p>
+
+<ul>
+<li><p><code>ansible_become_user</code><br>
+The user Ansible ‘becomes’ after using privilege escalation. This must be available to the ‘login user’.</p></li>
+
+<li><p><code>ansible_connection</code><br>
+The connection plugin actually used for the task on the target host.</p></li>
+
+<li><p><code>ansible_host</code><br>
+The ip/name of the target host to use instead of inventory_hostname.</p></li>
+
+<li><p><code>ansible_python_interpreter</code><br>
+The path to the Python executable Ansible should use <em>on the target host</em>.</p></li>
+
+<li><p><code>ansible_user</code><br>
+The user Ansible ‘logs in’ as.</p></li>
+</ul>
+
+<h3><a href="https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html#magic-variables">Magic variables</a></h3>
+
+<p>Ansible-controlled; overrides any set by user.</p>
+
+<h2><a href="./inventory.yml"><code>inventory.yml</code></a> | <a href="https://docs.ansible.com/ansible/latest/inventory_guide/index.html" title="docs.ansible.com">Ansible Inventories</a></h2>
+
+<p>Ansible inventories are set(s) of target hosts upon which <code>ansible</code> operates.
+These are declared. Default is <code>inventory.cfg</code> file.</p>
+
+<p>Format is YAML or proprietary &quot;Ansible Inventory Format&quot;.
+Regardless, all must abide Ansible-specified (sub)keys.</p>
+
+<p>Location of this file is declared in Ansible configuration
+(e.g., <a href="ansible.cfg"><code>ansible.cfg</code></a>) at &quot;<code>inventory</code>&quot; key.</p>
+
+<pre><code class="language-ini">[defaults]
+inventory=inventory.cfg
+</code></pre>
+
+<p>@ <a href="inventory.yml"><strong><code>inventory.yml</code></strong></a></p>
+
+<p>Default inventory file: <code>/etc/ansible/hosts</code></p>
+
+<p>Validate the inventory file</p>
+
+<pre><code class="language-bash">
+ansible-inventory -i inventory/hosts.yml --list --yaml
+ansible-inventory -i inventory/hosts.yml --graph
+
+# YAML linter
+yamllint inventory/hosts.yml # dnf install yamllint
+</code></pre>
+
+<h2>Prep target(s)</h2>
+
+<p>There are several conventions for configuring target machines.
+A simple, secure method is to configure the script user (<code>gitops</code>)
+on the target(s) such that their password login is entirely disabled,
+making remote, key-based ssh login the only method of access,
+and then creating a <code>/etc/sudoers.d/gitops</code> file that enables
+elevated privileges sans password entry.</p>
+
+<ul>
+<li>Install Ansible on admin node (not a cluster node)</li>
+<li>Prepare all target machines by running this script on each one.
+It requires <code>root</code> privileges.
+
+<ul>
+<li><a href="create_provisioner.sh"><code>create_provisioner.sh</code></a><br></li>
+</ul></li>
+</ul>
+
+<p>@ <code>~/.ansible.cfg</code> | <a href="ansible.cfg"><code>ansible.cfg</code></a></p>
+
+<pre><code class="language-ini">[defaults]
+action_warnings=False
+inventory=inventory.cfg
+deprecation_warnings=False
+remote_user  = u2
+;; become : This setting (True) works only for playbooks. 
+;; Whereas ad-hoc commands (-a COMMAND) REQUIRE flag --become regardless.
+become = True
+become_user = root
+[privilege_escalation]
+become_method = sudo
+become_ask_pass = True
+[ssh_connection]
+ssh_config = ${HOME}/.ssh/config
+;; TTY allocation may cause failure by infinite silent hang 
+;; depending on sudoers files configuration. 
+;; Sudoers config may require : &quot;Defaults !requiretty&quot;
+;ssh_args = -tt
+usetty = True
+ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+pipelining = True
+scp_if_ssh = smart
+;; Force scp
+;ssh_transfer_method = scp
+timeout = 10
+</code></pre>
+
+<h2>Use</h2>
+
+<pre><code class="language-bash"># Ad-hoc command at one machine of default hosts file @ /etc/ansible/hosts
+ansible -i hosts 192.168.1.109 -m ping
+# Ad-hoc command (model: ping) at all target machines of hosts file @ /etc/ansible/hosts
+ansible -i hosts app -m ping
+# Same as above, but target is self
+ansible -m ping localhost 
+# Lists all facts of target (using model: setup)
+ansible -m setup localhost
+
+# Create ./ansible.cfg that includes declared inventory file.
+ansible-config init --disabled |tee ansible.cfg.disabled
+vim ansible.cfg.disabled # Edit; declare &quot;inventory=inventory.cfg&quot;, and save as ansible.cfg
+vim inventory.cfg # add [target] list of hosts
+target='target'
+
+# Ad-hoc command ping at $target machines declared in inventory file declared in ./ansible.cfg
+ansible $target -m ping
+# Ad-hoc : two commands
+ansible $target -a hostname -a id
+# Ad-hoc : Test is Ansible's ssh user (defaults to current user) has sudo sans password
+ansible $target -a 'ls -hl /etc/sudoers.d/' --become
+# shell module
+ansible $target -m ansible.builtin.shell -a hostname
+# script module
+ansible $target -m ansible.builtin.script -a foo.sh 
+
+# playbook : script w/ args injected
+ansible-playbook foo.yml -e a=foo -e b=bar 
+
+</code></pre>
+
+<h3>Privilege Escalation : <code>sudo</code></h3>
+
+<pre><code class="language-bash"># Ad-hoc sudo commands REQUIRE flag &quot;--become&quot; REGARDLESS of its mirror setting at .cfg 
+ansible target -a 'cat /etc/sudoers.d/gitops' --become #=&gt; &quot;BECOME password: &quot;
+</code></pre>
+
+<h3><code>ansible-vault</code></h3>
+
+<pre><code class="language-bash"># Create vault and add become_password
+vault=become_pass.yml
+ansible-vault create $vault
+    # Prompts for vault password,
+    # then opens in editor (vi). Add:
+    # ---
+    # ansible_become_password:·&quot;PASSWORD&quot;
+
+# View content
+ansible-vault view $vault
+# Edit content
+ansible-vault edit $vault --ask-vault-pass
+
+# Use : 
+# 1. Mod ansible.cfg
+# - vault_password_file = become_pass.yml
+# - become_ask_pass = False
+# 2. Playbook
+ansible-playbook playbook.yml --extra-vars &quot;@$vault&quot; --ask-vault-pass
+# Or Ad-hoc
+ansible target -a 'ls -hl /etc/sudoers.d/' --become --extra-vars &quot;@$vault&quot; --ask-vault-pass
+
+</code></pre>
+
+<h2>Playbook (YAML)</h2>
+
+<p>@ <code>example.yml</code></p>
+
+<pre><code class="language-yaml">---
+- name: example playbook
+  hosts: local
+  vars:
+    foo: &quot;bar&quot;
+    fbool: false
+    cities:
+    - Maryland
+    - Virginia
+  tasks:
+  - name: print foo
+    ## model: debug
+    ansible.builtin.debug:
+      msg: &quot;value of foo is: {{ foo }}&quot;
+    ## Run task only on fbool: true
+    when: fbool
+  - name: print cities
+    ## model: debug
+    ansible.builtin.debug:
+      #var: item 
+    loop: &quot;{{ cities }}&quot;
+
+</code></pre>
+
+<p>Because <code>ansible.cfg</code> set the inventory-file path <code>inventory.cfg</code> (@ PWD),
+and playbook (<code>example.yml</code>) set target (group) name (<code>hosts: local</code>),
+the command to run the playbook is simply:</p>
+
+<pre><code class="language-bash">☩ ansible-playbook example.yml
+
+PLAY [example playbook] ***...
+
+
+TASK [Gathering Facts] ***...
+ok: [localhost]
+
+TASK [print foo] ***...
+skipping: [localhost]
+
+TASK [print cities] ***...
+ok: [localhost] =&gt; (item=Maryland) =&gt; {
+    &quot;msg&quot;: &quot;Hello world!&quot;
+}
+ok: [localhost] =&gt; (item=Virginia) =&gt; {
+    &quot;msg&quot;: &quot;Hello world!&quot;
+}
+
+PLAY RECAP ***...
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+</code></pre>
+
+<p>@ <code>foo.yml</code></p>
+
+<pre><code class="language-yaml">---
+- name: Testing
+  hosts: target
+  vars:
+    config_file_path: ~/.ansible/ansible.cfg
+  become: true
+  #become_flags: &quot;-H -S -n&quot;
+  gather_facts: false
+  tasks:
+  - name: Task 1
+    #command: &quot;sh $HOME/devops/ansible/foo.sh {{a}} {{b}}&quot;
+    command: &quot;sh $HOME/devops/ansible/foo.sh&quot;
+
+</code></pre>
+
+<ul>
+<li>Failing @ WSL(2); all attempts at tweaking ansible's bazillion parameters across its many configuration files (<code>ansible.cfg</code>, <code>inventory.cfg</code>, playbook, ...) yields same result: hosts not found; can't resolve.</li>
+<li>Every tool except <code>ansible</code> is able to connect to any and every host.</li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Security.EMS.IAM.ZTA.ABAC</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><strong>EMS</strong> : Endpoint Management and Security</h1>
+
+<h2>Terms and Concepts</h2>
+
+<ul>
+<li><strong>IAM</strong> : <strong>Identity and Access Management</strong>
+
+<ul>
+<li><strong>ZTA</strong> : <a href="https://en.wikipedia.org/wiki/Zero_trust_architecture" title="Wikipedia"><strong>Zero Trust Architecture</strong></a>
+
+<ul>
+<li><strong>Endpoint Security Architecture</strong></li>
+</ul></li>
+<li><strong>ABAC</strong> : <a href="https://en.wikipedia.org/wiki/Attribute-based_access_control" title="Wikipedia"><strong>Attribute Based Access Control</strong></a></li>
+</ul></li>
+<li><strong>EMS</strong> : <strong>Enterprise Mobility and Security</strong> : <em>Device Lifecycle Control</em> <strong>stack</strong>
+
+<ul>
+<li><strong>MDM</strong> : <a href="https://en.wikipedia.org/wiki/Mobile_device_management" title="Wikipedia"><strong>Mobile Device Management</strong></a><br>
+controls mobile device functionality and converts it into a single purpose or dedicated device.
+It has features like device enrollment, remote control, device lockdown, and location tracking.</li>
+<li><strong>EMM</strong> : <strong>Enterprise Mobile Management</strong><br>
+offers all MDM features, and also provides Mobile Information Management (<strong>MIM</strong>),
+Bring Your Own Device (<strong>BYOD</strong>), Mobile Application Management (<strong>MAM</strong>)
+and Mobile Content Management (<strong>MCM</strong>).</li>
+<li><strong>UEM</strong> : <strong>Unified Endpoint Management</strong><br>
+provides enterprises management of mobile devices as well as endpoints
+like desktops, printers, IoT devices and wearables from a single management platform.</li>
+</ul></li>
+</ul>
+
+<h2><a href="https://spiffe.io/docs/latest/spiffe-about/overview/" title="SPIFFE.io">SPIFFE/SPIRE</a></h2>
+
+<p><strong>Secure Production Identity Framework for Everyone</strong> (SPIFFE)</p>
+
+<p><strong>SPIFFE</strong> is a set of open-source specifications for a framework
+capable of <strong>bootstrapping and issuing identity to services across heterogeneous environments</strong> and organizational boundaries.
+The heart of these specifications is one defining short-lived cryptographic identity documents,
+&quot;SPIFFE Verifiable Identity Document&quot; (<strong>SVID</strong>), and the API by which they are issued.
+Workloads use SVIDs when authenticating to other workloads,
+for example by establishing a TLS connection or by signing and verifying a JWT token.</p>
+
+<p>A <a href="https://spiffe.io/docs/latest/spire-about/spire-concepts/"><strong>SPIRE</strong></a> server is a production-ready implementation
+of the <strong>SPIFFE API</strong> that performs <strong>node and workload attestation</strong>
+in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads,
+based on a predefined set of conditions.</p>
+
+<ul>
+<li><strong>Origin:</strong> CNCF project, inspired by Google’s internal service identity system (Borg + Loas).</li>
+<li><strong>Purpose:</strong> Issues <strong>SPIFFE ID</strong>s, which are <strong>workload identities</strong>, e.g.,
+<strong><code>spiffe://$trust_domain/$service_name</code></strong>, in the form of an <strong>SVID</strong>
+
+<ul>
+<li><code>X.509-SVID</code></li>
+<li><code>JWT-SVID</code></li>
+</ul></li>
+<li><strong>Focus:</strong>
+
+<ul>
+<li>Designed for <em>service-to-service authentication</em> in distributed systems,
+including <strong>zero-trust environments</strong>.</li>
+<li>No DNS-based proof. Instead of third-party, hierarchical trust,
+proof of workload identity is done via <strong>attestation plugins</strong> (K8s, AWS IAM, etc.).</li>
+<li><strong>Certificates</strong> (SVIDs) are usually <strong>short-lived</strong> (minutes to hours)
+and signed by a <strong>private CA</strong> inside the trust domain.</li>
+</ul></li>
+</ul>
+
+<h2><a href="https://smallstep.com/platform/acme-device-attestation/index.html" title="smallstep.com">ACME Device Attestation</a> (<strong>ACME-DA</strong>) | <a href="https://smallstep.com/blog/acme-managed-device-attestation-explained/" title="smallstep.com/blog">Article</a></h2>
+
+<p>ACME-DA is an <strong>IETF draft extension to ACME</strong> that adds a challenge type for <strong>device identity</strong> rather than <strong>domain ownership</strong>.
+Instead of proving you control <code>example.com</code> (HTTP-01/DNS-01/TLS-ALPN-01),
+the client proves it <em>is</em> a specific hardware device,
+usually via something like TPM, Secure Enclave, or another hardware root of trust.</p>
+
+<ul>
+<li><strong>Origin:</strong> ACME-DA is a successor to <a href="https://datatracker.ietf.org/doc/html/rfc8894" title="IETF.org : RFC 8894">Simple Certificate Enrollment Protocol (SCEP)</a>,
+which was originally designed for issuing X.509 certificates to network devices.</li>
+<li><strong>Purpose:</strong> Automate issuing a certificate to a <em>device</em> without pre-provisioning secrets or relying on DNS ownership.
+ACME-DA is especially useful in <a href="https://en.wikipedia.org/wiki/Mobile_device_management">Mobile Device Management</a> (MDM);
+security software enabling organizations to secure, monitor, manage,
+and enforce policies on employee-owned mobile devices; providing a secure
+&quot;Bring Your Own Device&quot; (BYOD) environment to enterprises.</li>
+<li><strong>Challenge type:</strong> <code>device-attest-01</code> (proposed).</li>
+<li><strong>Mechanism:</strong>
+
+<ol>
+<li>The device has a manufacturer-provisioned identity key + attestation cert (often in a TPM or secure element).</li>
+<li>ACME server sends a challenge.</li>
+<li>The device signs it using the key and returns an attestation statement (e.g., TPM quote, FIDO attestation).</li>
+<li>CA verifies this attestation against trusted manufacturer root certs.</li>
+<li>If valid, CA issues a certificate to that device.</li>
+</ol></li>
+<li><strong>Output:</strong> Usually an <strong>X.509</strong> certificate with identifiers tied to the device’s attested identity.</li>
+</ul>
+
+<h2><a href="https://chatgpt.com/share/6897ae64-9964-8009-a329-9c600bf77d7f">ACME-DA v. SPIFFE/SPIRE</a></h2>
+
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>ACME Device Attestation</th>
+<th>SPIFFE/SPIRE</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Identity basis</strong></td>
+<td>Hardware root of trust (TPM, secure enclave, etc.)</td>
+<td>Workload attestation (platform, k8s API, cloud metadata)</td>
+</tr>
+
+<tr>
+<td><strong>Trust roots</strong></td>
+<td>Manufacturer CA roots</td>
+<td>Private trust domain CA</td>
+</tr>
+
+<tr>
+<td><strong>Target use case</strong></td>
+<td>Securely enroll physical devices</td>
+<td>Securely enroll workloads/services</td>
+</tr>
+
+<tr>
+<td><strong>Cert format</strong></td>
+<td>Normal X.509 with DNS, IP, or device identifiers</td>
+<td>X.509-SVID (SPIFFE ID in SAN URI) or JWT-SVID</td>
+</tr>
+
+<tr>
+<td><strong>Cert lifetime</strong></td>
+<td>Usually long-lived (months–years)</td>
+<td>Short-lived (minutes–hours)</td>
+</tr>
+
+<tr>
+<td><strong>Scope</strong></td>
+<td>Device provisioning/bootstrap</td>
+<td>Ongoing workload identity in distributed systems</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3><strong>Relationship</strong></h3>
+
+<ul>
+<li>ACME-DA is <strong>closer in spirit</strong> to SPIFFE/SPIRE than normal ACME is,
+because both are about automating issuance based on <strong>attestation</strong>, not just DNS.</li>
+<li>In fact, you could imagine <strong>SPIRE using ACME-DA</strong> as an <em>upstream CA enrollment method</em> for its nodes or agents;
+attesting a host once to get a bootstrap cert, then using SPIRE to issue short-lived workload certs.</li>
+<li>But <strong>they’re not direct predecessors or replacements</strong>:
+
+<ul>
+<li>ACME-DA is about <em>provisioning trust into a device</em> from a public or private CA based on hardware identity.</li>
+<li>SPIFFE/SPIRE is about <em>distributing and rotating trust inside a running environment</em> based on workload identity.</li>
+</ul></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

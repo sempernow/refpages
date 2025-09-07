@@ -1,0 +1,15 @@
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: lab4
+spec:
+  # StorageClass not required for manual PV/PVC/Pod config.
+  storageClassName: bogus
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    # Create on BOTH WORKER NODES
+    path: "/storage"

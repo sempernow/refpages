@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Apache.Tomcat</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://tomcat.apache.org/" title="tomcat.apache.org">Apache Tomcat</a> | <a href="https://chatgpt.com/share/681a895c-b8ec-8009-8417-cf83c59485e2">ChatGPT</a></h1>
+
+<p>Here's a <strong>systemd unit file</strong> to run a Tomcat 10+ instance
+(installed from tarball, e.g., in <code>/opt/tomcat</code>)
+as a service on RHEL-based systems:</p>
+
+<hr>
+
+<h3>🔧 Assumptions:</h3>
+
+<ul>
+<li>Tomcat is installed at <code>/opt/tomcat</code></li>
+<li>It runs as user <code>tomcat</code> (non-root)</li>
+<li>Java is properly installed and in <code>PATH</code> (e.g., OpenJDK 17)</li>
+</ul>
+
+<hr>
+
+<h3>1. <strong>Create the Tomcat system user (no login shell)</strong></h3>
+
+<pre><code class="language-bash">sudo useradd -r -M -U -s /bin/false tomcat
+</code></pre>
+
+<hr>
+
+<h3>2. <strong>Extract Tomcat and set ownership</strong></h3>
+
+<pre><code class="language-bash">sudo tar -xzf apache-tomcat-10.*.tar.gz -C /opt
+sudo mv /opt/apache-tomcat-10.* /opt/tomcat
+sudo chown -R tomcat:tomcat /opt/tomcat
+
+## Simple
+#sudo semanage fcontext -a -t bin_t &quot;/opt/tomcat(/.*)?&quot;
+#sudo restorecon -Rv /opt/tomcat
+## Compliant
+# Add policy lest certain policies already exist : See subsequent section(s) here 
+sudo dnf install selinux-policy-targeted
+
+sudo semanage fcontext -a -t tomcat_exec_t &quot;/opt/tomcat/bin(/.*)?&quot;
+sudo semanage fcontext -a -t tomcat_var_run_t &quot;/opt/tomcat/temp(/.*)?&quot;
+sudo semanage fcontext -a -t tomcat_cache_t &quot;/opt/tomcat/work(/.*)?&quot;
+sudo semanage fcontext -a -t tomcat_log_t &quot;/opt/tomcat/logs(/.*)?&quot;
+# Apply the labels
+sudo restorecon -Rv /opt/tomcat
+</code></pre>
+
+<hr>
+
+<h3>3. <strong>Create the systemd unit file</strong></h3>
+
+<p>Save as:
+<code>/etc/systemd/system/tomcat.service</code></p>
+
+<pre><code class="language-ini">[Unit]
+Description=Apache Tocat 10 Web Application Container
+After=network.target
+
+[Service]
+Type=forking
+
+User=tomcat
+Group=tomcat
+
+Environment=&quot;JAVA_HOME=/usr/lib/jvm/java-17-openjdk&quot;
+Environment=&quot;CATALINA_PID=/opt/tomcat/temp/tomcat.pid&quot;
+Environment=&quot;CATALINA_HOME=/opt/tomcat&quot;
+Environment=&quot;CATALINA_BASE=/opt/tomcat&quot;
+Environment=&quot;CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC&quot;
+Environment=&quot;JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom&quot;
+
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+
+<hr>
+
+<h3>4. <strong>Reload systemd and start Tomcat</strong></h3>
+
+<pre><code class="language-bash">sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable --now tomcat
+</code></pre>
+
+<hr>
+
+<h3>5. <strong>Test it</strong></h3>
+
+<pre><code class="language-bash">curl http://localhost:8080/
+</code></pre>
+
+<hr>
+
+<h2>SELinux : Further considerations</h2>
+
+<p>The statement &quot; <code>sudo dnf install selinux-policy-targeted</code>&quot; is <strong>safe and expected</strong> in a STIG/FIPS-compliant RHEL environment—<strong>as long as it's not already using an alternative policy like <code>selinux-policy-mls</code> or <code>selinux-policy-strict</code></strong>.</p>
+
+<hr>
+
+<h3>✅ What <code>selinux-policy-targeted</code> is:</h3>
+
+<ul>
+<li><p>It is the <strong>default SELinux policy</strong> on RHEL systems, including:</p>
+
+<ul>
+<li>RHEL 7, 8, and 9</li>
+<li>CentOS, AlmaLinux, Rocky</li>
+</ul></li>
+
+<li><p>Provides <strong>type enforcement</strong> for the most common services (e.g., <code>httpd</code>, <code>tomcat</code>, <code>sshd</code>, etc.)</p></li>
+
+<li><p>Fully compatible with STIG/FIPS profiles when SELinux is in <strong>enforcing</strong> mode</p></li>
+</ul>
+
+<hr>
+
+<h3>🔍 Check your current SELinux policy:</h3>
+
+<pre><code class="language-bash">sestatus | grep Policy
+# Should say: SELinux policy from config file: targeted
+</code></pre>
+
+<p>Or check from config:</p>
+
+<pre><code class="language-bash">grep ^SELINUXTYPE= /etc/selinux/config
+# SELINUXTYPE=targeted
+</code></pre>
+
+<hr>
+
+<h3>⚠️ When to <strong>avoid</strong> installing this:</h3>
+
+<p>Only if your system uses a <strong>non-default SELinux policy</strong> like:</p>
+
+<ul>
+<li><code>mls</code> (Multi-Level Security)</li>
+<li><code>strict</code> (Very fine-grained, rarely used)</li>
+<li>A custom policy set by your security team</li>
+</ul>
+
+<p>In those cases, installing <code>selinux-policy-targeted</code> could conflict or overwrite policy files.</p>
+
+<hr>
+
+<h3>🔐 Bottom line:</h3>
+
+<p>In a standard RHEL system aligned with STIG/FIPS and using the <strong>default SELinux mode</strong>, installing or reinstalling <code>selinux-policy-targeted</code> is:</p>
+
+<ul>
+<li>✅ Safe</li>
+<li>✅ Expected</li>
+<li>✅ Auditable</li>
+</ul>
+
+<h2>Provision using <strong>Ansible</strong></h2>
+
+<p>A minimal, auditable <strong>Ansible role</strong> to install and configure <strong>Apache Tomcat 10+</strong> from a tarball in a <strong>STIG/FIPS-compliant RHEL environment</strong>, with SELinux context alignment and systemd integration.</p>
+
+<hr>
+
+<h3>🔧 Role: <code>roles/tomcat10/</code></h3>
+
+<h4>📁 Directory Structure:</h4>
+
+<pre><code>roles/
+└── tomcat10/
+    ├── tasks/
+    │   └── main.yml
+    ├── templates/
+    │   ├── tomcat.service.j2
+    └── vars/
+        └── main.yml
+</code></pre>
+
+<hr>
+
+<h3>📄 <code>vars/main.yml</code></h3>
+
+<pre><code class="language-yaml">tomcat_version: &quot;10.1.27&quot;
+tomcat_user: &quot;tomcat&quot;
+tomcat_group: &quot;tomcat&quot;
+tomcat_home: &quot;/opt/tomcat&quot;
+java_home: &quot;/usr/lib/jvm/java-17-openjdk&quot;
+</code></pre>
+
+<hr>
+
+<h3>📄 <code>templates/tomcat.service.j2</code></h3>
+
+<pre><code class="language-ini">[Unit]
+Description=Apache Tomcat 10 Web Application Container
+After=network.target
+
+[Service]
+Type=forking
+
+User={{ tomcat_user }}
+Group={{ tomcat_group }}
+
+Environment=&quot;JAVA_HOME={{ java_home }}&quot;
+Environment=&quot;CATALINA_PID={{ tomcat_home }}/temp/tomcat.pid&quot;
+Environment=&quot;CATALINA_HOME={{ tomcat_home }}&quot;
+Environment=&quot;CATALINA_BASE={{ tomcat_home }}&quot;
+Environment=&quot;CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC&quot;
+Environment=&quot;JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom&quot;
+
+ExecStart={{ tomcat_home }}/bin/startup.sh
+ExecStop={{ tomcat_home }}/bin/shutdown.sh
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+
+<hr>
+
+<h3>📄 <code>tasks/main.yml</code></h3>
+
+<pre><code class="language-yaml">- name: Ensure required packages are installed
+  package:
+    name:
+      - curl
+      - tar
+      - java-17-openjdk
+      - policycoreutils-python-utils
+      - selinux-policy-targeted
+    state: present
+
+- name: Create tomcat group
+  group:
+    name: &quot;{{ tomcat_group }}&quot;
+    system: true
+
+- name: Create tomcat user
+  user:
+    name: &quot;{{ tomcat_user }}&quot;
+    group: &quot;{{ tomcat_group }}&quot;
+    shell: /sbin/nologin
+    home: &quot;{{ tomcat_home }}&quot;
+    system: true
+    create_home: false
+
+- name: Download and extract Tomcat
+  unarchive:
+    src: &quot;https://archive.apache.org/dist/tomcat/tomcat-10/v{{ tomcat_version }}/bin/apache-tomcat-{{ tomcat_version }}.tar.gz&quot;
+    dest: /opt
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+    creates: &quot;{{ tomcat_home }}/bin/startup.sh&quot;
+
+- name: Ensure correct ownership
+  file:
+    path: &quot;{{ tomcat_home }}&quot;
+    state: directory
+    recurse: yes
+    owner: &quot;{{ tomcat_user }}&quot;
+    group: &quot;{{ tomcat_group }}&quot;
+
+- name: Apply SELinux contexts
+  sefcontext:
+    target: &quot;{{ item.path }}&quot;
+    setype: &quot;{{ item.type }}&quot;
+    state: present
+  loop:
+    - { path: &quot;{{ tomcat_home }}/bin(/.*)?&quot;, type: &quot;tomcat_exec_t&quot; }
+    - { path: &quot;{{ tomcat_home }}/temp(/.*)?&quot;, type: &quot;tomcat_var_run_t&quot; }
+    - { path: &quot;{{ tomcat_home }}/work(/.*)?&quot;, type: &quot;tomcat_cache_t&quot; }
+    - { path: &quot;{{ tomcat_home }}/logs(/.*)?&quot;, type: &quot;tomcat_log_t&quot; }
+
+- name: Restore SELinux context
+  command: &quot;restorecon -Rv {{ tomcat_home }}&quot;
+
+- name: Deploy systemd service unit
+  template:
+    src: tomcat.service.j2
+    dest: /etc/systemd/system/tomcat.service
+    mode: '0644'
+
+- name: Reload systemd and start Tomcat
+  systemd:
+    name: tomcat
+    daemon_reload: yes
+    enabled: yes
+    state: started
+</code></pre>
+
+<hr>
+
+<h3>✅ Usage in Playbook:</h3>
+
+<pre><code class="language-yaml">- hosts: all
+  become: true
+  roles:
+    - tomcat10
+</code></pre>
+
+<hr>
+
+<h2>Bash</h2>
+
+<p>Here is a <strong>secure, air-gap–friendly Bash script</strong> to install <strong>Apache Tomcat 10+</strong> in a <strong>STIG/FIPS-compliant RHEL environment</strong>, with:</p>
+
+<ul>
+<li>Offline install via pre-downloaded tarball</li>
+<li>Correct SELinux labels</li>
+<li>Secure systemd unit</li>
+<li>No internet access required during execution</li>
+</ul>
+
+<hr>
+
+<h3>🔧 1. <strong>Prepare Your Offline Package Bundle</strong></h3>
+
+<h4>Required files:</h4>
+
+<ul>
+<li>Tomcat tarball (e.g., <code>apache-tomcat-10.1.27.tar.gz</code>)</li>
+<li>OpenJDK 17 RPMs (use <code>dnf download</code> with dependencies)</li>
+<li>Save the script below as <code>install_tomcat10.sh</code></li>
+</ul>
+
+<hr>
+
+<h3>📝 <code>install_tomcat10.sh</code></h3>
+
+<pre><code class="language-bash">#!/bin/bash
+set -euo pipefail
+
+# CONFIG
+TOMCAT_VER=&quot;10.1.27&quot;
+TOMCAT_TARBALL=&quot;apache-tomcat-${TOMCAT_VER}.tar.gz&quot;
+TOMCAT_DIR=&quot;/opt/tomcat&quot;
+TOMCAT_USER=&quot;tomcat&quot;
+JAVA_HOME=&quot;/usr/lib/jvm/java-17-openjdk&quot;
+
+# Validate inputs
+if [[ ! -f &quot;$TOMCAT_TARBALL&quot; ]]; then
+  echo &quot;❌ Missing $TOMCAT_TARBALL in current directory.&quot;
+  exit 1
+fi
+
+echo &quot;📦 Installing required packages from local RPMs...&quot;
+dnf install -y ./java-17-openjdk-*.rpm ./selinux-policy-targeted*.rpm ./policycoreutils-python-utils*.rpm
+
+echo &quot;👤 Creating tomcat user/group...&quot;
+useradd -r -M -U -s /sbin/nologin -d &quot;$TOMCAT_DIR&quot; &quot;$TOMCAT_USER&quot; || true
+
+echo &quot;📁 Installing Tomcat to $TOMCAT_DIR...&quot;
+rm -rf &quot;$TOMCAT_DIR&quot;
+mkdir -p &quot;$TOMCAT_DIR&quot;
+tar -xf &quot;$TOMCAT_TARBALL&quot; --strip-components=1 -C &quot;$TOMCAT_DIR&quot;
+chown -R &quot;$TOMCAT_USER:$TOMCAT_USER&quot; &quot;$TOMCAT_DIR&quot;
+
+echo &quot;🔒 Configuring SELinux contexts...&quot;
+semanage fcontext -a -t tomcat_exec_t &quot;${TOMCAT_DIR}/bin(/.*)?&quot;
+semanage fcontext -a -t tomcat_var_run_t &quot;${TOMCAT_DIR}/temp(/.*)?&quot;
+semanage fcontext -a -t tomcat_cache_t &quot;${TOMCAT_DIR}/work(/.*)?&quot;
+semanage fcontext -a -t tomcat_log_t &quot;${TOMCAT_DIR}/logs(/.*)?&quot;
+restorecon -Rv &quot;$TOMCAT_DIR&quot;
+
+echo &quot;🛠️ Creating systemd unit...&quot;
+cat &gt; /etc/systemd/system/tomcat.service &lt;&lt;EOF
+[Unit]
+Description=Apache Tomcat 10 Web Application Container
+After=network.target
+
+[Service]
+Type=forking
+User=${TOMCAT_USER}
+Group=${TOMCAT_USER}
+Environment=&quot;JAVA_HOME=${JAVA_HOME}&quot;
+Environment=&quot;CATALINA_PID=${TOMCAT_DIR}/temp/tomcat.pid&quot;
+Environment=&quot;CATALINA_HOME=${TOMCAT_DIR}&quot;
+Environment=&quot;CATALINA_BASE=${TOMCAT_DIR}&quot;
+Environment=&quot;CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC&quot;
+Environment=&quot;JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom&quot;
+ExecStart=${TOMCAT_DIR}/bin/startup.sh
+ExecStop=${TOMCAT_DIR}/bin/shutdown.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo &quot;🚀 Enabling and starting Tomcat...&quot;
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable --now tomcat
+
+echo &quot;✅ Tomcat ${TOMCAT_VER} installed and running on port 8080.&quot;
+</code></pre>
+
+<hr>
+
+<h3>📦 Packaging for Transfer</h3>
+
+<p>On a connected machine:</p>
+
+<pre><code class="language-bash">mkdir tomcat-offline &amp;&amp; cd tomcat-offline
+wget https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.27/bin/apache-tomcat-10.1.27.tar.gz
+dnf download --resolve java-17-openjdk selinux-policy-targeted policycoreutils-python-utils
+cp /path/to/install_tomcat10.sh .
+tar czf tomcat10-offline-bundle.tar.gz *
+</code></pre>
+
+<p>Transfer the <code>.tar.gz</code> to your target and extract it, then:</p>
+
+<pre><code class="language-bash">sudo bash install_tomcat10.sh
+</code></pre>
+
+<hr>
+
+<h2>Post-install checks</h2>
+
+<p>Verify SELinux context / run OpenSCAP</p>
+
+<p>Here is a <strong>companion script</strong> to verify the <strong>SELinux context</strong>, <strong>systemd unit status</strong>, and optionally run a <strong>SCAP scan</strong> (if tools are installed) to validate that your air-gapped Tomcat installation meets STIG/FIPS expectations.</p>
+
+<hr>
+
+<h3>🧪 <code>verify_tomcat10.sh</code></h3>
+
+<pre><code class="language-bash">#!/bin/bash
+set -euo pipefail
+
+TOMCAT_DIR=&quot;/opt/tomcat&quot;
+TOMCAT_USER=&quot;tomcat&quot;
+EXPECTED_TYPES=(
+  &quot;tomcat_exec_t:${TOMCAT_DIR}/bin&quot;
+  &quot;tomcat_var_run_t:${TOMCAT_DIR}/temp&quot;
+  &quot;tomcat_cache_t:${TOMCAT_DIR}/work&quot;
+  &quot;tomcat_log_t:${TOMCAT_DIR}/logs&quot;
+)
+
+echo &quot;🔎 Verifying SELinux context assignments...&quot;
+fail=0
+for pair in &quot;${EXPECTED_TYPES[@]}&quot;; do
+  type=${pair%%:*}
+  path=${pair#*:}
+  actual=$(ls -Zd &quot;$path&quot; | awk '{print $1}')
+  if [[ &quot;$actual&quot; != &quot;$type&quot; ]]; then
+    echo &quot;❌ $path has incorrect SELinux type: $actual (expected $type)&quot;
+    fail=1
+  else
+    echo &quot;✅ $path is labeled correctly: $type&quot;
+  fi
+done
+
+[[ $fail -eq 0 ]] || { echo &quot;❌ SELinux context check failed.&quot;; exit 1; }
+
+echo &quot;📡 Checking Tomcat systemd service...&quot;
+if ! systemctl is-enabled --quiet tomcat; then
+  echo &quot;❌ Tomcat service is not enabled&quot;
+  exit 1
+fi
+
+if ! systemctl is-active --quiet tomcat; then
+  echo &quot;❌ Tomcat service is not active&quot;
+  journalctl -u tomcat --no-pager -n 20
+  exit 1
+fi
+echo &quot;✅ Tomcat service is enabled and active.&quot;
+
+echo &quot;🧪 Running optional SCAP compliance scan (if available)...&quot;
+if command -v oscap &amp;&gt;/dev/null; then
+  profile=&quot;xccdf_org.ssgproject.content_profile_stig&quot;
+  datastream=&quot;/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml&quot;
+
+  if [[ -f &quot;$datastream&quot; ]]; then
+    oscap xccdf eval \
+      --profile &quot;$profile&quot; \
+      --results &quot;tomcat-scap-results.xml&quot; \
+      --report &quot;tomcat-scap-report.html&quot; \
+      &quot;$datastream&quot;
+    echo &quot;✅ SCAP scan completed. Report: tomcat-scap-report.html&quot;
+  else
+    echo &quot;⚠️ SCAP content not found at $datastream&quot;
+  fi
+else
+  echo &quot;ℹ️ OpenSCAP (oscap) not installed; skipping scan.&quot;
+fi
+</code></pre>
+
+<hr>
+
+<h3>📦 Optional Dependencies:</h3>
+
+<p>Install these <strong>on a connected host</strong> and copy RPMs for offline use:</p>
+
+<pre><code class="language-bash">dnf download --resolve scap-security-guide openscap-scanner
+</code></pre>
+
+<p>On target host:</p>
+
+<pre><code class="language-bash">sudo dnf install ./scap-security-guide*.rpm ./openscap-scanner*.rpm
+</code></pre>
+
+<hr>
+
+<h3>📜 Output:</h3>
+
+<ul>
+<li>Shows current SELinux context validation</li>
+<li>Prints systemd status</li>
+
+<li><p>Optionally generates:</p>
+
+<ul>
+<li><code>tomcat-scap-report.html</code> — human-readable report</li>
+<li><code>tomcat-scap-results.xml</code> — machine-readable results</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

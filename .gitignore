@@ -1,0 +1,4 @@
+*.log
+LOG.*
+README.html
+!REFs/*.sql

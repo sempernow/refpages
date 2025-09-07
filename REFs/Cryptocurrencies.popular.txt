@@ -1,0 +1,369 @@
+REFs 
+====
+    [Cryptocurrency Market Caps](https://coinmarketcap.com/)
+    [The Different Proofs of Crypto Currency](https://steemit.com/cryptocurrency/@killjoy/the-different-proofs-of-crypto-currency)
+
+Bitcoin [BTC] 2009
+=======
+    PoW cryptocurrency and digital payment system; blockchain based; first decentralized digital currency [Satoshi Nakamoto]  https://en.wikipedia.org/wiki/Bitcoin
+
+    Hashcash 
+        PoW algo, used by Bitcoin  
+
+    Bitcoin Cash [BCH] 2017 
+    ------------
+        Original; 3% hold outs from hard fork. 
+
+    "Mastering Bitcoin"  http://chimera.labs.oreilly.com/books/1234000001802/ch01.html
+    HashCash  https://en.wikipedia.org/wiki/Hashcash
+
+Ethereum [ETH] 2015
+========
+    "A ... TRANSACTION LEDGER"; hybid PoW (PoW) + Proof-of-Stake (PoS); plans to go fully PoS; A distributed P2P architecture with all the parts; network stack, distributed storage, protocols, turing-complete programming language, virtual machine, token and apps [Dapp] thereof; all executing blockchain/PoW -based contracts and protocols; effectively a new, 'decentralized' version of the web entirely orthogonal to the existing one, but one that can communicate with the existing one in some manner
+
+    TRANSACTION SINGLETON MACHINE
+        The single canonical instance of the machine responsible for all the transactions; a single global truth that everyone believes in; SHARED-STATE [acounts record] 
+
+        WORLD STATE; Ethereum’s global state consists of a mapping between account addresses and the account states, per MERKLE TREE; large number of leaf nodes at the bottom of the tree that contain the underlying data; the root node of this structure is cryptographically dependent on the data stored in the tree; secures the data; block header includes the root hash of the state, transactions, and receipts trees; any node can validate a small part of state of Ethereum without needing to store the entire state, which can be huge.
+
+    ACCOUNTS are 20-byte [160-bit] address; identifier; interact through  message-passing framework; TWO TYPES of accounts:
+
+        1. EXTERNALLY OWNED account
+
+            controlled by private keys; no code associated with them; can send messages to other externally owned accounts OR to other contract accounts by creating and signing a transaction using its private key; message between two externally owned accounts is simply a value transfer; a message to a contract account activates the contract account’s code (e.g. to transfer tokens, write to internal storage, mint new tokens, perform some calculation, create new contracts, etc.).
+
+        2. CONTRACT account
+
+            controlled by, and associated with, their CONTRACT CODE; CANNOT initiate new transactions on their own; must be fired externally.
+
+        ACCOUNT STATEs: 4 
+        - nonce
+            If External Account, it's the number of transactions sent from the account’s address
+            If Contract Account, it's the number of contracts created by the account.
+        -  balance
+            Wei [10^18 Wei = 1 Ether]; (1G x 1G) Wei = 1 Eth; 1 billion billion Wei equals 1 Ether
+        - storageRoot
+            hash of the root node of a Merkle Tree; tree encodes the hash of the storage contents of this account; empty by default.
+        - codeHash
+            hash of the EVM (Ethereum Virtual Machine) code of this account.
+            If Externally Accounts, is the hash of the empty string
+            If Contract Account, is hash of the code
+
+    GAS / PAYMENT
+        Every transaction incurs a fee; Gas is the unit used to measure the fees required for a particular computation. GAS PRICE is the amount of Ether the SENDER is willing to spend per unit of gas [gwei]; 1 gwei = 1G Wei; SPENDER pays gas, which is sent to the “beneficiary” address [typically the miner’s address; miner performs the calculations enabling/recording the transaction].
+
+        With every transaction, a sender sets a gas limit and gas price; 
+        price x limit = MAX the sender is willing to pay for executing a transaction. 
+        E.g., if SENDER sets gas limit to 50,000 and gas price to 20 gwei, then
+
+            50,000 x 20 gwei = 50,000 x 20 x 1G Wei = 1,000,000 x 1G Wei 
+            = (1M x 1G) / (1G X 1G) = 0.001 Ether 
+    
+        ... is MAX price the SENDER is willing to spend to execute the transaction; sender is refunded for any unused gas at the end of the transaction, exchanged at the original rate.
+
+        MINERs are FREE to EXECUTE or IGNORE any TRANSACTION; advertise MINIMUM GAS PRICE required to execute.
+
+        STORAGE FEEs; gas also used to pay; incentive to keep small; database size increases storage required ON ALL NODES; any transaction that also clears an entry in storage, then the fee for executing that operation of is waived, and a refund is given for freeing up storage space.
+
+    TRANSACTIONS
+         a transaction is a cryptographically signed piece of instruction that is generated by an externally owned account, serialized, and then submitted to the blockchain; There are two types of transactions: message calls and contract creations; All transactions contain the following components:
+
+        - nonce;     number of transactions sent by sender
+        - gasPrice;  Wei per unit of gas
+        - gasLimit;  max and paid upfront
+        - to;        recipient address; empty if contract
+        - value;     amount to transfer to recipient, in Wei
+        - v,r,s;     create sender's transaction signature
+        - init;      contract-creation only
+        - data;      optional
+
+     MESSAGES
+        Inter-contract communications; fires code of recipient contract; INTERNAL TRANSACTIONS; NOT generated by Externally Owned Accounts; contracts communicate per SCOPE; virtual objects; not serialized and only exist in the Ethereum execution environment.
+
+    BLOCKS
+        A group of transactions; blockchain is a chained series of such blocks; a block consists of
+
+        - header
+        - info about the set of transactions included in that block
+        - a set of other block headers for the current block’s OMMERs
+
+            parentHash, ommersHash, beneficiary, stateRoot, transactionsRoot, receiptsRoot, logsBloom, difficulty, number, gasLimit, gasUsed, timestamp, extraData, mixHash, nonce
+
+        - Merkle Tree structures: stateRoot, transactionsRoot, receiptsRoot
+
+        - DIFFICULTY vs. TIME; PROTOCOL ADJUSTS to maintain 15 sec transaction times.
+
+        OMMER
+            ommited but valid Orphaned Blocks; a block whose parent is equal to the parent of the current block’s parent; miners are rewarded for them.
+
+    DAO
+        Decentralized Autonomous Org; project hacked/looted; spawned hard fork; Ethereum [ETH] + Ethereum Classic [ETC]
+    
+    Ðapp 
+        Any Distributed App on Ethereum network; 
+            Ð is Unicode/UTF-8 'LATIN CAPITAL LETTER ETH'
+            Unicode Escape Sequence: Python: u'\xd0', JS: '\u00d0'
+            Hexidecimal Escape Sequence: Python: '\xc3\x90'
+
+    Swarm 
+        a distributed storage platform and content distribution service; native base layer service of the ethereum web 3 stack; defines the `bzz` subprotocol running on the ethereum devp2p network  The primary objective of Swarm is to provide a sufficiently decentralized and redundant store of Ethereum’s public record, in particular to store and distribute dapp code and data as well as block chain data. From an economic point of view, it allows participants to efficiently pool their storage and bandwidth resources in order to provide the aforementioned services to all participants.
+        https://swarm-guide.readthedocs.io/en/latest/
+        http://swarm-gateways.net/bzz:/theswarm.eth/
+
+        A network of nodes for secure data storage without trusting the nodes; includes a peer-to-peer messaging protocol, PSS; data per (hashed) chunks; knows nearest neighbor to every node; uses Ethereum peer to peer networking stack offering authenticated, encrypted RLP-serialised transport; kademlia overlay topology for efficient routing; PSS uses whisper envelopes (cryptography subsystem) to offer end-to-end encryption for privacy and allows partial addressing to allow client configurable recipient anonymity; message relaying offers full sender anonymity. PSS provides a way for protocols to be mounted over arbitrary subset of non-directly connected nodes and allows UDP-like protocols running on such sub-networks.  
+        https://www.youtube.com/watch?v=fNlO5XJv9mI 
+        
+    Whisper 
+        a communication protocol for DApps to communicate with each other.
+        https://github.com/ethereum/wiki/wiki/Whisper
+
+    Mist 
+        Electron-based Browser for Ethereum's network; run [serverless] Dapps
+        App interface; Dapp is detached from UI.
+        Dapp How-to  https://blog.ethereum.org/2016/07/12/build-server-less-applications-mist/
+        
+        Electron
+            cross platform DESKTOP app framework; JS/HTML/CSS; Chromium + Node.js; http://electron.atom.io
+
+    Solidity
+        a contract-oriented language for Ethereum Virtual Machine (EVM); Syntax is similar to JS; used for building Dapps  https://solidity.readthedocs.io/en/latest/
+        
+        Remix
+            Browser-based IDE for writing Solidity code.
+    
+    Meteor  
+        JS app platform; full-stack JavaScript framework designed exclusively for SPAs.
+        Data-only over the wire; no HTML; simple data binding; Distributed Data Protocol and a pub–sub pattern to automatically propagate data changes to clients in real-time without requiring the developer to write any synchronization code. Full stack reactivity ensures that all layers, from the database to the templates, update themselves automatically when necessary. Ecosystem packages such as Server Side Rendering address the problem of SEO.
+        Ethereum Apps/Network uses it. 
+        Meteor.com       https://www.meteor.com/tutorials
+        Meteor @ GitHub  https://github.com/meteor/meteor
+        Hosting Options  https://wsvincent.com/meteor-hosting-options/
+
+        Galaxy
+            Meteor.com platform-as-a-service for Meteor apps;
+            Docker + AWS
+
+    YELLOW PAPER
+        Ethereum's formal specification
+
+    Wikipedia                 https://en.wikipedia.org/wiki/Ethereum   
+    Ethereum/Wiki [GitHub]    https://github.com/ethereum/wiki/wiki      
+    YELLOW PAPER              https://github.com/ethereum/yellowpaper
+    "How Does Ethereum Work"  https://medium.com/@preethikasireddy/how-does-ethereum-work-anyway-22d1df506369
+
+NEO 
+===
+    Chinese Ethereum; blockchain platform based on OnChain's cryptocurrency; Proof-of-Stake (PoS); enables development of digital assets + smart contracts; 2 tokens: NEO [Antshares (ANS)] + GAS [Antcoins (ANC)]; Da Hongfei is the (non-technical) "leader", and CEO of OnChain; Zhang Zhengwen is the core developer, and founder.
+
+    Onchain: 
+        a private VC-backed company with over 40 employees.  
+    NEO:     
+        a public platform with different community-led groups contributing to this public project.  
+
+    Neo Crypto     https://neocrypto.org/  
+    Wikipedia      https://en.wikipedia.org/wiki/NEO_(cryptocurrency)  
+    OnChain        http://www.onchain.com/en-us/ 
+    HyperLedger    https://en.wikipedia.org/wiki/Hyperledger  
+    NEO+OnChain    https://hackernoon.com/neo-onchain-and-its-ultimate-plan-dna-4c33e9b6bfaa
+    NEO news       https://coincentral.com/what-is-neo-cryptocurrency/  
+
+    DELEGATED BYZANTINE FAULT TOLERANCE (DBFT) ALGORITHM
+        Proof-of-Stake (PoS); a consensus mechanism; allows the system to resist the Byzantine Generals problem and maintains consensus even if some nodes bare malicious intentions
+
+    OnChain (formerly Antshares) 
+        NEO's blockchain; a sister company in China; works with Chinese gov't (Legal Chain) + Japan gov't + Alibaba + Microsoft China, etal; touts 'Distributed Network Architecture' (DNA); Developed with HyperChain
+
+        NEO is considered more of a open-source public cloud model which will be separate from OnChain but can also interconnected in terms of the cross chain functionality per NeoX. 
+
+    NEO [Antshares (ANS)]
+        100M max; 50M current; INDIVISIBLE (min is 1); NEO produces GAS for holders which is needed to use the NEO network and suite of services.  This would presumably create buying pressure (demand) as its used for the ecosystem which is good for holders. The more projects using the NEO network the more demand for GAS tokens
+
+    GAS [Antcoins (ANC)] 
+        100M max; 10M current; rewards wallets for holding NEO. Similar to “ether” with Ethereum operating as fuel for using the ecosystem, GAS serves a similar function. The difference with NEO is that GAS was given its own special status as a token. (Similar to Steemit tokens, STEEM and Steem Dollars, SBD).
+
+        GAS is a Proof of Stake like incentive generated with each new NEO block. The release will entail 8 GAS per block reduce by 1 each year (So year 2 will be 7 GAS, year 3, 6 and so on). This will go until 100 million GAS are produced after which there will be no further GAS produced.
+
+    NeoX
+        a system enabling execute and operate across various Blockchains
+
+    NEO Contract
+        the mechanism for creating smart contracts; integrates pre-existing codebases (e.g. C#, VB.Net, F#, Java, Kotlin)
+
+    NeoFS
+        a service which allows decentralized storage (like a peer to peer Dropbox)
+
+    NeoQ
+        lattice-based cryptographic mechanism which creates problems that cannot be solved by quantum computers and ensuring being quantum-proof
+
+Ripple [XRP] 2012
+======
+    A PAYMENT PROTOCOL; Ripple Transaction Protocol (RTXP); CONCENSUS LEDGER; was OpenCoin [@EDonkey]; XRP is the network's one and only NATIVE DIGITAL ASSET; divisible to 6 decimal places; 1M drop = 1 XRP; 100 billion XRP created at inception, with no more allowed, so XRP is "scarce asset with decreasing supply"; Not dependent on any third party for redemption; other currencies therein are debt instruments (i.e. liabilities), and exist in the form of balances; users NOT required to use XRP as store of value or medium of exchange; enables instant and direct transfer of money between two parties; leader in adoption rate by financial institutions; cross-currency transactions in 3 to 5 sec.
+    
+    GATEWAYs 
+        any person or organization that enables users to put money into and take money out of Ripple's liquidity pool; accepts currency deposits from users and issues balances into Ripple's distributed ledger; redeem ledger balances against the deposits they hold when currency is withdrawn; similar to banks, yet they SHARE ONE GLOBAL LEDGER known as the Ripple protocol.
+        
+        E.g., Bitstamp  https://en.wikipedia.org/wiki/Bitstamp .
+
+    CONSENSUS LEDGER 
+        Ripple relies on a common shared ledger, which is a DISTRIBUTED DATABASE storing information about all Ripple accounts; "managed by a network of independent validating servers that constantly compare their transaction records." Servers could belong to anyone, including banks or market makers; the last closed ledger is a perfect record of all Ripple accounts as determined by the network of servers; server determines which transactions to apply based on if a transaction came from a specified node in the ‘unique node list’ or (UNL); if agreed upon by a "supermajority" of peers, then considered validated, else the consensus process is again attempted by the nodes, each round reducing disagreement, until the supermajority is reached. While users may assemble their own UNL nodes and have full control over which nodes they trust, most people will use the default UNL supplied by the client app.
+
+    BITCOIN BRIDGE 
+        A link between the Ripple and bitcoin ecosystems; to pay any bitcoin user straight from a Ripple account without ever needing to hold any of the digital currency; any merchant accepting bitcoins has the potential to accept any currency in the world; allows any Ripple user to send bitcoins without having to use a central exchange such as BTC-e to acquire them. 
+
+    MARKET MAKERS 
+        Any user on Ripple can act as a market maker by offering an arbitrage service such as providing market liquidity, intra-gateway currency conversion, rippling, etc. Market makers can also be hedge funds or currency trading desks. According to the Ripple website, "by holding balances in multiple currencies and connecting to multiple gateways, market makers facilitate payments between users where no direct trust exists, enabling exchanges across gateways". With a sufficient number of market makers, the path finding algorithm creates a near frictionless market and enables users to seamlessly pay each other via the network in different currencies, without assuming any undesired foreign exchange risk. 
+
+    OPEN API
+        payment network API based on the popular REST API standard. Used by Magneto; an e-commerce platform with Ripple extension.
+
+    HISTORY
+        EDonkey Network; 
+            2011; Arthur Britto and David Schwartz  
+            https://en.wikipedia.org/wiki/EDonkey_network
+            a digital currency system in which transactions were verified by consensus among members of the network, rather than by the mining process; OpenCoin
+            
+            Also, P2P file transfers; Razorback2 was a server of the eDonkey network, known for being able to handle 1 million users simultaneously, was shutdown by Belgium; EDonkey is #2 today, after BitTorrent
+
+    Ripple.com  https://ripple.com/
+    Wikipedia   http://bit.ly/1R1yii0  
+    GitHub      https://github.com/ripple/rippled https://ripple.com/
+    Magneto     https://magento.com/  (Adobe owns it)
+
+
+Litecoin [LTC] 2011
+========
+    A Bitcoin fork  https://en.wikipedia.org/wiki/Litecoin
+    - Litecoin Network aims to process a block every 2.5 minutes, rather than Bitcoin's 10 minutes
+    - greater resistance to a double spending attack over the same period as Bitcoin.
+    - uses scrypt in its proof-of-work algorithm, a sequential memory-hard function requiring asymptotically more memory than an algorithm which is not memory-hard.
+    - will produce 84 million Litecoins, or four times as many currency units as will be issued by the Bitcoin Network.
+    
+    
+NEM [NEM] 2015
+===
+    P2P cryptocurrency and blockchain platform; proof-of-importance (POI) algorithm, multisignature accounts, encrypted messaging, and an Eigentrust++ reputation system; used in a commercial blockchain called Mijin; being tested by financial institutions and private companies in Japan and internationally http://bit.ly/2gHoe4f
+    
+    
+Dash [DASH] 2014
+====
+    was Darkcoin/XCoin; Bitcoin variant; instant transactions (InstantSend); private transactions (PrivateSend); decentralized governance (DGBB); two-tier architecture to power its network; first tier is miners who secure the network and write transactions to the blockchain; second tier are masternodes which enable the advanced features of Dash.  https://en.wikipedia.org/wiki/Dash_(cryptocurrency)
+
+
+Monero [XMR] 2014
+======
+    proof-of-work; mine on ordinary machines; highly scalable; CryptoNote protocol; AlphaBay dark-net mkt was its main use; police shut it down July 2017.  https://en.wikipedia.org/wiki/Monero_(cryptocurrency)
+
+    CryptoNote 
+    ----------
+     an application layer protocol that powers several decentralized PRIVACY ORIENTED digital currencies; ANONYMOUS BLOCKCHAIN; distributed public ledger, but transaction data obscured; full data access requires secret key of either sender/reciever.  https://en.wikipedia.org/wiki/CryptoNote
+     
+
+IOTA [MIOTA] 2016
+====
+    distributed ledger; DIRECTED ACYCLIC GRAPH (DAG) instead of blockchain; currently operates using a central intermediary; focused on secure comms and payments between IoT machines; transactions are free regardless of their size, confirmations times are fast, "easily scales" to handle unlimited number of transactions
+
+    IOTA Foundation oversees; a Linux Foundation-like non-profit dedicated to developing the technology and maintaining it license-free for all developers to work with; partnering with Volkswagen and Innogy to develop CarPass, which enables secure audit trails, digital identifies, and charging networks for cars; partnering with Deutsche Telekom, Microsoft, Fujitsu,and Samsung; opened up a data marketplace using IOTA technology; founding member of the Trusted IOT Alliance, which includes the companies Bosch, Consensys, USbank, and Cisco.
+
+    https://en.wikipedia.org/wiki/IOTA_(technology)
+
+
+OmiseGO [OMG] 2017
+=======
+    Ethereum-based financial technology for use in digital wallets; enables real-time, peer-to-peer value exchange and payment services agnostically across jurisdictions and organizational silos, and across both fiat money and decentralized currencies. Designed to enable financial inclusion and disrupt existing institutions; access via OmiseGO network and digital wallet framework, starting in Q4 2017.  https://omg.omise.co/
+
+
+Qtum [QTUM] 2017
+====
+    - Blockchain-enabled smart contracts
+    - proof-ofstake validation for transactions
+    - mobile/wallets/ payment verification (SPV) techniques
+    
+    Ethereum smart contracts:
+    - uses computationally expensive proof-of-work validation
+    - is expected to hard-fork multiple times in the future
+    - requires downloading the entire blockchain
+    - limited utility and lack formal semantics
+
+    Qtum smart-contract framework:
+    - sociotechnical application suitability
+    - formal semantics language expressiveness
+    - provision of smart-contract template libraries
+        
+    https://qtum.org/en/
+
+
+Steem [STEEM] 2016
+=====
+    a zero-fee, near instant settlement blockchain of transferrable tokens; processes more transactions per second than the Bitcoin or Ethereum networks; the blockchain is text content and metadata; a database that applications or websites can connect to. Through these apps, Steem users can transact and interact with the Steem database; blocks are groups of signed transactions; produced in rounds; 21 WINESSES produce and sign the blocks; build upon OpenLedger/Graphene/Bitshares Framework/Toolkit; which competes with Ethereum ecosystem. 
+
+        2017-11-03 - NOT responding to new user sign-ups.
+
+        Graphene [GitHub]      https://github.com/cryptonomex/graphene
+        Bitshares/OpenLedger   https://bitshares.openledger.info/create-account     
+
+    ACCOUNT IDENTITY is by alphanumeric names instead of their cryptographic hashes; transactions are  occur directly between identities; easier for humans than hexadecimal hashes.
+
+    DECENTRALIZED CONSENSUS ALGORITHM is by a method called DELEGATED PROOF OF STAKE, where block-creating accounts (WITNESSES) are ELECTED by Steem users. Instead of relying on proof of work to find blocks, the Steem network actively schedules blockchain transactions to be processed in blocks every 3 seconds. Block producers are given a small part of the rewards created in each block; the rest is paid to authors and curators.
+
+    ZERO TRANSACTION FEEs
+        BANDWIDTH,​ ​instead​ ​of​ micropayments, controls/disincentivizes spam etal (from entering into the ledger/blockchain); bandwidth is required to transact, so the network implements ​DYNAMIC FRACTIONAL RESERVES on the network's bandwith; network constantly calulates a fractional reserve ratio (max-bandwidth-per-share); each account is limited thereof by its share of (network) tokens (STEEM); exceeding their limit delays their next transaction until their average ​​falls​ ​back below it; accounts need about 10 times the minimum required to transact weekly for reasonable user experience; MUCH more resistent to attack than fee-based method.
+
+            REF: "full reserve" vs. "fractional reserve" systems: In "full" system, each user is allowed the fraction of total bandwidth proportional to their shares. In "fractional" system, each user can use more, so long as not everyone uses it at the same time; a congested network must revert to a full reserve system. The challenge is setting the proper​ ​FRACTIONAL ​​RESERVE ​RATIO.
+
+    SMART MEDIA TOKEN (SMT) 
+        2017; a native digital asset on the Steem blockchain that can be quickly launched by anyone to help monetize online content and create incentives to encourage desired user behavior; similar to Ethereum's ERC-20 tokens, but with certain built-in ‘Proof-of-Brain’ properties and a token distribution reward system designed specifically for digital content businesses; Proof-of-Brain is a TOKENS REWARDS ALGORITHM that encourages people to create and curate content; tokens distributed by "upvote" and "like"-based algorithms integrated with websites to align incentives between application owners and community members
+
+    STEEMIT.COM 
+        Steemit is a social news service which runs a blogging and social networking website on top of a blockchain database, known as Steem. The service produces STEEM and Steem Dollars which are tradeable tokens users obtain for posting, discovering, and commenting on interesting content; text content is saved in the blockchain.
+
+        Non-Steemit apps and websites use the same Steem user credentials as used on Steemit; the user account and password are part of the network database, using public-key cryptography. Only the user who owns an account can authenticate actions (such as commenting, voting, or transferring with their password or appropriate key). Each account has a set of private keys with different access privileges. The lowest security level key allows posting, commenting and voting, but not transfers of currency. Therefore, with a hierarchy of keys, it is possible to use other Steem faucets without risking a loss of funds or account control.
+
+        AUTHORs/CURATORs 
+            Curators upvote (discover) posts and comments of authors (content creators); upvoted authors and curators receive a monetary reward; vote strength and curation rewards are influenced by the amount of STEEM Power held by the voter.
+
+        REPUTATION SYSTEM
+            new accounts start with a reputation of 25. An account's received votes influence its reputation, up and down, incentivizing online etiquette and community interaction.
+
+        REWARDs 
+            Post and comment rewards are split between author (75%) and curators (25%); by default, paid in STEEM Power (50%) and liquid tokens (50%); optionally, 100% payment in STEEM Power; awarded to authors and commenters 7 days after a post or comment is made; post authors may also choose to decline payouts.
+
+        SUBJECTIVE PROOF OF WORK (PoW)
+            vs Objective PoW such as mining; an alternate approach to distributing a currency; much broader application; allows for both buy-in and work-in; can be applied to build a community around any concept; can vote to reinforce the community values or purpose.
+
+        RATE-LIMITED VOTING 
+            The more frequently a user votes, the less their vote counts; limits abuse; voting power recharges 20% per day.
+
+    FAUCET  
+        A frontend website portal is known as a faucet; have been created by third parties; offer alternative interface designs or features; open and permissionless nature of Steem network allows third-party websites and apps to connect and interact with the Steem database and blockchain. 
+
+    3 CURRENCIES:
+    
+        STEEM
+            the network's native token (STEEM); liquid; bought in an exchange and converted into Steem Dollars or STEEM Power.
+            
+        STEEM POWER (SP)
+            access token; STEEM that has been entered into a smart contract; locked into its vesting fund for 3 months [13 weeks]; pays interest (15%/yr); represents the amount of influence an account has compared to the rest of the network. The more SP an account has, the higher influence its vote has on posts or comments; determines an account's weight for witness approval voting; used to upvote content and get curating rewards. The more SP a voter has the more SP he'll generate for himself and the more SBD for the content creator; EARLIEST VOTES GETS THE BIGGEST SHARE of the reward.
+
+            Accounts are created with a small amount of deposited STEEM in the form of SP. Content creators have the option to choose post rewards of 100% SP instead of the default 50% liquid currency (a combination of STEEM and Steem Dollars) and 50% SP.
+
+            POWERING UP/DOWN 
+                Converting STEEM to SP is powering UP; converting SP to STEEM is powering DOWN; SP cannot be transferred or traded directly, but the account owner can choose to power down, i.e., withdraw liquid STEEM in weekly payments at a rate of up to 1/13th of the account's total SP; account loses its voting influence in proportion to the STEEM withdrawn.
+            
+        STEEM BLOCKCHAIN DOLLARS (SBD)
+            a.k.a. "Steem Based Dollars" a.k.a. "Steem Dollars"; a DEBT instrument like a Convertible Note; kept @ 1 USD; created and rewarded per blockchain algorithm; limits max SBD-to-STEEM (debt-to-ownership) ratio to 10%; tradable (one-way) to STEEM [~5 days]; protects content creators from volatitlity; PAYS INTEREST set by price feed publishers who are voted on by SP shareholders.
+            
+    WALLET
+        Steem wallets are all publicly visible and tied explicitly to a particular account name; the Steemit Wallet page shows the tokens and voting power belonging to an account; owner of a wallet initiates transactions of Steem (Backed) Dollars (SBD) and STEEM from the Steemit Wallet page; owner controls powering up or down, transferring liquid tokens to and from savings balances, and conversion of Steem Dollars to STEEM. Savings balances are provided as a security measure and take 3 days for a withdrawal. Powering up is immediate, but POWERING DOWN CAN TAKE WEEKS. Buying or selling STEEM (converting to or from SBD) can be initiated using the Market by creating Buy or Sell orders.
+
+    Steemit.com  https://www.steemit.com/
+    steem.io     https://steem.io/documentation/
+    GitHub       https://github.com/steemit/steem
+    Wikipedia    https://en.wikipedia.org/wiki/Steemit
+
+
+TETHER [USDT] 2016
+======
+    A digital token backed by fiat currency; global ledger; a method to maintain a one-­to-­one reserve ratio between a cryptocurrency token, called tethers, and its associated real­world asset, fiat currency; uses the Bitcoin blockchain, Proof of Reserves, and other audit methods; closely associated with Bitfinex.
+
+    Tether    https://en.wikipedia.org/wiki/Tether_(cryptocurrency)
+    Bitfinex  https://en.wikipedia.org/wiki/Bitfinex

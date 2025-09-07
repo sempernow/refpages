@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AWS.ECS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Elastic Container Service (ECS) (Docker)</h1>
+
+<p>Elastic Container Service; Docker =&gt; EC2;<br>
+Elastic Container Registry (ECR); handles ELB;<br>
+Run/manage containers across a cluster of EC2 instances.<br>
+DevGuide  <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html">https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html</a><br>
+CLI Ref   <a href="https://docs.aws.amazon.com/cli/latest/reference/ecs/index.html">https://docs.aws.amazon.com/cli/latest/reference/ecs/index.html</a></p>
+
+<ul>
+<li><p>Workflow<br>
+CodeCommit (Git) =&gt; Docker CLI =&gt; ECR =&gt; ECS =&gt; EC2 Instance(s)</p>
+
+<h2><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/launch_types.html">Two Launch Types</a></h2></li>
+
+<li><p><strong>Fargate</strong><br>
+Host a cluster on a serverless infra managed by ECS<br>
+Register Task Definition, and Fargate launches it.</p>
+
+<ul>
+<li>Bind Mounts</li>
+<li>Fargate Task Storage (10GB; ephemeral)</li>
+</ul></li>
+
+<li><p><strong>EC2</strong><br>
+Host tasks on a cluster of EC2 instances</p>
+
+<ul>
+<li><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/bind-mounts.html">Bind Mounts</a></li>
+
+<li><p><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-volumes.html">Docker Volumes</a> (EBS:<code>/var/lib/docker/volumes</code>)</p></li>
+
+<li><p>Task Networking @ <code>awsvpc</code> Network Mode</p>
+
+<ul>
+<li>So ECS tasks get same network properties as EC2 instances.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-cli-tutorial-ec2.html">Creating a Cluster with EC2 Task Using AWS CLI</a> [Tutorial]</h2>
+
+<h2>&quot;Deploying Docker to AWS [2017-09-27] [Lynda]&quot;</h2>
+
+<ul>
+<li><p>ECS/ECR (Elastic Container Registry; Repo)<br>
+ECS &gt; Repositories &gt; Create new repo<br>
+View Push Commands &gt; (button; lists relevant <code>aws</code> &amp; <code>docker</code> CLI commands)</p></li>
+
+<li><p>Login to AWS</p>
+
+<pre><code class="language-bash"># Login to AWS  
+aws ecr get-login --no-include-email --region 'us-east-1'
+# Returns login command w/ passord-key-string  ...
+docker login -u AWS -p eyjwXYl4765elwrj8selrle77jq ... https://${AWS_ECR_REPO}.dkr.ecr.us-east-1.amazonaws.com
+# ... copy/paste it back into terminal
+</code></pre></li>
+
+<li><p>Push to AWS</p>
+
+<pre><code class="language-bash"># Push Image to AWS
+docker push &quot;${AWS_ECR_REPO}.dkr.ecr.us-east-1.amazonaws.com/${NAME}:${TAG}&quot;
+</code></pre></li>
+
+<li><p>Create Task<br>
+ECS &gt; Task Definitions</p></li>
+
+<li><p>Run<br>
+ECS &gt; Clusters &gt;<br>
+Task Definition:<br>
+Number of tasks: (replicas/instances)<br>
+Run (button)</p></li>
+</ul>
+
+<h2>ECS &gt; Launch Wizard (Fargate) ... FAILed</h2>
+
+<h2>EKS (Kubernetes)</h2>
+
+<p>Managed Kubernetes; service that handles scaling, upgrades and all of the management of the Kubernetes service and its clusters.  <a href="https://aws.amazon.com/eks/">https://aws.amazon.com/eks/</a></p>
+
+<h2>FarGate</h2>
+
+<p>Managed service for running Docker containers; handles all the underlying infrastructure; like EC2, but &quot;instances&quot; are containers, not VMs.</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

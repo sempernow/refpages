@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Webpack</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://webpack.js.org/" title="Webpack.js.org">Webpack</a> | <a href="https://webpack.js.org/guides/getting-started/">Guides</a></h1>
+
+<p>A stunningly stupid &quot;build tool&quot;. Rigid as Rigamortis, and brittle as cheap china; forbidden filenames; forbidden directory names; the list of forbiddens is damn near infinite. The resulting <code>bundle.js</code> is a horror show. In a word, it's <code>npm</code>.</p>
+
+<pre><code class="language-bash">npm init -y
+npm i webpack --save-dev
+npm i webpack-cli --save-dev
+</code></pre>
+
+<h2>tl;dr</h2>
+
+<p>The resulting build (<code>bundle.js</code>), to import a one-line function, is 100 lines of horrific code. Somehow, they managed to do this even to the ES6 Module system; transmuting its one-liner <code>import { name} ...</code> statement into their <strong><em>big garbled mess</em></strong>. The process is heavily imperative. Its own core config files, <code>package.json</code> and <code>webpack.config.js</code>, mutate with build phases, each of each phase requiring manual edits, and all <strong><em>by design</em></strong>.</p>
+
+<ul>
+<li>The app source files here total <code>300 bytes</code> (not minified), yet their <em>minified production</em> <code>bundle.js</code> is over <code>300%</code> <em>larger</em>. The ratio doesn't improve with project size; it gets worse, because there are more dependencies to track, though needlessly so, thanks to <a href="https://caniuse.com/#feat=es6-module-dynamic-import" title="@ CanIUse.com">ES6 Modules, which work in the browser</a> sans Webpack or any other bundler.</li>
+</ul>
+
+<h3>Mod <a href="webpack.config.js">@ <code>webpack.config.js</code></a></h3>
+
+<ul>
+<li>Must mod/overwrite on devel, test, prod, ...</li>
+</ul>
+
+<h3>Mod <a href="src/index.js">@ <code>index.js</code></a></h3>
+
+<pre><code class="language-js">import { cube } from './math.js'
+</code></pre>
+
+<ul>
+<li>Yes, this ES6 Modules beauty should be the end of it, but no, this is the black-hole of stupid that is the Node ecosystem, so Webpack is going to change this into a hundred or so lines @ <code>bundle.js</code>.</li>
+</ul>
+
+<h3>Mod <a href="src/math.js">@ <code>math.js</code></a></h3>
+
+<h3>Mod <a href="package.json">@ <code>package.json</code></a></h3>
+
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;webpack-x&quot;,
+  &quot;sideEffects&quot;: [
+      &quot;protect-this-polyfill.js&quot;,
+      &quot;*.css&quot;
+      ]
+//...
+&quot;scripts&quot;: {
+    &quot;test&quot;: &quot;echo \&quot;Error: no test specified\&quot; &amp;&amp; exit 1&quot;,
+    &quot;build&quot;: &quot;webpack&quot;
+},
+//...
+</code></pre>
+
+<ul>
+<li>Must mod/overwrite on devel, test, prod, ...</li>
+</ul>
+
+<h3>Build</h3>
+
+<pre><code class="language-bash">npm run build
+</code></pre>
+
+<h3><a href="dist/bundle.js">@ <code>bundle.js</code></a></h3>
+
+<ul>
+<li>Must mod/overwrite on devel, test, prod, ...</li>
+</ul>
+
+<h3><a href="dist/bundle.devel.js">@ <code>bundle.devel.js</code></a> (renamed/saved)</h3>
+
+<ul>
+<li>Must rename, else overwritten by Webpack on prod, as must be its own config file.</li>
+</ul>
+
+<h2><a href="https://webpack.js.org/guides/tree-shaking/" title="Webpack.js.org">Tree Shaking</a></h2>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

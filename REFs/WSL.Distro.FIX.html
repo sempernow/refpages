@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WSL.Distro.FIX</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>WSL :: Manually Uninstall a Distro</h1>
+
+<h1>If distro fails to (re)install, ...</h1>
+
+<p>Delete its folders @ dirs:</p>
+
+<pre><code>C:\Program Files\WindowsApps\  
+    DISTRO
+        \AppxMetadata
+        \Assets
+        \DISTRO.exe (SYNLINK)
+
+C:\Users\X1\AppData\Local\Microsoft\WindowsApps\  
+    DISTRO\DISTRO.exe
+
+C:\Users\X1\AppData\Local\Packages\  
+    DISTRO\
+</code></pre>
+
+<p>Unregister per <code>wslconfig.exe</code></p>
+
+<pre><code class="language-bash">wslconfig /l  # list all distros
+wslconfig /u $_DISTRO
+</code></pre>
+
+<p>Then reinstall the distro normally, through Microsoft Store.</p>
+
+<h2>If FUBAR, then toggle the WSL feature itself (off, then on again)  ...</h2>
+
+<p>@ Start Menu ...</p>
+
+<pre><code>@ Settings (icon) &gt; Apps &amp; features (@ left menu)
+    &gt; Programs and Features  (@ bottom)
+    &gt; Turn Windows features on or off (link)
+    &gt; WSL Windows Subsystem for Linux (check-box)
+</code></pre>
+
+<p>(Reboot each time.)</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

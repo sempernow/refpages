@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win10.Registry.Mods</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Windows (7|10) Registry Mods</h1>
+
+<p>Negotiating the labyrinth.</p>
+
+<h2>Keys affecting File Type Association (FTA) and other useful mods</h2>
+
+<p>Change a filetype's <strong>icon</strong>, reported <strong>type</strong>, and <strong>handler</strong>(s), and/or add a (custom) app to File Explorer's context menu. The relevant registry keys, and two CLI-based methods for modifying them, are detailed herein. One method involves exporting, modifying, and then adding back <code>.reg</code> files. The other method is entirely programmatic. Both allow for scripting to batch process any list of such mods.</p>
+
+<ul>
+<li><p>Some (protected) file types require a two-step process to modify their FTA app or icon; first delete the key, then add it back. This is due to restrictions written into a type's subkey(s). Examples of such are detailed below.</p></li>
+
+<li><p>If changes aren't immediately apparent after modifications, then toggle the targeted type's handler, e.g., to <code>Notepad</code> and then back, per &quot;<code>Open with</code>&quot;-&gt;&quot;<code>Always use ...</code>&quot;, and/or refresh Windows icon cache per <code>ie4uinit.exe -show</code>.</p></li>
+</ul>
+
+<p>Lots of mystery, paranoia, and misinformation surround the Windows registry. Having worked with it quite a bit over the decades, experience indicates that any target key(s) should first be exported and archived, unaltered, as can be the entire registry. Keys can then be restored simply and reliably, unless the damage is too extensive. Again from experience, just about the only way to truly screw things up beyond the target key is to programmatically insert a malformed key or entry. That is, to inject improper syntax. Even then, it takes a very unfortunate mix of such syntax to harm the registry irreparably, or otherwise even affect it beyond the target key. The registry is not fragile.</p>
+
+<h2>FTA entries</h2>
+
+<ul>
+<li>Most reside at subkeys of HKEY_CLASSES_ROOT (<code>HKCR</code>)</li>
+</ul>
+
+<h3><code>HKCR\.{TYPE}</code></h3>
+
+<ul>
+<li><p>Modify only by pointing to a (created) key where the FTA mods reside. A standard naming convention used by applications for their FTAs is <code>HKCR\{APP}.{TYPE}</code> or <code>HKCR\{APP}{TYPE}</code>. Absent any such app, the naming convention is <code>HKCR\{TYPE}file</code> or <code>HKCR\{TYPE}_auto_file</code>. All such keys are equivalents; they're for FTA settings, as detailed later. This key should point to the one desired. E.g., ...</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\.{TYPE}]
+@=&quot;{TYPE}file&quot;
+</code></pre></li>
+
+<li><p>Two entry values prevent certain other filetype mods. <strong>Delete them</strong> as necessary, if they exist.</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\.{TYPE}]
+@=&quot;{TYPE}&quot;
+&quot;EditFlags&quot;=dword:002...
+&quot;FriendlyTypeName&quot;=&quot;@C:\\...\\ieframe.dll,-914&quot;
+</code></pre>
+
+<ul>
+<li><code>&quot;EditFlags&quot;=-</code><br></li>
+<li><code>&quot;FriendlyTypeName&quot;=-</code></li>
+</ul>
+
+<blockquote>
+<p>These entries may also exist at other registry keys regarding the filetype, e.g., at subkeys under the <code>HKCU</code> hive (<code>HKCU\SOFTWARE\...\Explorer\FileExts\.{TYPE}</code>). Such keys regenerate any required subkey per user-select actions, and so may be deleted entirely, as discussed later.</p>
+</blockquote></li>
+
+<li><p>Add <code>{TYPE}</code> filetype to the <code>New</code> file (creation) list @ File Explorer's context menu, along with an optional template file:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\.{TYPE}\ShellNew]
+&quot;NullFile&quot;=&quot;&quot;
+&quot;FileName&quot;=&quot;C:\\path to\\optional template file\\New.{TYPE}&quot;
+</code></pre>
+
+<blockquote>
+<p>This <strong>optional</strong> <code>New</code> list mod is <strong>orthogonal</strong> to FTA mod(s). It's <strong>a very useful mod</strong>, spawining the custom per-type template file anew in the current folder with a single click.</p>
+</blockquote></li>
+</ul>
+
+<h3><code>HKCR\{TYPE}file</code></h3>
+
+<ul>
+<li><p><strong>This is where most FTA customizations should reside</strong>. Mods in this hive (<code>HKCR</code>) persist, survive, and recover from subsequent user-select FTA actions, unlike those in the <code>HKCU</code> hive. Be sure the primary file-type key, <code>HKCR\.{TYPE}</code>, is modified to point to this key, whatever this key is actually named. (See <strong>naming convention</strong> discussed above.)</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\{TYPE}file]
+@=&quot;{TYPE}&quot;
+&quot;Content Type&quot;=&quot;text/{TYPE}&quot;
+&quot;PerceivedType&quot;=&quot;text&quot;
+</code></pre>
+
+<blockquote>
+<p><em>Here only</em>, at the <code>@=&quot;{TYPE}&quot;</code> entry, <code>{TYPE}</code> can be <strong>any string</strong>; it's the <strong>term for the file type</strong> reported by File Explorer, <strong>not a key-name reference</strong> as is that same entry under the <code>HKCR\.{TYPE}</code> key. <em>Confusions abound!</em></p>
+</blockquote></li>
+
+<li><p>Create <code>&quot;NeverShowExt&quot;=&quot;&quot;</code> entry, optionally, to <strong>hide the extension</strong> of <code>{TYPE}</code> <strong>regardless of settings</strong>  at<br>
+File Explorer GUI. The entry is typically inserted here, though elsewhere for certain cases.</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\{TYPE}file]
+ &quot;NeverShowExt&quot;=&quot;&quot;
+</code></pre>
+
+<blockquote>
+<p><code>NeverShowExt</code> mod is only worth the trouble if in developer mode, whereof the File Explorer GUI setting is <code>display known file extensions</code>, which applies to all types. This method overrides that setting per target type, affecting no others.</p>
+</blockquote></li>
+
+<li><p>Set <code>DefaultIcon</code> to the desired (custom) <strong>icon</strong> (path):</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\{TYPE}file\DefaultIcon]
+@=&quot;C:\\ICONS\\{TYPE}.ico,0&quot;
+</code></pre></li>
+
+<li><p>Add FTA app(s) to File Explorer's context menu, as <strong>handlers</strong><br>
+for <code>Open</code>, <code>Edit</code>, <code>Run</code>, ... actions per <code>{TYPE}</code> filetype.</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\{TYPE}file\shell]
+
+[HKEY_CLASSES_ROOT\{TYPE}file\shell\edit]
+
+[HKEY_CLASSES_ROOT\{TYPE}file\shell\edit\command]
+@=&quot;\&quot;C:\\Program Files\\Microsoft VS Code\\Code.exe\&quot; \&quot;%1\&quot;&quot;
+
+[HKEY_CLASSES_ROOT\{TYPE}file\shell\open]
+
+[HKEY_CLASSES_ROOT\{TYPE}file\shell\open\command]
+; This would run the file and any args directly, e.g., '.bat' type
+@=&quot;\&quot;%1\&quot; %*&quot;
+
+[HKEY_CLASSES_ROOT\{TYPE}\shell\run]
+@=&quot;Process per typeProcessor&quot;
+&quot;Icon&quot;=&quot;S:\\path to\\the app\\typeProcessor.exe,0&quot;
+
+[HKEY_CLASSES_ROOT\{TYPE}\shell\run\command]
+@=&quot;\&quot;S:\\path to\\the app\\typeProcessor.exe\&quot; \&quot;%1\&quot;&quot;
+
+</code></pre>
+
+<blockquote>
+<p>Entries in this hive (<code>HKCR</code>) are <strong>not overwritten</strong> by subsequent user actions, unlike those at <code>HKCU</code>. That is, though FTAs (app/icon) are <strong>hijacked</strong> upon any subsequent &quot;<code>Open with</code>&quot;-&gt;&quot;<code>Always use ...</code>&quot; user-select action (<code>UserChoice</code>), they <strong>do restore</strong> whenever that selection is back to the app designated herein. Contrarily, mods @ <code>HKCU</code> <strong>never restore</strong>, since they are overwritten upon any user-select. (See <code>HKCU\...\.{TYPE}\UserChoice</code> section.)</p>
+</blockquote></li>
+</ul>
+
+<blockquote>
+<p>Again, <strong>this subkey name</strong>, <code>{TYPE}file</code>, is <strong>just an example</strong>. Such keys may be <strong>auto-generated</strong> by some related app, per install or other process; or created by us. As mentioned in the section on the primary file-type key, <code>HKCR\.{TYPE}</code>, the standard naming convention for this FTA key, used by applications for their FTAs, is <code>HKCR\{APP}.{TYPE}</code> or <code>HKCR\{APP}{TYPE}</code>. And absent any such app, the naming convention is <code>HKCR\{TYPE}file</code> or <code>HKCR\{TYPE}_auto_file</code>. All such keys are equivalents; they're for these FTA settings. Just make sure the primary key points to the one containing the desired mods, whatever its name. It's okay for several such keys to exist for a given file-type, even though only one is used.</p>
+</blockquote>
+
+<h3><code>HKCR\Applications\{APPNAME}</code></h3>
+
+<ul>
+<li><p>Add an (unregistered) app to File Explorer's Context Menu. Use only when <strong>not</strong> an FTA app; otherwise, use the method shown above, at a <code>HKCR\{TYPE}file\shell</code> sub-key.</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\Applications\{APP}.exe]
+
+[HKEY_CLASSES_ROOT\Applications\{APP}.exe\DefaultIcon]
+@=&quot;S:\\path to\\the app\\{APP}.exe,0&quot;
+
+[HKEY_CLASSES_ROOT\Applications\{APP}.exe\shell]
+
+[HKEY_CLASSES_ROOT\Applications\{APP}.exe\shell\run]
+
+[HKEY_CLASSES_ROOT\Applications\{APP}.exe\shell\run\command]
+@=&quot;\&quot;S:\\path to\\the app\\{APP}.exe\&quot; \&quot;%1\&quot;&quot;
+</code></pre></li>
+</ul>
+
+<h3><code>HKCU\SOFTWARE\...\Explorer\FileExts\.{TYPE}</code></h3>
+
+<ul>
+<li><p>This key has <strong>3 subkeys</strong>, <code>OpenWithList</code>, <code>OpenWithProgids</code>, and <code>UserChoice</code>. They <strong>can all be deleted</strong> and then, for good measure, recreated sans entries. They automatically regenerate/repopulate on any subsequent user-select.</p></li>
+
+<li><p><code>UserChoice</code> sets the FTA; the one system-wide app associated with the filetype.<br>
+Delete the <code>ProgId</code> entry. Okay to also (re)set it, but that is usually unnecessary.</p>
+
+<pre><code>[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.{TYPE}\UserChoice]
+&quot;ProgId&quot;=&quot;{TYPE}file&quot;
+</code></pre>
+
+<ul>
+<li><p>Special cases, such as <code>url</code> and <code>html</code> ...</p>
+
+<pre><code>[HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.html\UserChoice]
+&quot;ProgId&quot;=&quot;FirefoxHTML-308046B0AF4A39CB&quot;
+</code></pre></li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p><code>UserChoice</code> is where FTA and icon settings are <strong>hijacked</strong> per app. The <strong>subkey is overwritten</strong>  per subsequent user-select (<code>UserChoice</code>) actions, &quot;<code>Open with</code>&quot;-&gt;&quot;<code>Always use ...</code>&quot;, unlike setting(s) at the <code>HKCR\{TYPE}file</code> key. Comparing mods at the two hives, <code>HKCR</code> vs. <code>HKCU</code>, while the <em>immediate</em> effects from any user-select actions are the same, the big difference is that <code>HKCR</code> <strong>settings recover</strong> (FTA &amp; icon) upon user-select back to whatever handlers were programmed therein. Whereas any mods here (<code>HKCU\...\UserChoice</code>) are gone, having been overwritten. This is the cause of much user unhappiness.</p>
+</blockquote>
+
+<h3><code>HKCR\Directory</code></h3>
+
+<ul>
+<li><p>Add (non-FTA) apps to File Explorer's context menu.<br>
+Example:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\Directory\Background\shell\CyghereAdmin]
+@=&quot;Cygwin Admin Here&quot;
+&quot;Icon&quot;=&quot;C:\\Cygwin\\Cygwin-Terminal.ico,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\CyghereAdmin\command]
+@=&quot;:\\cygwin\\bin\\minttyAdmin.exe -i /Cygwin-Terminal.ico -e /bin/xhere /bin/bash.exe&quot;
+; This method requires Cygwin's 'chere' package.
+</code></pre>
+
+<blockquote>
+<p>Such mods, in the <code>HKCR\Directory</code> subkey, are <strong>orthogonal</strong> to FTA.</p>
+</blockquote></li>
+</ul>
+
+<h2>Programmatically Add/Modify/Delete Registry Keys</h2>
+
+<ul>
+<li>Two methods, using Windows native command-line tools
+
+<ul>
+<li><code>regedit.exe /s|/e   FILE.reg</code></li>
+<li><code>reg.exe add|delete  KEYpath</code></li>
+</ul></li>
+</ul>
+
+<h3><code>regedit /s FILE.reg</code> method.</h3>
+
+<ul>
+<li><p>Simple, quick, and quite legible:</p>
+
+<ul>
+<li>Export the target (sub)key to a <code>.reg</code> file:<br>
+<code>regedit /e &quot;HKCR.foo.reg&quot; &quot;HKCR\.foo&quot;</code>.<br></li>
+<li>Edit the file, and then load (merge) it back:<br>
+<code>regedit /s &quot;HKCR.foo.reg&quot;</code>.</li>
+</ul></li>
+
+<li><p>Can be made as programmatic as the other method by having some orthogonal process auto-generate the <code>FILE.reg</code>.</p></li>
+</ul>
+
+<h4>Delete</h4>
+
+<p><code>regedit /s FILE.reg</code></p>
+
+<ul>
+<li>Delete (sub)<strong>keys</strong> by <strong>prepending</strong> a hyphen, <code>-</code>, e.g., <code>[-HKEY...]</code></li>
+<li>Delete <strong>entries</strong> by <strong>appending</strong> a hyphen, <code>-</code>, e.g., <code>&quot;Entry&quot;=-</code></li>
+</ul>
+
+<blockquote>
+<p>At times when the <code>reg delete KEYpath /f</code> method fails per <code>DENIED: ...</code>, this method succeeds.</p>
+</blockquote>
+
+<h4>Add</h4>
+
+<p><code>regedit /s FILE.reg</code></p>
+
+<ul>
+<li>Merges the data. Same as double-click on the file, sans query/report GUI. That is, it does NOT remove keys/vals which do not exist in <code>FILE.reg</code>. So, manual or programmatic deletion is required for such effect. Likewise, <strong>before (re)loading</strong> a (modified) key, <strong>remove all irrelevant keys</strong> from the file. If not, it increases the chances of the key merge (partially) failing due to some active process(es) involving those irrelvant subkeys.<br></li>
+</ul>
+
+<h3><code>reg add|delete KEYpath</code> method.</h3>
+
+<ul>
+<li><p>Accepts <strong>abbreviations</strong> for the four main <strong>hive</strong> key-names:</p>
+
+<pre><code>HKEY_LOCAL_MACHINE      HKLM
+HKEY_CURRENT_USER       HKCU
+HKEY_USERS              HKU
+HKEY_CURRENT_CONFIG     HKCC
+</code></pre></li>
+
+<li><p><code>reg query|save ...</code> are also useful here.</p></li>
+</ul>
+
+<h4>Delete</h4>
+
+<pre><code>reg delete ROOTKEY\SubKey /f 
+
+    ROOTKEY  [ HKLM | HKCU | HKCR | HKU | HKCC ]
+
+    /va        delete all values under this key.
+
+    /f         Forces the deletion without prompt.
+</code></pre>
+
+<blockquote>
+<p>E.g., delete the key and all subkeys thereunder:</p>
+</blockquote>
+
+<pre><code>reg delete HKCR\foofile /f   
+</code></pre>
+
+<h4>Add</h4>
+
+<pre><code>reg add ROOTKEY\SubKey ...
+
+    ROOTKEY  [ HKLM | HKCU | HKCR | HKU | HKCC ]
+
+    /v       The value name, under the selected Key, to add.
+
+    /ve      adds an empty value name (Default) for the key
+
+    /t       RegKey data types (defaults to REG_SZ)
+             [ REG_SZ  | REG_MULTI_SZ | REG_EXPAND_SZ |
+             REG_DWORD | REG_QWORD    | REG_BINARY    | REG_NONE ]
+
+    /d       The data to assign to the registry ValueName being added.
+
+    /f       Force overwriting the existing registry entry without prompt.
+</code></pre>
+
+<h3>Examples</h3>
+
+<h4>Add default (custom) icon for filetype <code>foo</code>:</h4>
+
+<pre><code>reg add HKCR\foofile\DefaultIcon /ve /d &quot;C:\ICONS\foo.ico&quot;  
+</code></pre>
+
+<p>Creates a default (<code>REG_SZ</code>) data-type value at an &quot;empty value name&quot;, <code>@=...</code>, entry:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\foofile\DefaultIcon]  
+@=&quot;C:\\ICONS\\foo.ico&quot;  
+</code></pre>
+
+<h4>Add the <code>NeverShowExt</code> value (flag) for filetype <code>foo</code>:</h4>
+
+<pre><code>reg add HKCR\foofile /v &quot;NeverShowExt&quot;
+</code></pre>
+
+<p>Creates a value name having an empty string value of default (<code>REG_SZ</code>) data type:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\foofile]  
+&quot;NeverShowExt&quot;=&quot;&quot;  
+</code></pre>
+
+<h4>Add <code>foo</code> filetype and its template file, <code>New.foo</code>, to File Explorer's <code>New</code> menu:</h4>
+
+<pre><code>reg add HKCR\.foo\ShellNew /v &quot;FileName&quot; /d &quot;C:\ICONS\ShellNew\New.foo&quot;
+reg add HKCR\.foo\ShellNew /v &quot;Nullfile&quot;
+</code></pre>
+
+<p>Creates:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\.foo\ShellNew]
+&quot;FileName&quot;=&quot;C:\\ICONS\\ShellNew\\New.foo&quot;
+&quot;Nullfile&quot;=&quot;&quot;
+</code></pre>
+
+<h4><code>FTA</code>; associate filetype <code>foo</code> with its <code>edit</code> handler (app):</h4>
+
+<pre><code>reg add HKCR\foofile\shell\edit\command /ve /t REG_EXPAND_SZ   
+/d &quot;\&quot;C:\\Program Files\\Microsoft VS Code\\Code.exe\&quot; \&quot;^%1\&quot;&quot;  
+</code></pre>
+
+<p>Creates a <code>REG_EXPAND_SZ</code> data type:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\foofile\shell\edit\command]  
+@=hex(2):22,00,43,00,3a,00,5c,00,5c,00,50,00,72,00,6f,00,67,00,72,00,61,00,6d,\  
+00,20,00,46,00,69,00,6c,00,65,00,73,00,5c,00,5c,00,4d,00,69,00,63,00,72,00,\  
+6f,00,73,00,6f,00,66,00,74,00,20,00,56,00,53,00,20,00,43,00,6f,00,64,00,65,\  
+00,5c,00,5c,00,43,00,6f,00,64,00,65,00,2e,00,65,00,78,00,65,00,22,00,20,00,\  
+22,00,25,00,31,00,22,00,00,00  
+</code></pre>
+
+<h4><code>FTA</code>, same as above, using the default data-type:</h4>
+
+<pre><code>reg add HKCR\foofile\shell\edit\command /ve   
+/d &quot;\&quot;C:\Program Files\Microsoft VS Code\Code.exe\&quot; \&quot;^%1\&quot;&quot; /f  
+</code></pre>
+
+<p>Creates:</p>
+
+<pre><code>[HKEY_CLASSES_ROOT\foofile\shell\edit\command]  
+@=&quot;\&quot;C:\\Program Files\\Microsoft VS Code\\Code.exe\&quot; \&quot;%1\&quot;&quot;  
+</code></pre>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

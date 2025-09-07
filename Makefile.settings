@@ -1,0 +1,20 @@
+##############################################################################
+# Makefile.settings : Environment Variables for Makefile(s)
+##############################################################################
+# Environment variable rules:
+# - Any TRAILING whitespace KILLS its variable value and may break recipes.
+# - ESCAPE only that required by the shell (bash).
+# - Environment Hierarchy:
+#   - Makefile environment OVERRIDEs OS environment lest set per "?=".
+#   - Docker YAML `env_file:` OVERRIDEs OS/Makefile environment.
+#   - Docker YAML `environment:` OVERRIDEs YAML `env_file:`.
+#   - CMDline OVERRIDEs ALL per `make recipeX FOO=newValue BAR=newToo`.
+#
+
+##############################################################################
+# Makefile $(INFO) Meta 
+SHELL   := /bin/bash
+YELLOW  := "\e[1;33m"
+RESTORE := "\e[0m"
+INFO    := @bash -c 'printf $(YELLOW);echo "@ $$1";printf $(RESTORE)' MESSAGE
+#... Usage: `$(INFO) 'whatever'` prints "@ whatever", stylized.

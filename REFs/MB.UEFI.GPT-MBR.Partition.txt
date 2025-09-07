@@ -1,0 +1,243 @@
+Get Partition Type (MBR|GPT)
+============================
+@ diskpart 
+  DISKPART> list disk
+
+    Disk ###  Status         Size     Free     Dyn  Gpt
+    --------  -------------  -------  -------  ---  ---
+    Disk 0    Online          111 GB  1024 KB
+    Disk 1    Online         1863 GB  1024 KB
+    Disk 2    Online           59 GB  1024 KB        * 
+    
+  If GPT, then "Gpt" collumn shows "*" (asterisk).
+  So, e.g., above Disks 0 & 1 are both "MBR"; Disk 2 is "GPT". 
+
+@ Device Manager (GUI)
+  RIGHT-CLICK selected disk @ "Disk drives", then @ popup ...
+  > Properties > Volumes > Populate 
+  See "Partition style" value, e.g., "Master Boot Record (MBR)"
+
+
+
+2018
+====
+Setup USB as Install Media per script ...
+diskpart.exe /s TXTFILE
+TXTFILE, e.g., if USB @ disk 1 ...
+
+  if UEFI machine
+
+    SELECT DISK 1
+    CLEAN
+    CONVERT GPT
+    CREATE PARTITION PRIMARY
+    ACTIVE
+    FORMAT FS=FAT32 QUICK 
+    ASSIGN
+    EXIT
+
+  if not UEFI machine
+
+    SELECT DISK 1
+    CLEAN
+    CONVERT MBR
+    CREATE PARTITION PRIMARY
+    ACTIVE
+    FORMAT FS=NTFS QUICK 
+    ASSIGN
+    EXIT
+
+
+2017 
+====
+
+SSD/HDD
+=======
+  # MBR Disk if Win 7   [ < 4TB]
+  # GPT Disk if Win 10  [GUID Partition Table]
+  
+  GPT/MBR partition scheme is disk-wide; 
+  ENTIRE DISK is EITHER mbr or gpt; 
+  
+  ALL PARTITIONS are DESTROYED by `diskpart convert`
+  
+    @ diskpart
+    
+      list disk 
+      select disk # <<< select # CAREFULLY !!!
+      list disk     <<< shows "*" at selected disk
+      clean
+      convert MBR|GPT 
+  
+  # Partitions per OS/version ...
+  
+    Handled @ OS Install, but for DISM-applied method, must manually prepare by creating the necessary partitions, then applying source [wim] files by DISM, per partition.
+
+  # Win10 Partitions [GPT-based]
+        Size   FS    Type      Name                    Purpose
+        -----  ----  ----      ----                    -------
+    1.  500MB  NTFS  Recovery  "Recovery tools"        Recovery Env. (Menu); contains winre.wim
+    2.  100MB  EFI   System    "EFI System Partition"  Boot; contains BCDstore
+    3.   16MB  MSR   Reserved  "Microsoft Reserved"    Partition management
+    4.  20+GB  NTFS  Primary   "Windows" [OS]          Windows Operating System files
+
+    UEFI/GPT-based hard drive partitions (2017)
+    https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/configure-uefigpt-based-hard-drive-partitions
+
+    @ diskpart
+
+      list disk 
+      select disk # <<< select # CAREFULLY !!!
+      list disk     <<< shows "*" at selected disk
+      clean
+      convert GPT
+
+      1. "System" (EFI)  
+      
+        create partition EFI size=100|260  [512|4k]
+        format quick fs=FAT32 label="System"
+        assign letter="S"
+        
+      2. "Microsoft Reserved" (MSR)
+        
+        create partition MSR size=16
+        
+      3. "Windows"
+
+        create partition primary 
+        shrink minimum=500
+        format quick fs=ntfs label="Windows"
+        assign letter="W"
+        
+      4. "Recovery tools"
+      
+        create partition primary size=500
+        format quick fs=ntfs label="Recovery tools"
+        assign letter="R"
+        set id="de94bba4-06d1-4d40-a16a-bfd50179d6ac"
+        gpt attributes=0x8000000000000001
+        
+        NOT necessary to set gpt attributes, which protect from access/removal. 
+        
+        CAN DELETE this Recovery Partition later, @ Windows Disk Management GUI, but only after 
+        creating a USB recovery drive. 
+        
+        Create a (USB) recovery drive using Start Menu > "Create a recovery drive".
+        May uncheck "Back up ..." to make smallest size. The process typically fails otherwise.
+        
+  System and Utility Partitions
+  
+    The first two partitions, EFI & MSR, are sometimes referred to by Microsoft as the SYSTEM PARTITIONS. By default, they do not appear in File Explorer. This helps protect end users from accidentally modifying a partition.
+
+    Protect end users from accidentally modifying other partitions by IDENTIFYING them as UTILITY PARTITIONS. To set partitions as utility partitions:
+
+    Diskpart.exe 
+
+      list disk
+      select disk 
+      select partition 
+      help gpt                            :: show gpt options 
+      gpt attributes=0x0000000000000001   :: GPT_ATTRIBUTE_PLATFORM_REQUIRED 
+                     0x8000000000000000   :: GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER
+                     0x4000000000000000   :: GPT_BASIC_DATA_ATTRIBUTE_HIDDEN
+                     0x1000000000000000   :: GPT_BASIC_DATA_ATTRIBUTE_READ_ONLY
+    
+    https://msdn.microsoft.com/en-us/library/aa365449(VS.85).aspx
+  
+      
+  # Win 7 Partitions [MBR-based]
+  
+    1. 100MB  FAT32 "System Reserved" [BCDstore/boot]
+    2. xxxGB  NTFS  "System" [THE partition]
+
+    @ diskpart
+
+      list disk 
+      select disk # <<< select # CAREFULLY !!!
+      list disk     <<< shows "*" at selected disk
+      clean
+      convert MBR 
+
+      1. "System Reserved" (FAT32)  
+
+        create partition primary size=100
+        select partition 1
+        format fs=FAT32 label="System Reserved" quick
+        assign letter=R
+        active
+        
+      2. "System" (NTFS)  
+        
+        create partition primary
+        select partition 2
+        format fs=ntfs label=System quick
+        assign letter=C
+      
+USB 
+===
+  MBR if Win 7  [PE]
+  GPT if Win 10 [PE]
+  
+  MB vendors are more supportive of the FAT32 [vs NTFS] filesystem for either MBR or GPT -based disks; *vastly* so of their UEFI compliant firmware; even more so if disk is GPT-based.
+  
+  The USB setup process is to convert USB to mbr|gpt-based per 7|10, then partition, then either apply [wim] files by DISM, or mount+clone an ISO or other such [source] image.
+
+  If ENTIRE disk available, and source is ISO, 
+  then use Rufus, which will select GPT/MBR-based per OS-@-ISO info. 
+  Else, ...
+  
+  # Win 7 or 10 [PE]
+  
+    Only 1 [FAT32] partition needed.
+
+    @ diskpart
+    
+      list disk 
+      select disk # <<< select # CAREFULLY !!!
+      list disk  <<< shows "*" at selected disk
+      clean
+      convert mbr|gpt
+          
+      create partition primary
+      select partition 1
+      format fs=FAT32 label="WinPE" quick
+      assign letter=K
+      active
+
+  NOTE: okay to SCRIPT diskpart.exe per "/s" ... 
+
+    diskpart /s TXTFILE
+    
+  note the symantics :: verb  object
+    
+    list|select|detail  disk|volume|partition
+
+
+HW/UEFI/BIOS
+============
+
+  # ASRock AM1H-ITX [Kabini]
+
+    @ BIOS > USB Config ...
+     USB Legacy ENABLE  # it's the last of several params in USB config section
+
+    @ BIOS > Boot Config 
+     Order/selection/disable ... 
+     are irrelevant; press "F11" on boot.  
+     but set boot order to ...
+     1. SSD
+     2. "USB WD Passport ..." [NOT "UEFI WD Passport ..."]
+
+    @ Boot Menu [F11 on boot]
+     choose "USB ...", NOT "UEFI..."
+     The latter causes infinite hang; pwr button off/on to exit.
+     
+  # ASRock H270M-Pro4 
+   
+    @ Boot Menu [F11 on boot]
+    choose "UEFI ..."  
+  
+Configure UEFI/GPT-Based Hard Drive Partitions by Using Windows PE and DiskPart
+===============================================================================
+  2014 
+  https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-8.1-and-8/hh825686(v=win.10)

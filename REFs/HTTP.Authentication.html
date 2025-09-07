@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTTP.Authentication</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.owasp.org/index.php/The_General_HTTP_Authentication_Framework" title="@ OWASP.org">HTTP Authentication Protocols/Schemes</a></h1>
+
+<h2>See Labs @ <code>DEV/go/.../labs/2-auth/</code> . <a name="labs"></a></h2>
+
+<p><img src="http-authentication-flow.png" alt="HTTP Authentication Flow (PNG)"></p>
+
+<ol>
+<li>Client requests secure resource (URI).</li>
+<li>Response Header (Request from Server)
+
+<ul>
+<li>@ <code>HTTP 401 Unauthorized</code>
+
+<ul>
+<li>If apropos. (Not at login form page.)</li>
+</ul></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/WWW-Authenticate" title="@ MDN"><code>WWW-Authenticate: &lt;type&gt; realm=&lt;realm&gt;</code></a>
+
+<ul>
+<li><a href="https://tools.ietf.org/html/rfc7616#section-3.3" title="RFC 7617, Section 3.3 @ ietf.org">Spec @ Digest Auth</a></li>
+<li><a href="https://tools.ietf.org/html/rfc7616#section-3.9" title="RFC 7617, Section 3.9 @ ietf.org">Example @ Digest Auth</a></li>
+</ul></li>
+</ul></li>
+<li>Request Header (Response from Client)
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization" title="@ MDN"><code>Authorization: &lt;type&gt; &lt;credentials&gt;</code></a></li>
+</ul></li>
+</ol>
+
+<blockquote>
+<p>Note the <code>WWW-Authenticate</code> header triggers a <strong><em>browser popup</em></strong>; &quot;Authentication Required&quot;; a hard-coded login form.</p>
+</blockquote>
+
+<h3>Reference: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication" title="@ developer.mozilla.org">MDN</a></h3>
+
+<h2><a href="https://en.wikipedia.org/wiki/Mutual_authentication" title="@ Wikipedia">Mutual Auth</a> | <a href="https://tools.ietf.org/html/rfc8120#section-1" title="ietf.org">RFC 8120</a> (2017)</h2>
+
+<ul>
+<li>@ Server: <a href="https://github.com/schollz/pake" title="schollz/pake [Golang] @ GitHub">PAKE2 library</a></li>
+<li>@ Browser: <a href="https://github.com/schollz/wasmcrypto" title="schollz/WASMcrypto @ GitHub">WASMcrypto</a></li>
+</ul>
+
+<p>A general framework providing a strong cryptographic solution for password authentications; password-based authenticated key exchange (<strong>PAKE</strong>). Default mode of SSH. <em>When using CA certificates</em>, this protocol is called <em>Mutual TLS</em> (<strong>mTLS</strong>). Isn't as popular as JWT-based schemes, for web applications.</p>
+
+<blockquote>
+<p>[Digest Auth works, but] &hellip; powerful computers &hellip; <strong><em>offline
+   password dictionary attack</em></strong> &hellip; threatening the effectiveness of such hash-based password protections.</p>
+
+<p>[Even with TLS (HTTPS),] &hellip; if the users are fraudulently routed to a &quot;wrong Website&quot; via some kind of social engineering attack (e.g., <strong><em>phishing</em></strong>) and <em>tricked into performing authentication on that site</em> &hellip;</p>
+</blockquote>
+
+<ul>
+<li>No password information exchanged, as with Digest Auth protocol.</li>
+<li>Both server and client must own the valid registered credentials (authentication secret).</li>
+</ul>
+
+<h3>Mutual Authentication :: named messages:</h3>
+
+<ul>
+<li><strong>Authentication Request</strong> (<code>INIT</code>/<code>STALE</code>): <strong>server requests</strong> <em>client start</em>.
+
+<ul>
+<li><code>401-INIT</code>: start  <em>auth protocol</em>.
+
+<ul>
+<li>Also used to indicate an auth failure.</li>
+</ul></li>
+<li><code>401-STALE</code>: start <em>new key exchange</em>.</li>
+</ul></li>
+<li><strong>Authenticated Key Exchange</strong> (<code>KEX</code>): used <strong>by both peers</strong> (server or client) to <em>authenticated and share a cryptographic secret</em>.
+
+<ul>
+<li><code>req-KEX-C1</code>: sent from client.</li>
+<li><code>401-KEX-S1</code>: sent from server; an intermediate response to a <code>req-KEX-C1</code>.</li>
+</ul></li>
+<li><strong>Authentication Verification</strong> (<code>VFY</code>): used <strong>by both peers</strong> to <em>verify the authentication</em> results.
+
+<ul>
+<li><code>req-VFY-C</code>: sent by client to <em>request server authenticate</em> and authorize the client.</li>
+<li><code>200-VFY-S</code>: response sent by server to indicate <em>client authentication succeeded</em>; also contains info necessary for the client to <em>check authenticity of the server</em>.</li>
+</ul></li>
+</ul>
+
+<h2>HMAC/SCRAM (<code>SCRAM-SHA-256</code>) | <a href="https://tools.ietf.org/html/rfc7804#section-3" title="ietf.org">RFC 7804</a>  (2016)</h2>
+
+<p>Salted Challenge Response HTTP Authentication Mechanism (SCRAM)</p>
+
+<p>Challenge/response testing an assertion against its <strong><em>keyed digest</em></strong> (HMAC), so <em>both client and server must have a pre-shared private key</em>. Commonly used to secure APIs.</p>
+
+<p>@ AWS APIs :: <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-auth-using-authorization-header.html" title="docs.aws.amazon.com/AmazonS3">AWS4-HMAC-SHA256</a></p>
+
+<h2>Digest Auth | <a href="https://tools.ietf.org/html/rfc7616#section-3" title="ietf.org">RFC 7616</a> (2015) | <a href="https://tools.ietf.org/html/rfc2617#section-3.1" title="ietf.org">RFC 2617, Section 3</a> (1999) <a name="digest-auth"></a></h2>
+
+<p>The Digest scheme is based on a simple challenge-response paradigm &hellip; challenges using a <a href="https://en.wikipedia.org/wiki/Cryptographic_nonce" title="@ Wikipedia">nonce</a> value [to mitigate <strong><em>replay&nbsp;attacks</em></strong>] &hellip; response contains an <strong><em>unkeyed digest</em></strong>:  <code>user:pass:nonce:HTTPmethod:requestURI</code>.</p>
+
+<p>Requires (pre-existing) <em>shared secret</em> (<code>user:pass</code>) known to both client and server, so this scheme is useful for Login sessions, but not for Sign up. <a href="https://tools.ietf.org/html/rfc7616#section-3.9" title="ietf.org">Example @ RFC 7617, Section 3</a></p>
+
+<h4><code>SHA512(user:pass:keyL:keyU)</code></h4>
+
+<p>In this version, a <code>cnonce</code> is sent back from client. Since server must maintain state anyway, the scheme can add (server-sent) <code>nonce</code> requirement too.</p>
+
+<ul>
+<li>Server <a href="#labs" title="See Labs">(<code>digest.go</code>)</a></li>
+<li>Client <a href="#labs" title="See Labs">(<code>form-login-digest.js</code>)</a></li>
+</ul>
+
+<h2>Basic Auth | <a href="https://tools.ietf.org/html/rfc7617#section-1" title="ietf.org">RFC 7617</a> (2015) | <a href="https://tools.ietf.org/html/rfc2617#section-1" title="ietf.org">RFC 2617</a> (1999)</h2>
+
+<p>This Golang <code>BasicAuth()</code> function is not used here; just a reference&nbsp;&hellip;</p>
+
+<pre><code class="language-golang">func (r *Request) BasicAuth() (username, password string, ok bool)
+</code></pre>
+
+<blockquote>
+<p><a href="https://golang.org/pkg/net/http/#Request.BasicAuth" title="net/http  pkg @ golang.org"><code>BasicAuth</code></a> returns the username and password provided in the request's Authorization header, if the request uses <code>HTTP Basic Authentication</code>. See <a href="https://tools.ietf.org/html/rfc2617#section-2" title="ietf.org">RFC 2617, Section 2</a>.</p>
+</blockquote>
+
+<p>User ID and password are passed over the network as clear text (<code>user:pass</code>), so HTTPS/TLS required. However, ...</p>
+
+<p>Modified scheme features:</p>
+
+<ul>
+<li>Encrypt the client's <code>POST</code> response data.</li>
+<li>Server can be stateless.
+
+<ul>
+<li>Can be hardened if state is maintained.</li>
+</ul></li>
+</ul>
+
+<p>This is a sort of <a href="#digest-auth" title="above">Digest Auth</a> scheme <a href="https://tools.ietf.org/html/rfc2617#section-3.1" title="ietf.org">RFC 2617, Section 3</a>, but with the &quot;private key&quot; generated client-side and sent (obfuscated) along with the (challenge) response. Also, server can be stateless, unlike Digest Auth.</p>
+
+<h4><code>XOR( XOR( user:pass, H(keyL) ), H(keyL+keyU) )</code></h4>
+
+<ul>
+<li>Server <a href="#labs" title="See Labs">(<code>basic.go</code>)</a></li>
+<li>Client <a href="#labs" title="See Labs">(<code>form-login-basic.js</code>)</a></li>
+</ul>
+
+<p>The <code>form</code>'s <code>submit</code> event is intercepted. The keys are concatenated (e.g., <code>user:pass</code>), creating the payload. This is XOR'd with a one-time login key <code>H(keyL)</code>; a message digest (<code>SHA-512</code>) of a randomly genterated number, per <code>Window.crypto</code>. The product is again XOR'd, but with a similarly constructed string based on <code>KeyL</code> and User Agent, <code>H(keyL+keyU)</code>. Finally, the payload is base64 encoded and then inserted into a hidden form key.</p>
+
+<p>To decipher server-side, the one-time login key is received as a cookie (<code>H(keyL)</code>), and the other key is regenerated from that one-time key concatenated with the UA Header. The one-time key (<code>H(keyL)</code>) cookie is deleted upon server response. The intent is for the server to respond with an auth cookie, <code>__Host-0: HMAC(user:pass)</code>, or perhaps a session cookie <code>__Host-0: HMAC(session:user:pass)</code>.</p>
+
+<p>The cipher payload is sent from the client per AJAX/<code>POST</code> under its own key (<code>ajax</code>). Prior to the delayed <code>form.submit()</code> action, the user-entered data (<code>user</code> and <code>pass</code>) are cleared.</p>
+
+<p>All the parameters required to defeat this are in the request, and so it remains vulnerable. The difference is that the payload is not sent in plaintext; its recovery requires knowledge of the hash and XOR scheme (or a very good guess), and performing its required multi-step processing on the base64-decoded payload.</p>
+
+<p>The scheme can be hardened by using a server-sent cookie (<code>H(keyL)</code>), sent along with the login form (page). Such a key would be absent from the subsequent client response (login request). This, however, requires the server to maintain state per user login. (Can handle per <code>http.context</code>?)</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

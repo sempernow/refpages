@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.CNI.calico</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises">Calico : On-prem K8s</a></h1>
+
+<h2>Download</h2>
+
+<pre><code class="language-bash">ok(){
+    DIR=calico
+    VER='v3.29.1'
+    BASE=https://raw.githubusercontent.com/projectcalico/calico/$VER/manifests
+
+    # Manifest Method
+    ok(){
+        dir=&quot;$DIR/manifest-method&quot;
+        file=calico.yaml
+        [[ -f $dir/$file ]] &amp;&amp; return 0
+        mkdir -p $dir
+        pushd $dir
+        curl -sSLO $BASE/$file || return 100
+        popd
+    }
+    ok || return $?
+
+    # Operator Method
+    ok(){
+        dir=&quot;$DIR/operator-method&quot;
+        mkdir -p $dir
+
+        # Operator
+        file=tigera-operator.yaml
+        [[ -f $dir/$file ]] || {
+            pushd $dir
+            curl -sSLO $BASE/$file || return 200
+            popd
+        }
+
+        # CRDs
+        file=custom-resources.yaml
+        [[ -f $dir/$file ]] || {
+            pushd $dir
+            curl -sSLO $BASE/$file || return 300
+            popd
+        }
+    }
+    ok || return $?
+
+    # CLI
+    ok(){
+        # calicoctl
+        # https://docs.tigera.io/calico/latest/operations/calicoctl/install
+        dir=&quot;$DIR/cli&quot;
+        url=https://github.com/projectcalico/calico/releases/download/$VER/calicoctl-linux-amd64 
+        file=calicoctl
+        [[ -f $dir/$file ]] &amp;&amp; return 0
+        mkdir -p $dir
+        pushd $dir
+        curl -sSL -o $file $url 
+        popd
+        chmod 0755 $dir/$file &amp;&amp; $dir/$file version |grep $VER || return 404
+    }
+    ok || return $?
+}
+ok || echo &quot;ERR: $?&quot;
+
+</code></pre>
+
+<h2>Install</h2>
+
+<h3><code>calicoctl</code> CLI on Host</h3>
+
+<pre><code class="language-bash">bin=/usr/local/bin/calicoctl
+sudo mv calico $bin &amp;&amp;
+    sudo chown root:root $bin &amp;&amp;
+        sudo chmod 0755 $bin ||
+            echo &quot;ERROR : $?&quot;
+
+</code></pre>
+
+<pre><code class="language-bash">☩ calicoctl get ippools -o wide
+NAME                  CIDR            NAT    IPIPMODE   VXLANMODE   DISABLED   DISABLEBGPEXPORT   SELECTOR
+default-ipv4-ippool   10.244.0.0/24   true   Never      Never       false      false              all()
+
+☩ calicoctl ipam show --show-blocks
++----------+-----------------+-----------+------------+-----------+
+| GROUPING |      CIDR       | IPS TOTAL | IPS IN USE | IPS FREE  |
++----------+-----------------+-----------+------------+-----------+
+| IP Pool  | 10.244.0.0/24   |       256 | 11 (4%)    | 245 (96%) |
+| Block    | 10.244.0.128/26 |        64 | 8 (12%)    | 56 (88%)  |
+| Block    | 10.244.0.192/26 |        64 | 1 (2%)     | 63 (98%)  |
+| Block    | 10.244.0.64/26  |        64 | 2 (3%)     | 62 (97%)  |
++----------+-----------------+-----------+------------+-----------+
+
+☩ calicoctl ipam show --show-configuration
++--------------------+-------+
+|      PROPERTY      | VALUE |
++--------------------+-------+
+| StrictAffinity     | false |
+| AutoAllocateBlocks | true  |
+| MaxBlocksPerHost   |     0 |
++--------------------+-------+
+
+☩ calicoctl ipam show --ip=10.244.0.142
+IP 10.244.0.142 is in use
+Attributes:
+  namespace: kube-system
+  node: a1
+  pod: coredns-76f75df574-fsxvc
+  timestamp: 2024-12-14 21:44:05.795537491 +0000 UTC
+
+
+</code></pre>
+
+<h3><code>calicoctl</code> CLI as <code>kubctl</code> plugin</h3>
+
+<p>At admin node:</p>
+
+<pre><code class="language-bash"># Install
+sudo curl -sSL https://github.com/projectcalico/calico/releases/download/v3.29.1/calicoctl-linux-amd64 -o /usr/local/bin/kubectl-calico
+
+# Use
+kubectl calico -h
+kubectl calico get node
+kubectl calico get ippool
+kubectl calico ipam check
+
+</code></pre>
+
+<h3>CNI by Operator Method</h3>
+
+<p><code>calico/node</code> runs three daemons:</p>
+
+<ol>
+<li>Felix : the Calico per-node daemon</li>
+<li>BIRD : speaks the BGP protocol to distribute
+routing information to other nodes</li>
+<li>confd : watches the Calico datastore
+for config changes and updates BIRD's config files</li>
+</ol>
+
+<p><a href="https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises"><strong>Install/Configure for On-prem deployments</strong></a></p>
+
+<h4>1. Intall CRDs and then CRs</h4>
+
+<pre><code class="language-bash">crd=tigera-operator.yaml
+cr=custom-resources-bpf-bgp.yaml
+kubectl create -f $crd
+kubectl apply -f $cr
+
+</code></pre>
+
+<pre><code class="language-bash">☩ k api-resources |grep calico |wc -l
+37
+
+☩ k get tigerastatuses
+NAME        AVAILABLE   PROGRESSING   DEGRADED   SINCE
+apiserver   True        False         False      57m
+calico      True        False         False      22m
+ippools     True        False         False      58m
+
+☩ kubectl logs -n calico-system -l k8s-app=calico-node
+</code></pre>
+
+<pre><code class="language-bash">☩ ansibash sudo calicoctl node status
+=== u1@a1
+Connection to 192.168.11.101 closed.
+Calico process is running.
+
+IPv4 BGP status
++----------------+-------------------+-------+----------+-------------+
+|  PEER ADDRESS  |     PEER TYPE     | STATE |  SINCE   |    INFO     |
++----------------+-------------------+-------+----------+-------------+
+| 192.168.11.102 | node-to-node mesh | up    | 11:35:46 | Established |
+| 192.168.11.100 | node-to-node mesh | up    | 11:35:41 | Established |
++----------------+-------------------+-------+----------+-------------+
+
+IPv6 BGP status
+No IPv6 peers found.
+...
+</code></pre>
+
+<h4>2. <a href="https://docs.tigera.io/calico/latest/networking/configuring/bgp">Configure BGP peering</a></h4>
+
+<p>This is advised as best of <a href="https://docs.tigera.io/calico/latest/networking/determine-best-networking#on-prem"><strong>Networking Options</strong></a> for <strong>On-prem</strong></p>
+
+<blockquote>
+<p>The most common network setup for Calico on-prem is non-overlay mode using BGP to peer with the physical network ... to make pod IPs routable outside of the cluster. ...This setup provides a rich range of advanced Calico features, including the ability to advertise Kubernetes service IPs (cluster IPs or external IPs), and the ability to control IP address management at the pod, namespace, or node level, to support a wide range of possibilities for integrating with existing enterprise network and security requirements.</p>
+</blockquote>
+
+<p><strong><em>Fantasically tedious configuration</em></strong>.</p>
+
+<p>Calico offers no single or few manifests having the supposedly-advised configuration. Instead, it's an almost key-by-key configuration.</p>
+
+<h3>by Manifest method</h3>
+
+<pre><code class="language-bash">kubectl apply -f calico.yaml
+</code></pre>
+
+<h2><a href="https://docs.tigera.io/calico/latest/operations/ebpf/enabling-ebpf">Enable <strong>eBPF</strong> dataplane</a></h2>
+
+<ul>
+<li><a href="https://docs.tigera.io/calico/latest/operations/ebpf/enabling-ebpf#configure-calico-to-talk-directly-to-the-api-server">Configure Calico to talk directly to K8s API server</a></li>
+</ul>
+
+<p>@ Operator method</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-services-endpoint
+  namespace: tigera-operator
+data:
+  KUBERNETES_SERVICE_HOST: 'K8S_CONTROL_PLANE_IP'
+  KUBERNETES_SERVICE_PORT: 'K8S_CONTROL_PLANE_PORT'
+</code></pre>
+
+<p>@ Manifest method</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-services-endpoint
+  namespace: kube-system
+data:
+  KUBERNETES_SERVICE_HOST: 'K8S_CONTROL_PLANE_IP'
+  KUBERNETES_SERVICE_PORT: 'K8S_CONTROL_PLANE_PORT'
+</code></pre>
+
+<pre><code class="language-bash">sed -i &quot;s,K8S_CONTROL_PLANE_IP,$K8S_CONTROL_PLANE_IP,g&quot; $cm
+sed -i &quot;s,K8S_CONTROL_PLANE_PORT,$K8S_CONTROL_PLANE_PORT,g&quot; $cm
+kubectl apply -f $cm
+kubectl delete pod -n kube-system -l k8s-app=calico-node
+kubectl delete pod -n kube-system -l k8s-app=calico-kube-controllers
+</code></pre>
+
+<p>In eBPF mode Calico <strong>replaces <code>kube-proxy</code></strong>,
+so disable it by adding a node selector to <code>kube-proxy</code>'s DaemonSet
+that matches no nodes:</p>
+
+<pre><code class="language-bash">kubectl patch ds -n kube-system kube-proxy -p '{&quot;spec&quot;:{&quot;template&quot;:{&quot;spec&quot;:{&quot;nodeSelector&quot;:{&quot;non-calico&quot;: &quot;true&quot;}}}}}'
+
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

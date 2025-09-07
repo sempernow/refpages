@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>README-etcdctl</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>etcdctl</h1>
+
+<p><code>etcdctl</code> is a command line client for <a href="https://github.com/coreos/etcd">etcd</a>.</p>
+
+<p>The v3 API is used by default on main branch. For the v2 API, make sure to set environment variable <code>ETCDCTL_API=2</code>. See also <a href="READMEv2.md">READMEv2</a>.</p>
+
+<p>If using released versions earlier than v3.4, set <code>ETCDCTL_API=3</code> to use v3 API.</p>
+
+<p>Global flags (e.g., <code>dial-timeout</code>, <code>--cacert</code>, <code>--cert</code>, <code>--key</code>) can be set with environment variables:</p>
+
+<pre><code>ETCDCTL_DIAL_TIMEOUT=3s
+ETCDCTL_CACERT=/tmp/ca.pem
+ETCDCTL_CERT=/tmp/cert.pem
+ETCDCTL_KEY=/tmp/key.pem
+</code></pre>
+
+<p>Prefix flag strings with <code>ETCDCTL_</code>, convert all letters to upper-case, and replace dash(<code>-</code>) with underscore(<code>_</code>). Note that the environment variables with the prefix <code>ETCDCTL_</code> can only be used with the etcdctl global flags. Also, the environment variable <code>ETCDCTL_API</code> is a special case variable for etcdctl internal use only.</p>
+
+<h2>Key-value commands</h2>
+
+<h3>PUT [options] &lt;key&gt; &lt;value&gt;</h3>
+
+<p>PUT assigns the specified value with the specified key. If key already holds a value, it is overwritten.</p>
+
+<p>RPC: Put</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>lease -- lease ID (in hexadecimal) to attach to the key.</p></li>
+
+<li><p>prev-kv -- return the previous key-value pair before modification.</p></li>
+
+<li><p>ignore-value -- updates the key using its current value.</p></li>
+
+<li><p>ignore-lease -- updates the key using its current lease.</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p><code>OK</code></p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl put foo bar --lease=1234abcd
+# OK
+./etcdctl get foo
+# foo
+# bar
+./etcdctl put foo --ignore-value # to detache lease
+# OK
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl put foo bar --lease=1234abcd
+# OK
+./etcdctl put foo bar1 --ignore-lease # to use existing lease 1234abcd
+# OK
+./etcdctl get foo
+# foo
+# bar1
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl put foo bar1 --prev-kv
+# OK
+# foo
+# bar
+./etcdctl get foo
+# foo
+# bar1
+</code></pre>
+
+<h4>Remarks</h4>
+
+<p>If &lt;value&gt; isn't given as command line argument, this command tries to read the value from standard input.</p>
+
+<p>When &lt;value&gt; begins with '-', &lt;value&gt; is interpreted as a flag.
+Insert '--' for workaround:</p>
+
+<pre><code class="language-bash">./etcdctl put &lt;key&gt; -- &lt;value&gt;
+./etcdctl put -- &lt;key&gt; &lt;value&gt;
+</code></pre>
+
+<p>Providing &lt;value&gt; in a new line after using <code>carriage return</code> is not supported and etcdctl may hang in that case. For example, following case is not supported:</p>
+
+<pre><code class="language-bash">./etcdctl put &lt;key&gt;\r
+&lt;value&gt;
+</code></pre>
+
+<p>A &lt;value&gt; can have multiple lines or spaces but it must be provided with a double-quote as demonstrated below:</p>
+
+<pre><code class="language-bash">./etcdctl put foo &quot;bar1 2 3&quot;
+</code></pre>
+
+<h3>GET [options] &lt;key&gt; [range_end]</h3>
+
+<p>GET gets the key or a range of keys [key, range_end) if range_end is given.</p>
+
+<p>RPC: Range</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>hex -- print out key and value as hex encode string</p></li>
+
+<li><p>limit -- maximum number of results</p></li>
+
+<li><p>prefix -- get keys by matching prefix</p></li>
+
+<li><p>order -- order of results; ASCEND or DESCEND</p></li>
+
+<li><p>sort-by -- sort target; CREATE, KEY, MODIFY, VALUE, or VERSION</p></li>
+
+<li><p>rev -- specify the kv revision</p></li>
+
+<li><p>print-value-only -- print only value when used with write-out=simple</p></li>
+
+<li><p>consistency -- Linearizable(l) or Serializable(s)</p></li>
+
+<li><p>from-key -- Get keys that are greater than or equal to the given key using byte compare</p></li>
+
+<li><p>keys-only -- Get only the keys</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p>&lt;key&gt;\n&lt;value&gt;\n&lt;next_key&gt;\n&lt;next_value&gt;...</p>
+
+<h4>Examples</h4>
+
+<p>First, populate etcd with some keys:</p>
+
+<pre><code class="language-bash">./etcdctl put foo bar
+# OK
+./etcdctl put foo1 bar1
+# OK
+./etcdctl put foo2 bar2
+# OK
+./etcdctl put foo3 bar3
+# OK
+</code></pre>
+
+<p>Get the key named <code>foo</code>:</p>
+
+<pre><code class="language-bash">./etcdctl get foo
+# foo
+# bar
+</code></pre>
+
+<p>Get all keys:</p>
+
+<pre><code class="language-bash">./etcdctl get --from-key ''
+# foo
+# bar
+# foo1
+# bar1
+# foo2
+# foo2
+# foo3
+# bar3
+</code></pre>
+
+<p>Get all keys with names greater than or equal to <code>foo1</code>:</p>
+
+<pre><code class="language-bash">./etcdctl get --from-key foo1
+# foo1
+# bar1
+# foo2
+# bar2
+# foo3
+# bar3
+</code></pre>
+
+<p>Get keys with names greater than or equal to <code>foo1</code> and less than <code>foo3</code>:</p>
+
+<pre><code class="language-bash">./etcdctl get foo1 foo3
+# foo1
+# bar1
+# foo2
+# bar2
+</code></pre>
+
+<h4>Remarks</h4>
+
+<p>If any key or value contains non-printable characters or control characters, simple formatted output can be ambiguous due to new lines. To resolve this issue, set <code>--hex</code> to hex encode all strings.</p>
+
+<h3>DEL [options] &lt;key&gt; [range_end]</h3>
+
+<p>Removes the specified key or range of keys [key, range_end) if range_end is given.</p>
+
+<p>RPC: DeleteRange</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>prefix -- delete keys by matching prefix</p></li>
+
+<li><p>prev-kv -- return deleted key-value pairs</p></li>
+
+<li><p>from-key -- delete keys that are greater than or equal to the given key using byte compare</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints the number of keys that were removed in decimal if DEL succeeded.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl put foo bar
+# OK
+./etcdctl del foo
+# 1
+./etcdctl get foo
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl put key val
+# OK
+./etcdctl del --prev-kv key
+# 1
+# key
+# val
+./etcdctl get key
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl put a 123
+# OK
+./etcdctl put b 456
+# OK
+./etcdctl put z 789
+# OK
+./etcdctl del --from-key a
+# 3
+./etcdctl get --from-key a
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl put zoo val
+# OK
+./etcdctl put zoo1 val1
+# OK
+./etcdctl put zoo2 val2
+# OK
+./etcdctl del --prefix zoo
+# 3
+./etcdctl get zoo2
+</code></pre>
+
+<h3>TXN [options]</h3>
+
+<p>TXN reads multiple etcd requests from standard input and applies them as a single atomic transaction.
+A transaction consists of list of conditions, a list of requests to apply if all the conditions are true, and a list of requests to apply if any condition is false.</p>
+
+<p>RPC: Txn</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>hex -- print out keys and values as hex encoded strings.</p></li>
+
+<li><p>interactive -- input transaction with interactive prompting.</p></li>
+</ul>
+
+<h4>Input Format</h4>
+
+<pre><code class="language-ebnf">&lt;Txn&gt; ::= &lt;CMP&gt;* &quot;\n&quot; &lt;THEN&gt; &quot;\n&quot; &lt;ELSE&gt; &quot;\n&quot;
+&lt;CMP&gt; ::= (&lt;CMPCREATE&gt;|&lt;CMPMOD&gt;|&lt;CMPVAL&gt;|&lt;CMPVER&gt;|&lt;CMPLEASE&gt;) &quot;\n&quot;
+&lt;CMPOP&gt; ::= &quot;&lt;&quot; | &quot;=&quot; | &quot;&gt;&quot;
+&lt;CMPCREATE&gt; := (&quot;c&quot;|&quot;create&quot;)&quot;(&quot;&lt;KEY&gt;&quot;)&quot; &lt;CMPOP&gt; &lt;REVISION&gt;
+&lt;CMPMOD&gt; ::= (&quot;m&quot;|&quot;mod&quot;)&quot;(&quot;&lt;KEY&gt;&quot;)&quot; &lt;CMPOP&gt; &lt;REVISION&gt;
+&lt;CMPVAL&gt; ::= (&quot;val&quot;|&quot;value&quot;)&quot;(&quot;&lt;KEY&gt;&quot;)&quot; &lt;CMPOP&gt; &lt;VALUE&gt;
+&lt;CMPVER&gt; ::= (&quot;ver&quot;|&quot;version&quot;)&quot;(&quot;&lt;KEY&gt;&quot;)&quot; &lt;CMPOP&gt; &lt;VERSION&gt;
+&lt;CMPLEASE&gt; ::= &quot;lease(&quot;&lt;KEY&gt;&quot;)&quot; &lt;CMPOP&gt; &lt;LEASE&gt;
+&lt;THEN&gt; ::= &lt;OP&gt;*
+&lt;ELSE&gt; ::= &lt;OP&gt;*
+&lt;OP&gt; ::= ((see put, get, del etcdctl command syntax)) &quot;\n&quot;
+&lt;KEY&gt; ::= (%q formatted string)
+&lt;VALUE&gt; ::= (%q formatted string)
+&lt;REVISION&gt; ::= &quot;\&quot;&quot;[0-9]+&quot;\&quot;&quot;
+&lt;VERSION&gt; ::= &quot;\&quot;&quot;[0-9]+&quot;\&quot;&quot;
+&lt;LEASE&gt; ::= &quot;\&quot;&quot;[0-9]+\&quot;&quot;
+</code></pre>
+
+<h4>Output</h4>
+
+<p><code>SUCCESS</code> if etcd processed the transaction success list, <code>FAILURE</code> if etcd processed the transaction failure list. Prints the output for each command in the executed request list, each separated by a blank line.</p>
+
+<h4>Examples</h4>
+
+<p>txn in interactive mode:</p>
+
+<pre><code class="language-bash">./etcdctl txn -i
+# compares:
+mod(&quot;key1&quot;) &gt; &quot;0&quot;
+
+# success requests (get, put, delete):
+put key1 &quot;overwrote-key1&quot;
+
+# failure requests (get, put, delete):
+put key1 &quot;created-key1&quot;
+put key2 &quot;some extra key&quot;
+
+# FAILURE
+
+# OK
+
+# OK
+</code></pre>
+
+<p>txn in non-interactive mode:</p>
+
+<pre><code class="language-bash">./etcdctl txn &lt;&lt;&lt;'mod(&quot;key1&quot;) &gt; &quot;0&quot;
+
+put key1 &quot;overwrote-key1&quot;
+
+put key1 &quot;created-key1&quot;
+put key2 &quot;some extra key&quot;
+
+'
+
+# FAILURE
+
+# OK
+
+# OK
+</code></pre>
+
+<h4>Remarks</h4>
+
+<p>When using multi-line values within a TXN command, newlines must be represented as <code>\n</code>. Literal newlines will cause parsing failures. This differs from other commands (such as PUT) where the shell will convert literal newlines for us. For example:</p>
+
+<pre><code class="language-bash">./etcdctl txn &lt;&lt;&lt;'mod(&quot;key1&quot;) &gt; &quot;0&quot;
+
+put key1 &quot;overwrote-key1&quot;
+
+put key1 &quot;created-key1&quot;
+put key2 &quot;this is\na multi-line\nvalue&quot;
+
+'
+
+# FAILURE
+
+# OK
+
+# OK
+</code></pre>
+
+<h3>COMPACTION [options] &lt;revision&gt;</h3>
+
+<p>COMPACTION discards all etcd event history prior to a given revision. Since etcd uses a multiversion concurrency control
+model, it preserves all key updates as event history. When the event history up to some revision is no longer needed,
+all superseded keys may be compacted away to reclaim storage space in the etcd backend database.</p>
+
+<p>RPC: Compact</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>physical -- 'true' to wait for compaction to physically remove all old revisions</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints the compacted revision.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl compaction 1234
+# compacted revision 1234
+</code></pre>
+
+<h3>WATCH [options] [key or prefix] [range_end] [--] [exec-command arg1 arg2 ...]</h3>
+
+<p>Watch watches events stream on keys or prefixes, [key or prefix, range_end) if range_end is given. The watch command runs until it encounters an error or is terminated by the user.  If range_end is given, it must be lexicographically greater than key or &quot;\x00&quot;.</p>
+
+<p>RPC: Watch</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>hex -- print out key and value as hex encode string</p></li>
+
+<li><p>interactive -- begins an interactive watch session</p></li>
+
+<li><p>prefix -- watch on a prefix if prefix is set.</p></li>
+
+<li><p>prev-kv -- get the previous key-value pair before the event happens.</p></li>
+
+<li><p>rev -- the revision to start watching. Specifying a revision is useful for observing past events.</p></li>
+</ul>
+
+<h4>Input format</h4>
+
+<p>Input is only accepted for interactive mode.</p>
+
+<pre><code>watch [options] &lt;key or prefix&gt;\n
+</code></pre>
+
+<h4>Output</h4>
+
+<p>&lt;event&gt;[\n&lt;old_key&gt;\n&lt;old_value&gt;]\n&lt;key&gt;\n&lt;value&gt;\n&lt;event&gt;\n&lt;next_key&gt;\n&lt;next_value&gt;\n...</p>
+
+<h4>Examples</h4>
+
+<h5>Non-interactive</h5>
+
+<pre><code class="language-bash">./etcdctl watch foo
+# PUT
+# foo
+# bar
+</code></pre>
+
+<pre><code class="language-bash">ETCDCTL_WATCH_KEY=foo ./etcdctl watch
+# PUT
+# foo
+# bar
+</code></pre>
+
+<p>Receive events and execute <code>echo watch event received</code>:</p>
+
+<pre><code class="language-bash">./etcdctl watch foo -- echo watch event received
+# PUT
+# foo
+# bar
+# watch event received
+</code></pre>
+
+<p>Watch response is set via <code>ETCD_WATCH_*</code> environmental variables:</p>
+
+<pre><code class="language-bash">./etcdctl watch foo -- sh -c &quot;env | grep ETCD_WATCH_&quot;
+
+# PUT
+# foo
+# bar
+# ETCD_WATCH_REVISION=11
+# ETCD_WATCH_KEY=&quot;foo&quot;
+# ETCD_WATCH_EVENT_TYPE=&quot;PUT&quot;
+# ETCD_WATCH_VALUE=&quot;bar&quot;
+</code></pre>
+
+<p>Watch with environmental variables and execute <code>echo watch event received</code>:</p>
+
+<pre><code class="language-bash">export ETCDCTL_WATCH_KEY=foo
+./etcdctl watch -- echo watch event received
+# PUT
+# foo
+# bar
+# watch event received
+</code></pre>
+
+<pre><code class="language-bash">export ETCDCTL_WATCH_KEY=foo
+export ETCDCTL_WATCH_RANGE_END=foox
+./etcdctl watch -- echo watch event received
+# PUT
+# fob
+# bar
+# watch event received
+</code></pre>
+
+<h5>Interactive</h5>
+
+<pre><code class="language-bash">./etcdctl watch -i
+watch foo
+watch foo
+# PUT
+# foo
+# bar
+# PUT
+# foo
+# bar
+</code></pre>
+
+<p>Receive events and execute <code>echo watch event received</code>:</p>
+
+<pre><code class="language-bash">./etcdctl watch -i
+watch foo -- echo watch event received
+# PUT
+# foo
+# bar
+# watch event received
+</code></pre>
+
+<p>Watch with environmental variables and execute <code>echo watch event received</code>:</p>
+
+<pre><code class="language-bash">export ETCDCTL_WATCH_KEY=foo
+./etcdctl watch -i
+watch -- echo watch event received
+# PUT
+# foo
+# bar
+# watch event received
+</code></pre>
+
+<pre><code class="language-bash">export ETCDCTL_WATCH_KEY=foo
+export ETCDCTL_WATCH_RANGE_END=foox
+./etcdctl watch -i
+watch -- echo watch event received
+# PUT
+# fob
+# bar
+# watch event received
+</code></pre>
+
+<h3>LEASE &lt;subcommand&gt;</h3>
+
+<p>LEASE provides commands for key lease management.</p>
+
+<h3>LEASE GRANT &lt;ttl&gt;</h3>
+
+<p>LEASE GRANT creates a fresh lease with a server-selected time-to-live in seconds
+greater than or equal to the requested TTL value.</p>
+
+<p>RPC: LeaseGrant</p>
+
+<h4>Output</h4>
+
+<p>Prints a message with the granted lease ID.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl lease grant 60
+# lease 32695410dcc0ca06 granted with TTL(60s)
+</code></pre>
+
+<h3>LEASE REVOKE &lt;leaseID&gt;</h3>
+
+<p>LEASE REVOKE destroys a given lease, deleting all attached keys.</p>
+
+<p>RPC: LeaseRevoke</p>
+
+<h4>Output</h4>
+
+<p>Prints a message indicating the lease is revoked.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl lease revoke 32695410dcc0ca06
+# lease 32695410dcc0ca06 revoked
+</code></pre>
+
+<h3>LEASE TIMETOLIVE &lt;leaseID&gt; [options]</h3>
+
+<p>LEASE TIMETOLIVE retrieves the lease information with the given lease ID.</p>
+
+<p>RPC: LeaseTimeToLive</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>keys -- Get keys attached to this lease</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints lease information.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl lease grant 500
+# lease 2d8257079fa1bc0c granted with TTL(500s)
+
+./etcdctl put foo1 bar --lease=2d8257079fa1bc0c
+# OK
+
+./etcdctl put foo2 bar --lease=2d8257079fa1bc0c
+# OK
+
+./etcdctl lease timetolive 2d8257079fa1bc0c
+# lease 2d8257079fa1bc0c granted with TTL(500s), remaining(481s)
+
+./etcdctl lease timetolive 2d8257079fa1bc0c --keys
+# lease 2d8257079fa1bc0c granted with TTL(500s), remaining(472s), attached keys([foo2 foo1])
+
+./etcdctl lease timetolive 2d8257079fa1bc0c --write-out=json
+# {&quot;cluster_id&quot;:17186838941855831277,&quot;member_id&quot;:4845372305070271874,&quot;revision&quot;:3,&quot;raft_term&quot;:2,&quot;id&quot;:3279279168933706764,&quot;ttl&quot;:465,&quot;granted-ttl&quot;:500,&quot;keys&quot;:null}
+
+./etcdctl lease timetolive 2d8257079fa1bc0c --write-out=json --keys
+# {&quot;cluster_id&quot;:17186838941855831277,&quot;member_id&quot;:4845372305070271874,&quot;revision&quot;:3,&quot;raft_term&quot;:2,&quot;id&quot;:3279279168933706764,&quot;ttl&quot;:459,&quot;granted-ttl&quot;:500,&quot;keys&quot;:[&quot;Zm9vMQ==&quot;,&quot;Zm9vMg==&quot;]}
+
+./etcdctl lease timetolive 2d8257079fa1bc0c
+# lease 2d8257079fa1bc0c already expired
+</code></pre>
+
+<h3>LEASE LIST</h3>
+
+<p>LEASE LIST lists all active leases.</p>
+
+<p>RPC: LeaseLeases</p>
+
+<h4>Output</h4>
+
+<p>Prints a message with a list of active leases.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl lease grant 60
+# lease 32695410dcc0ca06 granted with TTL(60s)
+
+./etcdctl lease list
+32695410dcc0ca06
+</code></pre>
+
+<h3>LEASE KEEP-ALIVE &lt;leaseID&gt;</h3>
+
+<p>LEASE KEEP-ALIVE periodically refreshes a lease so it does not expire.</p>
+
+<p>RPC: LeaseKeepAlive</p>
+
+<h4>Output</h4>
+
+<p>Prints a message for every keep alive sent or prints a message indicating the lease is gone.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl lease keep-alive 32695410dcc0ca0
+# lease 32695410dcc0ca0 keepalived with TTL(100)
+# lease 32695410dcc0ca0 keepalived with TTL(100)
+# lease 32695410dcc0ca0 keepalived with TTL(100)
+...
+</code></pre>
+
+<h2>Cluster maintenance commands</h2>
+
+<h3>MEMBER &lt;subcommand&gt;</h3>
+
+<p>MEMBER provides commands for managing etcd cluster membership.</p>
+
+<h3>MEMBER ADD &lt;memberName&gt; [options]</h3>
+
+<p>MEMBER ADD introduces a new member into the etcd cluster as a new peer.</p>
+
+<p>RPC: MemberAdd</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>peer-urls -- comma separated list of URLs to associate with the new member.</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints the member ID of the new member and the cluster ID.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl member add newMember --peer-urls=https://127.0.0.1:12345
+
+Member ced000fda4d05edf added to cluster 8c4281cc65c7b112
+
+ETCD_NAME=&quot;newMember&quot;
+ETCD_INITIAL_CLUSTER=&quot;newMember=https://127.0.0.1:12345,default=http://10.0.0.30:2380&quot;
+ETCD_INITIAL_CLUSTER_STATE=&quot;existing&quot;
+</code></pre>
+
+<h3>MEMBER UPDATE &lt;memberID&gt; [options]</h3>
+
+<p>MEMBER UPDATE sets the peer URLs for an existing member in the etcd cluster.</p>
+
+<p>RPC: MemberUpdate</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>peer-urls -- comma separated list of URLs to associate with the updated member.</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints the member ID of the updated member and the cluster ID.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl member update 2be1eb8f84b7f63e --peer-urls=https://127.0.0.1:11112
+# Member 2be1eb8f84b7f63e updated in cluster ef37ad9dc622a7c4
+</code></pre>
+
+<h3>MEMBER REMOVE &lt;memberID&gt;</h3>
+
+<p>MEMBER REMOVE removes a member of an etcd cluster from participating in cluster consensus.</p>
+
+<p>RPC: MemberRemove</p>
+
+<h4>Output</h4>
+
+<p>Prints the member ID of the removed member and the cluster ID.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl member remove 2be1eb8f84b7f63e
+# Member 2be1eb8f84b7f63e removed from cluster ef37ad9dc622a7c4
+</code></pre>
+
+<h3>MEMBER LIST</h3>
+
+<p>MEMBER LIST prints the member details for all members associated with an etcd cluster.</p>
+
+<p>RPC: MemberList</p>
+
+<h4>Output</h4>
+
+<p>Prints a humanized table of the member IDs, statuses, names, peer addresses, and client addresses.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl member list
+# 8211f1d0f64f3269, started, infra1, http://127.0.0.1:12380, http://127.0.0.1:2379
+# 91bc3c398fb3c146, started, infra2, http://127.0.0.1:22380, http://127.0.0.1:22379
+# fd422379fda50e48, started, infra3, http://127.0.0.1:32380, http://127.0.0.1:32379
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl -w json member list
+# {&quot;header&quot;:{&quot;cluster_id&quot;:17237436991929493444,&quot;member_id&quot;:9372538179322589801,&quot;raft_term&quot;:2},&quot;members&quot;:[{&quot;ID&quot;:9372538179322589801,&quot;name&quot;:&quot;infra1&quot;,&quot;peerURLs&quot;:[&quot;http://127.0.0.1:12380&quot;],&quot;clientURLs&quot;:[&quot;http://127.0.0.1:2379&quot;]},{&quot;ID&quot;:10501334649042878790,&quot;name&quot;:&quot;infra2&quot;,&quot;peerURLs&quot;:[&quot;http://127.0.0.1:22380&quot;],&quot;clientURLs&quot;:[&quot;http://127.0.0.1:22379&quot;]},{&quot;ID&quot;:18249187646912138824,&quot;name&quot;:&quot;infra3&quot;,&quot;peerURLs&quot;:[&quot;http://127.0.0.1:32380&quot;],&quot;clientURLs&quot;:[&quot;http://127.0.0.1:32379&quot;]}]}
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl -w table member list
++------------------+---------+--------+------------------------+------------------------+
+|        ID        | STATUS  |  NAME  |       PEER ADDRS       |      CLIENT ADDRS      |
++------------------+---------+--------+------------------------+------------------------+
+| 8211f1d0f64f3269 | started | infra1 | http://127.0.0.1:12380 | http://127.0.0.1:2379  |
+| 91bc3c398fb3c146 | started | infra2 | http://127.0.0.1:22380 | http://127.0.0.1:22379 |
+| fd422379fda50e48 | started | infra3 | http://127.0.0.1:32380 | http://127.0.0.1:32379 |
++------------------+---------+--------+------------------------+------------------------+
+</code></pre>
+
+<h3>ENDPOINT &lt;subcommand&gt;</h3>
+
+<p>ENDPOINT provides commands for querying individual endpoints.</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>cluster -- fetch and use all endpoints from the etcd cluster member list</li>
+</ul>
+
+<h3>ENDPOINT HEALTH</h3>
+
+<p>ENDPOINT HEALTH checks the health of the list of endpoints with respect to cluster. An endpoint is unhealthy
+when it cannot participate in consensus with the rest of the cluster.</p>
+
+<h4>Output</h4>
+
+<p>If an endpoint can participate in consensus, prints a message indicating the endpoint is healthy. If an endpoint fails to participate in consensus, prints a message indicating the endpoint is unhealthy.</p>
+
+<h4>Example</h4>
+
+<p>Check the default endpoint's health:</p>
+
+<pre><code class="language-bash">./etcdctl endpoint health
+# 127.0.0.1:2379 is healthy: successfully committed proposal: took = 2.095242ms
+</code></pre>
+
+<p>Check all endpoints for the cluster associated with the default endpoint:</p>
+
+<pre><code class="language-bash">./etcdctl endpoint --cluster health
+# http://127.0.0.1:2379 is healthy: successfully committed proposal: took = 1.060091ms
+# http://127.0.0.1:22379 is healthy: successfully committed proposal: took = 903.138µs
+# http://127.0.0.1:32379 is healthy: successfully committed proposal: took = 1.113848ms
+</code></pre>
+
+<h3>ENDPOINT STATUS</h3>
+
+<p>ENDPOINT STATUS queries the status of each endpoint in the given endpoint list.</p>
+
+<h4>Output</h4>
+
+<h5>Simple format</h5>
+
+<p>Prints a humanized table of each endpoint URL, ID, version, database size, leadership status, raft term, and raft status.</p>
+
+<h5>JSON format</h5>
+
+<p>Prints a line of JSON encoding each endpoint URL, ID, version, database size, leadership status, raft term, and raft status.</p>
+
+<h4>Examples</h4>
+
+<p>Get the status for the default endpoint:</p>
+
+<pre><code class="language-bash">./etcdctl endpoint status
+# 127.0.0.1:2379, 8211f1d0f64f3269, 3.0.0, 25 kB, false, 2, 63
+</code></pre>
+
+<p>Get the status for the default endpoint as JSON:</p>
+
+<pre><code class="language-bash">./etcdctl -w json endpoint status
+# [{&quot;Endpoint&quot;:&quot;127.0.0.1:2379&quot;,&quot;Status&quot;:{&quot;header&quot;:{&quot;cluster_id&quot;:17237436991929493444,&quot;member_id&quot;:9372538179322589801,&quot;revision&quot;:2,&quot;raft_term&quot;:2},&quot;version&quot;:&quot;3.0.0&quot;,&quot;dbSize&quot;:24576,&quot;leader&quot;:18249187646912138824,&quot;raftIndex&quot;:32623,&quot;raftTerm&quot;:2}}]
+</code></pre>
+
+<p>Get the status for all endpoints in the cluster associated with the default endpoint:</p>
+
+<pre><code class="language-bash">./etcdctl -w table endpoint --cluster status
++------------------------+------------------+----------------+---------+-----------+-----------+------------+
+|        ENDPOINT        |        ID        |    VERSION     | DB SIZE | IS LEADER | RAFT TERM | RAFT INDEX |
++------------------------+------------------+----------------+---------+-----------+-----------+------------+
+| http://127.0.0.1:2379  | 8211f1d0f64f3269 | 3.2.0-rc.1+git |   25 kB |     false |         2 |          8 |
+| http://127.0.0.1:22379 | 91bc3c398fb3c146 | 3.2.0-rc.1+git |   25 kB |     false |         2 |          8 |
+| http://127.0.0.1:32379 | fd422379fda50e48 | 3.2.0-rc.1+git |   25 kB |      true |         2 |          8 |
++------------------------+------------------+----------------+---------+-----------+-----------+------------+
+</code></pre>
+
+<h3>ENDPOINT HASHKV</h3>
+
+<p>ENDPOINT HASHKV fetches the hash of the key-value store of an endpoint.</p>
+
+<h4>Output</h4>
+
+<h5>Simple format</h5>
+
+<p>Prints a humanized table of each endpoint URL and KV history hash.</p>
+
+<h5>JSON format</h5>
+
+<p>Prints a line of JSON encoding each endpoint URL and KV history hash.</p>
+
+<h4>Examples</h4>
+
+<p>Get the hash for the default endpoint:</p>
+
+<pre><code class="language-bash">./etcdctl endpoint hashkv
+# 127.0.0.1:2379, 1084519789
+</code></pre>
+
+<p>Get the status for the default endpoint as JSON:</p>
+
+<pre><code class="language-bash">./etcdctl -w json endpoint hashkv
+# [{&quot;Endpoint&quot;:&quot;127.0.0.1:2379&quot;,&quot;Hash&quot;:{&quot;header&quot;:{&quot;cluster_id&quot;:14841639068965178418,&quot;member_id&quot;:10276657743932975437,&quot;revision&quot;:1,&quot;raft_term&quot;:3},&quot;hash&quot;:1084519789,&quot;compact_revision&quot;:-1}}]
+</code></pre>
+
+<p>Get the status for all endpoints in the cluster associated with the default endpoint:</p>
+
+<pre><code class="language-bash">./etcdctl -w table endpoint --cluster hashkv
++------------------------+------------+
+|        ENDPOINT        |    HASH    |
++------------------------+------------+
+| http://127.0.0.1:2379  | 1084519789 |
+| http://127.0.0.1:22379 | 1084519789 |
+| http://127.0.0.1:32379 | 1084519789 |
++------------------------+------------+
+</code></pre>
+
+<h3>ALARM &lt;subcommand&gt;</h3>
+
+<p>Provides alarm related commands</p>
+
+<h3>ALARM DISARM</h3>
+
+<p><code>alarm disarm</code> Disarms all alarms</p>
+
+<p>RPC: Alarm</p>
+
+<h4>Output</h4>
+
+<p><code>alarm:&lt;alarm type&gt;</code> if alarm is present and disarmed.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl alarm disarm
+</code></pre>
+
+<p>If NOSPACE alarm is present:</p>
+
+<pre><code class="language-bash">./etcdctl alarm disarm
+# alarm:NOSPACE
+</code></pre>
+
+<h3>ALARM LIST</h3>
+
+<p><code>alarm list</code> lists all alarms.</p>
+
+<p>RPC: Alarm</p>
+
+<h4>Output</h4>
+
+<p><code>alarm:&lt;alarm type&gt;</code> if alarm is present, empty string if no alarms present.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl alarm list
+</code></pre>
+
+<p>If NOSPACE alarm is present:</p>
+
+<pre><code class="language-bash">./etcdctl alarm list
+# alarm:NOSPACE
+</code></pre>
+
+<h3>DEFRAG [options]</h3>
+
+<p>DEFRAG defragments the backend database file for a set of given endpoints while etcd is running, <del>or directly defragments an etcd data directory while etcd is not running</del>. When an etcd member reclaims storage space from deleted and compacted keys, the space is kept in a free list and the database file remains the same size. By defragmenting the database, the etcd member releases this free space back to the file system.</p>
+
+<p><strong>Note: to defragment offline (<code>--data-dir</code> flag), use: <code>etcutl defrag</code> instead</strong></p>
+
+<p><strong>Note that defragmentation to a live member blocks the system from reading and writing data while rebuilding its states.</strong></p>
+
+<p><strong>Note that defragmentation request does not get replicated over cluster. That is, the request is only applied to the local node. Specify all members in <code>--endpoints</code> flag or <code>--cluster</code> flag to automatically find all cluster members.</strong></p>
+
+<h4>Options</h4>
+
+<ul>
+<li>data-dir -- Optional. <strong>Deprecated</strong>. If present, defragments a data directory not in use by etcd. To be removed in v3.6.</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>For each endpoints, prints a message indicating whether the endpoint was successfully defragmented.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl --endpoints=localhost:2379,badendpoint:2379 defrag
+# Finished defragmenting etcd member[localhost:2379]
+# Failed to defragment etcd member[badendpoint:2379] (grpc: timed out trying to connect)
+</code></pre>
+
+<p>Run defragment operations for all endpoints in the cluster associated with the default endpoint:</p>
+
+<pre><code class="language-bash">./etcdctl defrag --cluster
+Finished defragmenting etcd member[http://127.0.0.1:2379]
+Finished defragmenting etcd member[http://127.0.0.1:22379]
+Finished defragmenting etcd member[http://127.0.0.1:32379]
+</code></pre>
+
+<p>To defragment a data directory directly, use the <code>etcdutl</code> with <code>--data-dir</code> flag
+(<code>etcdctl</code> will remove this flag in v3.6):</p>
+
+<pre><code class="language-bash"># Defragment while etcd is not running
+./etcdutl defrag --data-dir default.etcd
+# success (exit status 0)
+# Error: cannot open database at default.etcd/member/snap/db
+</code></pre>
+
+<h4>Remarks</h4>
+
+<p>DEFRAG returns a zero exit code only if it succeeded defragmenting all given endpoints.</p>
+
+<h3>SNAPSHOT &lt;subcommand&gt;</h3>
+
+<p>SNAPSHOT provides commands to restore a snapshot of a running etcd server into a fresh cluster.</p>
+
+<h3>SNAPSHOT SAVE &lt;filename&gt;</h3>
+
+<p>SNAPSHOT SAVE writes a point-in-time snapshot of the etcd backend database to a file.</p>
+
+<h4>Output</h4>
+
+<p>The backend snapshot is written to the given file path.</p>
+
+<h4>Example</h4>
+
+<p>Save a snapshot to &quot;snapshot.db&quot;:</p>
+
+<pre><code>./etcdctl snapshot save snapshot.db
+</code></pre>
+
+<h3>SNAPSHOT RESTORE [options] &lt;filename&gt;</h3>
+
+<p>Note: Deprecated. Use <code>etcdutl snapshot restore</code> instead. To be removed in v3.6.</p>
+
+<p>SNAPSHOT RESTORE creates an etcd data directory for an etcd cluster member from a backend database snapshot and a new cluster configuration. Restoring the snapshot into each member for a new cluster configuration will initialize a new etcd cluster preloaded by the snapshot data.</p>
+
+<h4>Options</h4>
+
+<p>The snapshot restore options closely resemble to those used in the <code>etcd</code> command for defining a cluster.</p>
+
+<ul>
+<li><p>data-dir -- Path to the data directory. Uses &lt;name&gt;.etcd if none given.</p></li>
+
+<li><p>wal-dir -- Path to the WAL directory. Uses data directory if none given.</p></li>
+
+<li><p>initial-cluster -- The initial cluster configuration for the restored etcd cluster.</p></li>
+
+<li><p>initial-cluster-token -- Initial cluster token for the restored etcd cluster.</p></li>
+
+<li><p>initial-advertise-peer-urls -- List of peer URLs for the member being restored.</p></li>
+
+<li><p>name -- Human-readable name for the etcd cluster member being restored.</p></li>
+
+<li><p>skip-hash-check -- Ignore snapshot integrity hash value (required if copied from data directory)</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p>A new etcd data directory initialized with the snapshot.</p>
+
+<h4>Example</h4>
+
+<p>Save a snapshot, restore into a new 3 node cluster, and start the cluster:</p>
+
+<pre><code>./etcdctl snapshot save snapshot.db
+
+# restore members
+bin/etcdctl snapshot restore snapshot.db --initial-cluster-token etcd-cluster-1 --initial-advertise-peer-urls http://127.0.0.1:12380  --name sshot1 --initial-cluster 'sshot1=http://127.0.0.1:12380,sshot2=http://127.0.0.1:22380,sshot3=http://127.0.0.1:32380'
+bin/etcdctl snapshot restore snapshot.db --initial-cluster-token etcd-cluster-1 --initial-advertise-peer-urls http://127.0.0.1:22380  --name sshot2 --initial-cluster 'sshot1=http://127.0.0.1:12380,sshot2=http://127.0.0.1:22380,sshot3=http://127.0.0.1:32380'
+bin/etcdctl snapshot restore snapshot.db --initial-cluster-token etcd-cluster-1 --initial-advertise-peer-urls http://127.0.0.1:32380  --name sshot3 --initial-cluster 'sshot1=http://127.0.0.1:12380,sshot2=http://127.0.0.1:22380,sshot3=http://127.0.0.1:32380'
+
+# launch members
+bin/etcd --name sshot1 --listen-client-urls http://127.0.0.1:2379 --advertise-client-urls http://127.0.0.1:2379 --listen-peer-urls http://127.0.0.1:12380 &amp;
+bin/etcd --name sshot2 --listen-client-urls http://127.0.0.1:22379 --advertise-client-urls http://127.0.0.1:22379 --listen-peer-urls http://127.0.0.1:22380 &amp;
+bin/etcd --name sshot3 --listen-client-urls http://127.0.0.1:32379 --advertise-client-urls http://127.0.0.1:32379 --listen-peer-urls http://127.0.0.1:32380 &amp;
+</code></pre>
+
+<h3>SNAPSHOT STATUS &lt;filename&gt;</h3>
+
+<p>Note: Deprecated. Use <code>etcdutl snapshot restore</code> instead. To be removed in v3.6.</p>
+
+<p>SNAPSHOT STATUS lists information about a given backend database snapshot file.</p>
+
+<h4>Output</h4>
+
+<h5>Simple format</h5>
+
+<p>Prints a humanized table of the database hash, revision, total keys, and size.</p>
+
+<h5>JSON format</h5>
+
+<p>Prints a line of JSON encoding the database hash, revision, total keys, and size.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl snapshot status file.db
+# cf1550fb, 3, 3, 25 kB
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl --write-out=json snapshot status file.db
+# {&quot;hash&quot;:3474280699,&quot;revision&quot;:3,&quot;totalKey&quot;:3,&quot;totalSize&quot;:24576}
+</code></pre>
+
+<pre><code class="language-bash">./etcdctl --write-out=table snapshot status file.db
++----------+----------+------------+------------+
+|   HASH   | REVISION | TOTAL KEYS | TOTAL SIZE |
++----------+----------+------------+------------+
+| cf1550fb |        3 |          3 | 25 kB      |
++----------+----------+------------+------------+
+</code></pre>
+
+<h3>MOVE-LEADER &lt;hexadecimal-transferee-id&gt;</h3>
+
+<p>MOVE-LEADER transfers leadership from the leader to another member in the cluster.</p>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash"># to choose transferee
+transferee_id=$(./etcdctl \
+  --endpoints localhost:2379,localhost:22379,localhost:32379 \
+  endpoint status | grep -m 1 &quot;false&quot; | awk -F', ' '{print $2}')
+echo ${transferee_id}
+# c89feb932daef420
+
+# endpoints should include leader node
+./etcdctl --endpoints ${transferee_ep} move-leader ${transferee_id}
+# Error:  no leader endpoint given at [localhost:22379 localhost:32379]
+
+# request to leader with target node ID
+./etcdctl --endpoints ${leader_ep} move-leader ${transferee_id}
+# Leadership transferred from 45ddc0e800e20b93 to c89feb932daef420
+</code></pre>
+
+<h2>Concurrency commands</h2>
+
+<h3>LOCK [options] &lt;lockname&gt; [command arg1 arg2 ...]</h3>
+
+<p>LOCK acquires a distributed mutex with a given name. Once the lock is acquired, it will be held until etcdctl is terminated.</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>ttl - time out in seconds of lock session.</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Once the lock is acquired but no command is given, the result for the GET on the unique lock holder key is displayed.</p>
+
+<p>If a command is given, it will be executed with environment variables <code>ETCD_LOCK_KEY</code> and <code>ETCD_LOCK_REV</code> set to the lock's holder key and revision.</p>
+
+<h4>Example</h4>
+
+<p>Acquire lock with standard output display:</p>
+
+<pre><code class="language-bash">./etcdctl lock mylock
+# mylock/1234534535445
+</code></pre>
+
+<p>Acquire lock and execute <code>echo lock acquired</code>:</p>
+
+<pre><code class="language-bash">./etcdctl lock mylock echo lock acquired
+# lock acquired
+</code></pre>
+
+<p>Acquire lock and execute <code>etcdctl put</code> command</p>
+
+<pre><code class="language-bash">./etcdctl lock mylock ./etcdctl put foo bar
+# OK
+</code></pre>
+
+<h4>Remarks</h4>
+
+<p>LOCK returns a zero exit code only if it is terminated by a signal and releases the lock.</p>
+
+<p>If LOCK is abnormally terminated or fails to contact the cluster to release the lock, the lock will remain held until the lease expires. Progress may be delayed by up to the default lease length of 60 seconds.</p>
+
+<h3>ELECT [options] &lt;election-name&gt; [proposal]</h3>
+
+<p>ELECT participates on a named election. A node announces its candidacy in the election by providing
+a proposal value. If a node wishes to observe the election, ELECT listens for new leaders values.
+Whenever a leader is elected, its proposal is given as output.</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>listen -- observe the election.</li>
+</ul>
+
+<h4>Output</h4>
+
+<ul>
+<li><p>If a candidate, ELECT displays the GET on the leader key once the node is elected election.</p></li>
+
+<li><p>If observing, ELECT streams the result for a GET on the leader key for the current election and all future elections.</p></li>
+</ul>
+
+<h4>Example</h4>
+
+<pre><code class="language-bash">./etcdctl elect myelection foo
+# myelection/1456952310051373265
+# foo
+</code></pre>
+
+<h4>Remarks</h4>
+
+<p>ELECT returns a zero exit code only if it is terminated by a signal and can revoke its candidacy or leadership, if any.</p>
+
+<p>If a candidate is abnormally terminated, election rogress may be delayed by up to the default lease length of 60 seconds.</p>
+
+<h2>Authentication commands</h2>
+
+<h3>AUTH &lt;enable or disable&gt;</h3>
+
+<p><code>auth enable</code> activates authentication on an etcd cluster and <code>auth disable</code> deactivates. When authentication is enabled, etcd checks all requests for appropriate authorization.</p>
+
+<p>RPC: AuthEnable/AuthDisable</p>
+
+<h4>Output</h4>
+
+<p><code>Authentication Enabled</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl user add root
+# Password of root:#type password for root
+# Type password of root again for confirmation:#re-type password for root
+# User root created
+./etcdctl user grant-role root root
+# Role root is granted to user root
+./etcdctl user get root
+# User: root
+# Roles: root
+./etcdctl role add root
+# Role root created
+./etcdctl role get root
+# Role root
+# KV Read:
+# KV Write:
+./etcdctl auth enable
+# Authentication Enabled
+</code></pre>
+
+<h3>ROLE &lt;subcommand&gt;</h3>
+
+<p>ROLE is used to specify different roles which can be assigned to etcd user(s).</p>
+
+<h3>ROLE ADD &lt;role name&gt;</h3>
+
+<p><code>role add</code> creates a role.</p>
+
+<p>RPC: RoleAdd</p>
+
+<h4>Output</h4>
+
+<p><code>Role &lt;role name&gt; created</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role add myrole
+# Role myrole created
+</code></pre>
+
+<h3>ROLE GET &lt;role name&gt;</h3>
+
+<p><code>role get</code> lists detailed role information.</p>
+
+<p>RPC: RoleGet</p>
+
+<h4>Output</h4>
+
+<p>Detailed role information.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role get myrole
+# Role myrole
+# KV Read:
+# foo
+# KV Write:
+# foo
+</code></pre>
+
+<h3>ROLE DELETE &lt;role name&gt;</h3>
+
+<p><code>role delete</code> deletes a role.</p>
+
+<p>RPC: RoleDelete</p>
+
+<h4>Output</h4>
+
+<p><code>Role &lt;role name&gt; deleted</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role delete myrole
+# Role myrole deleted
+</code></pre>
+
+<h3>ROLE LIST &lt;role name&gt;</h3>
+
+<p><code>role list</code> lists all roles in etcd.</p>
+
+<p>RPC: RoleList</p>
+
+<h4>Output</h4>
+
+<p>A role per line.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role list
+# roleA
+# roleB
+# myrole
+</code></pre>
+
+<h3>ROLE GRANT-PERMISSION [options] &lt;role name&gt; &lt;permission type&gt; &lt;key&gt; [endkey]</h3>
+
+<p><code>role grant-permission</code> grants a key to a role.</p>
+
+<p>RPC: RoleGrantPermission</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>from-key -- grant a permission of keys that are greater than or equal to the given key using byte compare</p></li>
+
+<li><p>prefix -- grant a prefix permission</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p><code>Role &lt;role name&gt; updated</code>.</p>
+
+<h4>Examples</h4>
+
+<p>Grant read and write permission on the key <code>foo</code> to role <code>myrole</code>:</p>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role grant-permission myrole readwrite foo
+# Role myrole updated
+</code></pre>
+
+<p>Grant read permission on the wildcard key pattern <code>foo/*</code> to role <code>myrole</code>:</p>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role grant-permission --prefix myrole readwrite foo/
+# Role myrole updated
+</code></pre>
+
+<h3>ROLE REVOKE-PERMISSION &lt;role name&gt; &lt;permission type&gt; &lt;key&gt; [endkey]</h3>
+
+<p><code>role revoke-permission</code> revokes a key from a role.</p>
+
+<p>RPC: RoleRevokePermission</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>from-key -- revoke a permission of keys that are greater than or equal to the given key using byte compare</p></li>
+
+<li><p>prefix -- revoke a prefix permission</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p><code>Permission of key &lt;key&gt; is revoked from role &lt;role name&gt;</code> for single key. <code>Permission of range [&lt;key&gt;, &lt;endkey&gt;) is revoked from role &lt;role name&gt;</code> for a key range. Exit code is zero.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 role revoke-permission myrole foo
+# Permission of key foo is revoked from role myrole
+</code></pre>
+
+<h3>USER &lt;subcommand&gt;</h3>
+
+<p>USER provides commands for managing users of etcd.</p>
+
+<h3>USER ADD &lt;user name or user:password&gt; [options]</h3>
+
+<p><code>user add</code> creates a user.</p>
+
+<p>RPC: UserAdd</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>interactive -- Read password from stdin instead of interactive terminal</li>
+</ul>
+
+<h4>Output</h4>
+
+<p><code>User &lt;user name&gt; created</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user add myuser
+# Password of myuser: #type password for my user
+# Type password of myuser again for confirmation:#re-type password for my user
+# User myuser created
+</code></pre>
+
+<h3>USER GET &lt;user name&gt; [options]</h3>
+
+<p><code>user get</code> lists detailed user information.</p>
+
+<p>RPC: UserGet</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>detail -- Show permissions of roles granted to the user</li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Detailed user information.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user get myuser
+# User: myuser
+# Roles:
+</code></pre>
+
+<h3>USER DELETE &lt;user name&gt;</h3>
+
+<p><code>user delete</code> deletes a user.</p>
+
+<p>RPC: UserDelete</p>
+
+<h4>Output</h4>
+
+<p><code>User &lt;user name&gt; deleted</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user delete myuser
+# User myuser deleted
+</code></pre>
+
+<h3>USER LIST</h3>
+
+<p><code>user list</code> lists detailed user information.</p>
+
+<p>RPC: UserList</p>
+
+<h4>Output</h4>
+
+<ul>
+<li>List of users, one per line.</li>
+</ul>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user list
+# user1
+# user2
+# myuser
+</code></pre>
+
+<h3>USER PASSWD &lt;user name&gt; [options]</h3>
+
+<p><code>user passwd</code> changes a user's password.</p>
+
+<p>RPC: UserChangePassword</p>
+
+<h4>Options</h4>
+
+<ul>
+<li>interactive -- if true, read password in interactive terminal</li>
+</ul>
+
+<h4>Output</h4>
+
+<p><code>Password updated</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user passwd myuser
+# Password of myuser: #type new password for my user
+# Type password of myuser again for confirmation: #re-type the new password for my user
+# Password updated
+</code></pre>
+
+<h3>USER GRANT-ROLE &lt;user name&gt; &lt;role name&gt;</h3>
+
+<p><code>user grant-role</code> grants a role to a user</p>
+
+<p>RPC: UserGrantRole</p>
+
+<h4>Output</h4>
+
+<p><code>Role &lt;role name&gt; is granted to user &lt;user name&gt;</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user grant-role userA roleA
+# Role roleA is granted to user userA
+</code></pre>
+
+<h3>USER REVOKE-ROLE &lt;user name&gt; &lt;role name&gt;</h3>
+
+<p><code>user revoke-role</code> revokes a role from a user</p>
+
+<p>RPC: UserRevokeRole</p>
+
+<h4>Output</h4>
+
+<p><code>Role &lt;role name&gt; is revoked from user &lt;user name&gt;</code>.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl --user=root:123 user revoke-role userA roleA
+# Role roleA is revoked from user userA
+</code></pre>
+
+<h2>Utility commands</h2>
+
+<h3>MAKE-MIRROR [options] &lt;destination&gt;</h3>
+
+<p><a href="./doc/mirror_maker.md">make-mirror</a> mirrors a key prefix in an etcd cluster to a destination etcd cluster.</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>dest-cacert -- TLS certificate authority file for destination cluster</p></li>
+
+<li><p>dest-cert -- TLS certificate file for destination cluster</p></li>
+
+<li><p>dest-key -- TLS key file for destination cluster</p></li>
+
+<li><p>prefix -- The key-value prefix to mirror</p></li>
+
+<li><p>dest-prefix -- The destination prefix to mirror a prefix to a different prefix in the destination cluster</p></li>
+
+<li><p>no-dest-prefix -- Mirror key-values to the root of the destination cluster</p></li>
+
+<li><p>dest-insecure-transport -- Disable transport security for client connections</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p>The approximate total number of keys transferred to the destination cluster, updated every 30 seconds.</p>
+
+<h4>Examples</h4>
+
+<pre><code>./etcdctl make-mirror mirror.example.com:2379
+# 10
+# 18
+</code></pre>
+
+<h3>VERSION</h3>
+
+<p>Prints the version of etcdctl.</p>
+
+<h4>Output</h4>
+
+<p>Prints etcd version and API version.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl version
+# etcdctl version: 3.1.0-alpha.0+git
+# API version: 3.1
+</code></pre>
+
+<h3>CHECK &lt;subcommand&gt;</h3>
+
+<p>CHECK provides commands for checking properties of the etcd cluster.</p>
+
+<h3>CHECK PERF [options]</h3>
+
+<p>CHECK PERF checks the performance of the etcd cluster for 60 seconds. Running the <code>check perf</code> often can create a large keyspace history which can be auto compacted and defragmented using the <code>--auto-compact</code> and <code>--auto-defrag</code> options as described below.</p>
+
+<p>RPC: CheckPerf</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>load -- the performance check's workload model. Accepted workloads: s(small), m(medium), l(large), xl(xLarge)</p></li>
+
+<li><p>prefix -- the prefix for writing the performance check's keys.</p></li>
+
+<li><p>auto-compact -- if true, compact storage with last revision after test is finished.</p></li>
+
+<li><p>auto-defrag -- if true, defragment storage after test is finished.</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints the result of performance check on different criteria like throughput. Also prints an overall status of the check as pass or fail.</p>
+
+<h4>Examples</h4>
+
+<p>Shows examples of both, pass and fail, status. The failure is due to the fact that a large workload was tried on a single node etcd cluster running on a laptop environment created for development and testing purpose.</p>
+
+<pre><code class="language-bash">./etcdctl check perf --load=&quot;s&quot;
+# 60 / 60 Booooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo! 100.00%1m0s
+# PASS: Throughput is 150 writes/s
+# PASS: Slowest request took 0.087509s
+# PASS: Stddev is 0.011084s
+# PASS
+./etcdctl check perf --load=&quot;l&quot;
+# 60 / 60 Booooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo! 100.00%1m0s
+# FAIL: Throughput too low: 6808 writes/s
+# PASS: Slowest request took 0.228191s
+# PASS: Stddev is 0.033547s
+# FAIL
+</code></pre>
+
+<h3>CHECK DATASCALE [options]</h3>
+
+<p>CHECK DATASCALE checks the memory usage of holding data for different workloads on a given server endpoint. Running the <code>check datascale</code> often can create a large keyspace history which can be auto compacted and defragmented using the <code>--auto-compact</code> and <code>--auto-defrag</code> options as described below.</p>
+
+<p>RPC: CheckDatascale</p>
+
+<h4>Options</h4>
+
+<ul>
+<li><p>load -- the datascale check's workload model. Accepted workloads: s(small), m(medium), l(large), xl(xLarge)</p></li>
+
+<li><p>prefix -- the prefix for writing the datascale check's keys.</p></li>
+
+<li><p>auto-compact -- if true, compact storage with last revision after test is finished.</p></li>
+
+<li><p>auto-defrag -- if true, defragment storage after test is finished.</p></li>
+</ul>
+
+<h4>Output</h4>
+
+<p>Prints the system memory usage for a given workload. Also prints status of compact and defragment if related options are passed.</p>
+
+<h4>Examples</h4>
+
+<pre><code class="language-bash">./etcdctl check datascale --load=&quot;s&quot; --auto-compact=true --auto-defrag=true
+# Start data scale check for work load [10000 key-value pairs, 1024 bytes per key-value, 50 concurrent clients].
+# Compacting with revision 18346204
+# Compacted with revision 18346204
+# Defragmenting &quot;127.0.0.1:2379&quot;
+# Defragmented &quot;127.0.0.1:2379&quot;
+# PASS: Approximate system memory used : 64.30 MB.
+</code></pre>
+
+<h2>Exit codes</h2>
+
+<p>For all commands, a successful execution return a zero exit code. All failures will return non-zero exit codes.</p>
+
+<h2>Output formats</h2>
+
+<p>All commands accept an output format by setting <code>-w</code> or <code>--write-out</code>. All commands default to the &quot;simple&quot; output format, which is meant to be human-readable. The simple format is listed in each command's <code>Output</code> description since it is customized for each command. If a command has a corresponding RPC, it will respect all output formats.</p>
+
+<p>If a command fails, returning a non-zero exit code, an error string will be written to standard error regardless of output format.</p>
+
+<h3>Simple</h3>
+
+<p>A format meant to be easy to parse and human-readable. Specific to each command.</p>
+
+<h3>JSON</h3>
+
+<p>The JSON encoding of the command's <a href="../api/etcdserverpb/rpc.proto">RPC response</a>. Since etcd's RPCs use byte strings, the JSON output will encode keys and values in base64.</p>
+
+<p>Some commands without an RPC also support JSON; see the command's <code>Output</code> description.</p>
+
+<h3>Protobuf</h3>
+
+<p>The protobuf encoding of the command's <a href="../api/etcdserverpb/rpc.proto">RPC response</a>. If an RPC is streaming, the stream messages will be concetenated. If an RPC is not given for a command, the protobuf output is not defined.</p>
+
+<h3>Fields</h3>
+
+<p>An output format similar to JSON but meant to parse with coreutils. For an integer field named <code>Field</code>, it writes a line in the format <code>&quot;Field&quot; : %d</code> where <code>%d</code> is go's integer formatting. For byte array fields, it writes <code>&quot;Field&quot; : %q</code> where <code>%q</code> is go's quoted string formatting (e.g., <code>[]byte{'a', '\n'}</code> is written as <code>&quot;a\n&quot;</code>).</p>
+
+<h2>Compatibility Support</h2>
+
+<p>etcdctl is still in its early stage. We try out best to ensure fully compatible releases, however we might break compatibility to fix bugs or improve commands. If we intend to release a version of etcdctl with backward incompatibilities, we will provide notice prior to release and have instructions on how to upgrade.</p>
+
+<h3>Input Compatibility</h3>
+
+<p>Input includes the command name, its flags, and its arguments. We ensure backward compatibility of the input of normal commands in non-interactive mode.</p>
+
+<h3>Output Compatibility</h3>
+
+<p>Output includes output from etcdctl and its exit code. etcdctl provides <code>simple</code> output format by default.
+We ensure compatibility for the <code>simple</code> output format of normal commands in non-interactive mode. Currently, we do not ensure
+backward compatibility for <code>JSON</code> format and the format in non-interactive mode. Currently, we do not ensure backward compatibility of utility commands.</p>
+
+<h3>TODO: compatibility with etcd server</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

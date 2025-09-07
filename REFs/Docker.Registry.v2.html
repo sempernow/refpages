@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Docker.Registry.v2</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://distribution.github.io/distribution/">CNCF Distribution Registry</a></h1>
+
+<blockquote>
+<p>The Registry is a stateless, highly scalable server-side application that stores and lets you distribute container images and other content. The Registry is open-source, under the permissive Apache license.</p>
+</blockquote>
+
+<h2><a href="https://distribution.github.io/distribution/about/deploying/">Deploy a local Docker Registry</a></h2>
+
+<h3>TL;DR</h3>
+
+<pre><code class="language-bash"># Deploy a CNCF Distribution registry
+img='registry:2.8.3'
+vi config.yml # Custom config (bind mount or config map)
+
+docker run --rm -d --name registry \
+    -p 5000:5000 \
+    -v /tmp/local_registry:/var/lib/registry \
+    -v $(pwd)/config.yml:/etc/docker/registry/config.yml \
+    $img 
+    #... flag: --restart=always is not reliable.
+    
+    # If want local DNS resolution of registry.local:5000
+    export reg='registry.local'
+    echo &quot;127.0.0.1 $reg&quot; |sudo tee /etc/hosts
+
+</code></pre>
+
+<h3><a href="config.yml"><code>config.yml</code></a> | <a href="https://distribution.github.io/distribution/#list-of-configuration-options" title="distribution.github.io">List of Configuration Options</a></h3>
+
+<p>Commandline override pattern:</p>
+
+<ul>
+<li>&quot;<code>http.tls.certificate: VAL</code>&quot; maps to &quot;<code>-e REGISTRY_HTTP_TLS_CERTIFICATE=VAL</code>&quot;</li>
+</ul>
+
+<h3>Advanced deployments</h3>
+
+<pre><code class="language-bash"># +TLS 
+docker run --rm -d -p 5000:5000 --name registry \
+    -v $host_path_to_images:/var/lib/registry \
+    -v $host_path_to_certs:/certs \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    -p 443:443 \
+    $img
+
+# +HTTP Basic Auth via Apache server (httpd)
+docker run --entrypoint htpasswd httpd:2 -Bbn $user $pw &gt; $host_path_to_auth/htpasswd
+docker run --rm -d -p 5000:5000 --name registry \
+    -v $host_path_to_auth:/auth \
+    -e &quot;REGISTRY_AUTH=htpasswd&quot; \
+    -e &quot;REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm&quot; \
+    -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+    -v $host_path_to_certs:/certs \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    $img
+
+# Enables login ...
+docker login $registry_domain:5000
+
+# Run as a Service
+docker secret create domain.crt $host_path_to_certs/domain.crt
+docker secret create domain.key $host_path_to_certs/domain.key
+docker service create \
+    --name registry \
+    --secret domain.crt \
+    --secret domain.key \
+    --constraint 'node.labels.registry==true' \
+    #--mount type=bind,src=$host_path_to_images,dst=/var/lib/registry \
+    -v $host_path_to_images:/var/lib/registry \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/run/secrets/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/run/secrets/domain.key \
+    -p 443:443 \
+    --replicas 1 \
+    $img
+</code></pre>
+
+<ul>
+<li>Registry endpoint: <code>http://localhost:5000</code></li>
+
+<li><p><a href="https://docs.docker.com/reference/cli/dockerd/#daemon-configuration-file">`/etc/docker/daemon.json</a></p>
+
+<pre><code class="language-json">{
+    &quot;insecure-registries&quot;: [
+        &quot;localhost:5000&quot;, 
+        &quot;registry.local:5000&quot;, 
+        &quot;172.27.240.169:5000&quot;
+    ]
+}
+</code></pre></li>
+
+<li><p>Host paths (<code>$host_path*</code>) are to be created; exist only for their purpose here.</p></li>
+
+<li><p>LB/Reverse-proxy considerations
+(<a href="https://distribution.github.io/distribution/recipes/nginx/">NGINX example</a>):</p>
+
+<ul>
+<li>For all responses to any request under the “<code>/v2/</code>” url space, the <code>Docker-Distribution-API-Version</code> header should be set to the value “<code>registry/2.0</code>”, even for a <code>4xx</code> response. This header allows the docker engine to quickly resolve authentication realms and fallback to version 1 registries, if necessary. Confirming this is setup correctly can help avoid problems with fallback.<br></li>
+<li>In the same train of thought, you must make sure you are properly sending the <code>X-Forwarded-Proto</code>, <code>X-Forwarded-For</code>, and Host headers to their “<code>client-side</code>” values. Failure to do so usually makes the registry issue redirects to internal hostnames or downgrading from https to http.</li>
+</ul></li>
+</ul>
+
+<h2>Client Requests to API</h2>
+
+<pre><code class="language-bash">
+# Docker Registry v2 API 
+# https://distribution.github.io/distribution/spec/api/
+# Validate the registry abides /v2/
+registry=registry.local:5000
+
+curl -I https://$registry/v2/
+    # HTTP/1.1 401 Unauthorized                       &lt;&lt;&lt; REQUIRED of v2
+    # content-type: application/json
+    # docker-distribution-api-version: registry/2.0   &lt;&lt;&lt; REQUIRED of v2
+    # www-authenticate: Bearer realm=&quot;https://auth.docker.io/token&quot;,service=&quot;registry.docker.io&quot;
+    # ... The WWW-Authenticate header value provides token-request params, so ...
+
+# GET token : scoped to target image (library/busybox)
+    # See WWW-Authenticate header for the actual auth endpoint, which may be other than &quot;/v2/&quot;
+    curl &quot;https://$registry/token?service=registry.docker.io&amp;scope=repository:$app:pull&quot;
+        # {&quot;token&quot;:&quot;...&quot;,&quot;access_token&quot;: &quot;...&quot;, ...}
+
+# GET manifest : The DIGEST is NOT in the JSON, but in the HEADER
+    ## @ v2.3+, with GET or HEAD request MUST include else bogus reponse:
+    auth=&quot;Authorization: Bearer $token&quot;
+    accept='Accept: application/vnd.docker.distribution.manifest.v2+json'
+    repo=''
+    app='busybox'
+    name=&quot;$repo/$app&quot;
+    tag='latest'
+    curl -H &quot;$auth&quot; -H &quot;$accept&quot; -isS https://$registry/v2/$name/manifests/$tag 
+
+# GET catalog of its image repos : JSON response body
+    curl -s http://$registry/v2/_catalog  # {&quot;repositories: [&quot;repo/app:tag&quot;,...]&quot;}
+
+# GET tags/list : all tags of an image APP : JSON response body
+    curl -s https://$registry/v2/$name/tags/list \
+        |tee list.$app.tags.json # {&quot;name&quot;:&quot;repo/app&quot;,&quot;tags&quot;:[&quot;a&quot;,&quot;b&quot;,...]}
+
+# GET flat list of ALL IMAGES of a Distribution Registry v2 
+    # in a single pipeline of two GET requests using jq to flatten 
+    # JSON responses to resulting format ([REPO/]APP:TAG).
+    curl -s http://$registry/v2/_catalog \
+        |jq -Mr .[][] \
+        |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+        |jq -Mr '.tags[] as $tag | &quot;\(.name):\($tag)&quot;'
+            # busybox:1.31.1-musl
+            # nginx:1.25-alpine3.18
+            # nginx:1.25.4-alpine-otel
+            # redhat/ubi8:8.7
+            
+# GET all content of registry, both repos and images lists, 
+# in both JSON and flat-list formats.
+    curl -s http://$registry/v2/_catalog \
+        |tee catalog.json \
+        |jq -Mr .[][] \
+        |tee catalog.repositories.log \
+        |xargs -I{} curl -s http://$registry/v2/{}/tags/list \
+        |jq -Mr . --slurp \
+        |tee all.tags.list.json \
+        |jq -Mr '.[] | .tags[] as $tag | &quot;\(.name):\($tag)&quot;' \
+        |tee all.images.log
+
+</code></pre>
+
+<pre><code class="language-bash"># PUSH : Use docker (client)
+    docker tag $app:$tag $registry/$app:tag
+    docker push $registry/$app:tag
+
+    # PUSH all in local docker cache to registry
+    dit ()
+    {
+        function d ()
+        {
+            docker image ls --format &quot;table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}&quot; $@
+        }
+        h=&quot;$( d |head -n1)&quot;
+        echo &quot;$h&quot;
+        d &quot;$@&quot; |grep -v REPOSITORY |sort -t' ' -k2
+    }
+    export -f dit
+    dit |grep -v $registry |grep -v IMAGE |awk '{print $2}' \
+    |xargs -I{} /bin/bash -c '
+        docker tag $1 $0/$1
+        docker push $0/$1
+    ' $registry  {}
+
+</code></pre>
+
+<pre><code class="language-bash"># DELETE an image from Registry v2 
+    # 1. HEAD : returns the digest required of any subsequent DELETE request.
+    # Digest is returned in HTTP response header: &quot;Docker-Content-Digest: sha256:abc...123&quot;
+        digest=&quot;$(
+            curl -H &quot;$accept&quot; -H &quot;$auth&quot; -siSX HEAD \
+                https://$registry/v2/$name/manifests/$tag \
+                |grep -i docker-content-digest \
+                |awk '{printf &quot;%s\n&quot;,$2}' \
+                |sed 's/\W//g' \
+                |sed 's/sha256/sha256:/' \
+        )&quot;  
+            # HTTP/1.1 200 OK
+            # ...
+            # docker-content-digest: sha256:521...945
+            # ...
+                # Note the /v2 API will FAIL SILENTLY, REGARDLESS of reason 
+                # (auth fail, no Accept header, ...). 
+                # Yet its HEAD response ALWAYS INCLUDES a digest. 
+                # The sole distinction between success and failure 
+                # is that the digest is real on success and bogus on failure.
+                # Attempting step 2 or other /manifest/ request with bogus digest will fail (HTTP 4xx or 5xx)
+
+    # 2. DELETE : /v2/&lt;app&gt;/manifests/&lt;reference&gt;
+    # HTTP 202 response on success
+        curl -H &quot;$auth&quot; -H &quot;$accept&quot; -sSX DELETE \
+            https://$registry/v2/$name/manifests/$digest 
+
+</code></pre>
+
+<h2><code>docker</code> : Load/Push/Pull/Save</h2>
+
+<pre><code class="language-bash">registry='registry.local:5000'
+
+# Load all saved images (*.tar) into Docker cache
+find . -type f -exec docker load -i {} \;
+
+
+# Tag/Push to local registry
+
+## Define helper function to list only REPO:TAG of all cached images
+list(){ docker image ls --format &quot;table {{.Repository}}:{{.Tag}}&quot;; }
+export -f list
+
+## (Re)Tag cached images (once), 
+## replacing registry (if in name) with $registry, else prepending $registry/
+list |grep -v TAG |grep -v $registry |xargs -IX /bin/bash -c '
+    docker tag $1 $0/${1#*/}
+' $registry X
+
+## Push images (to $registry) 
+list |grep $registry |xargs -IX /bin/bash -c '
+    docker push $1
+' _ X
+
+
+# Get catalog of registry images
+curl -s http://$registry/v2/_catalog |jq .
+#&gt; {&quot;repositories&quot;: [&quot;abox&quot;,...,&quot;kube-apiserver&quot;,&quot;kube-controller-manager&quot;,...]}
+
+# IF server and client are behind same proxy server
+curl -s --noproxy '*' http://$registry/v2/_catalog |jq .
+
+
+# Get all images (tags) of a name ([REPO/]APP)
+name='bitnami/postgresql'
+curl -s http://$registry/v2/$name/tags/list
+
+# Save (archive) the container image
+fname=&quot;${name//\//.}&quot;
+tag='12.19.0'
+docker save $registry/${name}:$tag |gzip -c &gt; ${fname//:/_}.tar.gz
+
+</code></pre>
+
+<h3>Login to remote registry</h3>
+
+<pre><code class="language-bash">registry='ghcr.io'
+
+docker login $registry -u $username -p $accesstoken
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

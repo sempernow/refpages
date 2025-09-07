@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Proxmox</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.proxmox.com/en/proxmox-virtual-environment/overview" title="Proxmox.com">Proxmox VE</a> (PVE) | <a href="https://www.proxmox.com/en/products/proxmox-virtual-environment/overview" title="Proxmox.com">Download ISO</a></h1>
+
+<h2>Install</h2>
+
+<p>Copy ISO, e.g., <code>proxmox-ve_8.4-1.iso</code>, onto USB using Rufus. Boot from USB at target machine, and follow the installation prompts. Select the misleading &quot;GUI&quot; install, which is the normal, headless install.</p>
+
+<h2>Overview</h2>
+
+<p><strong>Proxmox Virtual Environment</strong> (<strong><code>pve</code></strong>) is an open-source server-management platform for enterprise virtualization; VMs, containers, HA clusters and integrated disaster recovery. Built upon <strong>Debian</strong>, it installs <strong>headless</strong> by default, providing a <strong>web UI</strong> available locally, e.g., <code>https://192.168.28.181:8006</code>, and SSH access (<code>root@192.168.28.181</code>).</p>
+
+<blockquote>
+<p>Compute, network, and storage in a single solution.</p>
+</blockquote>
+
+<ul>
+<li><def title="Kernel-based Virtual Machine"><strong>KVM</strong></def> <strong>hypervisor</strong> : Manage VMs; run almost any OS.</li>
+<li><def title="Linux Containers"><strong>LXC</strong></def> : A kind of lightweight VM; a container that behaves more like a full Linux OS with its own <code>systemd</code> (init system) and user space.</li>
+<li>SDS : <a href="https://en.wikipedia.org/wiki/Software-defined_storage" title="Wikipedia">Software-defined Storage</a>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Ceph_(software)">Ceph</a> : Run <a href="https://docs.ceph.com/en/reef/rbd/" title="docs.ceph.com/rbd"><strong>Ceph RBD</strong></a> and <a href="https://docs.ceph.com/en/reef/cephfs/" title="docs.ceph.com/reef"><strong>Ceph FS</strong></a> (Reef) directly on nodes of VE cluster.</li>
+</ul></li>
+<li>SDN : Software-defined Networking</li>
+<li>Web UI</li>
+</ul>
+
+<h3>Image Formats</h3>
+
+<ul>
+<li><code>.vmdk</code> : VMware (ESXi) proprietary</li>
+<li><code>.qcow2</code></li>
+<li><code>.vdi</code></li>
+</ul>
+
+<h2><a href="https://chatgpt.com/share/f5522c3c-a597-42ac-adee-4d445b0836f6" title="ChatGPT.com">Proxmox v. ESXi v. OpenStack</a></h2>
+
+<blockquote>
+<p>VMware is now owned by Broadcom, which has <strong>discontinued the Free ESXi Hypervisor</strong> : <a href="https://knowledge.broadcom.com/external/article?legacyId=2107518" title="knowledge.broadcom.com">End Of General Availability of the free vSphere Hypervisor</a>&quot;</p>
+</blockquote>
+
+<h2>Proxmox VE Ceph Reef cluster</h2>
+
+<blockquote>
+<p>Reef clusters are an evolution in Ceph's long-term release series, bringing improvements in scalability, performance, security, and Kubernetes integration. These advancements make <a href="https://docs.ceph.com/en/reef/cephfs/" title="docs.ceph.com/reef">CephFS</a> more capable of handling large-scale, distributed storage requirements across various industries, while still leveraging Ceph's robust object storage foundation, <def title="Reliable Autonomic Distributed Object Store"><strong>RADOS</strong></def>.</p>
+</blockquote>
+
+<h3><a href="https://proxmox.com/en/downloads/proxmox-virtual-environment/documentation/proxmox-ve-ceph-benchmark-2023-12">Ceph Benchmark</a></h3>
+
+<p>Fast SSDs and network speeds in a . Current fast SSD disks provide great performance, and fast network cards are becoming more affordable. Hence, this is a good point to reevaluate how quickly different network setups for Ceph can be saturated depending on how many OSDs are present in each node.
+Summary</p>
+
+<p>In this paper we will present the following three key findings regarding hyper-converged Ceph setups with fast disks and high network bandwidth:</p>
+
+<ul>
+<li>Our benchmarks show that a 10 Gbit/s network can be easily overwhelmed. Even when only using one very fast disk the network becomes a bottleneck quickly.</li>
+<li>A network with a bandwidth of 25 Gbit/s can also become a bottleneck. Nevertheless, some improvements can be gained through configuration changes. Routing via FRR is preferred for a full-mesh cluster over Rapid Spanning Tree Protocol (RSTP). If no fallback is needed, a simple routed setup may also be a (less resilient) option.</li>
+<li>When using a 100 Gbit/s network the bottleneck in the cluster seems to finally shift away from the actual hardware and toward the Ceph client. Here we observed <strong>write speeds of up to 6000 MiB/s and read speeds of up to 7000 MiB/s for a single client</strong>. However, when using multiple clients in parallel, writing at up to 9800 MiB/s and reading at 19 500 MiB/s was possible.</li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

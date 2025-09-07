@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>storage.fio</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>FIO : <code>fio</code> : <a href="https://fio.readthedocs.io/en/latest/fio_doc.html#examples">Flexible I/O Tester</a> (Benchmarking)</h1>
+
+<h2>Install</h2>
+
+<p>@ RHEL</p>
+
+<pre><code class="language-bash">sudo dnf update -y
+sudo dnf install -y fio
+
+# Else
+sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+sudo dnf install -y fio
+
+# Verify
+fio --version # fio-3.13
+</code></pre>
+
+<p>@ Win</p>
+
+<pre><code class="language-bat">choco install -y fio
+
+:: Verify
+fio.exe --version
+</code></pre>
+
+<h2>TL;DR</h2>
+
+<p>Phy I/O performance is 30% improvement over VM, and 10x over WSL.</p>
+
+<p>Performance at Random RW (4k)</p>
+
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>IOPS [k]</th>
+<th>BW [MB/s]</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Phy</td>
+<td>67</td>
+<td>273</td>
+</tr>
+
+<tr>
+<td>VM</td>
+<td>51</td>
+<td>209</td>
+</tr>
+
+<tr>
+<td>WSL2</td>
+<td>4.7</td>
+<td>19</td>
+</tr>
+
+<tr>
+<td>NFS</td>
+<td>2.4</td>
+<td>0.99</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Two target/test options : Device or FS</h3>
+
+<h4>FS</h4>
+
+<ul>
+<li><code>--filename=/path/to/file</code></li>
+<li><code>--filename=/path/to/dir</code> : Creates file therein</li>
+</ul>
+
+<ol>
+<li>Testing filesystem performance (ext4, XFS, etc.).</li>
+<li>Simulates <strong>real-world file access</strong> patterns (e.g., databases, logs).</li>
+<li>Avoids direct hardware access (safer for shared systems).</li>
+</ol>
+
+<h3>Device</h3>
+
+<ul>
+<li><code>--filename=/dev/sdX</code> : Requires flags:
+
+<ul>
+<li><code>--direct=1</code> :    Bypasses OS page cache (measures real disk speed)</li>
+<li><code>--ioengine=libaio</code> (or <code>io_uring</code>) : Enables async I/O for accurate results</li>
+<li><code>--numjobs=4</code> : Increases parallel I/O for SSDs</li>
+</ul></li>
+</ul>
+
+<ol>
+<li>Measuring <strong>raw disk performance</strong> (bypassing filesystem).</li>
+<li>Benchmarking SSDs/NVMe drives for <strong>maximum throughput/latency</strong>.</li>
+<li>Avoiding filesystem caching effects.</li>
+</ol>
+
+<p>@ Container : <code>nixery.dev/shell/fio:latest</code></p>
+
+<pre><code class="language-bash">☩ k exec -it test-fio-pod -- fio --name=randrw \
+    --rw=randrw \
+    --size=1G \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --time_based \
+    --ioengine=libaio \
+    --group_reporting \
+    --filename=192.168.11.100:/srv/nfs/k8s/fiotest \
+    |grep -e read: -e write:
+
+  read: IOPS=37.6k, BW=147MiB/s (154MB/s)(8806MiB/60001msec)
+  write: IOPS=37.5k, BW=147MiB/s (154MB/s)(8799MiB/60001msec); 0 zone resets
+</code></pre>
+
+<h2>@ NVMe : Random R/W (<code>bs=4k</code>)</h2>
+
+<p>AirDisk (Benchmarked at 1/3 performance of name brands)</p>
+
+<p><code>--randread</code> and <code>--randwrite</code> measure <strong>peak performance</strong> for a single operation.</p>
+
+<p><code>--randrw</code> measures <strong>realistic</strong> mixed workload <strong>performance</strong>, where reads and writes compete.</p>
+
+<p>Expect 2x BW and 2x IOPS at <code>--randread</code> or <code>--randwrite</code> relative to <code>--randrw</code> performance.
+The latter better represents real world (mixed) performance.
+Sum of the former (pure read or write) is theoretical performance.</p>
+
+<p>@ Windows physical machine where <code>C:</code> is NVMe SSD having about 1/3 performance of most name brands:</p>
+
+<pre><code class="language-ini">S:\&gt;fio.exe --rw=randrw --name=test  --size=1G --bs=4k --iodepth=32 --runtime=60 --group_reporting --filename=C:\testfile
+...
+  read: IOPS=66.8k, BW=261MiB/s (273MB/s)(512MiB/1963msec)
+  ...
+  write: IOPS=66.8k, BW=261MiB/s (274MB/s)(512MiB/1963msec)
+  ...
+</code></pre>
+
+<ul>
+<li>Some 30% more performant than VM (Hyper-V)</li>
+<li>Partitions (<code>C</code>, <code>S</code>, <code>W</code>) of various sizes (same disk) perform equivalently.</li>
+<li>SanDisk NVMe USB performs equivalently.</li>
+</ul>
+
+<p>@ Hyper-V VM (<code>u1@a0</code>) : RHEL9 : <strong>Dynamic</strong> disk : <code>/dev/sdb</code></p>
+
+<pre><code class="language-bash">☩ sudo fio --name=randrw \
+    --rw=randrw \
+    --size=1G \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --ioengine=libaio \
+    --group_reporting \
+    --filename=/dev/sdb
+
+  ...
+  read:  IOPS=51.0k, BW=199MiB/s (209MB/s)(512MiB/2570msec)
+  ...
+  write: IOPS=51.0k, BW=199MiB/s (209MB/s)(512MiB/2570msec); 0 zone resets
+  ...
+</code></pre>
+
+<ul>
+<li><strong>10x relative to WSL2</strong></li>
+</ul>
+
+<p>@ Hyper-V VM (<code>u1@a0</code>) : RHEL9 : <strong>Static</strong> disk : <code>/dev/sdc</code></p>
+
+<pre><code class="language-bash">☩ sudo fio --name=randrw \
+    --rw=randrw \
+    --size=1G \
+    --rw=randrw \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --ioengine=libaio \
+    --group_reporting \
+    --filename=/dev/sdc
+
+...
+  read:  IOPS=45.6k, BW=178MiB/s (187MB/s)(512MiB/2875msec)
+  ...
+  write: IOPS=45.6k, BW=178MiB/s (187MB/s)(512MiB/2875msec); 0 zone resets
+  ...
+</code></pre>
+
+<ul>
+<li>Slightly <em>less performant</em> than Dynamic disk.</li>
+</ul>
+
+<p>Get pure (AKA theoretical) IOPS: Sum that of read and write:</p>
+
+<p>@ Hyper-V VM (<code>u1@a0</code>) : RHEL9 : <strong>Static</strong> disk : <code>/dev/sdc</code></p>
+
+<pre><code class="language-bash">☩ sudo fio --name=randrw  \
+    --rw=randrw \
+    --size=1G \
+    --rw=randrw \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --ioengine=libaio \
+    --group_reporting \
+    --filename=/dev/sdc \
+    --output-format=json \
+     |tee fio.randrw.dev.sdc.json
+
+☩ cat fio.randrw.dev.sdc.json |jq '.jobs[0].read.iops + .jobs[0].write.iops'
+69774.820336
+</code></pre>
+
+<ul>
+<li>IOPS : <code>69,774</code> (pure AKA theoretical only)</li>
+</ul>
+
+<p>@ WSL2 : <code>/s</code></p>
+
+<pre><code class="language-bash">☩ sudo fio --name=randrw \
+    --rw=randrw \
+    --size=1G \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --ioengine=libaio \
+    --filename=/s/fiotest \
+    --group_reporting
+
+...
+  read:  IOPS=4698, BW=18.4MiB/s (19.2MB/s)(512MiB/27888msec)
+  ...
+  write: IOPS=4701, BW=18.4MiB/s (19.3MB/s)(512MiB/27888msec); 0 zone resets
+  ...
+</code></pre>
+
+<ul>
+<li>Worst performer. 10x worse.</li>
+</ul>
+
+<h3>NFS</h3>
+
+<p>@ NFS server</p>
+
+<pre><code class="language-bash">☩ k exec -it test-fio-pod -- fio --name=randrw \
+    --rw=randrw \
+    --size=1G \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --time_based \
+    --ioengine=libaio \
+    --group_reporting \
+    --filename=192.168.11.100:/srv/nfs/k8s/default-test-fio-claim-pvc-6ec4b98e-2bac-4aec-a1f2-44dcbef828be \
+    |grep -e read: -e write:
+  read: IOPS=32.9k, BW=129MiB/s (135MB/s)(7713MiB/60001msec)
+  write: IOPS=32.9k, BW=128MiB/s (135MB/s)(7705MiB/60001msec); 0 zone resets
+</code></pre>
+
+<ul>
+<li>Declare either a folder or file as the target
+
+<ul>
+<li><code>--filename=192.168.11.100:/srv/nfs/k8s/default-test-fio-claim-pvc-6ec4b98e-2bac-4aec-a1f2-44dcbef828be</code></li>
+<li><code>--filename=192.168.11.100:/srv/nfs/k8s/fiotest</code></li>
+</ul></li>
+</ul>
+
+<p>Using NFS performance tuning : <code>async,no_wdelay,fsid=0</code></p>
+
+<p>@ Pod application : 10x performance degredation relative to server side.</p>
+
+<pre><code class="language-bash">☩ k exec -it test-fio-pod -- fio --name=randrw \
+    --rw=randrw \
+    --size=1G \
+    --bs=4k \
+    --iodepth=32 \
+    --direct=1 \
+    --runtime=60 \
+    --time_based \
+    --ioengine=libaio \
+    --group_reporting \
+    --filename=/mnt/fiotest \
+    |grep -e read: -e write:
+
+  read: IOPS=5617, BW=21.9MiB/s (23.0MB/s)(1317MiB/60003msec)
+  write: IOPS=5610, BW=21.9MiB/s (23.0MB/s)(1315MiB/60003msec); 0 zone resets
+
+</code></pre>
+
+<h2>@ NVMe : Sequential Read</h2>
+
+<p>@ Windows</p>
+
+<pre><code class="language-bat">C:\TEMP&gt;fio.exe --name=seqread --filename=C:\testfile --size=1G --rw=read --bs=1M --iodepth=32 --runtime=60 --group_reporting
+...
+  read: IOPS=3038, BW=3039MiB/s (3186MB/s)(1024MiB/337msec)
+...
+
+del C:\testfile 
+</code></pre>
+
+<h2>@ NVMe : Sequential Write</h2>
+
+<p>@ Linux</p>
+
+<pre><code class="language-bash">sudo fio --name=seqread --filename=/testfile --size=1G --rw=read --bs=1M --iodepth=32 --runtime=60 --group_reporting
+rm /testfile
+</code></pre>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

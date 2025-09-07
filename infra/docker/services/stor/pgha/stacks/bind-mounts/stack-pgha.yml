@@ -1,0 +1,85 @@
+## https://docs.docker.com/compose/compose-file
+version: '3.8' ## @ Docker Engine 19.03.0+
+
+x-logopts: ## https://docs.docker.com/compose/compose-file/compose-file-v3/#extension-fields 
+    &common-logopts ## https://docs.docker.com/compose/compose-file/compose-file-v3/#logging 
+    options:
+        max-size: '12m'
+        max-file: '5'
+    driver: json-file
+
+networks:
+    pvt1:
+        driver: overlay
+        # ipam:
+        #     driver: default
+        #     config:
+        #         - subnet: "10.0.120.0/24"
+        #         #- gateway: "10.0.120.1"
+        external: true
+
+x-svc: &common-svc
+        image: ${PGHA_IMAGE}
+        user: "70:70"
+        networks:
+            pvt1:
+        ports:
+            - 5432
+        ## Starting the server : https://www.postgresql.org/docs/current/server-start.html 
+        # command: ["postgres", "-c", "config_file=${PATH_ABS_CTNR_PGHOME}/pgha/config/${PG_CONFIG}"]
+        healthcheck: ## https://docs.docker.com/compose/compose-file/compose-file-v3/#healthcheck 
+            test: ["CMD-SHELL", "[ $$(psql -Aqt -c 'SELECT 1')1 == 11 ] && exit 0 || exit 1"]
+            # test: ["NONE"] 
+            interval: 5s
+            timeout: 2s
+            retries: 3
+            start_period: 10s
+        logging: *common-logopts
+
+services:
+
+    pg1: 
+        <<: *common-svc
+        hostname: "${PGHA_HOST1}" ## valid RFC 1123 https://docs.docker.com/compose/compose-file/#hostname
+        volumes: ## https://docs.docker.com/compose/compose-file/compose-file-v3/#volumes
+            - ${PATH_ABS_VM_STORE}/pgha/pgdata:${PATH_ABS_CTNR_PGDATA}
+            - ${PATH_ABS_VM_STORE}/pgha/archive:${PATH_ABS_CTNR_PGARCHIVE}
+            - ${PATH_ABS_VM_STORE}/pgha/etc:${PATH_ABS_CTNR_PG_ETC}
+            - ${PATH_ABS_VM_STORE}/pgha/sql:${PATH_ABS_CTNR_PG_SQL}
+            #- ${PATH_ABS_VM_ASSETS}/sql:${PATH_ABS_CTNR_PGHOME}/sql
+        deploy: ## https://docs.docker.com/compose/compose-file/compose-file-v3/#deploy 
+            replicas: 1
+            placement:
+                constraints: 
+                    - node.labels.pg1 == true
+
+    pg2: 
+        <<: *common-svc
+        hostname: "${PGHA_HOST2}"
+        volumes:
+            - ${PATH_ABS_VM_STORE}/pgha/pgdata:${PATH_ABS_CTNR_PGDATA}
+            - ${PATH_ABS_VM_STORE}/pgha/archive:${PATH_ABS_CTNR_PGARCHIVE}
+            - ${PATH_ABS_VM_STORE}/pgha/etc:${PATH_ABS_CTNR_PG_ETC}
+            - ${PATH_ABS_VM_STORE}/pgha/sql:${PATH_ABS_CTNR_PG_SQL}
+            #- ${PATH_ABS_VM_ASSETS}/sql:${PATH_ABS_CTNR_PGHOME}/sql
+        deploy: ## https://docs.docker.com/compose/compose-file/compose-file-v3/#deploy 
+            replicas: 1
+            placement:
+                constraints: 
+                    - node.labels.pg2 == true
+
+    ## Only ONE del service required for entire swarm; see /core stack
+
+    # del: ## DEL Service : Prune all swarm nodes of obsolete docker objects
+    #     image: alpinelinux/docker-cli
+    #     volumes:
+    #         - "/var/run/docker.sock:/var/run/docker.sock"
+    #     ## Command @ multi-host     : docker system prune --all --force
+    #     ##         @ docker-desktop : docker prune image --force
+    #     command: ${DOCKER_PRUNE_COMMAND} 
+    #     deploy:
+    #         mode: global
+    #         restart_policy:
+    #             condition: none  ##... run once per deploy.
+    #             delay: 5m
+    #     logging: *common-logopts

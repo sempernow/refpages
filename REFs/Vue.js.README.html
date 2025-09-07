@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vue.js.README</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Vue.js Framework</h1>
+
+<p>For a detailed explanation, check out <a href="http://vuejs-templates.github.io/webpack/">guide</a> and <a href="http://vuejs.github.io/vue-loader">docs for vue-loader</a>.<br>
+<a href="https://vuejs.org/v2/guide/installation.html#CLI">https://vuejs.org/v2/guide/installation.html#CLI</a></p>
+
+<h2>tl;dr</h2>
+
+<ul>
+<li><code>109 KB</code> javascript file for '<code>Hello World</code>' app.</li>
+</ul>
+
+<h2>Install Vue CLI Dev Env.</h2>
+
+<pre><code class="language-bash"># Install vue-cli globally, per npm
+npm install --global vue-cli
+</code></pre>
+
+<h2>vue-project</h2>
+
+<pre><code class="language-bash"># create a new project using the &quot;webpack&quot; template
+vue init webpack vue-project
+</code></pre>
+
+<h2>Build Setup</h2>
+
+<pre><code class="language-bash"># install dependencies
+cd vue-project
+npm install
+# serve with hot reload at localhost:8080
+npm run dev  
+</code></pre>
+
+<h2>Inspect</h2>
+
+<pre><code class="language-bash"># Download a Web page w/ all requisites; css, js, images
+wget --mirror --adjust-extension --page-requisites --convert-links --user-agent=Mozilla http://localhost:8080
+
+# =&gt; 3 files ...
+app.js      # 1 MB !!! [development]
+index.html  # 1 KB
+robots.txt  # 1 KB 
+# for this 'Hello World' app.
+</code></pre>
+
+<h2>Production Build</h2>
+
+<pre><code class="language-bash"># build for production with minification
+npm run build  
+cd dist
+# serve @ localhost
+npm install http-server --global
+http-server -p 8080
+</code></pre>
+
+<h2>Inspect</h2>
+
+<pre><code class="language-bash"># Download a Web page w/ all requisites; css, js, images
+wget --mirror --adjust-extension --page-requisites --convert-links  \
+--user-agent=Mozilla http://localhost:8080
+# =&gt; response files download to ...
+/localhost+8080/
+    # 100% client-side rendering: `&lt;div id=app&gt;&lt;/div&gt;`   
+    index.html                                    # 1 KB   
+      /static
+      /static/css/
+        app.cca059254702f9ed953b7df749673cf4.css  # 1 KB
+      /static/js/             
+        app.f16ac5c624284d30f5af.js               # 1 KB
+        manifest.2ae2e69a05c33dfc65f8.js          # 1 KB
+        vendor.5973cf24864eecc78c48.js            # 109 KB
+</code></pre>
+
+<pre><code class="language-bash"># build for production and view the bundle analyzer report
+npm run build --report
+
+# run unit tests
+npm run unit
+
+# run e2e tests
+npm run e2e
+
+# run all tests
+npm test
+</code></pre>
+
+<h1>Nuxt.js</h1>
+
+<h2>tl;dr</h2>
+
+<ul>
+<li><p>Server-side rendering for <code>Vue.js</code> applications. <strong>Not really ready to use.</strong> GitHub repo instructions are rather intricate.</p>
+
+<pre><code class="language-bash"># render html @ /static/ mirroring per route @ /pages/sourceN.vue 
+nuxt generate
+</code></pre></li>
+</ul>
+
+<blockquote>
+<p>&quot;... a framework for creating Universal Vue.js Applications.&quot;</p>
+
+<p>&quot;...[think] of an e-commerce web application made with nuxt generate and hosted on a CDN. Everytime a product is out of stock or back in stock, we regenerate the web app. But if the user navigates through the web app in the meantime, it will be up to date thanks to the API calls made to the e-commerce API. No need to have multiple instances of a server + a cache anymore!&quot;</p>
+</blockquote>
+
+<p><a href="https://nuxtjs.org/guide">https://nuxtjs.org/guide</a><br>
+<a href="https://github.com/nuxt/nuxtjs.org">https://github.com/nuxt/nuxtjs.org</a>  [FAILed]<br>
+<a href="https://github.com/nuxt-community/starter-template">https://github.com/nuxt-community/starter-template</a>  [FAILed]</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

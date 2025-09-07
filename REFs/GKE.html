@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GKE</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://cloud.google.com/products/" title="GCP Products">Google Cloud Platform (GCP)</a></h1>
+
+<h2><a href="https://cloud.google.com/sdk/docs/"><code>gcloud</code> SDK</a></h2>
+
+<h2>Kubernetes :: Google Kubernetes Engine (GKE)</h2>
+
+<h3>@ Create Cluster</h3>
+
+<ul>
+<li><p>Node image<br>
+<code>cos</code>: Container Optimized; based on Chromium OS<br>
+<code>container-vm</code>; legacy; Debian-based</p></li>
+
+<li><p>Size<br>
+The number of Minions<br>
+GKE handles the Master, as GKE is a managed service.</p></li>
+
+<li><p>Automatic Upgrates (beta)<br>
+Allow GKE to manage nodes.</p></li>
+
+<li><p>More<br>
+A bazillion options.</p></li>
+
+<li><p>Equivalent REST or <a href="https://cloud.google.com/sdk/gcloud/">gcloud</a> command line<br>
+Code equiv to GUI selections; downloadable</p></li>
+</ul>
+
+<h3>@ <code>gcloud</code> shell</h3>
+
+<pre><code class="language-bash">gcloud container clusters list
+</code></pre>
+
+<h3>Configure <code>kubectl</code> @ <code>gcloud</code> to use the cluster.</h3>
+
+<ul>
+<li><p>&quot;Connect to cluster&quot; (link)<br>
+Copy/Paste command into gcloud shell ...</p>
+
+<pre><code class="language-bash">kubectl get nodes 
+</code></pre></li>
+</ul>
+
+<h3>Login to cluster Dashboard (Web UI)</h3>
+
+<p><a href="https://IP_ADDR/ui">https://IP_ADDR/ui</a></p>
+
+<p>Get URL and password @ GKE console<br>
+1. Endpoint: IP_ADDR<br>
+2. &quot;Show credentials&quot; (link)</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

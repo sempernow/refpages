@@ -1,0 +1,53 @@
+# ns=limited
+# k create ns $ns
+# k -n $ns create quota q1 --hard=cpu1,memory=2G,pods=5
+# dname=restrictginx
+# k -n $ns create deploy $dname -n $ns --replicas 3 --image nginx 
+# k -n $ns set resources deployment $dname --limits=memory=256Mi --requests=memory=64Mi
+# k -n $ns set resources deployment $dname --limits=cpu=200m --requests=cpu=200m
+# k -n $ns get po,deploy,rs
+# k -n $ns get deploy $dname -o yaml
+apiVersion: apps/v1                                             
+kind: Deployment                                                
+metadata:                                                       
+  labels:                                                       
+    app: restrictginx                                           
+  name: restrictginx                                            
+  namespace: limited                                            
+spec:                                                           
+  progressDeadlineSeconds: 600                                  
+  replicas: 3                                                   
+  revisionHistoryLimit: 10                                      
+  selector:                                                     
+    matchLabels:                                                
+      app: restrictginx                                         
+  strategy:                                                     
+    rollingUpdate:                                              
+      maxSurge: 25%                                             
+      maxUnavailable: 25%                                       
+    type: RollingUpdate                                         
+  template:                                                     
+    metadata:                                                   
+      creationTimestamp: null                                   
+      labels:                                                   
+        app: restrictginx                                       
+    spec:                                                       
+      containers:                                               
+      - image: nginx                                            
+        imagePullPolicy: Always                                 
+        name: nginx                                             
+        resources:                                              
+          limits:                                               
+            cpu: 200m                                           
+            memory: 245Mi                                       
+          requests:                                             
+            cpu: 200m                                           
+            memory: 64Mi                                        
+        terminationMessagePath: /dev/termination-log            
+        terminationMessagePolicy: File                          
+      dnsPolicy: ClusterFirst                                   
+      restartPolicy: Always                                     
+      schedulerName: default-scheduler                          
+      securityContext: {}                                       
+      terminationGracePeriodSeconds: 30                         
+                                                                

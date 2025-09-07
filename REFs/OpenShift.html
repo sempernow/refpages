@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>OpenShift</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.redhat.com/en/documentation/openshift_container_platform/3.11/html/architecture/architecture-index#architecture-index" title="docs.redhat.com">OpenShift</a></h1>
+
+<h2>Chalenges of OpenShift in air-gapped network under ADDS?</h2>
+
+<table>
+<thead>
+<tr>
+<th align="left">Category</th>
+<th align="left">Issue</th>
+<th align="left">How serious?</th>
+<th align="left">Notes</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">User Authentication</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">You must properly integrate OpenShift OAuth into your Active Directory (SSO or LDAP).</td>
+</tr>
+
+<tr>
+<td align="left">UID/GID inside containers</td>
+<td align="left">✅</td>
+<td align="left">Medium</td>
+<td align="left">OpenShift <strong>randomizes user IDs inside containers</strong> (for security; &quot;arbitrary UID&quot;). Apps must run as <strong>non-root</strong> and tolerate <strong>any</strong> UID/GID.</td>
+</tr>
+
+<tr>
+<td align="left">SCC (Security Context Constraints)</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">You must configure the correct SCCs (e.g., <code>anyuid</code>, <code>restricted</code>) based on your app needs and security posture.</td>
+</tr>
+
+<tr>
+<td align="left">Persistent Volumes (NFS/Gluster/CSI)</td>
+<td align="left">✅</td>
+<td align="left">Medium</td>
+<td align="left">If external storage is involved, random pod UIDs must still be able to access the PVC. Needs careful permissions setup.</td>
+</tr>
+
+<tr>
+<td align="left">Certificate Management</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">Air-gapped OpenShift + Active Directory + TLS = need internal PKI for certs (e.g., internal CA, cluster-wide TLS bootstrapping).</td>
+</tr>
+
+<tr>
+<td align="left">Pull Secrets / Registries</td>
+<td align="left">✅</td>
+<td align="left">High</td>
+<td align="left">OpenShift nodes must pull from private registries inside air-gapped setup (mirror registries, signature trust setup).</td>
+</tr>
+
+<tr>
+<td align="left">User shell access to nodes</td>
+<td align="left">✅</td>
+<td align="left">Medium</td>
+<td align="left">If AD users are supposed to SSH into OpenShift nodes (which is rare), you'd face the same UID challenges. But OpenShift itself doesn't rely on user SSH logins.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Problems of OpenShift under AD:</h2>
+
+<ol>
+<li><p><strong>Authentication</strong>:<br>
+OpenShift needs an OAuth provider config mapped to your AD or LDAP.</p>
+
+<ul>
+<li>Must configure <strong>OAuth</strong> with an <strong>LDAP Identity Provider</strong> against ADDS.</li>
+<li>Optionally, use SAML if available in your AD.</li>
+</ul></li>
+
+<li><p><strong>Authorization</strong>:<br>
+OpenShift RBAC is <em>separate</em> from AD groups. You must <strong>map</strong> AD groups into OpenShift roles.</p></li>
+
+<li><p><strong>UID/GID behavior inside Pods</strong>:<br>
+Applications <strong>cannot assume</strong> static UIDs. They must tolerate <strong>arbitrary UID/GID</strong>.<br>
+If an app refuses to run unless UID=1000 or UID=0, you must use a special SCC (e.g., <code>anyuid</code>).</p></li>
+
+<li><p><strong>Persistent Volumes</strong>:<br>
+If a Pod UID randomizes, and you’re mounting NFS storage or similar, you need to allow &quot;world-writable&quot; (<code>0777</code>) or use supplemental groups.</p></li>
+
+<li><p><strong>TLS Certificates</strong>:<br>
+OpenShift will want <strong>internal PKI</strong> — you can't rely on public Let's Encrypt, etc. Must bootstrap trust internally.</p></li>
+
+<li><p><strong>Mirrored Registries</strong>:<br>
+OpenShift nodes must pull images inside air-gap. You must mirror the full set of OpenShift and operator registries.</p></li>
+</ol>
+
+<hr>
+
+<h2>🚀 Summary</h2>
+
+<table>
+<thead>
+<tr>
+<th align="left">Statement</th>
+<th align="left">True or False</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left">You’ll face identity and authorization work integrating OpenShift to AD</td>
+<td align="left">✅ True</td>
+</tr>
+
+<tr>
+<td align="left">You must adapt your apps to run with random UIDs</td>
+<td align="left">✅ True</td>
+</tr>
+
+<tr>
+<td align="left">You must carefully plan TLS and image pulls in air-gap</td>
+<td align="left">✅ True</td>
+</tr>
+
+<tr>
+<td align="left">OpenShift’s problems here are better documented and understood</td>
+<td align="left">✅ True</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h1>✅ Good News:</h1>
+
+<ul>
+<li><strong>OpenShift is built to handle corporate Identity Providers (IdPs)</strong> like AD.</li>
+<li><strong>Rootless user namespace mapping is not your problem</strong> in OpenShift. (Podman at user shell is a separate concern.)</li>
+<li><strong>Solutions exist and are official</strong> (e.g., OpenShift + AD integration is supported, documented, and tested.)</li>
+</ul>
+
+<h1>❗ Bad News:</h1>
+
+<ul>
+<li><strong>Apps must be OpenShift-compliant</strong> (arbitrary UID tolerant, non-root, etc.)</li>
+<li><strong>AD integration still needs careful planning</strong>.</li>
+<li><strong>TLS, DNS, and mirror registries must be air-gapped cleanly.</strong></li>
+</ul>
+
+<hr>
+
+<h2>External Load Balancer</h2>
+
+<p>OpenShift (Red Hat OpenShift Container Platform) typically uses <strong>external load balancers</strong> to distribute traffic to the OpenShift cluster's control plane (API and Ingress) and application workloads. The exact load balancer depends on the underlying infrastructure:</p>
+
+<h3><strong>1. On-Premises / Bare Metal:</strong></h3>
+
+<ul>
+<li><strong>HAProxy</strong>: Often used as a software-based load balancer.</li>
+<li><strong>F5 BIG-IP</strong>, <strong>Citrix ADC</strong>, or <strong>Avi Networks</strong>: Enterprise-grade hardware/software load balancers.</li>
+<li><strong>Keepalived + HAProxy</strong>: For high availability in self-managed environments.</li>
+</ul>
+
+<h3><strong>2. Cloud Providers:</strong></h3>
+
+<ul>
+<li><strong>AWS</strong>: Elastic Load Balancer (ELB) or Application Load Balancer (ALB).</li>
+<li><strong>Azure</strong>: Azure Load Balancer or Application Gateway.</li>
+<li><strong>Google Cloud</strong>: Cloud Load Balancing (TCP/UDP or HTTP(S)).</li>
+<li><strong>IBM Cloud</strong>: IBM Cloud Load Balancer.</li>
+</ul>
+
+<h3><strong>3. OpenShift Ingress (Router) Layer:</strong></h3>
+
+<ul>
+<li>OpenShift’s <strong>Ingress Controller</strong> (based on <strong>HAProxy</strong>) handles application traffic routing.</li>
+<li>External load balancers forward traffic to OpenShift’s Ingress pods.</li>
+</ul>
+
+<h3><strong>Configuration:</strong></h3>
+
+<ul>
+<li>For API servers, the load balancer directs traffic to control plane nodes (masters).</li>
+<li>For applications, it routes traffic to OpenShift Router (Ingress) pods.</li>
+</ul>
+
+<h3><strong>Key Considerations:</strong></h3>
+
+<ul>
+<li><strong>High Availability (HA)</strong>: The load balancer must be highly available.</li>
+<li><strong>Health Checks</strong>: Ensures traffic only goes to healthy nodes/pods.</li>
+<li><strong>TLS Termination</strong>: Can be done at the load balancer or within OpenShift.</li>
+</ul>
+
+<p>OpenShift itself does <strong>not</strong> deploy the external load balancer—you must set it up separately based on your infrastructure. Here's how it fits into the installation:</p>
+
+<h3><strong>1. During OpenShift Installation (Required for High Availability)</strong></h3>
+
+<ul>
+<li>The OpenShift installer (for IPI - <strong>Installer-Provisioned Infrastructure</strong>) on platforms like AWS, Azure, or GCP <strong>automatically provisions</strong> a cloud load balancer (e.g., AWS ELB, Azure LB).</li>
+<li>For <strong>UPI (User-Provisioned Infrastructure)</strong>, you <strong>must manually configure</strong> the load balancer before installation.</li>
+</ul>
+
+<h3><strong>2. Key Load Balancer Requirements</strong></h3>
+
+<ul>
+<li><strong>API Server Load Balancer</strong>: Distributes traffic to control plane (master) nodes.
+
+<ul>
+<li>Listens on <strong>TCP/6443 (Kubernetes API)</strong> and optionally <strong>TCP/22623 (Machine Config Server)</strong>.</li>
+</ul></li>
+<li><strong>Ingress (Router) Load Balancer</strong>: Routes application traffic to OpenShift Ingress pods.
+
+<ul>
+<li>Typically listens on <strong>TCP/80 (HTTP)</strong> and <strong>TCP/443 (HTTPS)</strong>.</li>
+</ul></li>
+</ul>
+
+<h3><strong>3. How OpenShift Interacts with the Load Balancer</strong></h3>
+
+<ul>
+<li>The installer (IPI) or admin (UPI) provides the load balancer's address in the installation config (<code>install-config.yaml</code>).</li>
+<li>OpenShift components (API servers, routers) register themselves as backends.</li>
+</ul>
+
+<h3><strong>4. Post-Installation</strong></h3>
+
+<ul>
+<li>OpenShift <strong>does not manage</strong> the external load balancer—you must update it manually if nodes are added/removed.</li>
+<li>For cloud platforms, the load balancer is usually managed by the cloud provider (e.g., AWS ELB updates target instances automatically).</li>
+</ul>
+
+<h3><strong>Example: AWS Installer-Provisioned Infrastructure (IPI)</strong></h3>
+
+<ul>
+<li>OpenShift installer <strong>automatically creates</strong>:
+
+<ul>
+<li>One <strong>Network Load Balancer (NLB)</strong> for the API.</li>
+<li>One <strong>Classic Load Balancer (CLB)</strong> for Ingress (apps).</li>
+</ul></li>
+<li>You don’t need to manually configure them.</li>
+</ul>
+
+<h3><strong>Example: Bare Metal (UPI)</strong></h3>
+
+<ul>
+<li>You must <strong>pre-configure</strong> HAProxy/F5/Citrix before installation.</li>
+
+<li><p>Example HAProxy config snippet for API:</p>
+
+<pre><code class="language-conf"> frontend openshift-api
+   bind *:6443
+   default_backend masters
+   option tcp-check
+
+ backend masters
+   balance source
+   server master1 192.168.1.10:6443 check
+   server master2 192.168.1.11:6443 check
+   server master3 192.168.1.12:6443 check
+</code></pre></li>
+</ul>
+
+<h3><strong>Summary</strong></h3>
+
+<ul>
+<li><strong>IPI (Cloud)</strong>: OpenShift installer handles LB setup.</li>
+<li><strong>UPI (Bare Metal/VMs)</strong>: You must set up the LB before installation.</li>
+<li>OpenShift <strong>relies on but does not manage</strong> the external LB after deployment.</li>
+</ul>
+
+<h2>Q:</h2>
+
+<p>Terminating TLS at HAProxy does not allow for multiple ingress controllers, each having its own TLS</p>
+
+<h2>A:</h2>
+
+<p><strong>Terminating TLS at HAProxy</strong> (instead of passthrough) <strong>breaks multi-tenancy</strong> for OpenShift Ingress Controllers, as HAProxy would need to handle all certificates centrally, preventing individual Ingress Controllers from managing their own TLS certs. Here’s how to resolve this:</p>
+
+<hr>
+
+<h3><strong>Problem: TLS Termination at HAProxy vs. OpenShift Ingress</strong></h3>
+
+<ol>
+<li><p><strong>Terminating at HAProxy</strong>:</p>
+
+<ul>
+<li>HAProxy decrypts traffic and forwards plain HTTP to OpenShift.</li>
+<li><strong>Limitation</strong>: Only one certificate (or SNI bundle) can be configured at HAProxy, blocking per-IngressController TLS.</li>
+</ul></li>
+
+<li><p><strong>Passthrough to OpenShift</strong>:</p>
+
+<ul>
+<li>HAProxy forwards raw TLS traffic to OpenShift Routers.</li>
+<li><strong>Advantage</strong>: Each <code>IngressController</code> (e.g., for different domains) can manage its own TLS certs via OpenShift.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3><strong>Solution: Use TCP Passthrough for Ingress HTTPS</strong></h3>
+
+<p>Configure HAProxy to forward <strong>raw TLS traffic</strong> (<code>mode tcp</code>) to OpenShift Routers, letting OpenShift handle TLS termination:</p>
+
+<h4><strong>HAProxy Config (Passthrough for Ingress)</strong></h4>
+
+<pre><code class="language-conf"># Control Plane (API) - TLS Passthrough (mandatory)
+frontend openshift_api
+  bind *:6443
+  mode tcp
+  default_backend api_servers
+
+# Data Plane (Ingress) - TCP Passthrough for HTTPS
+frontend openshift_https
+  bind *:443
+  mode tcp                     # Critical: Forward TLS traffic unmodified
+  default_backend https_routers
+
+backend https_routers
+  mode tcp
+  balance roundrobin
+  server worker1 192.168.1.20:443 check
+  server worker2 192.168.1.21:443 check
+
+# Optional: HTTP → HTTPS redirect (terminates at HAProxy)
+frontend openshift_http
+  bind *:80
+  mode http
+  redirect scheme https code 301
+</code></pre>
+
+<hr>
+
+<h3><strong>Why This Works</strong></h3>
+
+<ul>
+<li><p><strong>OpenShift IngressControllers</strong> handle TLS termination internally, supporting:</p>
+
+<ul>
+<li>Multiple certificates (e.g., via <code>Ingress</code> or <code>Route</code> resources).</li>
+<li>SNI-based routing (different certs per domain).</li>
+<li>Automatic certificate rotation (e.g., with Let’s Encrypt + Cert-Manager).</li>
+</ul></li>
+
+<li><p><strong>HAProxy</strong> acts as a dumb TCP proxy, avoiding conflicts with OpenShift’s TLS management.</p></li>
+</ul>
+
+<hr>
+
+<h3><strong>Key Trade-offs</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>HAProxy TLS Termination</strong></td>
+<td>Offloads CPU from OpenShift.</td>
+<td>Single certificate, no multi-tenancy.</td>
+</tr>
+
+<tr>
+<td><strong>Passthrough (Recommended)</strong></td>
+<td>Supports multiple IngressControllers.</td>
+<td>OpenShift handles TLS (higher CPU usage on workers).</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3><strong>Advanced: SNI Passthrough (If Absolutely Needed)</strong></h3>
+
+<p>If you <strong>must</strong> terminate some traffic at HAProxy while allowing OpenShift to handle other domains:
+1. <strong>Use SNI filtering</strong> in HAProxy to split traffic:</p>
+
+<pre><code class="language-conf">   frontend openshift_https
+     bind *:443
+     mode tcp
+     tcp-request inspect-delay 5s
+     tcp-request content accept if { req_ssl_hello_type 1 }
+     use_backend openshift_ingress if { req_ssl_sni -i apps.example.com }
+     use_backend haproxy_terminated if { req_ssl_sni -i admin.example.com }
+</code></pre>
+
+<ol>
+<li><strong>Complexity</strong>: Not recommended unless you have a hard requirement.</li>
+</ol>
+
+<hr>
+
+<h3><strong>Best Practice</strong></h3>
+
+<ol>
+<li><strong>Always use passthrough</strong> for OpenShift Ingress HTTPS (<code>:443</code>).</li>
+<li><strong>Terminate TLS at HAProxy only</strong> for:
+
+<ul>
+<li>Non-OpenShift services.</li>
+<li>HTTP-to-HTTPS redirects (<code>:80</code>).</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3><strong>Verification</strong></h3>
+
+<ol>
+<li><p>Check OpenShift Routers are handling TLS:</p>
+
+<pre><code class="language-bash">oc get route -n &lt;namespace&gt;  # Verify TLS settings per route
+</code></pre></li>
+
+<li><p>Test SNI support:</p>
+
+<pre><code class="language-bash">openssl s_client -connect apps.example.com:443 -servername apps.example.com
+</code></pre></li>
+</ol>
+
+<h3>PROXY Protocol</h3>
+
+<h3><strong>OpenShift Ingress Support for PROXY Protocol</strong></h3>
+
+<p>Yes, <strong>OpenShift Ingress (Router)</strong> supports the <strong>PROXY protocol</strong> to preserve the <strong>real client IP address</strong> when the external load balancer (e.g., HAProxy) operates in <strong>TCP mode (TLS passthrough)</strong>. However, it must be explicitly enabled.</p>
+
+<hr>
+
+<h3><strong>1. How PROXY Protocol Works</strong></h3>
+
+<ul>
+<li><strong>Problem</strong>: When HAProxy operates in <code>mode tcp</code>, the original client IP is lost (traffic appears to come from the LB’s IP).</li>
+<li><strong>Solution</strong>: PROXY protocol prepends client connection metadata (including source IP) before the TLS handshake.</li>
+<li><strong>Requires</strong>:
+
+<ul>
+<li><strong>HAProxy</strong> must send PROXY protocol headers.</li>
+<li><strong>OpenShift Ingress</strong> must be configured to accept them.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3><strong>2. Configuring HAProxy to Send PROXY Protocol</strong></h3>
+
+<p>Modify the HTTPS backend in <code>haproxy.cfg</code> to add <code>send-proxy</code>:</p>
+
+<pre><code class="language-conf">frontend openshift_https
+  bind *:443
+  mode tcp
+  default_backend https_routers
+
+backend https_routers
+  mode tcp
+  balance roundrobin
+  server worker1 192.168.1.20:443 check send-proxy  # &lt;-- Critical
+  server worker2 192.168.1.21:443 check send-proxy
+</code></pre>
+
+<hr>
+
+<h3><strong>3. Enabling PROXY Protocol in OpenShift Ingress</strong></h3>
+
+<h4><strong>Method 1: Editing the Default IngressController</strong></h4>
+
+<pre><code class="language-bash">oc edit ingresscontroller/default -n openshift-ingress-operator
+</code></pre>
+
+<p>Add the <code>PROXY</code> protocol policy under <code>spec.tuningOptions</code>:</p>
+
+<pre><code class="language-yaml">spec:
+  tuningOptions:
+    proxyProtocol: Enabled  # &lt;-- Enable PROXY protocol
+</code></pre>
+
+<h4><strong>Method 2: Creating a Custom IngressController</strong></h4>
+
+<pre><code class="language-yaml">apiVersion: operator.openshift.io/v1
+kind: IngressController
+metadata:
+  name: proxy-protocol
+  namespace: openshift-ingress-operator
+spec:
+  domain: apps.example.com
+  endpointPublishingStrategy:
+    type: LoadBalancerService
+  tuningOptions:
+    proxyProtocol: Enabled
+</code></pre>
+
+<hr>
+
+<h3><strong>4. Verification</strong></h3>
+
+<h4><strong>Check IngressController Status</strong></h4>
+
+<pre><code class="language-bash">oc get ingresscontroller/default -n openshift-ingress-operator -o yaml | grep proxyProtocol
+</code></pre>
+
+<p>Expected output:</p>
+
+<pre><code class="language-yaml">    proxyProtocol: Enabled
+</code></pre>
+
+<h4><strong>Test Client IP Preservation</strong></h4>
+
+<ol>
+<li><p>Deploy a test app that echoes client IPs:</p>
+
+<pre><code class="language-bash">oc create deployment test-app --image=nginx
+oc expose deployment/test-app --port=80
+oc create route edge test-app --service=test-app
+</code></pre></li>
+
+<li><p>Access the app and check logs:</p>
+
+<pre><code class="language-bash">curl -k https://test-app.apps.example.com
+oc logs -l app=test-app | grep &quot;X-Forwarded-For&quot;
+</code></pre>
+
+<ul>
+<li>If PROXY protocol works, logs will show the <strong>real client IP</strong>, not the LB’s IP.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3><strong>5. Key Considerations</strong></h3>
+
+<ul>
+<li><strong>TLS Passthrough Required</strong>: PROXY protocol only works in <code>mode tcp</code> (no TLS termination at LB).</li>
+<li><strong>Compatibility</strong>: Ensure all LBs in the chain (e.g., cloud LB → HAProxy) support PROXY protocol.</li>
+<li><strong>Performance</strong>: Minimal overhead (additional header per connection).</li>
+</ul>
+
+<hr>
+
+<h3><strong>6. Troubleshooting</strong></h3>
+
+<ul>
+<li><p><strong>If client IPs are still missing</strong>:</p>
+
+<ul>
+<li>Verify HAProxy’s <code>send-proxy</code> is enabled.</li>
+
+<li><p>Check OpenShift Router logs:</p>
+
+<pre><code class="language-bash">oc logs -l ingresscontroller.operator.openshift.io/deployment-ingresscontroller=default -n openshift-ingress
+</code></pre></li>
+
+<li><p>Ensure no intermediate LBs strip PROXY headers.</p></li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3><strong>Summary</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Component</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>HAProxy</strong></td>
+<td>Add <code>send-proxy</code> to backend servers.</td>
+</tr>
+
+<tr>
+<td>2</td>
+<td><strong>OpenShift Ingress</strong></td>
+<td>Set <code>spec.tuningOptions.proxyProtocol: Enabled</code>.</td>
+</tr>
+
+<tr>
+<td>3</td>
+<td><strong>Verification</strong></td>
+<td>Check app logs for client IPs.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Result</strong>: OpenShift Ingress will now correctly forward the original client IP to applications.</p>
+
+<h2>Firewall Rules</h2>
+
+<p>OpenShift <strong>requires specific firewall rules</strong> for proper operation, but whether they are <strong>automatically configured</strong> depends on the installation method and platform. Here’s a breakdown:</p>
+
+<hr>
+
+<h3><strong>1. Installer-Provisioned Infrastructure (IPI) – Cloud (AWS, Azure, GCP)</strong></h3>
+
+<ul>
+<li><strong>Firewall rules are automatically configured</strong> by the OpenShift installer.</li>
+<li>Cloud provider security groups (AWS), NSGs (Azure), or firewall rules (GCP) are applied to allow:
+
+<ul>
+<li><strong>Control plane (master) communication</strong> (TCP/6443 for API, TCP/22623 for machine config).</li>
+<li><strong>Worker node communication</strong> (TCP/10250 for Kubelet, TCP/30000-32767 for NodePort services).</li>
+<li><strong>Ingress traffic</strong> (TCP/80, TCP/443 for apps).</li>
+</ul></li>
+<li><strong>No manual setup needed</strong> in most cases.</li>
+</ul>
+
+<hr>
+
+<h3><strong>2. User-Provisioned Infrastructure (UPI) – Bare Metal, VMware, On-Prem</strong></h3>
+
+<p><strong>You must manually configure firewall rules</strong> before installation.</p>
+
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>Port(s)</strong></th>
+<th><strong>Direction</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>API Server</strong></td>
+<td>TCP/6443</td>
+<td>Inbound</td>
+<td>Kubernetes API access</td>
+</tr>
+
+<tr>
+<td><strong>Machine Config</strong></td>
+<td>TCP/22623</td>
+<td>Inbound</td>
+<td>Node provisioning (masters only)</td>
+</tr>
+
+<tr>
+<td><strong>ETCD</strong></td>
+<td>TCP/2379-2380</td>
+<td>Internal</td>
+<td>ETCD cluster communication</td>
+</tr>
+
+<tr>
+<td><strong>Kubelet</strong></td>
+<td>TCP/10250</td>
+<td>Internal</td>
+<td>Metrics &amp; pod communication</td>
+</tr>
+
+<tr>
+<td><strong>Ingress (Router)</strong></td>
+<td>TCP/80, TCP/443</td>
+<td>Inbound</td>
+<td>Application traffic</td>
+</tr>
+
+<tr>
+<td><strong>NodePort Services</strong></td>
+<td>TCP/30000-32767</td>
+<td>Inbound</td>
+<td>Optional for external services</td>
+</tr>
+
+<tr>
+<td><strong>Internal Pod Network</strong></td>
+<td>VXLAN (UDP/4789), Geneve (UDP/6081)</td>
+<td>Internal</td>
+<td>SDN (OpenShift SDN/OVN-Kubernetes)</td>
+</tr>
+
+<tr>
+<td><strong>DNS</strong></td>
+<td>UDP/53</td>
+<td>Internal</td>
+<td>CoreDNS resolution</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Example for <code>firewalld</code> (RHEL/CentOS)</strong>:</p>
+
+<pre><code class="language-bash"># Masters and Workers
+firewall-cmd --permanent --add-port=6443/tcp       # API
+firewall-cmd --permanent --add-port=10250/tcp      # Kubelet
+firewall-cmd --permanent --add-port=4789/udp       # OpenShift SDN (VXLAN)
+firewall-cmd --permanent --add-port=6081/udp       # OVN-Kubernetes (Geneve)
+firewall-cmd --permanent --add-port=30000-32767/tcp # NodePort range
+# Masters only
+firewall-cmd --permanent --add-port=2379-2380/tcp  # ETCD
+firewall-cmd --permanent --add-port=22623/tcp      # Machine Config
+firewall-cmd --reload
+</code></pre>
+
+<hr>
+
+<h3><strong>3. OpenShift Does NOT Automatically Configure Host Firewalls (Except for IPI)</strong></h3>
+
+<ul>
+<li><strong>On bare metal or UPI</strong>, you must ensure:
+
+<ul>
+<li>Host firewalls (<code>firewalld</code>, <code>iptables</code>, or cloud security groups) allow the required traffic.</li>
+<li>OpenShift’s internal services (SDN, DNS, etc.) can communicate unblocked.</li>
+</ul></li>
+<li><strong>OpenShift SDN/OVN-Kubernetes</strong> manages internal networking but <strong>does not modify host firewall rules</strong>.</li>
+</ul>
+
+<hr>
+
+<h3><strong>4. Post-Installation Adjustments</strong></h3>
+
+<ul>
+<li>If you later enable features like <strong>Metrics, Logging, or Service Mesh</strong>, additional ports may be needed.</li>
+<li><strong>Egress firewall rules</strong> can be managed via OpenShift’s <code>NetworkPolicy</code> or <code>EgressFirewall</code> (for project-level restrictions).</li>
+</ul>
+
+<hr>
+
+<h3><strong>Key Takeaways</strong></h3>
+
+<ul>
+<li><strong>IPI (Cloud)</strong>: Firewall rules are auto-configured.</li>
+<li><strong>UPI (Bare Metal/VMware)</strong>: You must manually open ports.</li>
+<li><strong>OpenShift itself does not modify host firewalls</strong>—it assumes the required ports are open.</li>
+</ul>
+
+<h2>Host Configuration</h2>
+
+<p>For a <strong>User-Provisioned Infrastructure (UPI)</strong> OpenShift deployment on <strong>RHEL (Red Hat Enterprise Linux)</strong>, the host systems (masters, workers, and bootstrap nodes) must meet specific requirements. Below are the key <strong>kernel modules, swap settings, and network configurations</strong> needed:</p>
+
+<hr>
+
+<h3><strong>1. Kernel Modules</strong></h3>
+
+<p>OpenShift requires certain kernel modules for networking, storage, and security. Ensure these are loaded on all nodes (masters/workers):</p>
+
+<h4><strong>Required Modules</strong>:</h4>
+
+<pre><code class="language-bash"># Check loaded modules
+lsmod | grep -E 'br_netfilter|overlay|nf_conntrack|iptable_filter|ebtables|ip_tables'
+
+# Load if missing (persist via /etc/modules-load.d/)
+modprobe br_netfilter
+modprobe overlay
+modprobe nf_conntrack
+modprobe iptable_filter
+modprobe ebtables
+modprobe ip_tables
+</code></pre>
+
+<ul>
+<li><strong><code>br_netfilter</code></strong>: Required for Kubernetes network policy (must be enabled).</li>
+<li><strong><code>overlay</code></strong>: Needed for container storage (CRI-O/Podman).</li>
+<li><strong><code>nf_conntrack</code></strong>: For connection tracking (used by kube-proxy).</li>
+<li><strong><code>iptables/ebtables</code></strong>: Used by OpenShift SDN/OVN-Kubernetes.</li>
+</ul>
+
+<h4><strong>Verify Kernel Parameters</strong>:</h4>
+
+<pre><code class="language-bash"># Ensure these sysctl settings are applied (persist in /etc/sysctl.d/)
+cat &gt; /etc/sysctl.d/99-openshift.conf &lt;&lt;EOF
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF
+sysctl -p /etc/sysctl.d/99-openshift.conf
+</code></pre>
+
+<hr>
+
+<h3><strong>2. Swap Settings</strong></h3>
+
+<ul>
+<li><p><strong>Swap must be disabled</strong> on all nodes (Kubernetes does not support swap for reliability).</p>
+
+<pre><code class="language-bash"># Disable swap immediately
+swapoff -a
+
+# Remove swap entries from /etc/fstab (persistent)
+sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+# Verify
+free -h | grep -i swap
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3><strong>3. Network Requirements</strong></h3>
+
+<h4><strong>Host Network Configuration</strong></h4>
+
+<ul>
+<li><p><strong>DNS Resolution</strong>: All nodes must resolve each other and the OpenShift cluster name.</p>
+
+<pre><code class="language-bash"># Example /etc/hosts (minimal)
+192.168.1.10 master-0.openshift.example.com
+192.168.1.11 master-1.openshift.example.com
+192.168.1.12 master-2.openshift.example.com
+</code></pre></li>
+
+<li><p><strong>NetworkManager</strong>: Must be running (required for OpenShift SDN/OVN-Kubernetes).</p>
+
+<pre><code class="language-bash">systemctl enable --now NetworkManager
+</code></pre></li>
+</ul>
+
+<h4><strong>Firewall Rules</strong></h4>
+
+<p>OpenShift requires specific ports to be open (see <a href="#what-firewall-settings-are-required-by-openshift-or-does-its-install-add-them">previous answer</a> for details). For UPI, manually configure:</p>
+
+<pre><code class="language-bash"># Open ports on masters/workers (example for firewalld)
+firewall-cmd --permanent --add-port={6443,22623,2379-2380,10250}/tcp
+firewall-cmd --permanent --add-port={4789,6081}/udp  # VXLAN/Geneve (SDN)
+firewall-cmd --reload
+</code></pre>
+
+<h4><strong>Network Time Protocol (NTP)</strong></h4>
+
+<ul>
+<li><p>All nodes must be time-synchronized (use <code>chronyd</code> or <code>ntpd</code>):</p>
+
+<pre><code class="language-bash">systemctl enable --now chronyd
+chronyc sources  # Verify sync
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3><strong>4. Additional Host Requirements</strong></h3>
+
+<ul>
+<li><strong>Disk</strong>: Minimum <strong>100GB</strong> per node (more for etcd/workers).</li>
+<li><strong>CPU/Memory</strong>:
+
+<ul>
+<li><strong>Masters</strong>: 4+ vCPUs, 16GB+ RAM.</li>
+<li><strong>Workers</strong>: 2+ vCPUs, 8GB+ RAM.</li>
+</ul></li>
+
+<li><p><strong>SELinux</strong>: Must be enabled in <strong><code>enforcing</code></strong> mode.</p>
+
+<pre><code class="language-bash">getenforce  # Should return &quot;Enforcing&quot;
+</code></pre></li>
+
+<li><p><strong>Container Runtime</strong>: OpenShift installs <strong>CRI-O</strong> automatically (no Docker needed).</p></li>
+</ul>
+
+<hr>
+
+<h3><strong>5. Pre-Installation Validation</strong></h3>
+
+<p>Run the OpenShift pre-flight checks:</p>
+
+<pre><code class="language-bash"># From the installer node
+openshift-install preflight-check
+</code></pre>
+
+<hr>
+
+<h3><strong>Summary of UPI Host Prep</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th><strong>Requirement</strong></th>
+<th><strong>Action</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Kernel Modules</strong></td>
+<td>Load <code>br_netfilter</code>, <code>overlay</code>, <code>nf_conntrack</code>, etc.</td>
+</tr>
+
+<tr>
+<td><strong>Swap</strong></td>
+<td>Disable swap permanently.</td>
+</tr>
+
+<tr>
+<td><strong>Firewall</strong></td>
+<td>Open <a href="#what-firewall-settings-are-required-by-openshift-or-does-its-install-add-them">required ports</a> for API, SDN, etc.</td>
+</tr>
+
+<tr>
+<td><strong>Network</strong></td>
+<td>Enable <code>NetworkManager</code>, NTP sync, and proper DNS.</td>
+</tr>
+
+<tr>
+<td><strong>SELinux</strong></td>
+<td>Set to <code>enforcing</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<p>For the full checklist, refer to the <a href="https://docs.openshift.com/container-platform/latest/installing/installing_bare_metal/installing-bare-metal.html">OpenShift UPI Documentation</a>. Would you like a platform-specific guide (e.g., VMware, bare metal)?</p>
+
+<h2>OS Requirement</h2>
+
+<p>For <strong>modern versions of OpenShift (4.x)</strong>, Red Hat mandates the use of <strong>immutable, container-optimized operating systems</strong> for cluster nodes. Here’s the breakdown:</p>
+
+<hr>
+
+<h3><strong>1. Primary Operating Systems for OpenShift 4.x</strong></h3>
+
+<h4><strong>a) Red Hat Enterprise Linux CoreOS (RHCOS)</strong></h4>
+
+<ul>
+<li><strong>Default for</strong>:<br>
+
+<ul>
+<li><strong>Control Plane (Master) Nodes</strong><br></li>
+<li><strong>Worker Nodes</strong> (unless using RHEL workers)<br></li>
+</ul></li>
+<li><strong>Key Features</strong>:<br>
+
+<ul>
+<li>Immutable, atomic updates via <code>rpm-ostree</code>.<br></li>
+<li>Auto-updated by the OpenShift <strong>Machine Config Operator (MCO)</strong>.<br></li>
+<li>Minimal, secure, and optimized for containers.<br></li>
+<li>Includes <code>crio</code> (CRI-O) as the default container runtime.<br></li>
+</ul></li>
+</ul>
+
+<h4><strong>b) Red Hat Enterprise Linux (RHEL) 8/9</strong></h4>
+
+<ul>
+<li><strong>Optional for</strong>:<br>
+
+<ul>
+<li><strong>Worker Nodes</strong> (if you need custom packages/kernel modules).<br></li>
+</ul></li>
+<li><strong>Requirements</strong>:<br>
+
+<ul>
+<li>Must use <strong>RHEL 8.6+ or RHEL 9.x</strong> (specific minor versions depend on OpenShift release).<br></li>
+<li>Requires manual subscription attachment and compliance with OpenShift’s kernel/package restrictions.<br></li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3><strong>2. Deprecated/Unsupported OS Options</strong></h3>
+
+<ul>
+<li><strong>RHEL Atomic Host</strong> (legacy, replaced by RHCOS).<br></li>
+<li><strong>CentOS/RHEL 7</strong> (not supported in OpenShift 4.x).<br></li>
+<li><strong>Ubuntu, Fedora, or other Linux distros</strong> (not supported for cluster nodes).<br></li>
+</ul>
+
+<hr>
+
+<h3><strong>3. Why RHCOS?</strong></h3>
+
+<ul>
+<li><strong>Immutable Design</strong>: Prevents drift and ensures consistency.<br></li>
+<li><strong>Automatic Updates</strong>: Managed by OpenShift operators (no manual patching).<br></li>
+<li><strong>Security</strong>: Minimal attack surface (no SSH by default, read-only <code>/usr</code>).<br></li>
+<li><strong>Integration</strong>: Tightly coupled with OpenShift’s <strong>Machine API</strong> and <strong>MCO</strong>.<br></li>
+</ul>
+
+<hr>
+
+<h3><strong>4. When to Use RHEL Workers?</strong></h3>
+
+<p>Only if you need:<br>
+- Custom kernel modules (e.g., proprietary drivers).<br>
+- Specialized workloads requiring host-level packages.<br>
+- Legacy applications not fully containerized.</p>
+
+<p><strong>Note</strong>: Mixing RHCOS (masters) and RHEL (workers) is supported but adds complexity.</p>
+
+<hr>
+
+<h3><strong>5. How to Verify OS in OpenShift?</strong></h3>
+
+<pre><code class="language-bash">oc get nodes -o wide  # Shows OS and kernel version
+oc debug node/&lt;node&gt;  # Inspect the underlying OS
+</code></pre>
+
+<hr>
+
+<h3><strong>6. Future Direction</strong></h3>
+
+<ul>
+<li>OpenShift <strong>5.x</strong> (future) will likely continue enforcing RHCOS/RHEL as the only supported options.<br></li>
+<li><strong>RHEL 9</strong> will become the standard as RHEL 8 approaches EOL (2029).<br></li>
+</ul>
+
+<hr>
+
+<h3><strong>Summary Table</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th><strong>Node Type</strong></th>
+<th><strong>Recommended OS</strong></th>
+<th><strong>Alternative OS</strong> ---</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Control Plane</strong></td>
+<td>RHCOS</td>
+<td>None</td>
+</tr>
+
+<tr>
+<td><strong>Workers</strong></td>
+<td>RHCOS (default)</td>
+<td>RHEL 8/9 (if needed)</td>
+</tr>
+</tbody>
+</table>
+
+<p>For production, <strong>stick with RHCOS unless you have a compelling reason to use RHEL workers</strong>.</p>
+
+<p>Would you like details on how OpenShift manages RHCOS updates?</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

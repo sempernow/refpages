@@ -1,0 +1,50 @@
+# Binaries
+app/admin/admin
+app/api/api
+app/sidecar/exv/exv
+
+# Mac
+.DS_Store
+
+# Backup files
+*~*
+
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+# Folders
+_obj
+_test
+
+# App
+.env/
+archives/
+backup/
+keys/
+secrets/
+.pgpass
+pg.auto.pg1.conf
+pg.auto.pg2.conf
+
+# Editor files
+.idea/
+*.iml
+*.swp
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+*.exe
+//*.test
+.vscode/tasks.json

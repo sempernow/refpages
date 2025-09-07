@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.self-hosted.restore</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://chatgpt.com/share/68118301-6484-8009-b970-264388b4ef83" title="ChatGPT">GitLab omnibus : Restore from Backup</a></h1>
+
+<h2>Configure : <code>/etc/gitlab/gitlab.rb</code></h2>
+
+<p>To stand up a temporary <strong>GitLab self-hosted</strong> instance (Omnibus) <strong>just to test backup recovery</strong>,
+the <code>gitlab.rb</code> can be minimized to only what’s needed to:</p>
+
+<ul>
+<li>Serve the web interface (even just on localhost)</li>
+<li>Restore from backup</li>
+<li>Avoid full TLS/DNS setup</li>
+<li>Avoid Pages, Registry, and other components unless you're testing them too</li>
+</ul>
+
+<p>Here’s a <strong>minimal working <code>gitlab.rb</code></strong> for localhost-based testing:</p>
+
+<pre><code class="language-ruby"># External URL – can be HTTP if TLS isn't required
+external_url 'http://gitlab.test.local'
+
+# Disable Let's Encrypt, since we're not using HTTPS
+letsencrypt['enable'] = false
+
+# Reduce unnecessary components
+nginx['listen_https'] = false
+nginx['redirect_http_to_https'] = false
+
+# Optional: set a port if needed
+# nginx['listen_port'] = 8080
+
+# Disable other services you don’t need for a backup test
+gitlab_rails['gitlab_pages_enabled'] = false
+registry['enable'] = false
+prometheus_monitoring['enable'] = false
+grafana['enable'] = false
+puma['worker_processes'] = 1
+
+# Skip SMTP config if you don’t care about email
+gitlab_rails['smtp_enable'] = false
+
+# Use default PostgreSQL, Redis, etc. included in Omnibus
+postgresql['enable'] = true
+redis['enable'] = true
+</code></pre>
+
+<h2>Optional DNS &amp; TLS Setup for <code>gitlab.test.local</code></h2>
+
+<ul>
+<li><p><strong>DNS</strong>: Add to <code>/etc/hosts</code>:</p>
+
+<pre><code>127.0.0.1 gitlab.test.local
+</code></pre></li>
+
+<li><p><strong>TLS</strong> (optional): Use self-signed certs only if testing HTTPS.</p>
+
+<pre><code class="language-ruby">external_url 'https://gitlab.test.local'
+nginx['redirect_http_to_https'] = true
+nginx['ssl_certificate'] = &quot;/etc/gitlab/ssl/gitlab.test.local.crt&quot;
+nginx['ssl_certificate_key'] = &quot;/etc/gitlab/ssl/gitlab.test.local.key&quot;
+</code></pre></li>
+
+<li><p>Generate self-signed:</p>
+
+<pre><code class="language-bash">sudo mkdir -p /etc/gitlab/ssl
+sudo openssl req -x509 -nodes -newkey rsa:2048 -keyout /etc/gitlab/ssl/gitlab.test.local.key -out /etc/gitlab/ssl/gitlab.test.local.crt -days 365 -subj &quot;/CN=gitlab.test.local&quot;
+sudo chmod 600 /etc/gitlab/ssl/*
+</code></pre></li>
+</ul>
+
+<p>Then run:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl reconfigure
+</code></pre>
+
+<p>After reconfiguring, restore your backup:</p>
+
+<pre><code class="language-bash">sudo gitlab-backup restore BACKUP=timestamp
+</code></pre>
+
+<p>And if needed, reset permissions:</p>
+
+<pre><code class="language-bash">sudo gitlab-rake gitlab:check SANITIZE=true
+</code></pre>
+
+<p>If you <strong>disable GitLab's built-in NGINX</strong> via:</p>
+
+<pre><code class="language-ruby">nginx['enable'] = false
+</code></pre>
+
+<p>Then GitLab <strong>does not start its internal NGINX at all</strong>, and <strong>you are responsible</strong> for TLS termination, routing, and proxying (e.g., using your own reverse proxy or testing via direct port).</p>
+
+<p>But if you don’t explicitly disable it (<code>nginx['enable'] = false</code>),
+GitLab <strong>Omnibus still manages NGINX</strong>, and it <strong>will handle TLS</strong> if:</p>
+
+<ul>
+<li><code>external_url</code> uses <code>https://</code></li>
+<li>Or <code>nginx['listen_https'] = true</code> is set</li>
+</ul>
+
+<p>So in your earlier minimal config, even with:</p>
+
+<pre><code class="language-ruby">nginx['listen_https'] = false
+nginx['redirect_http_to_https'] = false
+</code></pre>
+
+<p>As long as <code>external_url</code> is <code>http://...</code>, <strong>no TLS is used</strong>, and NGINX serves plain HTTP.</p>
+
+<p>If you do set <code>external_url</code> to <code>https://...</code> but forget to explicitly disable NGINX TLS, GitLab's NGINX will <strong>try to serve HTTPS</strong>, and if no cert is provided, it will error unless you use Let's Encrypt or generate self-signed ones.</p>
+
+<h3>TL;DR</h3>
+
+<ul>
+<li><code>nginx['enable'] = false</code> → You must handle web serving and TLS yourself (e.g., via Apache, Traefik, or nothing).</li>
+<li><code>nginx['enable']</code> unset or true + <code>external_url = 'http://...'</code> → GitLab's NGINX serves <strong>HTTP only</strong>.</li>
+<li><code>nginx['enable']</code> unset or true + <code>external_url = 'https://...'</code> → GitLab's NGINX expects to serve <strong>HTTPS</strong> and needs certs configured.</li>
+</ul>
+
+<h2>Verify</h2>
+
+<p>The <strong>simplest way to verify projects are restored</strong> after <code>gitlab-backup restore</code> is to:</p>
+
+<hr>
+
+<h3>1. <strong>Check via Web UI (easiest)</strong></h3>
+
+<ul>
+<li>Log in as root:<br>
+Default user is <code>root</code>, password is either:
+
+<ul>
+<li>From the original backup (if <code>/etc/gitlab/gitlab-secrets.json</code> was preserved), or</li>
+<li>Reset via <code>gitlab-rails console</code> (see below).</li>
+</ul></li>
+<li>Browse to <code>http://&lt;your_gitlab&gt;/</code><br></li>
+<li>Verify:
+
+<ul>
+<li>Projects are listed on the dashboard.</li>
+<li>Project pages load.</li>
+<li>Files and commits are visible.</li>
+<li>(Optional) Pipelines, issues, and merge requests show up.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3>2. <strong>Reset root password if needed</strong></h3>
+
+<p>If you can’t log in:</p>
+
+<pre><code class="language-bash">sudo gitlab-rails console
+</code></pre>
+
+<pre><code class="language-ruby">user = User.find_by_username('root')
+user.password = 'newpassword'
+user.password_confirmation = 'newpassword'
+user.save!
+</code></pre>
+
+<hr>
+
+<h3>3. <strong>List projects via CLI</strong></h3>
+
+<pre><code class="language-bash">sudo gitlab-rails runner &quot;Project.all.each { |p| puts \&quot;#{p.id}: #{p.full_path}\&quot; }&quot;
+</code></pre>
+
+<p>Or if you want to include visibility or repo size:</p>
+
+<pre><code class="language-bash">sudo gitlab-rails runner 'Project.all.each { |p| puts &quot;#{p.full_path}, #{p.visibility_level}, #{p.statistics.repository_size}&quot; }'
+</code></pre>
+
+<hr>
+
+<h3>4. <strong>Check repo content from shell</strong></h3>
+
+<p>You can inspect bare repositories restored under:</p>
+
+<pre><code>/var/opt/gitlab/git-data/repositories/&lt;namespace&gt;/&lt;project&gt;.git/
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code class="language-bash">ls /var/opt/gitlab/git-data/repositories/mygroup/myproject.git/
+</code></pre>
+
+<hr>
+
+<h2>Let me know if you're testing registry, pages, or CI/CD artifacts — they each require extra restore steps and paths.</h2>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

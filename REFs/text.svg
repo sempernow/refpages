@@ -1,0 +1,14 @@
+<svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        .small { font: italic 9px monospace; }
+        .heavy { font: bold 18px "Big John"; }
+        .foo { font: italic 14px sans-serif; fill: red; }
+    </style>
+
+    <text x="20" y="25" class="small">.small { font: italic 13px monospace; }</text>
+    <text x="20" y="5" class="small">svg viewBox=min-x min-y width height  </text>
+
+    <text x="20" y="80" class="heavy">.heavy { font: bold 30px "Big John"; }</text>
+    <text x="40" y="44" class="foo">.foo { font: italic 40px sans-serif; fill: red; }</text>
+    <text x="40" y="200" style="font:40px sans-serif;">U+2627: &#x2627; </text>
+</svg>

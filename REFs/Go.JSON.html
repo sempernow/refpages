@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Go.JSON</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Go &amp; JSON</h1>
+
+<h2><code>json.Marshal</code> &mdash; Go <em>to</em> JSON</h2>
+
+<pre><code class="language-golang">type model struct {
+    State    bool
+    Pictures []string
+    FooBar   string `db:&quot;foo_bar&quot; json:&quot;fooBar,omitempty&quot;`
+    FooBar2  string `db:&quot;foo_bar_2&quot; json:&quot;fooBar2&quot;`
+    // The JSON &quot;omitempty&quot; affects only Marshalling (struct to JSON); 
+    // does NOT AFFECT struct on Unmarshal (JSON to struct)
+}
+
+m := model{
+    State: true,
+    Pictures: []string{
+        &quot;one.jpg&quot;,
+        &quot;two.jpg&quot;,
+        &quot;three.jpg&quot;,
+    },
+    FooBar: &quot;&quot;, 
+}
+
+b, err := json.Marshal(m)
+if err != nil {
+    fmt.Println(&quot;FAIL @ json.Marshal: &quot;, err)
+}
+
+os.Stdout.Write(b)
+</code></pre>
+
+<pre><code class="language-bash">☩ go run .
+{&quot;State&quot;:true,&quot;Pictures&quot;:[&quot;one.jpg&quot;,&quot;two.jpg&quot;,&quot;three.jpg&quot;],&quot;fooBar2&quot;:&quot;&quot;}}
+</code></pre>
+
+<ul>
+<li>Note that <code>omitempty</code> ensures JSON key is <strong><em>omitted</em></strong>,
+whether or not its struct field (key) is present,
+as long as the value thereof is it's type's <strong><em>zero-value</em></strong>.</li>
+</ul>
+
+<h2><code>json.Unmarshal</code> &mdash; JSON <em>to</em> Go</h2>
+
+<pre><code class="language-golang">var data img
+rcvd := `{
+        &quot;Width&quot;: 800,
+        &quot;Height&quot;:600,
+        &quot;Title&quot;:&quot;Foo Bar&quot;,
+        &quot;Thumbnail&quot;:{
+            &quot;Url&quot;:&quot;http://www.example.com/image/481989943&quot;,
+            &quot;Height&quot;:125,
+            &quot;Width&quot;:100
+        },
+        &quot;Animated&quot;:false,
+        &quot;IDs&quot;:[116,943,234,38793]
+    }`
+
+type thumbnail struct {
+    URL           string
+    Height, Width int
+}
+
+type img struct {
+    Width, Height int
+    Title         string
+    Thumbnail     thumbnail
+    Animated      bool
+    IDs           []int
+}
+
+err := json.Unmarshal([]byte(rcvd), &amp;data)
+if err != nil {
+    log.Fatalln(&quot;FAIL @ json.Unmarshal&quot;, err)
+}
+
+fmt.Printf(&quot;%+v\n&quot;, data)
+</code></pre>
+
+<pre><code class="language-bash">☩ go run .
+{Width:800 Height:600 Title:Foo Bar Thumbnail:{URL:http://www.example.com/image/481989943 Height:125 Width:100} Animated:false IDs:[116 943 234 38793]}
+</code></pre>
+
+<h3>JSON <code>null</code> <strong><em>maps to</em></strong> the Golang <strong><em>type's zero value</em></strong>; <code>&quot;&quot;</code>, <code>0</code>, <code>{}</code>, <code>[]</code></h3>
+
+<pre><code class="language-golang">rcvd = `null`
+</code></pre>
+
+<pre><code class="language-bash">☩ go run .
+{Width:0 Height:0 Title: Thumbnail:{URL: Height:0 Width:0} Animated:false IDs:[]}
+</code></pre>
+
+<table>
+<thead>
+<tr>
+<th>JSON</th>
+<th>Golang (<code>struct</code>)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>{&quot;Thumbnail&quot;:{}}</code></td>
+<td><code>{Thumbnail:{URL: Height:0 Width:0}}</code></td>
+</tr>
+
+<tr>
+<td><code>{&quot;Thumbnail&quot;:null}</code></td>
+<td><code>{Thumbnail:{URL: Height:0 Width:0}}</code></td>
+</tr>
+
+<tr>
+<td><code>{&quot;IDs&quot;:null}</code></td>
+<td><code>{IDs:[]}</code></td>
+</tr>
+
+<tr>
+<td><code>{&quot;Width&quot;:null}</code></td>
+<td><code>{Width:0}</code></td>
+</tr>
+
+<tr>
+<td><code>{&quot;Title&quot;:null}</code></td>
+<td><code>{Title:}</code></td>
+</tr>
+</tbody>
+</table>
+
+<h3>JSON keys <strong><em>ommitted</em></strong> map same as <code>null</code></h3>
+
+<pre><code class="language-golang">rcvd = `{
+    &quot;Width&quot;: 800,
+    &quot;Title&quot;:&quot;Foo Bar&quot;
+}`
+</code></pre>
+
+<pre><code class="language-bash">☩ go run .
+{Width:800 Height:0 Title:Foo Bar Thumbnail:{URL: Height:0 Width:0} Animated:false IDs:[]}
+</code></pre>
+
+<h4>Note <code>null</code> is a javascript keyword.</h4>
+
+<h2>JSON Tags</h2>
+
+<p>Allow for namespace maps, per domain (per package); <code>json.</code>, <code>db.</code>, .... Note that <strong>conditionals</strong>, e.g., <code>omitempty</code>, apply on mapping <strong><em>from struct</em></strong> to &hellip; JSON, DBMS query, or whatever, <strong><em>only</em></strong>; they <strong><em>do not apply to</em></strong> <strong><code>json.Unmarshal</code>ling</strong>.</p>
+
+<pre><code class="language-golang">type img struct {
+    Width, Height int
+    Title         string
+    Thumbnail     thumbnail
+    Animated      bool
+    IDs           []int
+    FooBar        string `db:&quot;foo_bar&quot; json:&quot;fooBar,omitempty&quot;` 
+    //... JSON key is omitted on Marshalling (struct to JSON). 
+    //... Does NOT AFFECT struct on Unmarshal (JSON to struct)!
+}
+</code></pre>
+
+<pre><code class="language-golang">rcvd = `{
+    &quot;Width&quot;:800
+}`
+</code></pre>
+
+<pre><code class="language-bash">☩ go run .
+{Width:800 Height:0 Title: Thumbnail:{URL: Height:0 Width:0} Animated:false IDs:[] FooBar:}
+</code></pre>
+
+<h2>Pointer Types @ Unmarshal (JSON to Go)</h2>
+
+<p>With one simple test for <code>nil</code>, pointer field types allow us to set and abide <strong><em>validation</em></strong> criteria, including those against type's zero-value,
+yet conditionally <strong><em>bypass validation</em></strong> <em>on absesnt key and key having</em> <code>null</code> <em>(javascript keyword) value</em>.</p>
+
+<p>This trick works for all Golang value types (those pointed to); <code>int</code>, <code>string</code>, <code>[]byte</code>, <code>struct{}</code>, &hellip; their zero-values are <em>not</em> <code>nil</code>.</p>
+
+<pre><code class="language-golang">// User ...
+type User struct {
+    Uname *string //`json:&quot;uname,omitempty&quot;`
+}
+
+func main() {
+    var u1, u2, u3 User
+    json.Unmarshal([]byte(`{&quot;uname&quot;:&quot;&quot;}`), &amp;u1)   // the type's zero-value
+    json.Unmarshal([]byte(`{}`), &amp;u2)             // absent key
+    json.Unmarshal([]byte(`{&quot;uname&quot;:null}`), &amp;u3) // null (javascript keyword)
+
+    fmt.Println(&quot;uname set:&quot;, u1.Uname != nil, *u1.Uname)
+    fmt.Println(&quot;uname set:&quot;, u2.Uname != nil, u2.Uname) // Can't dereference nil pointer
+    fmt.Println(&quot;uname set:&quot;, u3.Uname != nil, u3.Uname) // Can't dereference nil pointer
+}
+</code></pre>
+
+<pre><code class="language-bash">☩ go run .
+uname set: true 
+uname set: false &lt;nil&gt;
+uname set: false &lt;nil&gt;
+</code></pre>
+
+<h3><a href="json-validation/pattern-3.go"><code>json-validation/pattern-3.go</code></a></h3>
+
+<pre><code class="language-golang">// UserP3 is case/pattern handles cases where want keys to bypass validation if not sent or null.
+type UserP3 struct {
+	Name     *string `json:&quot;name&quot; validate:&quot;required,min=1&quot;` 
+	Age      *uint   `json:&quot;age&quot;  validate:&quot;omitempty,gte=1&quot;`
+	Addr     *string `json:&quot;addr&quot; validate:&quot;min=1&quot;`
+	FavColor string  `json:&quot;favColor&quot;`
+} // Use this struct only @ Unmarshal (JSON to Go)
+
+// Pointers with `&quot;omitempty&quot;` bypass validation (validate) on null||not-sent,
+// yet are caught (invalidate) if condition not met when sent and not null.
+</code></pre>
+
+<h3><code>.Decode</code>, vs. <code>.Unmarshal</code></h3>
+
+<pre><code class="language-golang">if err := json.NewDecoder(jStream).Decode(&amp;toThisStruct); err != nil {
+    fmt.Printf(&quot;FAIL @ Unmarshalling (JSON to struct) \n%s\n&quot;, err)
+}
+</code></pre>
+
+<ul>
+<li>Use <code>json.Decoder</code> if the JSON data is coming from an <code>io.Reader</code> stream, such as an HTTP request.</li>
+<li>Use <code>json.Unmarshal</code> if the JSON data is already in memory, as <code>[]byte</code>.</li>
+</ul>
+
+<h2>Pairing types across app boundaries</h2>
+
+<table>
+<thead>
+<tr>
+<th>PostgreSQL</th>
+<th>Golang</th>
+<th>Javascript</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>BIGINT</code></td>
+<td><code>int</code></td>
+<td><code>integer</code></td>
+</tr>
+
+<tr>
+<td><code>UUID</code></td>
+<td><code>string</code></td>
+<td><code>string</code></td>
+</tr>
+
+<tr>
+<td><code>NUMERIC(5,2)</code></td>
+<td>???</td>
+<td>???</td>
+</tr>
+
+<tr>
+<td><code>TIMESTAMPTZ</code></td>
+<td><code>time.Time</code></td>
+<td><code>string</code></td>
+</tr>
+</tbody>
+</table>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

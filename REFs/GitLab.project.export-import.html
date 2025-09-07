@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.project.export-import</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.gitlab.com/user/project/settings/import_export/" title="docs.gitlab.com">GitLab Migrate : Project Export/Import</a></h1>
+
+<p>Regarding <strong>development across two air-gapped networks</strong>,
+automate the transfer of projects between two air-gapped GitLab instances
+(one-way from <code>gitlab.a.lan</code> to <code>gitlab.b.lan</code>)
+while ensuring proper group and subgroup mapping and creation.</p>
+
+<ul>
+<li>From: <code>gitlab.a.lan/group-a/x/project-1</code></li>
+<li>To: <code>gitlab.b.lan/group-b/y/project-1</code>
+
+<ul>
+<li>Path (<code>path_with_namespace</code>) may not yet exist.</li>
+</ul></li>
+</ul>
+
+<p>The process involves exporting projects from the source GitLab,
+transferring the exported files, then importing them into the destination GitLab,
+and potentially creating any necessary groups and subgroups in the destination GitLab before import.</p>
+
+<p>Here's a step-by-step breakdown to automate this using scripting:</p>
+
+<h3>1. Export the Project from Source GitLab (<code>gitlab.a.lan</code>)</h3>
+
+<p>Use the GitLab API to export the project.
+This will create an export file that you can download once the export is complete.</p>
+
+<pre><code class="language-bash">origin=https://gitlab.a.lan
+
+# Trigger export
+curl -X POST -H &quot;PRIVATE-TOKEN: $a_access_token&quot; &quot;$origin/api/v4/projects/$project_id/export&quot;
+
+# Check export status and download when ready
+while :;do
+    export_status=$(curl -H &quot;PRIVATE-TOKEN: $a_access_token&quot; &quot;$origin/api/v4/projects/$project_id/export&quot;)
+    if [[ $export_status == *&quot;finished&quot;* ]]; then
+        curl -H &quot;PRIVATE-TOKEN: $a_access_token&quot; &quot;$origin/api/v4/projects/$project_id/export/download&quot; -o prj.$project_id.tar.gz
+        break
+    fi
+    sleep 10
+done
+</code></pre>
+
+<h3>2. Transfer the Export File</h3>
+
+<p>Transfer the exported <code>.tar.gz</code> file to the destination network.
+This might involve physical media like a USB drive, depending on your air-gap protocols.</p>
+
+<h3>3. Check and Create Group/Subgroup on Destination GitLab (<code>gitlab.b.lan</code>)</h3>
+
+<p>Before you can import the project, ensure that the target group/subgroup structure exists. If not, create it using API calls.</p>
+
+<pre><code class="language-bash">origin=https://gitlab.b.lan
+
+# Function to create group if it does not exist
+create_group_if_not_exists() {
+    local parent_id=&quot;$1&quot;
+    local group_path=&quot;$2&quot;
+    local group_name=&quot;$3&quot;
+
+    # Check if group exists
+    existing_group=$(curl -sH &quot;PRIVATE-TOKEN: $b_access_token&quot; &quot;$origin/api/v4/groups?search=$group_path&quot;)
+
+    if [[ -z $existing_group ]];then
+        # Create group
+        create_group=$(curl -sX POST -H &quot;PRIVATE-TOKEN: $b_access_token&quot; &quot;$origin/api/v4/groups&quot; --form &quot;name=$group_name&quot; --form &quot;path=$group_path&quot; --form &quot;parent_id=$parent_id&quot;)
+        echo $(echo $create_group |jq -Mr '.id')
+    else
+        echo $(echo $existing_group |jq -Mr '.[0].id')
+    fi
+}
+
+# Example usage for group and subgroup
+parent_id=$(create_group_if_not_exists &quot;&quot; &quot;group-b&quot; &quot;Group B&quot;)
+subgroup_id=$(create_group_if_not_exists &quot;$parent_id&quot; &quot;y&quot; &quot;Subgroup Y&quot;)
+</code></pre>
+
+<h3>4. Import Project to Destination GitLab</h3>
+
+<p>Once the required groups are confirmed or created,
+import the project into the appropriate subgroup.</p>
+
+<pre><code class="language-bash">origin=https://gitlab.b.lan
+
+# Import project
+curl -sX POST -H &quot;PRIVATE-TOKEN: $b_access_token&quot; &quot;$origin/api/v4/projects/import&quot; --form &quot;namespace_id=$subgroup_id&quot; --form &quot;path=project-1&quot; --form &quot;file=@/path/to/project_export.tar.gz&quot;
+</code></pre>
+
+<h3>5. Script and Schedule</h3>
+
+<p>Combine the above scripts into a single script or set of scripts. You'll need to handle parameters like project IDs and tokens securely. You can schedule these scripts to run at regular intervals using cron jobs on Unix/Linux systems or Task Scheduler on Windows, depending on your environment.</p>
+
+<h3>Security Considerations</h3>
+
+<ul>
+<li>Ensure that access tokens used in scripts are secured and have minimal permissions necessary to perform the operations.</li>
+<li>Consider using secure storage for scripts and credentials, such as vault solutions or encrypted storage.</li>
+<li>Validate all data transferred between networks to avoid security risks.</li>
+</ul>
+
+<p>By following these steps, you can automate the one-way transfer of projects between two air-gapped GitLab instances,
+handling differences in group and subgroup paths dynamically.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

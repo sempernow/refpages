@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.traefik</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://doc.traefik.io/traefik/providers/kubernetes-ingress/" title="doc.traefik.io">Traefik Proxy</a></h1>
+
+<p>Cloud Native Application Proxy</p>
+
+<blockquote>
+<p>Simplify and automate the discovery, routing, and load balancing of microservices.</p>
+</blockquote>
+
+<ul>
+<li><a href="https://doc.traefik.io/traefik/providers/kubernetes-crd/#traefik-kubernetes">Configuration Discovery</a> via Providers</li>
+<li><a href="https://doc.traefik.io/traefik/routing/overview/">Routing and Load Balancing</a>
+
+<ul>
+<li><a href="https://doc.traefik.io/traefik/providers/overview/#supported-providers">Providers</a> :  infrastructure components, whether orchestrators, container engines, cloud providers, or key-value stores. The idea is that Traefik queries the provider APIs in order to find relevant information about routing, and when Traefik detects a change, it dynamically updates the routes.
+
+<ul>
+<li><p>Declared in Traefik configuration. May be in a ConfigMap, but in K3s, Traefik Proxy is installed by Helm, and so obfuscated:</p>
+
+<pre><code class="language-bash">☩ kubectl get secret chart-values-traefik -n kube-system \
+    -o jsonpath='{.data.values-01_HelmChart\.yaml}' \
+    |base64 -d
+</code></pre>
+
+<pre><code class="language-yaml">deployment:
+...
+providers:
+kubernetesIngress:
+    publishedService:
+    enabled: true
+image:
+repository: &quot;rancher/mirrored-library-traefik&quot;
+tag: &quot;2.11.10&quot;
+...
+</code></pre>
+
+<pre><code class="language-bash">☩ kubectl get deployment traefik -n kube-system -o json \
+    |jq -Mr .spec.template.spec.containers[].args
+</code></pre>
+
+<pre><code class="language-json">[
+    &quot;--global.checknewversion&quot;,
+    &quot;--global.sendanonymoususage&quot;,
+    &quot;--entrypoints.metrics.address=:9100/tcp&quot;,
+    &quot;--entrypoints.traefik.address=:9000/tcp&quot;,
+    &quot;--entrypoints.web.address=:8000/tcp&quot;,
+    &quot;--entrypoints.websecure.address=:8443/tcp&quot;,
+    &quot;--api.dashboard=true&quot;,
+    &quot;--ping=true&quot;,
+    &quot;--metrics.prometheus=true&quot;,
+    &quot;--metrics.prometheus.entrypoint=metrics&quot;,
+    &quot;--providers.kubernetescrd&quot;,
+    &quot;--providers.kubernetesingress&quot;,
+    &quot;--providers.kubernetesingress.ingressendpoint.publishedservice=kube-system/traefik&quot;,
+    &quot;--entrypoints.websecure.http.tls=true&quot;
+]
+</code></pre>
+
+<ul>
+<li>Using Kubernetes Ingress provider, LetsEncrypt HA can be achieved by using a Certificate Controller such as Cert-Manager.
+<a href="https://doc.traefik.io/traefik/middlewares/overview/">Middlewares</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>&vellip;</li>
+</ul>
+
+<h2>URL Rewrite : <strong><code>Middleware</code></strong></h2>
+
+<p>Traekfik's <strong>chainable</strong> <code>Middleware</code> applies only to objects declaring it.
+Use K8s <code>Ingress</code> with <code>annotations</code> for simple configurations,
+else Traefik's <code>IngressRoute</code> for full Traefik configuration control.</p>
+
+<h3>1.a. <code>/old-path</code> --&gt; <code>/new-path</code></h3>
+
+<p><code>Middleware</code> (<strong>ReplacePath</strong>) / <strong><code>Ingress</code></strong> (<code>annotations</code>)</p>
+
+<pre><code class="language-yaml">---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+## ReplacePath
+metadata:
+  name: replace-path
+  namespace: default
+spec:
+  replacePath:
+    path: &quot;/new-path&quot;
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  namespace: default
+  annotations:
+    ## Having no &quot;middlewares&quot; key, Kubernetes Ingress' 
+    ## are unaffected by any middlewares unless declared 
+    ## at traefik annotation key using this pattern : &lt;namespace&gt;-&lt;middleware-name&gt;@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: &quot;default-replace-path@kubernetescrd&quot;
+spec:
+  rules:
+  - host: example.com
+    http:
+      paths:
+      - path: /old-path
+        pathType: Prefix
+        backend:
+          service:
+            name: svc-x
+            port:
+              number: 80
+
+</code></pre>
+
+<h3>1.b. <code>/old-path</code> --&gt; <code>/new-path</code></h3>
+
+<p><code>Middleware</code> (<strong>ReplacePath</strong>) / <strong><code>IngressRoute</code></strong></p>
+
+<pre><code class="language-yaml">---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+## ReplacePath
+metadata:
+  name: replace-path
+  namespace: default
+spec:
+  replacePath:
+    path: &quot;/new-path&quot;
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: example-ingressroute
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - middlewares:
+        - name: replace-path
+      kind: Rule # The only routes.kind 
+      match: &quot;Host(`example.com`) &amp;&amp; Path(`/old-path`)&quot;
+      services:
+        - name: svc-x
+          port: 80
+</code></pre>
+
+<h3>2. <code>/api/v1/(.*)</code> --&gt; <code>/v2/$1</code></h3>
+
+<p><code>Middleware</code> (<strong>ReplacePathRegex</strong>) / <strong><code>IngressRoute</code></strong></p>
+
+<pre><code class="language-yaml">---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+## ReplacePathRegex
+metadata:
+  name: replace-path-regex
+  namespace: default
+spec:
+  replacePathRegex:
+    regex: &quot;^/api/v1/(.*)&quot;
+    replacement: &quot;/v2/$1&quot;
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: example-ingressroute-regex
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: &quot;Host(`example.com`) &amp;&amp; PathPrefix(`/api/v1`)&quot;
+      kind: Rule
+      services:
+        - name: svc-x
+          port: 80
+      middlewares:
+        - name: replace-path-regex
+
+</code></pre>
+
+<h3>3. <code>/app</code> --&gt; <code>/</code></h3>
+
+<p><code>Middleware</code> (<strong>AddPrefix</strong>) / <strong><code>IngressRoute</code></strong></p>
+
+<pre><code class="language-yaml">---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: add-prefix
+  namespace: default
+spec:
+  addPrefix:
+    prefix: &quot;/app&quot;
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: example-ingressroute-prefix
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: &quot;Host(`example.com`)&quot;
+      kind: Rule
+      services:
+        - name: svc-x
+          port: 80
+      middlewares:
+        - name: add-prefix
+</code></pre>
+
+<h2>Lab</h2>
+
+<h3><a href="app.yaml"><code>app.yaml</code></a></h3>
+
+<ul>
+<li><a href="svc.nginx-mock-app.yaml"><code>svc.nginx-mock-app.yaml</code></a></li>
+<li><a href="middleware.nginx-mock-app.yaml"><code>middleware.nginx-mock-app.yaml</code></a></li>
+<li><a href="ingressroute.nginx-mock-app.yaml"><code>ingressroute.nginx-mock-app.yaml</code></a></li>
+
+<li><p><a href="pod.nginx-mock-app.yaml"><code>pod.nginx-mock-app.yaml</code></a></p>
+
+<pre><code class="language-bash">☩ ip -4 -brief addr show dev eth0
+eth0             UP             172.27.240.169/20
+
+☩ sudo vi /etc/hosts &amp;&amp; cat /etc/hosts
+...
+172.27.240.169    app.wsl.lan
+
+☩ cat svc.nginx-mock-app.yaml middleware.nginx-mock-app.yaml ingressroute.nginx-mock-app.yaml pod.nginx-mock-app.yaml \
+|tee app.yaml
+
+☩ k apply -f app.yaml
+service/nginx-mock-app created
+middleware.traefik.containo.us/nginx-mock-app created
+ingressroute.traefik.containo.us/nginx-mock-app created
+pod/nginx-mock-app created
+
+☩ k get $all -l app
+NAME                     TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)   AGE
+service/nginx-mock-app   ClusterIP   10.43.63.23   &lt;none&gt;        80/TCP    52m
+
+NAME                                            AGE
+middleware.traefik.containo.us/nginx-mock-app   52m
+
+NAME                                              AGE
+ingressroute.traefik.containo.us/nginx-mock-app   52m
+
+NAME                 READY   STATUS    RESTARTS   AGE
+pod/nginx-mock-app   1/1     Running   0          52m
+
+☩ curl -is http://app.wsl.lan/api/v1/ |head
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Content-Length: 615
+Content-Type: text/html
+Date: Fri, 20 Dec 2024 18:43:25 GMT
+Etag: &quot;6745ef54-267&quot;
+Last-Modified: Tue, 26 Nov 2024 15:55:00 GMT
+Server: nginx/1.27.3
+
+&lt;!DOCTYPE html&gt;
+</code></pre></li>
+</ul>
+
+<h2><a href="https://doc.traefik.io/traefik-hub/api-gateway/intro">Hub API Gateway</a></h2>
+
+<p>Traefik Hub API Gateway is a <strong>drop-in replacement for Traefik Proxy</strong>.
+It can do everything Traefik Proxy does,
+with additional capabilities and support out of the box.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

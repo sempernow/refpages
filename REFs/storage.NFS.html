@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>storage.NFS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>NFS</h1>
+
+<h2>Options for File Sharing between Windows &amp; Linux hosts</h2>
+
+<ul>
+<li><p><strong>Samba</strong> | <a href="https://en.wikipedia.org/wiki/Samba_(software)" title="Wikipedia.org"><code>wikipedia.org</code></a> | <a href="https://www.samba.org/" title="samba.org"><code>samba.org</code></a> : Samba is a FOSS implementation of the <strong>SMB</strong> (Server Message Block) <strong>protocol</strong>. Samba runs on Windows and most Linux distros. Suitable for straightforward <strong>file sharing between Windows and Linux systems</strong>, especially in small to medium-sized environments. Samba is convenient because it supports the SMB protocol natively used by Windows, making it simple to configure cross-platform file sharing. Yet larger enterprises often use more advanced or specialized systems, especially when higher performance, scalability, or advanced features are required.</p>
+
+<ul>
+<li>Samba services are implemented as two daemons:
+
+<ul>
+<li><code>smbd</code> : Provides the file and printer sharing services.
+
+<ul>
+<li>Configuration : Located at either:
+
+<ul>
+<li><code>/etc/smb.conf</code></li>
+<li><code>/etc/samba/smb.conf</code></li>
+</ul></li>
+</ul></li>
+<li><code>nmbd</code> : Provides the NetBIOS-to-IP-address name service.</li>
+</ul></li>
+<li>SMB Versions:
+
+<ul>
+<li><strong>SMB1</strong> AKA <strong>CIFS</strong>: This version is <strong>deprecated</strong> and disabled by default on most modern systems because it has many security issues (such as susceptibility to man-in-the-middle attacks) and lacks the encryption and integrity checks present in later versions. Microsoft and other vendors strongly recommend disabling SMB1.</li>
+<li><a href="https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/4287490c-602c-41c0-a23e-140a1f137832" title="learn.microsoft.com"><strong>SMB2</strong></a> &amp; <strong>SMB3</strong>: These versions are <strong>current and secure</strong>, with SMB3 being the most recent and providing enhancements such as encryption, improved performance, and better resilience. SAMBA fully supports these versions.</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>NFS</strong> (Network File System): Primarily used in Unix/Linux environments, though it can be used on Windows with a client installation. NFS is often <strong>preferred in Linux-heavy environments</strong> because it <strong>offers better performance with Linux file systems</strong>. Some organizations use both SAMBA and NFS depending on whether the client is Windows or Linux.</p></li>
+
+<li><p><strong>NetApp</strong> &amp; <strong>EMC Isilon</strong>: These are dedicated, enterprise-grade <strong>storage appliances</strong> that support <strong>multi-protocol access</strong>, including <strong>SMB</strong>, <strong>NFS</strong>, and sometimes <strong>iSCSI</strong>. They provide advanced features like snapshotting, replication, and high-availability configurations, which are beneficial for large-scale deployments.</p>
+
+<ul>
+<li><a href="https://chatgpt.com/share/6800c8c1-aa1c-4e94-9601-a022f240f7fa" title="ChatGPT">NFS in vSphere/ESXi environment</a></li>
+<li><a href="https://chatgpt.com/share/6718413f-03c0-8009-8b4e-b7435fc7f9ba" title="ChatGPT">Linux NFS AD Permissions Issues</a></li>
+</ul></li>
+
+<li><p><strong>Ceph</strong>: An open-source distributed storage platform that supports multiple interfaces, including <strong>CephFS</strong> for file storage. Ceph can integrate with SAMBA for SMB shares or directly with NFS for Unix/Linux systems, making it a flexible option for mixed environments.</p></li>
+
+<li><p><strong>Azure Files</strong> &amp; <strong>AWS FSx</strong>: For enterprises moving to the cloud, managed storage solutions like Azure Files (with SMB and NFS support) or AWS FSx for Windows File Server (SMB support) are becoming popular for hybrid cloud environments. These services are fully managed, scalable, and offer high availability and integration with cloud-native services.</p></li>
+</ul>
+
+<p>In most enterprises, the choice between these depends on factors like performance requirements, ease of management, security, scalability, and support for disaster recovery.</p>
+
+<h2>NetApp</h2>
+
+<p>Runs under ONTAP, a proprietary OS having a Unix-like CLI.</p>
+
+<p><strong>Use NFSv3</strong>, which abides Linux-client UID/GID permissions,
+requiring only minimal coupling of server-client configurations.</p>
+
+<p><strong><em>NFSv4 uses names</em></strong> of users and groups instead,
+and requires evermore coupling of server-client configurations.
+Moreover, if storage consumers include automated provisioners
+(e.g., for containerized workloads),
+the highly-coupled if not manual
+configuration requirements are worst fit.</p>
+
+<h3>@ Client machine(s)</h3>
+
+<pre><code class="language-bash"># Remote NFS server (SERVER:EXPORT) params
+server=192.168.0.216
+export=/remote/export
+
+# Local NFS client mount params
+mount=/local/path
+options='nfsvers=3,sec=sys,proto=tcp,port=2049,noacl,nolock'
+
+# Prep the local mount point
+sudo mkdir -p $mount
+sudo chown :$aGID $mount
+sudo chmod g+s $mount # So all files created thereunder/after are of group $aGID
+
+# Mount now : does not survive reboot and is not mounted by `mount -a`
+sudo mount -t nfs -o &quot;$options&quot; $server:$export $mount
+
+# Mount persistently and by `mount -a` 
+cat /etc/fstab |grep $mount ||
+    echo &quot;$server:$export    $mount    defaults,$options    0 0&quot; |sudo tee -a /etc/fstab
+
+</code></pre>
+
+<ul>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#services-required-on-an-nfs-client_mounting-nfs-shares" title="docs.redhat.com">Required client services</a> (RHEL)</li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#enabling-client-side-caching-of-nfs-content_mounting-nfs-shares" title="docs.redhat.com">Enabling client-side caching of NFS content</a></li>
+<li><code>chmod g+s</code> : SetGID bit (<code>setgid</code>) on mount point so all created thereunder inherit parent <code>GID</code></li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_file_systems/mounting-nfs-shares_managing-file-systems#frequently-used-nfs-mount-options_mounting-nfs-shares" title="docs.redhat.com">Mount <strong>options</strong></a> : &quot;<code>defaults,...</code>&quot;
+
+<ul>
+<li><code>nfsvers</code> (NFS version) : Use instead of <code>nfs</code> if at RHEL 7+</li>
+<li><code>sec</code> (Security mode)
+
+<ul>
+<li>Use <code>sys</code> for authentication of NFS operations by local (client) UNIX UIDs/GIDs (<code>AUTH_SYS</code>)</li>
+<li>Use <code>krb5</code> for Kerberos V5 instead.</li>
+</ul></li>
+<li><code>port</code>, <code>proto</code> : <code>2049/TCP</code> is the default for NFS, both <code>NFSv3</code> and <code>NFSv4</code>,
+assigned by <def title="Internet Assigned Numbers Authority">IANA</def>.<br>
+Hence those parameter declarations are often omitted.</li>
+</ul></li>
+</ul>
+
+<p>@ <code>/etc/fstab</code></p>
+
+<pre><code class="language-ini">192.168.0.216:/remote/export    /local/path    nfs    defaults,nfsvers=3,sec=sys,port=2049,proto=tcp,noacl,nolock    0 0 
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.self-hosted</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Self-hosted <a href="https://docs.gitlab.com" title="docs.gitlab.com">GitLab EE</a></h1>
+
+<ul>
+<li><a href="https://docs.gitlab.com/install/requirements/">Install/Requirements</a>
+
+<ul>
+<li>Performance tuning configurations of the various associated/required applications.</li>
+</ul></li>
+<li><a href="https://docs.gitlab.com/administration/docs_self_host/#self-host-the-product-documentation-with-gitlab-pages">Self-host the product documentation</a>
+
+<ul>
+<li><a href="https://docs.gitlab.com/administration/docs_self_host/#redirect-the-help-links-to-the-new-docs-site">Redirect <code>/help</code> links to Docs</a>
+
+<ul>
+<li><a href="https://docs.gitlab.com/administration/settings/help_page/#redirect-help-pages">Redirect <code>/help</code> links</a></li>
+</ul></li>
+</ul></li>
+<li><a href="https://chatgpt.com/share/67bd002b-c7e8-8009-8427-44e4223e1481"><strong>Synch Repos Across Domains</strong></a>
+
+<ul>
+<li><a href="https://docs.gitlab.com/user/project/settings/import_export/">Migrate projects and groups by using file exports</a>
+---</li>
+</ul></li>
+</ul>
+
+<h1><a href="https://chatgpt.com/share/67b8a032-3848-8009-9622-77cb22777ea5">Configuration</a></h1>
+
+<h1>Q:</h1>
+
+<p>Provide sane performance tuning
+of GitLab for self-hosted <strong>single host</strong>
+serving some 500 python developers.</p>
+
+<h1>A:</h1>
+
+<p>Optimizing a <strong>self-hosted GitLab instance</strong> for <strong>500 Python developers</strong> requires careful tuning of GitLab’s services, including <strong>Gitaly, PostgreSQL, Puma (Rails), Redis, and Workhorse</strong>. Below is a <strong>sane performance tuning guide</strong> to improve responsiveness, repository operations, and overall stability for <strong>a single-host deployment</strong>.</p>
+
+<hr>
+
+<h2><strong>1. System and Hardware Considerations</strong></h2>
+
+<h3><strong>Recommended Hardware for 500 Developers</strong></h3>
+
+<ul>
+<li><strong>CPU</strong>: 16+ cores (Preferably AMD EPYC / Intel Xeon)</li>
+<li><strong>RAM</strong>: 64GB+ (more if hosting CI/CD on the same server)</li>
+<li><strong>Storage</strong>:
+
+<ul>
+<li><strong>SSD/NVMe for repositories</strong> (<code>/var/opt/gitlab/git-data/repositories</code>)</li>
+<li><strong>Dedicated disk for PostgreSQL</strong> (<code>/var/opt/gitlab/postgresql</code>)</li>
+</ul></li>
+<li><strong>Network</strong>: 10GbE recommended for high concurrency</li>
+<li><strong>OS</strong>: RHEL 9 / Ubuntu 22.04 LTS</li>
+</ul>
+
+<hr>
+
+<h2><strong>2. GitLab Configuration (<code>/etc/gitlab/gitlab.rb</code>)</strong></h2>
+
+<p>Run <code>sudo gitlab-ctl reconfigure</code> after making changes.</p>
+
+<h3><strong>2.1. Puma - Optimize Web API Requests</strong></h3>
+
+<p>Puma replaces Unicorn as the default web server. Tune it for better parallel request handling.</p>
+
+<pre><code class="language-ruby">puma['worker_processes'] = 6  # Adjust based on CPU cores (8–12 cores = 6 workers)
+puma['min_threads'] = 4
+puma['max_threads'] = 16
+</code></pre>
+
+<h3><strong>2.2. Gitaly - Optimize Git Performance</strong></h3>
+
+<p>Gitaly is responsible for <strong>repository operations</strong> (clone, push, fetch).</p>
+
+<pre><code class="language-ruby">gitaly['concurrency'] = [
+  { 'rpc' =&gt; '/gitaly.SmartHTTPService/PostUploadPack', 'max_per_repo' =&gt; 10 },
+  { 'rpc' =&gt; '/gitaly.SSHService/UploadPack', 'max_per_repo' =&gt; 10 }
+]
+gitaly['graceful_restart_timeout'] = '30s'
+gitaly['cgroups_memory_enabled'] = true
+gitaly['cgroups_memory_limit'] = '4GB'
+</code></pre>
+
+<ul>
+<li><a href="https://git-scm.com/book/en/v2/Git-on-the-Server-Smart-HTTP">Git Smart HTTP</a></li>
+</ul>
+
+<p>This setting ensures <strong>smart HTTP and SSH Git operations</strong> do not overload the system.</p>
+
+<h3><strong>2.3. PostgreSQL - Optimize Database Performance</strong></h3>
+
+<p>For <strong>large repositories and heavy API usage</strong>, increase PostgreSQL memory and connections.</p>
+
+<pre><code class="language-ruby">postgresql['max_connections'] = 400
+postgresql['shared_buffers'] = &quot;16GB&quot;
+postgresql['work_mem'] = &quot;256MB&quot;
+postgresql['maintenance_work_mem'] = &quot;512MB&quot;
+postgresql['effective_cache_size'] = &quot;48GB&quot;
+</code></pre>
+
+<p>Ensure PostgreSQL runs on <strong>NVMe SSDs</strong>.</p>
+
+<h3><strong>2.4. Redis - Optimize Caching</strong></h3>
+
+<p>GitLab uses Redis for caching, reducing database load.</p>
+
+<pre><code class="language-ruby">redis['maxmemory'] = &quot;16GB&quot;
+redis['maxmemory_policy'] = &quot;allkeys-lru&quot;
+</code></pre>
+
+<h3><strong>2.5. Workhorse - Optimize Git HTTP Handling</strong></h3>
+
+<p>Workhorse acts as a reverse proxy for Git HTTP requests.</p>
+
+<pre><code class="language-ruby">gitlab_workhorse['listen_network'] = &quot;tcp&quot;
+gitlab_workhorse['listen_addr'] = &quot;0.0.0.0:8181&quot;
+</code></pre>
+
+<p>This allows <strong>faster internal request processing</strong>.</p>
+
+<h3><strong>2.6. Sidekiq - Optimize Background Jobs</strong></h3>
+
+<p>Sidekiq processes background jobs (issues, CI/CD triggers).</p>
+
+<pre><code class="language-ruby">sidekiq['concurrency'] = 20
+</code></pre>
+
+<p>This ensures background tasks don’t get <strong>backlogged</strong>.</p>
+
+<hr>
+
+<h2><strong>3. Git Performance Tuning</strong></h2>
+
+<h3><strong>3.1. Optimize Git Garbage Collection</strong></h3>
+
+<p>GitLab runs periodic <strong>Git garbage collection (GC)</strong>, which should be optimized for <strong>large repositories</strong>.</p>
+
+<p>Edit:</p>
+
+<pre><code class="language-bash">sudo -u git -H git config --global gc.auto 0
+sudo -u git -H git config --global pack.threads 4
+sudo -u git -H git config --global pack.windowMemory 256m
+</code></pre>
+
+<p>Then, schedule Git garbage collection <strong>off-peak hours</strong>:</p>
+
+<pre><code class="language-bash">crontab -e
+</code></pre>
+
+<p>Add:</p>
+
+<pre><code class="language-bash">0 2 * * * sudo gitlab-rake gitlab:cleanup:repos
+</code></pre>
+
+<hr>
+
+<h2><strong>4. Linux Kernel &amp; System Tweaks</strong></h2>
+
+<h3><strong>4.1. Increase File Descriptors</strong></h3>
+
+<p>Large teams mean <strong>high concurrent Git operations</strong>.</p>
+
+<p>Edit <code>/etc/security/limits.conf</code>:</p>
+
+<pre><code>gitlab    soft    nofile    1000000
+gitlab    hard    nofile    1000000
+</code></pre>
+
+<h3><strong>4.2. Optimize TCP/IP Stack</strong></h3>
+
+<p>Edit <code>/etc/sysctl.conf</code>:</p>
+
+<pre><code>fs.file-max = 1000000
+net.core.somaxconn = 1024
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_keepalive_time = 300
+net.core.rmem_max = 8388608
+net.core.wmem_max = 8388608
+</code></pre>
+
+<p>Apply with:</p>
+
+<pre><code class="language-bash">sudo sysctl -p
+</code></pre>
+
+<hr>
+
+<h2><strong>5. Monitoring &amp; Troubleshooting</strong></h2>
+
+<h3><strong>5.1. Enable GitLab’s Embedded Prometheus Monitoring</strong></h3>
+
+<p>In <code>/etc/gitlab/gitlab.rb</code>:</p>
+
+<pre><code class="language-ruby">prometheus_monitoring['enable'] = true
+</code></pre>
+
+<p>Check GitLab’s built-in metrics:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl status
+sudo gitlab-ctl tail
+</code></pre>
+
+<h3><strong>5.2. Check Gitaly Performance</strong></h3>
+
+<pre><code class="language-bash">sudo gitlab-rake gitlab:gitaly:status
+</code></pre>
+
+<h3><strong>5.3. Debug PostgreSQL Slow Queries</strong></h3>
+
+<pre><code class="language-bash">sudo gitlab-psql -c &quot;SELECT * FROM pg_stat_activity WHERE state != 'idle';&quot;
+</code></pre>
+
+<hr>
+
+<h2><strong>6. CI/CD Considerations</strong></h2>
+
+<p>For <strong>500 Python developers</strong>, CI/CD can overload GitLab.</p>
+
+<ul>
+<li><p><strong>Move CI/CD Runners to Separate Machines</strong></p>
+
+<ul>
+<li><p>Use <strong>GitLab Runner</strong> on dedicated nodes:</p>
+
+<pre><code class="language-bash">sudo gitlab-runner register
+</code></pre></li>
+
+<li><p>Runners should have <strong>high CPU &amp; RAM</strong>.</p></li>
+</ul></li>
+
+<li><p><strong>Enable Cache for Python Dependencies</strong></p>
+
+<pre><code class="language-yaml">cache:
+key: pip-cache
+paths:
+  - .pip-cache/
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h2><strong>7. Backup Strategy</strong></h2>
+
+<p>Configure backups in <code>/etc/gitlab/gitlab.rb</code>:</p>
+
+<pre><code class="language-ruby">gitlab_rails['backup_keep_time'] = 604800  # Keep backups for 7 days
+gitlab_rails['backup_path'] = &quot;/var/opt/gitlab/backups&quot;
+</code></pre>
+
+<p>Schedule daily backups:</p>
+
+<pre><code class="language-bash">crontab -e
+</code></pre>
+
+<pre><code class="language-bash">0 3 * * * sudo gitlab-backup create
+</code></pre>
+
+<hr>
+
+<h2><strong>Final Steps</strong></h2>
+
+<ol>
+<li><p><strong>Apply Changes</strong>:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl reconfigure
+sudo gitlab-ctl restart
+</code></pre></li>
+
+<li><p><strong>Monitor Performance</strong>:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl status
+</code></pre></li>
+
+<li><p><strong>Stress Test</strong>:</p>
+
+<pre><code class="language-bash">url=https://gitlab.example.com/
+ab -n 1000 -c 100 $url
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h2><strong>Summary of Key Optimizations</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Change</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>CPU &amp; RAM</strong></td>
+<td>16+ cores, 64GB+ RAM</td>
+</tr>
+
+<tr>
+<td><strong>Puma</strong></td>
+<td>6 workers, 16 threads</td>
+</tr>
+
+<tr>
+<td><strong>Gitaly</strong></td>
+<td>Concurrency limits &amp; memory cgroups</td>
+</tr>
+
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td>400 connections, tuned memory</td>
+</tr>
+
+<tr>
+<td><strong>Redis</strong></td>
+<td>16GB cache, LRU eviction</td>
+</tr>
+
+<tr>
+<td><strong>Git Optimization</strong></td>
+<td>Disable auto-GC, use cronjob</td>
+</tr>
+
+<tr>
+<td><strong>TCP/IP Tweaks</strong></td>
+<td>Reduce timeouts, increase sockets</td>
+</tr>
+
+<tr>
+<td><strong>Monitoring</strong></td>
+<td>Enable Prometheus, logs</td>
+</tr>
+</tbody>
+</table>
+
+<p>This configuration ensures <strong>GitLab scales efficiently</strong>
+for <strong>500 developers</strong> while optimizing
+<strong>repository access, background jobs, and CI/CD workflows</strong>.</p>
+
+<h1>Q:</h1>
+
+<p>Do those Puma/Gitaly/PostgreSQL/Redis/Git configurations differ from defaults of GitLab v17.x?</p>
+
+<h1>A:</h1>
+
+<p>Yes, the configurations differ from the <strong>default settings in GitLab v17.x</strong> in several key ways. Below, I'll <strong>compare the defaults vs. recommended settings</strong> for <strong>Puma, Gitaly, PostgreSQL, Redis, and Git</strong>, highlighting why changes are necessary for scaling to <strong>500 Python developers</strong> on a <strong>single-host GitLab instance</strong>.</p>
+
+<hr>
+
+<h2><strong>1. Puma (Web Application Server)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-ruby">puma['worker_processes'] = 2
+puma['min_threads'] = 4
+puma['max_threads'] = 4
+</code></pre>
+
+<ul>
+<li><strong>Limited to 2 workers</strong> → inefficient for high-concurrency environments.</li>
+<li><strong>Thread count (4) is low</strong>, which may cause request queuing under load.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-ruby">puma['worker_processes'] = 6  # Scale workers based on available CPU cores
+puma['min_threads'] = 4
+puma['max_threads'] = 16
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> More <strong>workers</strong> allow better parallel request handling for GitLab UI/API.</li>
+<li><strong>Why?</strong> Higher <strong>threads</strong> allow handling multiple concurrent requests per worker.</li>
+</ul>
+
+<hr>
+
+<h2><strong>2. Gitaly (Git RPC Service)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-ruby">gitaly['concurrency'] = [
+  { 'rpc' =&gt; '/gitaly.SmartHTTPService/PostUploadPack', 'max_per_repo' =&gt; 5 },
+  { 'rpc' =&gt; '/gitaly.SSHService/UploadPack', 'max_per_repo' =&gt; 5 }
+]
+gitaly['graceful_restart_timeout'] = '0s'
+</code></pre>
+
+<ul>
+<li><strong>Limits Git operations to 5 concurrent uploads per repository.</strong></li>
+<li><strong>No memory cgroups, so Gitaly can overconsume RAM</strong>.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-ruby">gitaly['concurrency'] = [
+  { 'rpc' =&gt; '/gitaly.SmartHTTPService/PostUploadPack', 'max_per_repo' =&gt; 10 },
+  { 'rpc' =&gt; '/gitaly.SSHService/UploadPack', 'max_per_repo' =&gt; 10 }
+]
+gitaly['graceful_restart_timeout'] = '30s'
+gitaly['cgroups_memory_enabled'] = true
+gitaly['cgroups_memory_limit'] = '4GB'
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Increase <strong>concurrent Git upload handling</strong> for large teams.</li>
+<li><strong>Why?</strong> Memory cgroups prevent <strong>Gitaly from consuming too much RAM</strong>.</li>
+</ul>
+
+<hr>
+
+<h2><strong>3. PostgreSQL (Database)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-ruby">postgresql['max_connections'] = 200
+postgresql['shared_buffers'] = &quot;256MB&quot;
+postgresql['work_mem'] = &quot;4MB&quot;
+postgresql['maintenance_work_mem'] = &quot;64MB&quot;
+postgresql['effective_cache_size'] = &quot;4GB&quot;
+</code></pre>
+
+<ul>
+<li><strong>Only 200 connections</strong> → <strong>insufficient for 500 developers</strong> using GitLab UI/API.</li>
+<li><strong>Low cache and memory allocation</strong> → Slower queries under heavy load.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-ruby">postgresql['max_connections'] = 400
+postgresql['shared_buffers'] = &quot;16GB&quot;
+postgresql['work_mem'] = &quot;256MB&quot;
+postgresql['maintenance_work_mem'] = &quot;512MB&quot;
+postgresql['effective_cache_size'] = &quot;48GB&quot;
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Increase max connections to <strong>400</strong> to handle <strong>API calls and web UI requests</strong>.</li>
+<li><strong>Why?</strong> Higher <code>shared_buffers</code> allows caching <strong>more query results in RAM</strong>.</li>
+</ul>
+
+<hr>
+
+<h2><strong>4. Redis (Caching Service)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-ruby">redis['maxmemory'] = &quot;0&quot;  # Unlimited
+redis['maxmemory_policy'] = &quot;noeviction&quot;
+</code></pre>
+
+<ul>
+<li><strong>Unlimited Redis memory usage</strong> can cause <strong>Out-of-Memory (OOM) issues</strong>.</li>
+<li><strong>No eviction policy</strong>, meaning Redis will refuse new writes when full.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-ruby">redis['maxmemory'] = &quot;16GB&quot;
+redis['maxmemory_policy'] = &quot;allkeys-lru&quot;
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Set a <strong>16GB cache limit</strong> to prevent Redis from consuming all system RAM.</li>
+<li><strong>Why?</strong> Use <strong>Least Recently Used (LRU) eviction</strong> to remove old cache entries.</li>
+</ul>
+
+<hr>
+
+<h2><strong>5. Git Configuration (Garbage Collection &amp; Packing)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-bash">git config --global gc.auto 1
+git config --global pack.threads 1
+</code></pre>
+
+<ul>
+<li><strong>Git automatically runs garbage collection (<code>gc.auto 1</code>)</strong>, which is inefficient for large repos.</li>
+<li><strong>Packing operations (<code>pack.threads 1</code>) use a single thread</strong>, slowing down large repository maintenance.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-bash">sudo -u git -H git config --global gc.auto 0
+sudo -u git -H git config --global pack.threads 4
+sudo -u git -H git config --global pack.windowMemory 256m
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Disable auto-GC and <strong>run it via cron at off-peak hours</strong>.</li>
+<li><strong>Why?</strong> Use <strong>4 threads for packing</strong>, improving performance for large repos.</li>
+</ul>
+
+<hr>
+
+<h2><strong>6. Workhorse (Git HTTP Proxy)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-ruby">gitlab_workhorse['listen_network'] = &quot;unix&quot;
+gitlab_workhorse['listen_addr'] = &quot;/var/opt/gitlab/gitlab-workhorse/socket&quot;
+</code></pre>
+
+<ul>
+<li>Uses <strong>Unix sockets</strong>, which are fine for low-traffic environments but <strong>may not scale well</strong> under high load.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-ruby">gitlab_workhorse['listen_network'] = &quot;tcp&quot;
+gitlab_workhorse['listen_addr'] = &quot;0.0.0.0:8181&quot;
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Switch to <strong>TCP sockets</strong> for better <strong>network concurrency</strong> under load.</li>
+</ul>
+
+<hr>
+
+<h2><strong>7. Sidekiq (Background Job Processing)</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<pre><code class="language-ruby">sidekiq['concurrency'] = 5
+</code></pre>
+
+<ul>
+<li><strong>Only 5 workers</strong>, causing backlogs in notifications, CI/CD triggers, etc.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs:</strong></h3>
+
+<pre><code class="language-ruby">sidekiq['concurrency'] = 20
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Increases <strong>background job throughput</strong> for faster task processing.</li>
+</ul>
+
+<hr>
+
+<h2><strong>8. TCP/IP Kernel Tweaks</strong></h2>
+
+<h3><strong>GitLab v17.x Default:</strong></h3>
+
+<ul>
+<li>Defaults to <strong>generic kernel networking settings</strong>, which can be suboptimal for heavy concurrent traffic.</li>
+</ul>
+
+<h3><strong>Recommended for 500 Devs (<code>/etc/sysctl.conf</code>)</strong></h3>
+
+<pre><code class="language-bash">fs.file-max = 1000000
+net.core.somaxconn = 1024
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_keepalive_time = 300
+net.core.rmem_max = 8388608
+net.core.wmem_max = 8388608
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> <strong>Reduce connection wait times</strong> and <strong>increase socket buffers</strong> for high-concurrency Git operations.</li>
+</ul>
+
+<hr>
+
+<h2><strong>Summary of Key Differences</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th><strong>GitLab v17.x Default</strong></th>
+<th><strong>Optimized for 500 Devs</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Puma</strong></td>
+<td>2 workers, 4 threads</td>
+<td>6 workers, 16 threads</td>
+</tr>
+
+<tr>
+<td><strong>Gitaly</strong></td>
+<td>5 concurrent Git ops</td>
+<td>10 concurrent Git ops, memory-limited</td>
+</tr>
+
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td>200 connections, 256MB cache</td>
+<td>400 connections, 16GB cache</td>
+</tr>
+
+<tr>
+<td><strong>Redis</strong></td>
+<td>Unlimited memory, no eviction</td>
+<td>16GB limit, LRU eviction</td>
+</tr>
+
+<tr>
+<td><strong>Git GC</strong></td>
+<td>Auto-GC, 1-thread packing</td>
+<td>Scheduled GC, 4-thread packing</td>
+</tr>
+
+<tr>
+<td><strong>Workhorse</strong></td>
+<td>Unix socket</td>
+<td>TCP socket for high concurrency</td>
+</tr>
+
+<tr>
+<td><strong>Sidekiq</strong></td>
+<td>5 workers</td>
+<td>20 workers</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2><strong>Final Steps</strong></h2>
+
+<ol>
+<li><p>Apply changes:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl reconfigure
+sudo gitlab-ctl restart
+</code></pre></li>
+
+<li><p>Monitor GitLab:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl status
+</code></pre></li>
+
+<li><p>Check PostgreSQL slow queries:</p>
+
+<pre><code class="language-bash">sudo gitlab-psql -c &quot;SELECT * FROM pg_stat_activity WHERE state != 'idle';&quot;
+</code></pre></li>
+</ol>
+
+<p>These optimizations should ensure <strong>smooth operation for 500 developers</strong>,
+reducing latency in Git operations and improving UI/API response times.</p>
+
+<h1>Q:</h1>
+
+<p>Actual memory of host needn't be the sum of those &quot;memory&quot; settings?</p>
+
+<h1>A1:</h1>
+
+<p>You're absolutely correct to think critically about the memory settings for each service. The memory configurations for <strong>PostgreSQL</strong>, <strong>Redis</strong>, <strong>Gitaly</strong>, etc., are all separate and typically don't add up directly to the total available physical memory. However, they do need to be managed carefully, as each service will use its portion of the memory based on the settings.</p>
+
+<p>Here's an explanation of how memory settings for these services interact:</p>
+
+<h3><strong>1. PostgreSQL Memory Settings</strong></h3>
+
+<p>The key settings like <code>shared_buffers</code>, <code>work_mem</code>, and <code>effective_cache_size</code> configure how PostgreSQL uses memory, but <strong>they don’t directly sum up</strong> to the total memory PostgreSQL consumes.</p>
+
+<ul>
+<li><p><strong><code>shared_buffers</code></strong>: This is the amount of memory PostgreSQL uses for caching data in memory. It’s typically a portion of the total system RAM, but not all of it. For high-performance systems, this should generally be set to around <strong>25-40%</strong> of total system memory, but it can be lower for very large systems where disk I/O speed is optimized.</p></li>
+
+<li><p><strong><code>work_mem</code></strong>: This is the amount of memory used for sorting and hashing operations per query. It can be a concern if many queries use a lot of memory, but PostgreSQL will only allocate this amount for each operation. In practice, it doesn’t sum up to a strict total — PostgreSQL will use it per query execution context.</p></li>
+
+<li><p><strong><code>effective_cache_size</code></strong>: This is more of a hint to PostgreSQL about how much memory is available for caching, used by the query planner. It should generally be set to <strong>50-75%</strong> of the total system memory, as it's a guideline for query optimization.</p></li>
+</ul>
+
+<h3><strong>2. Redis Memory Settings</strong></h3>
+
+<p>The <strong><code>maxmemory</code></strong> setting tells Redis how much memory it can use for caching. It doesn't &quot;add up&quot; with other services, and Redis will try to stay within this limit, evicting keys as necessary based on the eviction policy (<code>allkeys-lru</code> in the example).</p>
+
+<h3><strong>3. Gitaly Memory Settings</strong></h3>
+
+<p>The memory settings for Gitaly are primarily related to how much memory Gitaly can use for its own internal operations, including handling repository access and storing temporary files. These settings will use memory resources, but not to the extent of directly competing with the entire host's memory.</p>
+
+<h3><strong>4. Puma Memory Settings</strong></h3>
+
+<p>Puma's memory use depends on the number of worker processes and threads. Each worker uses a set amount of memory, so <strong>the memory per worker can add up</strong> (along with threads), but again, the total memory usage will not be strictly the sum of all worker memory unless all are fully utilized. Generally, you want to make sure each worker has enough memory, but <strong>you don't want to have too many workers</strong> such that you run out of memory on the system.</p>
+
+<h3><strong>How to Monitor and Tune:</strong></h3>
+
+<ul>
+<li><strong>Total Memory Usage</strong>: You should make sure that the total memory usage for all services doesn’t exceed the available memory of the host. The system’s <strong>swap space</strong> (if any) should also be monitored to avoid performance issues.</li>
+<li><strong>Process Isolation</strong>: Services like PostgreSQL, Redis, and Gitaly may run on separate processes and may have specific memory limits. Each service is designed to work efficiently within its own limits.</li>
+<li><strong>Host Memory</strong>: If your host has <strong>64GB RAM</strong>, you wouldn't necessarily allocate all of it to these services. You might leave some memory for the OS and other applications.</li>
+</ul>
+
+<h3>Example:</h3>
+
+<p>If you set:
+- PostgreSQL <code>shared_buffers</code> = 16GB
+- Redis <code>maxmemory</code> = 16GB
+- Gitaly memory settings = 4GB</p>
+
+<p>Then you could aim for something like:
+- 16GB + 16GB + 4GB = 36GB for these services, leaving the remaining memory (roughly 28GB) for the OS, Puma, caching, and other overhead.</p>
+
+<p><strong>The sum of the &quot;memory&quot; settings for services is a guideline, not an exact total</strong>, and you should monitor the system’s overall memory usage to ensure that your host is not overloaded. Tools like <code>htop</code>, <code>vmstat</code>, or GitLab's built-in metrics can help you track this.</p>
+
+<h3>Conclusion:</h3>
+
+<p>While it's good practice to tune memory for these services, the <strong>actual system memory usage</strong> won't be the sum of all the configured memory limits. As long as you leave sufficient memory for the operating system and other processes, these services will run efficiently within their own memory limits without exceeding the host's capacity. Regular monitoring is key to understanding how these services interact with your server's memory.</p>
+
+<h1>A2:</h1>
+
+<p>You're absolutely right! The actual <strong>physical memory (RAM) requirement</strong> of the host <strong>is not necessarily the sum of all the individual &quot;memory&quot; settings</strong> from Puma, Gitaly, PostgreSQL, Redis, and other services. These values represent <strong>allocation limits, caches, or buffers</strong>, which do not all get fully utilized at the same time.</p>
+
+<h3><strong>How to Estimate Real Memory Usage</strong></h3>
+
+<p>Rather than summing up all memory values, we consider:
+1. <strong>Memory allocation vs. actual usage</strong>: Services typically <strong>do not use their full allocation</strong> unless under extreme load.
+2. <strong>Overlapping memory usage</strong>: Some caches (PostgreSQL, Redis) may hold redundant data, reducing total needs.
+3. <strong>OS-level memory management</strong>: Linux aggressively caches disk reads and reclaims memory dynamically.</p>
+
+<hr>
+
+<h3><strong>Breakdown of Major Services and Realistic RAM Usage</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th><strong>Service</strong></th>
+<th><strong>Configured Memory</strong></th>
+<th><strong>Actual Usage Estimate</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Puma</strong> (Web API)</td>
+<td>Threads don’t allocate large memory</td>
+<td><strong>1–2 GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Gitaly</strong> (Git operations)</td>
+<td><code>4GB</code> cgroup limit</td>
+<td><strong>1–4 GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>PostgreSQL</strong> (Database)</td>
+<td><code>16GB</code> shared_buffers</td>
+<td><strong>12–16 GB</strong> (most actively used)</td>
+</tr>
+
+<tr>
+<td><strong>Redis</strong> (Cache)</td>
+<td><code>16GB</code> maxmemory</td>
+<td><strong>4–8 GB</strong> (depends on cache churn)</td>
+</tr>
+
+<tr>
+<td><strong>Sidekiq</strong> (Background jobs)</td>
+<td>Concurrency 20</td>
+<td><strong>2–4 GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Workhorse</strong> (Git HTTP proxy)</td>
+<td>Minimal memory use</td>
+<td><strong>~500MB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Kernel Disk Caching</strong></td>
+<td>Linux caches Git repo reads</td>
+<td><strong>6–12 GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>OS &amp; Miscellaneous</strong></td>
+<td>System services, SSH, monitoring</td>
+<td><strong>4–6 GB</strong></td>
+</tr>
+</tbody>
+</table>
+
+<h3><strong>Total Estimated RAM Requirement</strong></h3>
+
+<p>Instead of <strong>summing up the maximum allocations (≈58 GB),</strong> we estimate:
+- <strong>Minimum required RAM</strong>: <strong>32GB</strong>
+- <strong>Optimal RAM</strong>: <strong>64GB</strong>
+- <strong>For heavy CI/CD workloads</strong>: <strong>128GB+</strong></p>
+
+<hr>
+
+<h3><strong>Key Considerations</strong></h3>
+
+<ol>
+<li><strong>PostgreSQL's <code>shared_buffers</code> doesn't use all memory immediately.</strong> It only keeps frequently accessed data in RAM.</li>
+<li><strong>Redis does not always use full <code>maxmemory</code>.</strong> If the cache is not full, it uses less.</li>
+<li><strong>Gitaly uses memory in bursts during Git operations.</strong> Idle time consumption is low.</li>
+<li><strong>Sidekiq jobs vary in memory needs</strong> depending on how many are running.</li>
+<li><strong>Linux dynamically allocates unused RAM to disk caching.</strong> This improves performance without reserving actual memory.</li>
+</ol>
+
+<hr>
+
+<h3><strong>What Happens If RAM is Exceeded?</strong></h3>
+
+<p>If total memory demand <strong>exceeds available RAM</strong>, GitLab will start <strong>swapping</strong>, which significantly degrades performance. To <strong>prevent this</strong>:
+- <strong>Enable swap (if necessary, for buffer)</strong>:</p>
+
+<pre><code class="language-bash">  sudo fallocate -l 8G /swapfile
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  echo &quot;/swapfile none swap sw 0 0&quot; | sudo tee -a /etc/fstab
+</code></pre>
+
+<ul>
+<li><strong>Monitor memory usage with <code>htop</code> or <code>glances</code></strong>.</li>
+<li><strong>Use cgroups (<code>systemd</code> or <code>cgroup</code> limits)</strong> to prevent single services from consuming all RAM.</li>
+</ul>
+
+<hr>
+
+<h3><strong>Conclusion</strong></h3>
+
+<ul>
+<li><strong>Do NOT add up all memory settings</strong>—they represent <strong>limits</strong>, not actual usage.</li>
+<li><strong>64GB RAM</strong> is a <strong>good target</strong> for <strong>500 developers</strong> with <strong>Git, API, and CI/CD</strong> usage.</li>
+<li><strong>If hosting runners for CI/CD</strong>, aim for <strong>128GB+</strong>.</li>
+</ul>
+
+<h1>Q:</h1>
+
+<p>If the CI/CD pipelines use <strong>Kubernetes executor</strong>
+and GitLab runners are of a remote (k8s) service,
+do the advised configurations change at all?</p>
+
+<h1>A:</h1>
+
+<p>Yes, if <strong>CI/CD pipelines use a Kubernetes executor</strong>
+and <strong>GitLab runners are on a remote Kubernetes cluster</strong>,
+<strong>GitLab's resource requirements on the main server decrease</strong>,
+but some optimizations remain necessary.</p>
+
+<h3><strong>Key Differences with Kubernetes Runners</strong></h3>
+
+<ol>
+<li><strong>GitLab no longer runs CI/CD jobs locally</strong> → <strong>No need for high Sidekiq concurrency</strong>.</li>
+<li><strong>GitLab's PostgreSQL, Redis, Puma, and Gitaly still require tuning</strong>, but memory pressure is lower.</li>
+<li><strong>Workhorse and API performance remain crucial</strong>, as pipelines generate API requests and Git operations.</li>
+</ol>
+
+<hr>
+
+<h2><strong>How Do Configuration Recommendations Change?</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th><strong>Service</strong></th>
+<th><strong>With Local CI/CD</strong></th>
+<th><strong>With Kubernetes Runners</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Puma (API, UI, GitLab Rails)</strong></td>
+<td><strong>6 workers, 16 threads</strong></td>
+<td><strong>Keep same (API still serves CI/CD requests)</strong></td>
+</tr>
+
+<tr>
+<td><strong>Gitaly (Git backend)</strong></td>
+<td><strong>10 concurrent RPCs, 4GB memory</strong></td>
+<td><strong>Keep same (repos still cloned by runners)</strong></td>
+</tr>
+
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td><strong>400 connections, 16GB shared_buffers</strong></td>
+<td><strong>Reduce to ~300 connections, 12GB shared_buffers</strong></td>
+</tr>
+
+<tr>
+<td><strong>Redis (Cache for jobs, API, sessions)</strong></td>
+<td><strong>16GB maxmemory</strong></td>
+<td><strong>Reduce to ~8GB maxmemory</strong> (CI/CD caching moves to Kubernetes)</td>
+</tr>
+
+<tr>
+<td><strong>Sidekiq (Background jobs processing)</strong></td>
+<td><strong>20 concurrency</strong></td>
+<td><strong>Reduce to ~8 concurrency</strong> (fewer local jobs)</td>
+</tr>
+
+<tr>
+<td><strong>Workhorse (Git HTTP Proxy)</strong></td>
+<td><strong>TCP mode, handles CI/CD requests</strong></td>
+<td><strong>Keep same (runners clone repos via HTTP)</strong></td>
+</tr>
+
+<tr>
+<td><strong>Git Garbage Collection (GC)</strong></td>
+<td><strong>Run via cron off-peak</strong></td>
+<td><strong>Keep same (repositories still grow over time)</strong></td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2><strong>How These Changes Impact Performance</strong></h2>
+
+<h3>✅ <strong>Lower PostgreSQL &amp; Redis load</strong>:</h3>
+
+<ul>
+<li>CI/CD <strong>job logs and artifacts</strong> now persist in <strong>Kubernetes storage</strong> instead of <strong>PostgreSQL/Redis</strong> on GitLab.</li>
+<li><strong>Fewer writes</strong> to <strong>PostgreSQL</strong> → lower memory and disk I/O.</li>
+</ul>
+
+<h3>✅ <strong>Lower Sidekiq load</strong>:</h3>
+
+<ul>
+<li><strong>CI/CD job execution moves to Kubernetes</strong>, so <strong>fewer jobs run inside GitLab</strong>.</li>
+<li>Background jobs <strong>still needed</strong> for:
+
+<ul>
+<li><strong>Pipeline scheduling</strong></li>
+<li><strong>CI/CD event processing</strong></li>
+<li><strong>Artifact expiration</strong></li>
+<li><strong>Merge request automation</strong></li>
+</ul></li>
+<li><strong>Reduce Sidekiq concurrency</strong> from <code>20</code> to <strong>8</strong>.</li>
+</ul>
+
+<h3>✅ <strong>Gitaly &amp; Workhorse remain critical</strong>:</h3>
+
+<ul>
+<li><strong>Pipelines still clone repositories</strong> from GitLab → <strong>Gitaly still needs high concurrency</strong>.</li>
+<li>Runners <strong>access repositories via HTTP(S)</strong> → <strong>Workhorse should stay in TCP mode</strong>.</li>
+</ul>
+
+<h3>✅ <strong>Git garbage collection remains necessary</strong>:</h3>
+
+<ul>
+<li>Even though runners are external, <strong>Git repositories still accumulate loose objects</strong>.</li>
+<li><strong>Run Git GC</strong> regularly to avoid repo bloat.</li>
+</ul>
+
+<hr>
+
+<h2><strong>Revised Configuration (<code>/etc/gitlab/gitlab.rb</code>)</strong></h2>
+
+<p>If runners <strong>move to Kubernetes</strong>, apply these changes:</p>
+
+<h3><strong>1. PostgreSQL - Reduce Memory &amp; Connections</strong></h3>
+
+<pre><code class="language-ruby">postgresql['max_connections'] = 300
+postgresql['shared_buffers'] = &quot;12GB&quot;
+postgresql['work_mem'] = &quot;128MB&quot;
+postgresql['effective_cache_size'] = &quot;36GB&quot;
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Fewer CI/CD database queries.</li>
+</ul>
+
+<hr>
+
+<h3><strong>2. Redis - Reduce Memory Allocation</strong></h3>
+
+<pre><code class="language-ruby">redis['maxmemory'] = &quot;8GB&quot;
+redis['maxmemory_policy'] = &quot;allkeys-lru&quot;
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> CI/CD cache now handled in Kubernetes.</li>
+</ul>
+
+<hr>
+
+<h3><strong>3. Sidekiq - Reduce Background Worker Concurrency</strong></h3>
+
+<pre><code class="language-ruby">sidekiq['concurrency'] = 8
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Fewer local CI/CD jobs to process.</li>
+</ul>
+
+<hr>
+
+<h3><strong>4. Keep Puma, Gitaly, and Workhorse Settings</strong></h3>
+
+<pre><code class="language-ruby">puma['worker_processes'] = 6
+puma['max_threads'] = 16
+
+gitaly['concurrency'] = [
+  { 'rpc' =&gt; '/gitaly.SmartHTTPService/PostUploadPack', 'max_per_repo' =&gt; 10 },
+  { 'rpc' =&gt; '/gitaly.SSHService/UploadPack', 'max_per_repo' =&gt; 10 }
+]
+gitaly['cgroups_memory_enabled'] = true
+gitaly['cgroups_memory_limit'] = '4GB'
+
+gitlab_workhorse['listen_network'] = &quot;tcp&quot;
+gitlab_workhorse['listen_addr'] = &quot;0.0.0.0:8181&quot;
+</code></pre>
+
+<ul>
+<li><strong>Puma</strong> stays <strong>highly concurrent</strong> for <strong>UI/API requests</strong>.</li>
+<li><strong>Gitaly</strong> still needs <strong>high concurrency for cloning/fetching</strong>.</li>
+<li><strong>Workhorse</strong> remains <strong>optimized for Git HTTP traffic</strong>.</li>
+</ul>
+
+<hr>
+
+<h3><strong>5. Keep Git Garbage Collection Active</strong></h3>
+
+<pre><code class="language-bash">sudo -u git -H git config --global gc.auto 0
+sudo -u git -H git config --global pack.threads 4
+sudo -u git -H git config --global pack.windowMemory 256m
+</code></pre>
+
+<ul>
+<li><strong>Why?</strong> Even with external runners, repositories still accumulate junk objects.</li>
+</ul>
+
+<hr>
+
+<h2><strong>How Much RAM is Now Needed?</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>With Local CI/CD</strong></th>
+<th><strong>With Kubernetes Runners</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>PostgreSQL</strong></td>
+<td><strong>16GB</strong></td>
+<td><strong>12GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Redis</strong></td>
+<td><strong>16GB</strong></td>
+<td><strong>8GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Puma</strong></td>
+<td><strong>2GB</strong></td>
+<td><strong>2GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Gitaly</strong></td>
+<td><strong>4GB</strong></td>
+<td><strong>4GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Sidekiq</strong></td>
+<td><strong>4GB</strong></td>
+<td><strong>2GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Workhorse + Kernel Caching</strong></td>
+<td><strong>8GB</strong></td>
+<td><strong>6GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>OS &amp; Misc.</strong></td>
+<td><strong>6GB</strong></td>
+<td><strong>4GB</strong></td>
+</tr>
+
+<tr>
+<td><strong>Total RAM Required</strong></td>
+<td><strong>64GB</strong></td>
+<td><strong>32GB–48GB</strong></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>With <strong>Kubernetes runners</strong>, GitLab can <strong>run well on 32GB</strong>, but <strong>48GB is safer</strong> for heavy repo traffic.</li>
+<li>If hosting <strong>large repositories (GBs in size)</strong>, keep <strong>64GB+</strong>.</li>
+</ul>
+
+<hr>
+
+<h2><strong>Final Thoughts</strong></h2>
+
+<p>✅ <strong>With external runners, GitLab requires ~30% less memory</strong><br>
+✅ <strong>PostgreSQL and Redis workloads drop significantly</strong><br>
+✅ <strong>Workhorse and Gitaly remain critical for repo access</strong><br>
+✅ <strong>Git garbage collection is still necessary</strong></p>
+
+<p>If your Kubernetes cluster is also <strong>handling GitLab registry/artifacts</strong>,<br>
+we can fine-tune <strong>object storage, persistent volumes, and caching strategies!</strong></p>
+
+<h1>Q:</h1>
+
+<p>How to load test the protected Git service endpoints, e.g., git ls-remote $host/$repo.git, which require authentication, using Apache Bench?</p>
+
+<h1>A:</h1>
+
+<p>To <strong>load test protected Git service endpoints</strong> such as <code>git ls-remote $host/$repo.git</code>, which require <strong>authentication</strong>, using <strong>Apache Bench (<code>ab</code>)</strong>, follow these steps:</p>
+
+<hr>
+
+<h3><strong>1. Gather Required Credentials</strong></h3>
+
+<p>For Git HTTP authentication, you typically use:
+- <strong>Username &amp; Password</strong> (Basic Auth)
+- <strong>Personal Access Token (PAT)</strong> (GitLab, GitHub)
+- <strong>Session Cookies</strong> (If using GitLab with login)</p>
+
+<hr>
+
+<h3><strong>2. Format the Authenticated Request</strong></h3>
+
+<p>Git servers usually require <strong>Basic Authentication</strong>, which can be provided using:
+- <strong>Username &amp; Password</strong>: <code>https://username:password@$host/$repo.git</code>
+- <strong>Access Token</strong> (Preferred): <code>https://oauth_token@$host/$repo.git</code></p>
+
+<h4><strong>Example: Constructing an Authenticated URL</strong></h4>
+
+<pre><code class="language-bash">GIT_HOST=&quot;git.example.com&quot;
+REPO_PATH=&quot;group/repo.git&quot;
+USERNAME=&quot;testuser&quot;
+PASSWORD=&quot;supersecret&quot;
+ACCESS_TOKEN=&quot;glpat-xxxxxxxxxxxxxx&quot;
+
+# Basic Auth (Less Secure)
+AUTH_URL=&quot;https://$USERNAME:$PASSWORD@$GIT_HOST/$REPO_PATH&quot;
+
+# Personal Access Token (More Secure)
+AUTH_URL=&quot;https://$ACCESS_TOKEN@$GIT_HOST/$REPO_PATH&quot;
+</code></pre>
+
+<hr>
+
+<h3><strong>3. Use Apache Bench (<code>ab</code>) for Load Testing</strong></h3>
+
+<h4><strong>Basic Test</strong></h4>
+
+<p>To test the response time and throughput:</p>
+
+<pre><code class="language-bash">ab -n 100 -c 10 &quot;$AUTH_URL/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<ul>
+<li><strong><code>-n 100</code></strong> → Total <strong>100 requests</strong></li>
+<li><strong><code>-c 10</code></strong> → <strong>10 concurrent connections</strong></li>
+<li><strong><code>/info/refs?service=git-upload-pack</code></strong> → The endpoint Git uses for <code>ls-remote</code></li>
+</ul>
+
+<h4><strong>More Intensive Load Test</strong></h4>
+
+<pre><code class="language-bash">ab -n 1000 -c 50 &quot;$AUTH_URL/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<ul>
+<li>Simulates <strong>1000 total requests</strong> with <strong>50 concurrent users</strong></li>
+</ul>
+
+<hr>
+
+<h3><strong>4. If Password Authentication Fails (Use <code>-H</code> Header)</strong></h3>
+
+<p>Some Git servers block <code>username:password</code> in URLs. Use an <strong>Authorization header</strong> instead:</p>
+
+<pre><code class="language-bash">ab -n 100 -c 10 -H &quot;Authorization: Basic $(echo -n &quot;$USERNAME:$PASSWORD&quot; | base64)&quot; &quot;https://$GIT_HOST/$REPO_PATH/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<p>For <strong>Personal Access Token (PAT)</strong>:</p>
+
+<pre><code class="language-bash">ab -n 100 -c 10 -H &quot;Authorization: Basic $(echo -n &quot;oauth:$ACCESS_TOKEN&quot; | base64)&quot; &quot;https://$GIT_HOST/$REPO_PATH/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<hr>
+
+<h3><strong>5. Using Session Cookies (For GitLab)</strong></h3>
+
+<p>If GitLab requires login, use session cookies:
+1. Log in via <code>curl</code>:</p>
+
+<pre><code class="language-bash">   curl -c cookies.txt -X POST -d &quot;username=myuser&amp;password=mypass&quot; &quot;https://git.example.com/users/sign_in&quot;
+</code></pre>
+
+<ol>
+<li><p>Use <strong>Apache Bench</strong> with cookies:</p>
+
+<pre><code class="language-bash">ab -n 100 -c 10 -C &quot;cookie_value_from_cookies.txt&quot; &quot;https://git.example.com/$REPO_PATH/info/refs?service=git-upload-pack&quot;
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3><strong>6. Analyzing Apache Bench Output</strong></h3>
+
+<p>After running <code>ab</code>, you’ll get:
+- <strong>Requests per second</strong> (<code>Requests/sec</code>): Higher is better.
+- <strong>Time per request</strong> (<code>Time per request</code>): Lower is better.
+- <strong>Failed requests</strong>: Ensure <strong>0 failed</strong> requests.</p>
+
+<hr>
+
+<h3><strong>7. Monitor GitLab Server Load During Test</strong></h3>
+
+<p>While running <code>ab</code>, monitor server resources:</p>
+
+<pre><code class="language-bash">htop   # CPU/RAM usage
+iotop  # Disk I/O usage
+dstat  # Network usage
+</code></pre>
+
+<hr>
+
+<h3><strong>8. Avoid Being Blocked</strong></h3>
+
+<p>🔹 <strong>Use <code>-r</code> to prevent aborting on socket failures</strong>:</p>
+
+<pre><code class="language-bash">ab -n 1000 -c 50 -r &quot;$AUTH_URL/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<p>🔹 <strong>Rate-limit requests (<code>-p</code>) to avoid overloading the Git server</strong>:</p>
+
+<pre><code class="language-bash">ab -n 1000 -c 10 -p 500 &quot;https://$GIT_HOST/$REPO_PATH/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<hr>
+
+<h3><strong>Summary</strong></h3>
+
+<p>✔ <strong>Use Apache Bench (<code>ab</code>)</strong> to test <code>git ls-remote</code> using <code>/info/refs?service=git-upload-pack</code><br>
+✔ <strong>Use <code>-H &quot;Authorization: Basic &lt;base64&gt;</code> for authentication</strong><br>
+✔ <strong>Monitor server load (<code>htop</code>, <code>iotop</code>, <code>dstat</code>)</strong><br>
+✔ <strong>Use <code>-r</code> to prevent premature failures</strong></p>
+
+<p>Would you like to extend testing to <strong>Git pushes/pulls</strong> (<code>git-receive-pack</code>)? 🚀</p>
+
+<h1>Q:</h1>
+
+<p>The real issue is <code>git clone $url</code> responding HTTP 500,
+but we don't want to slam the server with lots of such requests,
+thinking that would ruin everyone's day.</p>
+
+<h1>A:</h1>
+
+<p>... you don't want to overload the server with excessive test requests.
+Here’s a structured approach to <strong>debug</strong> this <strong>without causing unnecessary load</strong>.</p>
+
+<hr>
+
+<h2><strong>1. Understanding the <code>git clone</code> HTTP Request</strong></h2>
+
+<p>When running:</p>
+
+<pre><code class="language-bash">git clone https://$GIT_HOST/$REPO_PATH.git
+</code></pre>
+
+<p>Git makes multiple HTTP requests to the server:</p>
+
+<ol>
+<li><strong>Fetch repository metadata (<code>ls-remote</code>)</strong><br>
+
+<ul>
+<li><code>GET /$REPO_PATH.git/info/refs?service=git-upload-pack</code></li>
+</ul></li>
+<li><strong>Negotiate packfile transfer</strong><br>
+
+<ul>
+<li><code>POST /$REPO_PATH.git/git-upload-pack</code></li>
+</ul></li>
+<li><strong>Download objects in batches</strong><br>
+
+<ul>
+<li><strong>Multiple <code>POST</code> requests</strong> until all objects are fetched.</li>
+</ul></li>
+</ol>
+
+<p>An <strong>HTTP 500</strong> (Internal Server Error) suggests:
+- The <strong>Git HTTP backend</strong> (Gitaly, Workhorse, or Nginx) <strong>is failing.</strong>
+- The <strong>server is overloaded</strong> or <strong>misconfigured</strong>.
+- A <strong>specific repository operation (e.g., object packing) is triggering an error</strong>.</p>
+
+<hr>
+
+<h2><strong>2. How to Test Without Slamming the Server</strong></h2>
+
+<p>To <strong>troubleshoot without flooding GitLab</strong>, use <strong>controlled and targeted tests</strong>:</p>
+
+<h3><strong>Option 1: Isolate <code>git ls-remote</code> First</strong></h3>
+
+<p>Since <code>git clone</code> first calls <code>ls-remote</code>, check if it fails first:</p>
+
+<pre><code class="language-bash">git ls-remote https://$GIT_HOST/$REPO_PATH.git
+</code></pre>
+
+<p>If this also returns <strong>HTTP 500</strong>,
+the issue is likely <strong>Gitaly or GitLab Workhorse</strong>.</p>
+
+<h3><strong>Option 2: Clone a Tiny Repo (Low Impact Test)</strong></h3>
+
+<p>Instead of testing with a <strong>large repo</strong>, clone a small one:</p>
+
+<pre><code class="language-bash">git clone --depth 1 https://$GIT_HOST/$SMALL_TEST_REPO.git
+</code></pre>
+
+<ul>
+<li><strong>If this works</strong>, the problem is <strong>large repository cloning</strong>.</li>
+<li><strong>If this also fails</strong>, the problem is likely <strong>system-wide</strong>.</li>
+</ul>
+
+<h3><strong>Option 3: Clone with Debug Logging</strong></h3>
+
+<p>Run <code>git clone</code> with <strong>detailed debug logs</strong>:</p>
+
+<pre><code class="language-bash">GIT_TRACE=1 GIT_CURL_VERBOSE=1 git clone https://$GIT_HOST/$REPO_PATH.git
+</code></pre>
+
+<ul>
+<li><strong>Check where the request fails.</strong></li>
+
+<li><p>Look for errors like:</p>
+
+<pre><code>fatal: HTTP error 500
+</code></pre>
+
+<p>or</p>
+
+<pre><code>POST git-upload-pack (500 Internal Server Error)
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h2><strong>3. Check Server Logs for Root Cause</strong></h2>
+
+<p>On the <strong>GitLab server</strong>, analyze logs in <strong>real-time</strong> while running <code>git clone</code>:</p>
+
+<h3><strong>Gitaly Logs (Git backend)</strong></h3>
+
+<pre><code class="language-bash">sudo tail -f /var/log/gitlab/gitaly/current
+</code></pre>
+
+<ul>
+<li>Look for <code>RPC error</code> or <code>failed to process upload-pack</code>.</li>
+</ul>
+
+<h3><strong>Workhorse Logs (Git HTTP proxy)</strong></h3>
+
+<pre><code class="language-bash">sudo tail -f /var/log/gitlab/gitlab-workhorse/current
+</code></pre>
+
+<ul>
+<li>Check if Workhorse is failing when proxying Git HTTP requests.</li>
+</ul>
+
+<h3><strong>Nginx Logs (GitLab Web Requests)</strong></h3>
+
+<pre><code class="language-bash">sudo tail -f /var/log/gitlab/nginx/gitlab_access.log
+sudo tail -f /var/log/gitlab/nginx/gitlab_error.log
+</code></pre>
+
+<ul>
+<li>Look for <code>500 Internal Server Error</code>.</li>
+</ul>
+
+<h3><strong>PostgreSQL Logs (Database issues)</strong></h3>
+
+<pre><code class="language-bash">sudo tail -f /var/log/gitlab/postgresql/current
+</code></pre>
+
+<ul>
+<li>If CI/CD jobs or hooks are failing, it might be <strong>a DB overload issue</strong>.</li>
+</ul>
+
+<hr>
+
+<h2><strong>4. Possible Causes of HTTP 500 in <code>git clone</code></strong></h2>
+
+<p>Based on logs, here are common reasons and fixes:</p>
+
+<table>
+<thead>
+<tr>
+<th><strong>Cause</strong></th>
+<th><strong>Logs to Check</strong></th>
+<th><strong>Fix</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Gitaly crashes under load</strong></td>
+<td><code>gitaly/current</code></td>
+<td>Increase memory, concurrency</td>
+</tr>
+
+<tr>
+<td><strong>Large repo fetch failing (<code>git-upload-pack</code>)</strong></td>
+<td><code>gitaly/current</code></td>
+<td>Run <code>git gc</code> on repo</td>
+</tr>
+
+<tr>
+<td><strong>GitLab Workhorse timeouts</strong></td>
+<td><code>gitlab-workhorse/current</code></td>
+<td>Increase timeout (<code>workhorse['proxy_timeout'] = 300</code>)</td>
+</tr>
+
+<tr>
+<td><strong>Nginx too many open files</strong></td>
+<td><code>nginx/gitlab_error.log</code></td>
+<td>Increase worker limits (<code>worker_rlimit_nofile 100000;</code>)</td>
+</tr>
+
+<tr>
+<td><strong>PostgreSQL slow queries</strong></td>
+<td><code>postgresql/current</code></td>
+<td>Optimize DB (<code>work_mem</code>, <code>shared_buffers</code>)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2><strong>5. Safe Load Testing Without Overloading the Server</strong></h2>
+
+<p>To simulate <code>git clone</code> <strong>without impacting production</strong>, use <strong>Apache Bench (<code>ab</code>) with rate-limiting</strong>:</p>
+
+<h3><strong>Option 1: Test Without Downloading Objects</strong></h3>
+
+<p>Instead of cloning everything, <strong>only request metadata</strong>:</p>
+
+<pre><code class="language-bash">ab -n 10 -c 2 &quot;https://$GIT_HOST/$REPO_PATH.git/info/refs?service=git-upload-pack&quot;
+</code></pre>
+
+<ul>
+<li>Simulates <strong>10 lightweight clone requests</strong>.</li>
+<li><strong>Does not</strong> download full repository data.</li>
+</ul>
+
+<h3><strong>Option 2: Rate-Limited <code>git clone</code></strong></h3>
+
+<p>Clone with bandwidth limits:</p>
+
+<pre><code class="language-bash">git clone --depth=1 --single-branch --progress https://$GIT_HOST/$REPO_PATH.git &amp;
+sleep 2 &amp;&amp; kill $!
+</code></pre>
+
+<ul>
+<li>Runs a <strong>partial fetch</strong> for 2 seconds, then stops.</li>
+<li><strong>Prevents overloading</strong> the server.</li>
+</ul>
+
+<h3><strong>Option 3: Clone Specific Large Objects</strong></h3>
+
+<p>If a repo has <strong>large files</strong>, fetch only <strong>a single large object</strong>:</p>
+
+<pre><code class="language-bash">git fetch --depth 1 origin &lt;large_commit_sha&gt;
+</code></pre>
+
+<ul>
+<li><strong>Checks if large object retrieval is the issue</strong>.</li>
+</ul>
+
+<hr>
+
+<h2><strong>6. Final Steps: Fixing HTTP 500 Issues</strong></h2>
+
+<h3>✅ <strong>If Gitaly is the issue:</strong></h3>
+
+<ul>
+<li><p>Increase <strong>memory limits</strong> in <code>gitaly.toml</code>:</p>
+
+<pre><code class="language-toml">[memory]
+max_rss = &quot;6GB&quot;
+</code></pre></li>
+
+<li><p>Restart Gitaly:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl restart gitaly
+</code></pre></li>
+</ul>
+
+<h3>✅ <strong>If Nginx is the issue:</strong></h3>
+
+<ul>
+<li><p>Increase <strong>timeout limits</strong> in <code>/etc/gitlab/gitlab.rb</code>:</p>
+
+<pre><code class="language-ruby">nginx['proxy_read_timeout'] = 300
+nginx['proxy_connect_timeout'] = 300
+</code></pre></li>
+
+<li><p>Restart Nginx:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl restart nginx
+</code></pre></li>
+</ul>
+
+<h3>✅ <strong>If Workhorse is the issue:</strong></h3>
+
+<ul>
+<li><p>Increase timeout:</p>
+
+<pre><code class="language-ruby">gitlab_workhorse['proxy_timeout'] = 300
+</code></pre></li>
+
+<li><p>Restart Workhorse:</p>
+
+<pre><code class="language-bash">sudo gitlab-ctl restart gitlab-workhorse
+</code></pre></li>
+</ul>
+
+<h3>✅ <strong>If Large Repo Clones Are the Issue:</strong></h3>
+
+<ul>
+<li><p>Run <strong>Git Garbage Collection</strong>:</p>
+
+<pre><code class="language-bash">sudo -u git -H git gc --aggressive /var/opt/gitlab/git-data/repositories/@hashed/&lt;repo_path&gt;
+</code></pre></li>
+
+<li><p><strong>Encourage shallow clones</strong>:</p>
+
+<pre><code class="language-bash">git clone --depth 1 https://$GIT_HOST/$REPO_PATH.git
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h2><strong>7. Summary</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th><strong>Step</strong></th>
+<th><strong>What to Do</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Verify <code>ls-remote</code></strong></td>
+<td>Run <code>git ls-remote $URL</code></td>
+</tr>
+
+<tr>
+<td><strong>Check logs</strong></td>
+<td><code>gitaly</code>, <code>workhorse</code>, <code>nginx</code>, <code>postgresql</code></td>
+</tr>
+
+<tr>
+<td><strong>Clone small repo</strong></td>
+<td><code>git clone --depth 1 $URL</code></td>
+</tr>
+
+<tr>
+<td><strong>Run controlled Apache Bench test</strong></td>
+<td><code>ab -n 10 -c 2 $URL/info/refs?service=git-upload-pack</code></td>
+</tr>
+
+<tr>
+<td><strong>Optimize GitLab</strong></td>
+<td>Increase <strong>timeouts, memory, Git GC</strong></td>
+</tr>
+</tbody>
+</table>
+
+<h1>Q:</h1>
+
+<p>Indeed, <code>git ls-remote</code> by itself generates the same pattern and rate of HTTP 500 responses !</p>
+
+<p>That is, from above:</p>
+
+<blockquote>
+<p>Since <code>git clone</code> first calls <code>ls-remote</code>, check if it fails first:</p>
+
+<pre><code class="language-bash">&gt;git ls-remote https://$GIT_HOST/$REPO_PATH.git
+&gt;```
+&gt;If this also returns **HTTP 500**, 
+&gt;the issue is likely **Gitaly or GitLab Workhorse**.
+
+
+# A:
+
+Great observation! If `git ls-remote $URL` alone is generating **HTTP 500 responses** at the same rate and pattern as `git clone`, this strongly suggests the issue lies in **GitLab’s Git HTTP service**, specifically:
+
+### **Possible Causes**
+1. **Gitaly is failing under load** (Git backend service)
+2. **GitLab Workhorse is misconfigured or timing out**
+3. **Nginx reverse proxy limits are being exceeded**
+4. **A specific repository operation (`git-upload-pack`) is failing**
+5. **File descriptor limits or memory constraints on GitLab components**
+
+---
+
+## **1. Verify Gitaly is the Issue**
+Since `git ls-remote` interacts **directly with Gitaly**, check if Gitaly is failing.
+
+### **Check Gitaly Logs in Real-Time**
+</code></pre>
+
+<p>bash
+sudo tail -f /var/log/gitlab/gitaly/current</p>
+
+<pre><code>- Look for **errors or RPC failures**:
+</code></pre>
+
+<p>rpc error: code = Internal desc = failed to call git-upload-pack</p>
+
+<pre><code>
+### **Manually Test Gitaly**
+Try an RPC request to Gitaly:
+</code></pre>
+
+<p>bash
+sudo gitlab-rake gitlab:gitaly:status</p>
+
+<pre><code>If Gitaly is failing, restart it:
+</code></pre>
+
+<p>bash
+sudo gitlab-ctl restart gitaly</p>
+
+<pre><code>
+**If Gitaly is repeatedly failing**, **increase its memory limits**:
+</code></pre>
+
+<p>toml
+[gitaly]
+concurrency = 20
+memory_limit = &quot;6GB&quot;</p>
+
+<pre><code>Then reload:
+</code></pre>
+
+<p>bash
+sudo gitlab-ctl reconfigure</p>
+
+<pre><code>
+---
+
+## **2. Check GitLab Workhorse**
+Since Workhorse proxies Git HTTP traffic, **it may be timing out**.
+
+### **Check Workhorse Logs**
+</code></pre>
+
+<p>bash
+sudo tail -f /var/log/gitlab/gitlab-workhorse/current</p>
+
+<pre><code>- Look for:
+</code></pre>
+
+<p>500 Internal Server Error
+  upstream prematurely closed connection</p>
+
+<pre><code>
+### **Increase Workhorse Timeout**
+Edit `/etc/gitlab/gitlab.rb`:
+</code></pre>
+
+<p>ruby
+gitlab_workhorse['proxy_timeout'] = 300</p>
+
+<pre><code>Then restart:
+</code></pre>
+
+<p>bash
+sudo gitlab-ctl restart gitlab-workhorse</p>
+
+<pre><code>
+---
+
+## **3. Increase Nginx Limits**
+If GitLab is behind **Nginx**, **Nginx may be rejecting requests** due to:
+- **Connection limits**
+- **Timeout settings**
+
+### **Check Nginx Logs**
+</code></pre>
+
+<p>bash
+sudo tail -f /var/log/gitlab/nginx/gitlab_error.log</p>
+
+<pre><code>- Look for errors like:
+</code></pre>
+
+<p>502 Bad Gateway
+  500 Internal Server Error
+  client sent too many requests</p>
+
+<pre><code>
+### **Increase Timeout &amp; Connections**
+Edit `/etc/gitlab/gitlab.rb`:
+</code></pre>
+
+<p>ruby
+nginx['proxy_read_timeout'] = 300
+nginx['proxy_connect_timeout'] = 300
+nginx['worker_connections'] = 16384
+nginx['worker_rlimit_nofile'] = 100000</p>
+
+<pre><code>Then restart:
+</code></pre>
+
+<p>bash
+sudo gitlab-ctl restart nginx</p>
+
+<pre><code>
+---
+
+## **4. Verify Git is Failing on `git-upload-pack`**
+### **Manually Test Git HTTP API**
+Instead of `git ls-remote`, run:
+</code></pre>
+
+<p>bash
+curl -v &quot;https://$GIT_HOST/$REPO_PATH.git/info/refs?service=git-upload-pack&quot;</p>
+
+<pre><code>- If this **also returns HTTP 500**, it confirms **GitLab’s Git service** is failing.
+- If it **succeeds**, the issue is related to **Git concurrency limits**.
+
+### **Increase Gitaly Concurrency**
+</code></pre>
+
+<p>toml
+[gitaly]
+concurrency = 20</p>
+
+<pre><code>Then restart:
+</code></pre>
+
+<p>bash
+sudo gitlab-ctl restart gitaly</p>
+
+<pre><code>
+---
+
+## **5. Check File Descriptors &amp; Memory Limits**
+If **too many requests cause failures**, increase system limits.
+
+### **Check Open Files Limit**
+</code></pre>
+
+<p>bash
+ulimit -n</p>
+
+<pre><code>If **less than 100000**, increase it in `/etc/security/limits.conf`:
+</code></pre>
+
+<p>gitlab  soft  nofile  100000
+gitlab  hard  nofile  100000</p>
+
+<pre><code>
+### **Check System Memory**
+</code></pre>
+
+<p>bash
+free -h</p>
+
+<pre><code>If **Gitaly is OOM-killing**, increase swap:
+</code></pre>
+
+<p>bash
+sudo fallocate -l 8G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile</p>
+
+<pre><code>
+---
+
+## **6. Safe Testing Without Overloading GitLab**
+Instead of running many `git clone` commands:
+- Test **only metadata fetching**:
+</code></pre>
+
+<p>bash
+  ab -n 10 -c 2 &quot;https://$GIT_HOST/$REPO_PATH.git/info/refs?service=git-upload-pack&quot;</p>
+
+<pre><code>- Use **shallow cloning**:
+</code></pre>
+
+<p>bash
+  git clone --depth 1 https://$GIT_HOST/$REPO_PATH.git
+  ```</p>
+</blockquote>
+
+<hr>
+
+<h2><strong>Summary of Fixes</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th><strong>Issue</strong></th>
+<th><strong>Fix</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Gitaly crashes</strong></td>
+<td>Increase memory, concurrency</td>
+</tr>
+
+<tr>
+<td><strong>Workhorse timeouts</strong></td>
+<td>Increase <code>proxy_timeout</code></td>
+</tr>
+
+<tr>
+<td><strong>Nginx rate limits</strong></td>
+<td>Increase <code>worker_connections</code>, <code>proxy_read_timeout</code></td>
+</tr>
+
+<tr>
+<td><strong>Too many open files</strong></td>
+<td>Set <code>ulimit -n 100000</code></td>
+</tr>
+
+<tr>
+<td><strong>Swap thrashing</strong></td>
+<td>Add swap (<code>8GB</code>)</td>
+</tr>
+</tbody>
+</table>
+
+<p>Let me know which logs show <strong>500 errors</strong>, and we’ll narrow it down! 🚀</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

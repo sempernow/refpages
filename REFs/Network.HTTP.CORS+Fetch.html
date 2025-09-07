@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Network.HTTP.CORS+Fetch</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://javascript.info/fetch-crossorigin" title="javascript.info">CORS + Fetch API</a> | <a href="https://javascript.info/fetch-crossorigin#summary">Summary</a></h1>
+
+<h2>TL;DR</h2>
+
+<ol>
+<li><strong>Browsers always add <code>Origin</code> header to CORS requests</strong>. They act as trusted mediator; validate the request against preflight response header(s), and such.</li>
+<li>If a <code>fetch</code> request body is JSON, declared per <code>Content-Type: application/json</code>, then it is an &quot;Unsafe&quot; CORS request. (That declaration should be unnecessary, as the service endpoint should be expecting content of that one type.)</li>
+<li><code>Cookie</code> header is normally not sent with requests of Fetch API. To send them, request options must include <code>credentials</code>:
+
+<ul>
+<li><a href="https://javascript.info/fetch-api"><code>fetch(url, {credentials: &quot;include&quot;})</code></a></li>
+<li>In doing so,<code>Access-Control-Allow-Origin</code> response header value must be set to a specific origin, not the wildcard, <code>&quot;*&quot;</code>; browsers interpret it here as a literal.</li>
+</ul></li>
+<li>Though headers beyond those of &quot;Safe&quot; list must be explicitly declared in preflight (<code>OPTIONS</code>) request (<code>Access-Control-Allow-Headers:</code>), the <code>Cookie</code> header needn't be declared if the <code>Authorization</code> header is declared and <code>fetch</code> option '<code>credentials: &quot;include&quot;</code>' is set.</li>
+</ol>
+
+<blockquote>
+<p>Be advised that browsers will <strong><em>falsely report</em></strong> CORS errors in certain cases. For example, if the CORS request is to endpoints not handled by the router, if the service is unavailable (500 Internal Server Error), and other cases. Each browser vendor has their own set of quirks. Chrome tends to provide the most insight (versus Firefox) into CORS issues.</p>
+</blockquote>
+
+<h2><a href="https://javascript.info/fetch-crossorigin#cors-for-safe-requests">CORS @ safe requests</a></h2>
+
+<blockquote>
+<p>CORS requests that are automatically allowed by browsers; sans preflight (<code>OPTIONS</code>) request.</p>
+</blockquote>
+
+<ul>
+<li>Safe method: <code>GET</code>, <code>POST</code>, <code>HEAD</code></li>
+
+<li><p>Safe headers:</p>
+
+<pre><code class="language-http">Accept
+Accept-Language
+Content-Language
+Content-Type (1)
+</code></pre>
+
+<ul>
+<li>(1) Only if type is <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code>, or <code>text/plain</code>.</li>
+</ul></li>
+</ul>
+
+<h4>Example CORS request:</h4>
+
+<ul>
+<li>URL: <code>https://anywhere.com/request</code> (To)</li>
+<li>Origin: <code>https://javascript.info/page</code> (From)</li>
+</ul>
+
+<p>Request Headers</p>
+
+<pre><code class="language-http">GET /request
+Host: anywhere.com
+Origin: https://javascript.info
+...
+</code></pre>
+
+<pre><code class="language-bash"># cURL-equivalent request
+curl -X GET \
+  -H 'Origin: https://javascript.info' \
+  -H 'Host: anywhere.com' \
+  https://anywhere.com/request
+</code></pre>
+
+<p>Response Headers (Permissive):</p>
+
+<pre><code class="language-http">200 OK
+Content-Type: text/html; charset=UTF-8
+Access-Control-Allow-Origin: https://javascript.info
+</code></pre>
+
+<h3>Safe response headers</h3>
+
+<p>Browser allows javascript only these, by default:</p>
+
+<pre><code>Cache-Control
+Content-Language
+Content-Type
+Expires
+Last-Modified
+Pragma
+</code></pre>
+
+<p>To grant JavaScript access to any other response header, the server must send <code>Access-Control-Expose-Headers</code>, e.g.,</p>
+
+<pre><code class="language-http">200 OK
+Content-Type: text/html; charset=UTF-8
+Content-Length: 12345
+API-Key: 2c9de507f2c54aa1
+Access-Control-Allow-Origin: https://javascript.info
+Access-Control-Expose-Headers: Content-Length,API-Key
+</code></pre>
+
+<h2><a href="https://javascript.info/fetch-crossorigin#unsafe-requests">CORS @ unsafe requests</a></h2>
+
+<pre><code class="language-js">let response = await fetch('https://site.com/service.json', {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'API-Key': 'secret'
+  }
+})
+</code></pre>
+
+<p>Browser sends Preflight, <code>OPTIONS</code> method, request</p>
+
+<h3>Preflight</h3>
+
+<p>Request</p>
+
+<pre><code class="language-http">OPTIONS /service.json
+Host: site.com
+Origin: https://javascript.info
+Access-Control-Request-Method: PATCH
+Access-Control-Request-Headers: Content-Type,API-Key
+</code></pre>
+
+<p>If the server agrees to serve the requests, then it <strong><em>should respond with empty body</em></strong>, status <code>200</code> <strong><em>and headers</em></strong>:</p>
+
+<p>Response</p>
+
+<pre><code class="language-http">Access-Control-Allow-Origin: https://javascript.info
+Access-Control-Allow-Methods: PATCH
+Access-Control-Allow-Headers: Content-Type,API-Key.
+</code></pre>
+
+<p>Server may have list of such to service all expected requests</p>
+
+<pre><code class="language-http">200 OK
+Access-Control-Allow-Origin: https://javascript.info
+Access-Control-Allow-Methods: PUT,PATCH,DELETE
+Access-Control-Allow-Headers: API-Key,Content-Type,If-Modified-Since,Cache-Control
+Access-Control-Max-Age: 86400
+</code></pre>
+
+<h3>Main</h3>
+
+<p>Request</p>
+
+<pre><code class="language-http">PATCH /service.json
+Host: site.com
+Content-Type: application/json
+API-Key: secret
+Origin: https://javascript.info
+</code></pre>
+
+<p>Response</p>
+
+<pre><code class="language-http">Access-Control-Allow-Origin: https://javascript.info
+</code></pre>
+
+<h3><a href="https://javascript.info/fetch-crossorigin#credentials">Credentials</a></h3>
+
+<p>A cross-origin request initiated by JavaScript code by default does not bring any credentials (headers: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie"><code>Cookie</code></a> or <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/WWW-Authenticate"><code>WWW-Authenticate</code></a>).</p>
+
+<p>For example, <code>fetch('http://another.com')</code> does not send any cookies, even those that belong to <code>another.com</code> domain.</p>
+
+<p>To send credentials using Fetcch API, add the option <code>credentials: &quot;include&quot;</code>, ...</p>
+
+<pre><code class="language-js">fetch('http://another.com', {
+  credentials: &quot;include&quot;
+})
+</code></pre>
+
+<h3>Preflight</h3>
+
+<p>Request headers</p>
+
+<pre><code class="language-http">OPTIONS /service.json
+Host: site.com
+Origin: https://javascript.info
+Access-Control-Request-Method: PATCH
+Access-Control-Request-Headers: Authorization
+</code></pre>
+
+<p>Response headers (Permissive)</p>
+
+<pre><code class="language-http">200 OK
+Access-Control-Allow-Origin: https://javascript.info
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Headers: Authorization
+</code></pre>
+
+<ul>
+<li><strong><em>Cannot use</em></strong> <code>&quot;*&quot;</code> if <code>fetch(..)</code> uses <code>credentials: ...</code> because it is interpreted as a literal in that case.</li>
+<li>Needn't add <code>Cookie</code> to list of allowed headers; browsers automatically send cookies (originated at that domain) if <code>fetch</code> option '<code>credentials: &quot;include&quot;</code>' is set.</li>
+</ul>
+
+<h3>Main</h3>
+
+<p>Request</p>
+
+<pre><code class="language-http">OPTIONS /service.json
+Host: site.com
+Origin: https://javascript.info
+Access-Control-Request-Method: PATCH
+Access-Control-Request-Headers: Authorization
+</code></pre>
+
+<p>Response</p>
+
+<pre><code class="language-http">Access-Control-Allow-Origin: https://javascript.info
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.self-hosted.backup</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>GitLab on-prem Backups</h1>
+
+<pre><code class="language-bash">/opt/gitlab/bin/gitlab-backup create
+</code></pre>
+
+<h2>@ <code>/etc/gitlab/gitlab.rb</code></h2>
+
+<pre><code class="language-ruby">gitlab_rails['manage_backup_path'] = true
+gitlab_rails['backup_path'] = &quot;/var/opt/gitlab/backups&quot;
+gitlab_rails['backup_archive_permissions'] = 0640 # Permissions on backup tar file
+gitlab_rails['backup_keep_time'] = 604800 # Purge older than 7 days
+gitlab_rails['backup_exclude'] = ['artifacts', 'lfs', 'uploads'] # Optional excludes
+</code></pre>
+
+<p>Backup parameters in <code>/etc/gitlab/gitlab.rb</code> strictly configure <strong>how</strong> backups are created when the <code>gitlab-backup</code> command is run (e.g., paths, retention policy, exclusions), but <strong>they do not configure any schedule</strong>. There is <strong>no internal scheduler</strong> within GitLab Omnibus for backups.</p>
+
+<p>Backups must be scheduled <strong>externally</strong>.
+There are only a few possible mechanisms to initiate backups from the host.</p>
+
+<h4>✅ 1. <strong>Cron Job</strong></h4>
+
+<p>Check for system cron jobs:</p>
+
+<pre><code class="language-bash">sudo crontab -l
+sudo crontab -u git -l
+sudo crontab -u gitlab -l
+grep -r gitlab-backup /etc/cron*
+</code></pre>
+
+<p>Look also in:</p>
+
+<pre><code class="language-bash">/etc/cron.daily/
+/etc/cron.d/
+/var/spool/cron/
+</code></pre>
+
+<h4>✅ 2. <strong>Systemd Timer</strong></h4>
+
+<p>Check for a systemd timer:</p>
+
+<pre><code class="language-bash">systemctl list-timers --all | grep gitlab
+grep -r gitlab-backup /etc/systemd/system/
+</code></pre>
+
+<p>GitLab does <strong>not</strong> ship with a built-in timer,
+but a local admin might have added one.</p>
+
+<h4>✅ 3. <strong>Manual Script (Ansible/Puppet)</strong></h4>
+
+<p>Look for automation artifacts:</p>
+
+<pre><code class="language-bash">grep -r gitlab-backup /root /home /opt/gitlab /etc
+</code></pre>
+
+<p>Sometimes backups are triggered by infrastructure tools like Ansible or Puppet via <code>gitlab-backup create</code>.</p>
+
+<h4>✅ 4. <strong>User activity or <code>at</code> command</strong></h4>
+
+<p>Check command logs and history:</p>
+
+<pre><code class="language-bash">last -f /var/log/wtmp
+cat ~/.bash_history | grep gitlab-backup
+atq
+</code></pre>
+
+<hr>
+
+<h1>Schedule App Backups</h1>
+
+<p>A complete, ready-to-use <strong>systemd timer + service</strong> pair to automate <strong>GitLab Omnibus backups</strong> on an air-gapped or standard Linux host.</p>
+
+<hr>
+
+<h2>✅ 1. Create the Service Unit</h2>
+
+<p><strong>File:</strong> <code>/etc/systemd/system/gitlab-backup.service</code></p>
+
+<pre><code class="language-ini">[Unit]
+Description=Create GitLab Backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/gitlab/bin/gitlab-backup create
+User=root
+Group=root
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+</code></pre>
+
+<hr>
+
+<h2>✅ 2. Create the Timer Unit</h2>
+
+<p><strong>File:</strong> <code>/etc/systemd/system/gitlab-backup.timer</code></p>
+
+<pre><code class="language-ini">[Unit]
+Description=Daily GitLab Backup at 2:30 AM
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+AccuracySec=5min
+
+[Install]
+WantedBy=timers.target
+</code></pre>
+
+<ul>
+<li><code>Persistent=true</code> ensures it runs if the system was off at the scheduled time.</li>
+<li><code>AccuracySec=5min</code> is optional but adds some flexibility for scheduling.</li>
+</ul>
+
+<hr>
+
+<h2>✅ 3. Reload and Enable</h2>
+
+<pre><code class="language-bash">sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable --now gitlab-backup.timer
+</code></pre>
+
+<hr>
+
+<h2>✅ 4. Check Timer Status</h2>
+
+<pre><code class="language-bash">systemctl list-timers --all | grep gitlab-backup
+</code></pre>
+
+<p>You should see output like:</p>
+
+<pre><code>gitlab-backup.timer  loaded active waiting   Sun 2025-05-08 02:30:00 EDT ...
+</code></pre>
+
+<hr>
+
+<h2>✅ 5. View Logs</h2>
+
+<p>Use journalctl for logs:</p>
+
+<pre><code class="language-bash">journalctl -u gitlab-backup.service
+</code></pre>
+
+<hr>
+
+<!--
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

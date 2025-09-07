@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Python.Docker</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Python : Containerized Dev Box | <a href="https://hub.docker.com/_/python/tags?page=1&amp;name=3.7.15"><code>hub.docker.com</code></a> | <a href="https://docs.python.org/release/3.7.15/"><code>docs.python.org</code></a></h1>
+
+<h2>TL;DR</h2>
+
+<pre><code class="language-bash"># Start the dev box
+☩ img='python:3.7.15'
+☩ docker run -d --rm --name pbox \
+    -p 8888:8888 \
+    -v $(pwd)/app:/usr/src/app \
+    -w /usr/src/app \
+    $img sleep 1d
+# Exec an interactive shell therein
+☩ docker exec -it $img bash
+</code></pre>
+
+<p>@ <code>root@186afc9f08ac:/usr/src/app#</code> (<code>pbox</code> container)</p>
+
+<pre><code class="language-bash"># Install pipreqs : to generate 'requirements.txt' 
+python -m pip install pipreqs
+# Generate the requirements.txt
+## The list of all modules (versioned) required to run 
+## this project (./*.py) in the context of this Python (python) version.
+pipreqs .
+# Install those dependencies (modules@versions)
+python -m pip install -r requirements.txt
+# Run the app
+python app.py
+</code></pre>
+
+<h2>Images</h2>
+
+<p>Use a fully-loaded Python distro for development.
+Bitnami's is half the size of Python.org's, but lacks <code>pip</code> and other helpers.</p>
+
+<pre><code class="language-bash">☩ docker image ls
+REPOSITORY                       TAG       IMAGE ID       CREATED        SIZE
+bitnami/python                   3.7.15    c5d0a736cc3f   7 months ago   557MB
+python                           3.7.15    7c36701f2ac5   7 months ago   907MB
+</code></pre>
+
+<h2>Meta Demos</h2>
+
+<p>Deploy a Python box having bind mount to local app folder</p>
+
+<pre><code class="language-text">☩ tree
+.
+├── app
+│   ├── v1
+│   │   ├── templates
+│   │   └── web
+│   │       ├── css
+│   │       └── nfs
+│   │           ├── sub1
+│   │           │   └── bar
+│   │           └── foo
+│   └── dir.html
+├── infra
+│   └── docker
+│       └── Dockerfile
+├── README.md
+└── tree.log
+
+9 directories, 6 files
+</code></pre>
+
+<pre><code class="language-bash"># Run the python directory server from inside the container
+☩ port='8080'
+☩ docker run -d --rm --name pbox \
+    -p $port:$port \
+    -v $(pwd)/app:/usr/src/app $img \
+    python -m http.server $port \
+        --bind 127.0.0.1 \
+        --directory /usr/src/app/v1/web/nfs
+
+# Exec an interactive shell therein
+☩ docker exec -it pbox bash
+</code></pre>
+
+<p>From inside the container, hit the server's lone endpoint.</p>
+
+<p>@ <code>root@d6c12e690057:/#</code></p>
+
+<pre><code class="language-bash"># Perform a GET request using HTTP-client utility cURL
+## and log STDOUT for posterity; to host FS, thanks to bind mount.
+curl -sI localhost:8080 |tee curl-I.localhost.8080.log
+</code></pre>
+
+<pre><code class="language-text">HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.7.15
+Date: Fri, 21 Jul 2023 15:09:43 GMT
+Content-type: text/html; charset=utf-8
+Content-Length: 363
+</code></pre>
+
+<h2>Dockerfile</h2>
+
+<pre><code class="language-Dockerfile"># syntax=docker/dockerfile:1
+##... Docker BuildKit 
+ARG SOURCE=python:3.7.15
+
+## Stage 1
+FROM ${SOURCE} AS builder
+
+WORKDIR /app
+
+## Prevent Python interpreter from generating cruft files
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+## GCC compiler is required for installing certain Python packages
+RUN apt-get update &amp;&amp; \
+    apt-get install -y --no-install-recommends gcc
+
+## Install dependencies using Wheels
+COPY requirements.txt .
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
+
+## Stage 2
+FROM bitnami/${SOURCE}
+
+## Run as unprivileged user
+RUN addgroup --system app &amp;&amp; adduser --system --group app
+## OR also REMOVE SHALL ACCESS and home dir. 
+## To randomize IDs, don't specify IDs (--gid 1001, --uid 1001).
+#RUN addgroup --gid 1001 --system app &amp;&amp; \
+#    adduser --no-create-home --shell /bin/false --disabled-password --uid 1001 --system --group app
+
+USER app
+WORKDIR /app
+
+COPY --from=builder /app/wheels /wheels
+COPY --from=builder /app/requirements.txt .
+
+RUN pip install --no-cache /wheels/*
+
+COPY app.py .
+
+CMD [ &quot;python&quot;, &quot;app.py&quot; ] 
+</code></pre>
+
+<p>To implement <a href="https://pypi.org/project/gunicorn/#description" title="@ PyPI">Gunicorn</a> (Python WSGI HTTP Server) for Flask, use this <code>CMD</code> at <code>Dockerfile</code>.</p>
+
+<pre><code class="language-bash">CMD [&quot;gunicorn&quot;, &quot;--bind&quot;, &quot;0.0.0.0:5555&quot;, &quot;{subfolder}.{file_name}:{flask_name}&quot;]
+</code></pre>
+
+<ul>
+<li>If main module is in root folder with file name <code>main.py</code>, and has Flask-instance variable name <code>myapp</code>, then the final command arg (above) is just &quot;<code>main:myapp</code>&quot;. If that app is moved to subfolders, then the arg becomes &quot;<code>subfolder1_name.subfolder2_name.main:myapp</code>&quot;</li>
+<li>Set workers: <code>-w 4</code></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+BitTorrent PROTOCOL  https://en.wikipedia.org/wiki/BitTorrent
+
+Torrent How To
+
+	SITES
+
+		https://torrentfreak.com/top-10-most-popular-torrent-sites-of-2016-160102/
+		RARBG.to is a favorite for TV shows & movies. 
+
+	VIDEO QUALITY/LABEL
+
+		https://en.wikipedia.org/wiki/Pirated_movie_release_types
+		For high quality, the name should include one of these: BDRip, WEB, WEBRip, HDTV, 720p, 1080p, x264 or H264. Avoid SCR, TS and CAM; they're a video recording of a video playing.
+
+	SOFTWARE
+		http://www.techradar.com/us/news/software/applications/best-torrent-client-8-we-recommend-1169584
+		Download ONLY using such software [torrent client]. 
+		Use the Magnet link, NOT any of the other links.
+
+	VPN
+
+		https://www.privateinternetaccess.com 
+		All your internet traffic is logged by your ISP [Verizon/Comcast], so if you don't use a VPN [Virtual Private Network] service they may send you warning notice[s] and/or terminate your service, and copyright holders' lawyers may sue if you download or upload such. If you UPLOAD torrent[s] of copyrighted material, the government may charge you with crime[s].
+

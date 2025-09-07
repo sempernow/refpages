@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.minik_NONE_DRIVER</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><code>minikube start --vm-driver=none</code> : 2018 Notes</h1>
+
+<p>Minikube supports a <a href="https://kubernetes.io/docs/tasks/tools/install-minikube/#install-a-hypervisor"><code>none</code> driver option</a> that runs the Kubernetes components <a href="https://github.com/kubernetes/minikube#linux-continuous-integration-without-vm-support" title="Linux Continuous Integration without VM Support [Install-method @ GitHub]">on the host and not in a VM</a>.</p>
+
+<p>Using this driver <strong>requires Docker</strong>, but <strong>not a hypervisor</strong>. The option has <strong>security issues</strong>, as it reports ...</p>
+
+<pre><code class="language-powershell"># Driver option: NONE 
+PS&gt; minikube start --vm-driver=none  
+</code></pre>
+
+<h3>... <em>reports</em> ...</h3>
+
+<pre><code>Starting local Kubernetes v1.10.0 cluster...
+Starting VM...
+Getting VM IP address...
+Moving files into cluster...
+Setting up certs...
+Connecting to cluster...
+Setting up kubeconfig...
+Starting cluster components...
+Kubectl is now configured to use the cluster.
+===================
+WARNING: IT IS RECOMMENDED NOT TO RUN THE NONE DRIVER ON PERSONAL WORKSTATIONS
+        The 'none' driver will run an insecure kubernetes apiserver as root that may leave the host vulnerable to CSRF attacks
+
+When using the none driver, the kubectl config and credentials generated will be root owned and will appear in the root home directory.
+You will need to move the files to the appropriate location and then set the correct permissions.  An example of this is below:
+
+        sudo mv /root/.kube $HOME/.kube # this will write over any previous configuration
+        sudo chown -R $USER $HOME/.kube
+        sudo chgrp -R $USER $HOME/.kube
+
+        sudo mv /root/.minikube $HOME/.minikube # this will write over any previous configuration
+        sudo chown -R $USER $HOME/.minikube
+        sudo chgrp -R $USER $HOME/.minikube
+
+This can also be done automatically by setting the env var CHANGE_MINIKUBE_NONE_USER=true
+Loading cached images from config file.
+</code></pre>
+
+<h2>Tested per (<code>minik.ps1</code>) QuickStart (<a href="Kubernetes.QuickStart.md" title="Kubernetes.QuickStart.md">MD</a> | <a href="Kubernetes.QuickStart.html" title="@ browser">HTML</a>)</h2>
+
+<h3><code>kubectl</code> tool appears to work</h3>
+
+<pre><code class="language-powershell">PS&gt; kubectl get pod
+NAME                             READY     STATUS  ...
+hello-minikube-6c47c66d8-rm5bp   1/1       Running ...
+</code></pre>
+
+<h3>Public address is inaccessible</h3>
+
+<pre><code class="language-powershell">PS&gt; curl $(minikube service hello-minikube --url)
+curl : Unable to connect to the remote serve 
+# IP:PORT
+PS&gt; minikube service hello-minikube --url
+http://192.168.1.11:31750
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

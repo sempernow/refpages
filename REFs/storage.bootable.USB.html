@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>storage.bootable.USB</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="http://www.intowindows.com/install-windows-10-from-usb-drive/">Create Bootable Windows 10 USB</a></h1>
+
+<h2>Using the Rufus app ...</h2>
+
+<ul>
+<li><p>Partition Type:<br>
+<code>MBR</code> (<a href="https://en.wikipedia.org/wiki/Master_boot_record" title="Wikipedia">Master Boot Record</a>) scheme for <code>BIOS</code> or <code>UEFI</code> (<code>2TB</code> partition limit).<br>
+<code>GPT</code> (<a href="https://en.wikipedia.org/wiki/GUID_Partition_Table" title="Wikipedia">GUID Partition Table</a>) scheme for <code>UEFI</code> only.</p></li>
+
+<li><p>File System:<br>
+<code>NTFS</code> for <code>BIOS</code> machine (faster file transfers).<br>
+<code>FAT32</code> for <code>UEFI</code> or <code>BIOS</code> machines.</p></li>
+</ul>
+
+<h2>Manually ...</h2>
+
+<h3>1. Partition and format the USB drive (<code>disk 1</code>).</h3>
+
+<ul>
+<li><p><code>DiskPart.exe</code></p>
+
+<ul>
+<li><p>if UEFI machine</p>
+
+<pre><code>SELECT DISK 1
+CLEAN
+CONVERT GPT
+CREATE PARTITION PRIMARY
+ACTIVE
+FORMAT FS=FAT32 QUICK 
+ASSIGN
+EXIT
+</code></pre></li>
+
+<li><p>if <strong>not</strong> UEFI machine</p>
+
+<pre><code>SELECT DISK 1
+CLEAN
+CONVERT MBR
+CREATE PARTITION PRIMARY
+ACTIVE
+FORMAT FS=NTFS QUICK 
+ASSIGN
+EXIT
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h3>2. Copy Boot Config Data (BCD).</h3>
+
+<ul>
+<li>@ Windows OS at drive <code>C:</code>, and USB at drive <code>K:</code> &hellip;
+
+<ul>
+<li><p>Using <a href="https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdboot-command-line-options-techref-di" title="BCDBoot Command-Line options @ docs.microsoft.com"><code>BCDBoot.exe</code></a></p>
+
+<pre><code>bcdboot.exe C:\Windows /S K: /F ALL
+</code></pre></li>
+</ul></li>
+<li>@ Windows Install ISO <strong>mounted</strong> at drive <code>J:</code>, and USB at drive <code>K:</code> &hellip;<br>
+
+<ul>
+<li><p>Using <a href="https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdboot-command-line-options-techref-di" title="BCDBoot Command-Line options @ docs.microsoft.com"><code>BCDboot.exe</code></a></p>
+
+<pre><code>bcdboot.exe J:\BOOT /S K: /F ALL
+</code></pre></li>
+
+<li><p>Using <code>BOOTSECT.EXE</code> (legacy; Windows XP)</p>
+
+<pre><code>PUSHD J:\BOOT
+bootsect.exe /NT60 K:
+</code></pre></li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>Can specify machine firmware type; <code>/F UEFI|BIOS|ALL</code>.</p>
+</blockquote>
+
+<h3>3. Copy all files from mounted ISO (<code>J:</code>) to USB (<code>K:</code>).</h3>
+
+<ul>
+<li><code>robocopy.exe J: K: /s</code><br></li>
+</ul>
+
+<h1>&nbsp;</h1>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

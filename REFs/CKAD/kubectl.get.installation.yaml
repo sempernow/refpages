@@ -1,0 +1,70 @@
+apiVersion: v1
+items:
+- apiVersion: operator.tigera.io/v1
+  kind: Installation
+  metadata:
+    creationTimestamp: "2023-07-09T17:27:23Z"
+    finalizers:
+    - tigera.io/operator-cleanup
+    generation: 2
+    name: default
+    resourceVersion: "2987"
+    uid: 64e65d46-f8fb-488e-811d-6cf1a2848bbe
+  spec:
+    calicoNetwork:
+      bgp: Enabled
+      hostPorts: Enabled
+      ipPools:
+      - blockSize: 26
+        cidr: 10.10.0.0/16
+        disableBGPExport: false
+        encapsulation: VXLANCrossSubnet
+        natOutgoing: Enabled
+        nodeSelector: all()
+      linuxDataplane: Iptables
+      multiInterfaceMode: None
+      nodeAddressAutodetectionV4:
+        firstFound: true
+    cni:
+      ipam:
+        type: Calico
+      type: Calico
+    controlPlaneReplicas: 2
+    flexVolumePath: /usr/libexec/kubernetes/kubelet-plugins/volume/exec/
+    kubeletVolumePluginPath: /var/lib/kubelet
+    logging:
+      cni:
+        logFileMaxAgeDays: 30
+        logFileMaxCount: 10
+        logFileMaxSize: 100Mi
+        logSeverity: Info
+    nodeUpdateStrategy:
+      rollingUpdate:
+        maxUnavailable: 1
+      type: RollingUpdate
+    nonPrivileged: Disabled
+    variant: Calico
+  status:
+    conditions:
+    - lastTransitionTime: "2023-07-09T17:27:57Z"
+      message: DaemonSet "calico-system/calico-node" is not available (awaiting 1
+        nodes)
+      observedGeneration: 2
+      reason: ResourceNotReady
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2023-07-09T17:27:57Z"
+      message: ""
+      observedGeneration: 2
+      reason: Unknown
+      status: "False"
+      type: Degraded
+    - lastTransitionTime: "2023-07-09T17:27:57Z"
+      message: ""
+      observedGeneration: 2
+      reason: Unknown
+      status: "False"
+      type: Ready
+kind: List
+metadata:
+  resourceVersion: ""

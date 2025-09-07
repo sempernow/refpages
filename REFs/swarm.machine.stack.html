@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>swarm.machine.stack</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.docker.com/machine/reference/"><code>docker-machine</code> (CLI)</a> :: <a href="https://docs.docker.com/machine/reference/create/"><code>create</code></a> &hellip;</h1>
+
+<h1><a href="https://docs.docker.com/engine/reference/commandline/docker/"><code>docker</code> (CLI)</a> :: <a href="https://docs.docker.com/engine/reference/commandline/swarm/"><code>swarm</code></a> | <a href="https://docs.docker.com/engine/reference/commandline/stack/"><code>stack</code></a> | <a href="https://docs.docker.com/engine/reference/commandline/service/"><code>service</code></a> | <a href="https://docs.docker.com/compose/compose-file/">Compose (YAML)</a></h1>
+
+<h2>Single-node</h2>
+
+<h3><code>docker swarm init</code></h3>
+
+<pre><code class="language-bash"># Init swarm mode 
+docker swarm init 
+# Validate swarm mode
+docker node ls 
+</code></pre>
+
+<h3><code>docker service create</code></h3>
+
+<pre><code class="language-bash"># Create services' overlay network 
+docker network create -d overlay 'appnet'
+# Create service(s)
+docker service create --name 'rds' --network 'appnet' -p 6379:6379 -d \
+    redis:6.0.8-buster redis-server --requirepass ${_REDIS_PASSWORD:-foob1234} 
+docker service create --name 'api' --network 'appnet' -p 80:5555 -d gd9h/cache-redis:latest
+# Update :: Add healthcheck https://docs.docker.com/engine/reference/commandline/service_update/
+docker service update --health-cmd &quot;curl -I -f -s --connect-timeout 2 localhost:5555 || exit 1&quot; api
+docker service rm 'api' 
+# Create api service (again), but w/ healthcheck
+docker service create --name 'api' --network 'appnet' -p 80:5555 -d \
+    --health-cmd &quot;curl -I -f -s --connect-timeout 2 localhost:5555 || exit 1&quot; \
+    --health-interval 10s \
+    --health-retries 3 \
+    --health-start-period 30s \
+    --health-timeout 2s \
+    gd9h/cache-redis:latest
+# Add Visualizer service (SUCCESS @ WSL; FAIL @ MINGW64 due to volume-mount pathing)
+docker service create --name 'viz' --network 'appnet' -p 8080:8080 -d \
+    --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock \
+    --label app.label=visualizer \
+    dockersamples/visualizer:stable
+</code></pre>
+
+<h3><code>docker service</code> [<code>update</code> | <code>scale</code>]</h3>
+
+<pre><code class="language-bash"># Update api service; mod to 3 replicas
+docker service update --replicas 3 api 
+
+# Test healthcheck 
+
+# Shutdown rds (cache) service 
+docker service scale rds=0
+# View services state (replicas running)
+docker service ls # api replicas should go to zero 
+# Restart rds (cache) service
+docker service scale rds=1
+# View services state (replicas running)
+docker service ls # api replicas should return to original number
+
+# Teardown
+docker service rm $(docker service ls -q)
+
+# Disintegrate Swarm 
+docker swarm leave -f 
+
+# Cleanup (remove custom networks and such)
+docker system prune -f
+</code></pre>
+
+<h5><a href="https://github.com/moby/moby/issues/29133#issuecomment-579774944" title="github.com/moby/.../issues "><code>docker-compose up</code> VERSUS <code>docker stack deploy ...</code></a></h5>
+
+<blockquote>
+<p>&hellip; <em>docker stack deploy supports &quot;Variable Substitution&quot; but you need to set the environment variables from the .env file in some way. Several options have been explained above. One of the neatest workarounds is using docker-compose config as pre-processor. So you can create your stack with</em> &hellip;</p>
+</blockquote>
+
+<p>:</p>
+
+<ul>
+<li><a href="https://docs.docker.com/compose/compose-file/#variable-substitution">Variable Substitution</a></li>
+<li><a href="https://docs.docker.com/compose/compose-file/#env_file"><code>env_file</code></a></li>
+<li>SOLUTIONs:
+
+<ol>
+<li><p>Use <code>docker-compose</code> tool as a preprocessor for <code>docker stack deploy</code>:</p>
+
+<pre><code class="language-bash">docker-compose config | docker stack deploy -c - $_STACK_NAME
+# OR 
+docker stack deploy -c &lt;(docker-compose config) $_STACK_NAME 
+</code></pre></li>
+
+<li><p>Use <code>Makefile</code> (PRRED)</p>
+
+<pre><code class="language-bash"># OR 
+make ...
+</code></pre></li>
+</ol></li>
+</ul>
+
+<h2>Multi-node | <a href="https://docs.docker.com/machine/reference/"><code>docker-machine</code></a> | <a href="https://app.cloudcraft.co/blueprint/db07c7d9-c5fc-43eb-b94d-93750787d25a" title="app.cloudcraft.co">Infra/Architecture</a></h2>
+
+<h3><a href="https://docs.docker.com/machine/reference/create/"><code>docker-machine create</code></a> | <a href="swarm.machine-create.sh"><code>swarm.machine-create.sh</code></a></h3>
+
+<ul>
+<li><a href="https://docs.docker.com/machine/drivers/aws/"><code>--driver amazonec2</code></a></li>
+<li><a href="https://docs.docker.com/machine/drivers/digital-ocean/"><code>--driver digitalocean</code></a></li>
+<li><a href="https://docs.docker.com/machine/drivers/hyper-v/"><code>--driver hyperv</code></a></li>
+</ul>
+
+<p>Create VMs</p>
+
+<pre><code class="language-bash">machines='h1,h2,h3' 
+switch='External Switch'
+ram=1024
+hdd=10000
+echo &quot;=== Create machines (idempotent)&quot;
+for vm in $(printf $machines | sed 's/,/ /g'); do 
+    echo &quot;=== @ '$vm'&quot;
+    [[ $( docker-machine ls -q | grep $vm ) ]] &amp;&amp; {
+        echo &quot;Machine '$vm' already exists.&quot;
+    } || \
+        docker-machine create -d hyperv \
+            --hyperv-virtual-switch $switch \
+            --hyperv-memory $ram --hyperv-disk-size $hdd \
+            $vm  # MUST be sequential; FAILs as background process(es).
+done
+</code></pre>
+
+<h4><a href="https://docs.docker.com/machine/drivers/generic/" title="drivers/generic">Add an existing machine</a></h4>
+
+<pre><code class="language-bash">docker-machine create \
+    --driver generic \
+    --generic-ip-address=${_IP_or_DNS_NAME_of_EXISTING_MACHINE} \
+    --generic-ssh-key ${_PRIVATE_KEY_of_EXISTING_MACHINE} \
+    ${_NEW_NAME_for_EXISTING_MACHINE}
+</code></pre>
+
+<ul>
+<li>By this scheme, we can use Terraform to generate the infra, and then use <code>docker-machine</code> to init/join into swarm, thereby removing the per-driver (per vendor) limitations of <code>docker-machine create</code>&hellip;.</li>
+</ul>
+
+<h2>Make Swarm Cluster | <a href="swarm-make.sh"><code>swarm-make.sh</code></a></h2>
+
+<h3><code>docker-machine ssh $vm &quot;docker swarm init&quot;</code></h3>
+
+<p>Remotely create a swarm cluster of managers (and/or workers). If a VM has more than one NIC (network interface), then must declare one, per its IP (<code>--advertise-addr $LEADER_IP</code>).</p>
+
+<pre><code class="language-bash">export vm='h1' # reset to master
+export m1=$vm  # Swarm Master/Leader
+
+# Set Control Plane comms (if more than one interface)
+LEADER_IP=$(docker-machine ip $m1)
+# Swarm Init
+docker-machine ssh $m1 docker swarm init --advertise-addr &quot;$LEADER_IP&quot;
+# Add managers
+JOIN_TOKEN_MGR=$(docker-machine ssh $m1 docker swarm join-token -q manager)
+echo $JOIN_TOKEN_MGR
+for i in 2 3; do
+    echo &quot;Joining @ node: 'vm$i'&quot;
+    docker-machine ssh vm$i docker swarm join --token &quot;$JOIN_TOKEN_MGR&quot; &quot;$LEADER_IP&quot;
+done
+
+# Validate cluster
+dm ssh $m1 docker node ls
+</code></pre>
+
+<h3><code>docker-machine env $vm</code></h3>
+
+<p>Configure local Docker client to remote engine (@ swarm leader VM); allows remote access per node; same tools/scripts as for single-host mode, but only for containers on the confgured node.</p>
+
+<pre><code class="language-bash">export vm='h1' # reset to master
+export m1=$vm  # Swarm Master/Leader
+
+# Configure docker client to swarm leader engine 
+docker-machine env $m1
+eval $(docker-machine env $m1) 
+# Verify 
+docker node ls 
+</code></pre>
+
+<h2>Stack Deploy | <a href="swarm.stack-deploy.sh"><code>swarm.stack-deploy.sh</code></a></h2>
+
+<h3><code>docker stack deploy</code></h3>
+
+<pre><code class="language-bash"># Deploy stack ...
+app='app' 
+svc='api' 
+
+docker stack deploy -c 'stack-cache-redis.yml' $app 
+# Stack
+docker stack ls
+
+# Services
+docker service ls || docker stack services $app ## EQUIV
+
+# All Tasks of ALL Services
+docker stack ps $app --format &quot;table {{.ID}}\t{{.Name}}\t{{.Image}}\t{{.Node}}\t{{.CurrentState}}&quot;
+# All Tasks of ONE Service
+docker service ps &quot;${app}_${svc}&quot; \
+    --format &quot;table {{.ID}}\t{{.Name}}\t{{.Image}}\t{{.Node}}\t{{.DesiredState}}\t{{.CurrentState}}&quot;
+# else
+docker container ls --format &quot;table {{.ID}}\t{{.Image}}\t{{.Command}}\t{{.Ports}}\t{{.Names}}&quot;
+# All Tasks of ALL Services across ALL Nodes
+docker node ps $(docker node ls -q) \
+    --format &quot;table {{.ID}}\t{{.Name}}\t{{.Image}}\t{{.Node}}\t{{.DesiredState}}\t{{.CurrentState}}&quot; \
+    | uniq | grep -v Shutdown
+
+# Use the following pair to match container ID to host (VM) name (to response @ cURL): 
+
+# All per Node ID + Container ID 
+for f in $(docker service ps -q &quot;${app}_${svc}&quot; -f desired-state=running); do 
+    docker inspect --format &quot;{{.NodeID}}  {{.Status.ContainerStatus.ContainerID}}&quot; $f
+done
+# All Node ID + Host Name 
+docker node ls 
+
+# ---------------------------------------------
+# Validate SWARM LOAD BALANCING and redis count 
+# Should serve round-robin or random container (id), and redis count, per request:
+ip=0.0.0.0 # @ Single/local-host engine swarm
+ip=$(docker-machine ip $m1)
+dns='kvpairs.com'
+
+for i in {1..9};do curl $ip --connect-timeout 1 &amp;&amp; echo '';sleep 1;done
+
+#ip=$(docker-machine ip a2) 
+
+for i in {1..5}; do
+    #curl $ip --connect-timeout 1 &amp;&amp; echo ''
+    curl $dns --connect-timeout 1 &amp;&amp; echo ''
+done
+
+# -----------------------------------------------------------------------------
+#  Teardown
+
+docker stack rm $app 
+
+export m='h'
+
+# Disintegrate Swarm ...
+# for i in 3 2 1; do
+#     echo &quot;Leaving swarm :: node '${m}$i'&quot;
+#     docker-machine ssh ${m}$i docker swarm leave -f
+# done
+seq {4,-1,1} | xargs -n 1 -I {} sh -c 'docker-machine ssh ${m}$1 docker swarm leave -f' _ {}
+
+# Prune ...
+# for i in 4 3 2 1; do 
+#     echo &quot;Prune system :: node '${m}$i'&quot;
+#     docker-machine ssh ${m}$i docker system prune -a -f
+# done
+seq {1,1,4} | xargs -n 1 -I {} sh -c 'docker-machine ssh h$1 docker system prune -a -f' _ {}
+
+# Unconfigure (reset docker tool to docker engine at host)
+docker-machine env --unset
+eval $(docker-machine env --unset)
+
+# Shutdown servers 
+docker-machine stop {dn3,dn2,dn1,aa3,aa2,aa1}
+
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.QuickStart</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Hello Minikube :: <a href="https://kubernetes.io/docs/setup/minikube/#quickstart">QuickStart</a></h1>
+
+<p>A one-pod cluster exposed to the standard HTTP listening port.</p>
+
+<pre><code class="language-powershell"># Start cluster 
+$ minikube start # --vm-driver=none # mode; See ..Install
+# Apply deployment; a pod exposed to port 8080
+$ kubectl create hello-minikube --image=k8s.gcr.io/echoserver:1.4 --port=8080 
+deployment.apps &quot;hello-minikube&quot; created  
+# Expose an endpoint per NodePort
+$ kubectl expose deployment hello-minikube --type=NodePort
+service &quot;hello-minikube&quot; exposed
+# Get status (multiple times) as pod is created/configured
+$ kubectl get pods
+hello-minikube-6c47c66d8-zmd8z... ContainerCreating... Running
+# Get public IP:PORT
+$ minikube service hello-minikube --url
+http://192.168.1.105:31233
+# Request/Response from HTTP server, per curl ...
+$ curl $(minikube service hello-minikube --url)
+StatusCode        : 200
+...
+# Cleanup
+$ kubectl delete services hello-minikube
+service &quot;hello-minikube&quot; deleted
+$ kubectl delete deployment hello-minikube
+deployment.extensions &quot;hello-minikube&quot; deleted
+# Turn off the Minikube; the cluster's VM
+$ minikube ssh   # into VM
+$ sudo poweroff  # from inside VM
+</code></pre>
+
+<ul>
+<li>If Minikube on Hyper-V (Windows), then use PowerShell terminal, and work from SystemDrive
+.</li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

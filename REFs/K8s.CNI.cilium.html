@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.CNI.cilium</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://github.com/cilium/cilium">Cilium</a></h1>
+
+<h2>Download</h2>
+
+<pre><code class="language-bash">ok(){
+    # CLI : https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/
+    dir=&quot;cilium/cilium-cli&quot;
+    ./$dir/cilium version 2&gt;&amp;1 || {
+        mkdir -p $dir
+        pushd $dir 
+        url=https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt
+        ver=$(curl -s $url) # v0.16.20
+        echo $ver |grep 'v' || return 1
+        arch=${ARCH:-amd64}
+        [[ &quot;$(uname -m)&quot; = &quot;aarch64&quot; ]] &amp;&amp; arch=arm64
+        tarball=&quot;cilium-linux-${arch}.tar.gz&quot;
+        url=https://github.com/cilium/cilium-cli/releases/download/${ver}/$tarball{,.sha256sum}
+        curl -L --fail --remote-name-all $url &amp;&amp;
+            sha256sum --check $tarball.sha256sum &amp;&amp;
+                sudo tar xzvfC $tarball . &amp;&amp;
+                    rm $tarball{,.sha256sum}
+        popd
+    }
+
+    # Chart : https://artifacthub.io/packages/helm/cilium/cilium/
+    # Images : https://github.com/cilium/cilium/releases
+    ver='1.16.4' 
+    dir=&quot;cilium&quot;
+    pushd $dir 
+    repo='cilium'
+    chart='cilium'
+    helm repo update $repo
+    helm pull $repo/$chart --version $ver &amp;&amp;
+        tar -xaf ${chart}-$ver.tgz &amp;&amp;
+            cp -p $chart/values.yaml . &amp;&amp;
+                type -t hdi &gt;/dev/null 2&gt;&amp;1 &amp;&amp;
+                    hdi $chart                
+    rm -rf $chart
+    popd
+}
+ok || echo '=== FAILed'
+
+</code></pre>
+
+<h2><a href="https://chatgpt.com/c/6749a5f4-ad00-8009-9166-ad815bc10bfc" title="ChatGPT">Install</a></h2>
+
+<p>Both methods are of Helm chart</p>
+
+<h3>CLI method</h3>
+
+<pre><code class="language-bash">☩ cilium install [flags]
+
+☩ cilium install --set config.ipam=kubernetes,global.k8sServiceHost=192.168.11.101,global.k8sServicePort=6443 --dry-run-helm-values
+</code></pre>
+
+<pre><code class="language-yaml">cluster:
+  name: kubernetes
+config:
+  ipam: kubernetes
+global:
+  k8sServiceHost: 192.168.11.101
+  k8sServicePort: 6443
+operator:
+  replicas: 1
+routingMode: tunnel
+tunnelProtocol: vxlan
+
+</code></pre>
+
+<p>@ <a href="values.yaml">`values.yaml</a></p>
+
+<pre><code class="language-bash">cilium install --kubeconfig ~/.kube/config --values values.yaml
+</code></pre>
+
+<pre><code class="language-bash">☩ kw
+cilium-dc9cb                       0/1     CrashLoopBackOff    4 (52s ago)   3m4s    192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+cilium-envoy-dprz2                 1/1     Running             0             7m27s   192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+cilium-operator-597d7f99c5-kt9kk   1/1     Running             0             7m27s   192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+coredns-76f75df574-5wtvn           0/1     ContainerCreating   0             36m     &lt;none&gt;           a1       &lt;none&gt;           &lt;none&gt;
+coredns-76f75df574-z54n4           0/1     ContainerCreating   0             36m     &lt;none&gt;           a1       &lt;none&gt;           &lt;none&gt;
+etcd-a1                            1/1     Running             18            36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-apiserver-a1                  1/1     Running             0             36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-controller-manager-a1         1/1     Running             0             36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-proxy-fnmf7                   1/1     Running             0             36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+kube-scheduler-a1                  1/1     Running             10            36m     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+sysdump-7bs6q                      1/1     Terminating         0             40s     192.168.11.101   a1       &lt;none&gt;           &lt;none&gt;
+</code></pre>
+
+<h3><a href="https://docs.cilium.io/en/stable/installation/k8s-install-helm/" title="docs.cilium.io">Helm method</a></h3>
+
+<pre><code class="language-bash">app=cilium
+ver=1.16.4
+values=values.yaml
+tar -xaf ${app}-$ver.tgz &amp;&amp;
+    helm upgrade --install -f $values $app $app/ &amp;&amp;
+        rm -rf $app
+
+</code></pre>
+
+<ul>
+<li><a href="values.yaml"><code>values.yaml</code></a></li>
+</ul>
+
+<p>If we want Cilium to use the HA LB (vIP)
+when communicating with K8s API server:</p>
+
+<pre><code class="language-bash">vip_or_domain=10.0.10.11 # OR k8s.lime.lan
+port=6444 # HALB frontend; upstreams to 6443 (kube-apiserver)
+helm install cilium cilium/cilium --namespace kube-system \
+    --set k8sServiceHost=$vip_or_domain \
+    --set k8sServicePort=$port \
+    --set kubeProxyReplacement=partial \
+    --set externalIPs.enabled=true
+</code></pre>
+
+<ul>
+<li><code>kubeProxyReplacement</code> :
+
+<ul>
+<li>Enables partial or full replacement of kube-proxy functionality by Cilium.</li>
+<li>In most cases, partial is sufficient to integrate with external load balancers.</li>
+</ul></li>
+<li><code>externalIPs.enabled</code> :
+
+<ul>
+<li>Allows the use of external IPs for services.
+This is necessary for external load balancers
+to direct traffic correctly.</li>
+</ul></li>
+
+<li><p><code>hostServices.enabled=true</code> :</p>
+
+<ul>
+<li><p>Optional. Enables handling of host services by Cilium,
+which can be helpful in environments with external load balancers.</p>
+
+<pre><code class="language-bash">helm install cilium cilium/cilium --version 1.16.4 \
+--namespace $CILIUM_NAMESPACE \
+--set ipam.mode=kubernetes \
+--set=kubeProxyReplacement=true \
+--set=securityContext.capabilities.ciliumAgent=&quot;{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}&quot; \
+--set=securityContext.capabilities.cleanCiliumState=&quot;{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}&quot; \
+--set=cgroup.autoMount.enabled=false \
+--set=cgroup.hostRoot=/sys/fs/cgroup \
+--set=k8sServiceHost=localhost \
+--set=k8sServicePort=7445 \
+--set hubble.relay.enabled=true \
+--set hubble.ui.enabled=true
+
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h3><a href="https://chatgpt.com/c/675905de-37fc-8009-ba64-c0f2501df333">Optimal per ChatGPT</a> : <a href="values.yaml"><code>values.yaml</code></a></h3>
+
+<p>Datapath : Direct (L3) v. Encapsulated (Overlay/VXLAN)</p>
+
+<p>For the best performance on east-west traffic in a single-subnet cluster,
+the <strong>Direct Datapath</strong> is usually the industry recommendation.</p>
+
+<p>Query</p>
+
+<pre><code class="language-bash">cilium config view | grep tunnel
+</code></pre>
+
+<ul>
+<li>If <code>tunnel</code> is set to <code>vxlan</code> or <code>geneve</code>, it’s <strong>Encapsulated</strong>.</li>
+<li>If <code>tunnel</code> is set to <code>disabled</code>, it’s <strong>Direct</strong>.</li>
+</ul>
+
+<p>Verify Cilium's load balancing configuration:</p>
+
+<pre><code class="language-bash">cilium service list
+cilium bpf lb list
+</code></pre>
+
+<p>Test before/after</p>
+
+<p>`<code>bash
+iperf3 
+</code></p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

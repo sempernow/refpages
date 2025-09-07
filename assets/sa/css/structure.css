@@ -1,0 +1,263 @@
+/*  structure  */
+html, body {
+
+}
+#overlay-1,
+#overlay-2 {
+    z-index: 1;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; 
+    background-color: rgba(0, 0, 0, 0.2);
+} 
+
+#view {
+    display: flex;
+    z-index: 1;
+    flex-flow: row wrap;
+    justify-content: center;
+    max-width: var(--width-view);
+    margin: auto;
+}
+
+/* @ single-thread iframe view : always one column : #owner buttons above and large */
+#view[data-type-shell="1.embed"] {
+    max-width: var(--width-main);
+}
+#view[data-type-shell="1.embed"] #owner-chn-buttons {
+    flex-wrap: nowrap;
+}
+#view[data-type-shell="1.embed"] #owner-chn-buttons span.button, 
+#view[data-type-shell="1.embed"] #owner-chn-buttons div.sponsor div {
+    font-size: 1.2em;
+}
+
+#view header,
+#view footer {
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: var(--width-view);
+}
+#view footer>* {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+#view footer a {
+    color:var(--info-color); 
+}
+#view header .site {
+    /* NO FLEXBOX FLOW @ fixed */
+    z-index: 2;
+    top: 0;
+    position: fixed;
+    height: var(--header-site-height);
+    width: var(--width-view);
+}
+#view header .page,
+#channel-header {
+    margin-top: var(--header-site-height);
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: var(--width-view);
+}
+
+#channel {
+    /* as child of view flexbox */
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: var(--width-view);
+
+    /* as parent flexbox */
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+
+    background: var(--chn-bkgnd);
+}
+
+#channel main {
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: var(--width-main);
+}
+
+#channel aside {
+    /* flex-grow for auto resize, but needs helper @media. */
+    flex-grow: 1; 
+    flex-shrink: 0;
+    flex-basis: var(--width-aside);
+}
+
+/* 
+    Box-width (min-/max-) per `em` or `ch` units:
+
+        - Makes typographical line length immutable.
+        - Mutates MQ break-points per font family.
+
+    font-size [px] * width [em] = width [px]
+    (16px * 26.7em = 587.2px)
+
+    Font sizing per `vmax` units is cleaner code/performance, 
+    but negates user-selectable (browser +/-) font-size.
+*/
+/* =================================== */
+/* ===  DUPLICATE @ root.css  === */
+/* =================================== */
+
+/* 1.5 * max-width =< view */
+@media only screen and (min-width : 1900px) {
+    :root {
+        font-size: 150%;
+    }
+}
+/* 1.3 * max-width =< view =< 1.5 max-width */
+@media only screen and (min-width : 1518px) and (max-width : 1900px) {
+    :root {
+        font-size: 120%;
+    }
+}
+
+/* (main + aside) =< view =< (main + (2 * aside)) */
+@media only screen and (min-width : 920px) and (max-width : 1226px) {
+    #view {
+        --width-view: 100%;
+    }
+    #view[data-type-shell="1.embed"] #channel aside.left { /* guarantee, else fail @ boundary */
+        --width-aside: var(--width-main);
+        --size-avatar: 150px;
+     }
+    #channel aside.left {
+        flex-grow: 0;
+    }
+}
+
+/* view =< (main + aside) */
+@media only screen and (min-width : 600px) and (max-width : 920px) {
+    #view {
+        --width-view: var(--width-main);
+    }
+    #channel aside.left { /* guarantee, else fail @ boundary */
+       --width-aside: var(--width-main);
+       --size-avatar: 150px;
+    }
+}
+
+/* view =< (main) */ /*  16px * 26.7em = 587.2px */
+@media only screen and (max-width : 600px) {
+    :root {
+        font-size: 100%;
+        font-size: 3.2vmin;
+    }
+    #view {
+        --width-main: 100%;
+        --width-view: 100%;
+    }
+    #channel aside.left { /* guarantee, else fail @ boundary */
+        --width-aside: var(--width-main);
+        --size-avatar: 150px;
+     }
+     #exchange .cards svg {
+        width: 48px;
+        height: 48px;
+     }
+
+}
+
+/* view =< (main + aside) */
+@media only screen and (max-width : 920px) {
+    #owner .upper {
+        height: auto;
+    }
+    #owner  {
+        border-bottom: none;
+    }
+    #owner .badge,
+    #owner .channel {
+        /* border: 1px solid  lime; */
+        margin-left: .3em;
+        margin-right: .3em;
+    }
+    #owner .channel h3 {
+        font-size: 1.8rem;
+    }
+    #owner-chn-buttons .follow {
+        padding-right: 2em;
+    }
+    #owner-chn-buttons .sponsor>* {
+        margin-right: 2em;
+    }
+    
+    /* owner @ single-thread page */
+
+    #channel.single-thread #owner {
+        padding: 0;
+        margin-top: 1em;
+    }
+    #channel.single-thread #owner img.banner,
+    #channel.single-thread #owner .about .badges,    
+    #channel.single-thread #owner .about .stats,
+    #channel.single-thread #owner .about p,
+    #channel.single-thread #owner .channel p {
+        display: none;
+    }
+    #channel.single-thread #owner img.avatar {
+        top: 0;
+        width: calc(0.5 * var(--size-avatar));
+        height: calc( 0.5 * var(--size-avatar));
+        margin-bottom: .2em;
+    }
+    #channel.single-thread #owner .channel {
+        margin-top: 0;
+    }
+
+    /* overflow : failing @ some channels */
+    #view {
+        --width-view: var(--width-main);
+    }
+    #channel aside.left { /* guarantee, else fail @ boundary */
+       --width-aside: var(--width-main);
+    }
+}
+
+
+/* hard limit handles bad .body content */
+#msg-list * ,
+#chn-list>*,
+#article * {
+    overflow: hidden;
+    max-width: 36rem;
+}
+
+/* view =< (main) */ /*  16px * 26.7em = 587.2px  */
+@media only screen and (max-width : 600px) {
+    :root {
+        font-size: 100%;
+        font-size: 2.7vmin;
+    }
+
+    #view {
+        --width-view: var(--width-main);
+    }
+
+    /* hard limit handles bad .body content */
+    #view>* {
+        max-width: 36rem;
+        overflow: hidden;
+    }
+    #view .site {
+        max-width: inherit;
+    }
+
+
+}
+
+
+
+
+
+
+

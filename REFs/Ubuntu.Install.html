@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ubuntu.Install</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Ubuntu Intall</h1>
+
+<h2>Install Ubuntu 18.04.1 LTS on VM @ Hyper-V</h2>
+
+<ul>
+<li>Create VM per &quot;Quick Create ...&quot;<br></li>
+<li>Connects per <code>XRDP</code></li>
+<li>Auto-Shared Drives (per <code>XRDP</code> Session only)
+
+<ul>
+<li>@ Connect (<code>XRDP</code>) &gt; Local Resources &gt; More &gt; (<strong>select</strong> <em>drives to share</em>)<br>
+Back @ Main menu &gt; Save Settings (check-box)<br></li>
+<li>Shared Drives are mounted @ <code>~/shared-drives</code></li>
+</ul></li>
+</ul>
+
+<h3><a href="h3>
+
+<pre><code class="language-bash"># Install OpenSSH
+apt-get install openssh-server
+# Check status of ssh daemon
+systemctl status ssh.service
+# Configure (See &quot;Network.SSH.sh&quot;)
+vim /etc/ssh/sshd_config
+</code></pre>
+
+<h3>Other Useful ...</h3>
+
+<pre><code class="language-bash">sudo apt-get update  # Update pkg list from repo
+sudo apt install -f  # fix broken dependencies
+
+# Install a downloaded .deb pkg
+sudo apt install -y $_DEB_PKG_PATH 
+# or 
+sudo dpkg -i $_DEB_PKG_PATH
+sudo apt install -f  # --fix-broken (dependencies)
+# ... to further config/fix ...
+sudo dpkg-reconfigure $_DEB_PKG_NAME  # path sans '.deb' 
+
+# Freeze filesystem (make read-only) @ next boot (only) 
+apt-get install overlayroot
+echo 'overlayroot=&quot;tmpfs&quot;' &gt;&gt; '/etc/overlayroot.conf'
+reboot
+# Persist
+overlayroot-chroot
+</code></pre>
+
+<h3><a href="https://kodi.wiki/view/HOW-TO:Install_Kodi_for_Linux" title="Kodi.wiki">Kodi</a></h3>
+
+<pre><code class="language-bash"># Kodi install
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:team-xbmc/ppa
+sudo apt-get install -y kodi
+</code></pre>
+
+<ul>
+<li>Kodi fails @ Armbian  (<a href="li>
+</ul>
+
+<h3><a href="http://www.codebind.com/linux-tutorials/install-vagrant-ubuntu-18-04-lts-linux/" title="CODEBIND.COM">Vagrant box @ VirtualBox VM on Ubuntu</a></h3>
+
+<ul>
+<li>Vagrant install (<a href="li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

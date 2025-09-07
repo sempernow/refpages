@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SELinux</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>SELinux</h1>
+
+<h2>Troubleshoot</h2>
+
+<p>Verify it's an SELinux issue:</p>
+
+<ol>
+<li>Set to Permissive</li>
+<li>Restart the problemed service or whatever</li>
+<li>If the problem goes away, then it's an SELinux issue.</li>
+</ol>
+
+<p><strong>Troubleshoot SELinux</strong>:</p>
+
+<pre><code class="language-bash">
+getenforce  # Shows: Enforcing, Permissive, or Disabled
+sestatus    # More detailed output
+
+# Install/Verify SELinux troubleshooting tools are available
+dnf install -y selinux-policy-targeted libselinux-utils policycoreutils setroubleshoot-server policycoreutils-python-utils
+
+# Automatically Diagnose via sealert 
+sudo sealert -a /var/log/audit/audit.log
+# List all known SELinux alerts that the setroubleshoot daemon has logged and categorized.
+sudo sealert -l &quot;*&quot;
+
+# 1. Most recent AVC denials
+sudo ausearch -m avc -ts recent 
+# 2. All recent SELinux audit messages:
+sudo journalctl -t setroubleshoot --since &quot;1 hour ago&quot;
+# 3. Explain Denials with audit2why
+sudo ausearch -m avc -ts recent |audit2why
+# 4. Suggest Allow Rules with audit2allow : USE WITH CAUTION
+sudo ausearch -m avc -ts recent |sudo audit2allow -a
+# 5. Fix Wrong File Contexts
+ls -Z $file                 # Show current SELinux context of a file (path)
+sudo restorecon -v $file    # Restore expected context @ file
+ls -Z $dir                  # Show current SELinux context of dir (path)
+sudo restorecon -vR $dir    # Restore expected context @ dir (recursively)
+# 6. Check File’s Expected Context
+sudo matchpathcon $file
+# 7. Set to permissive (temporarily)
+sudo setenforce 0
+# 8. Rebuild or Reload Policies
+sudo semodule -l        # List installed modules
+sudo semodule -B        # Rebuild and reload policy modules
+
+# Clear audit log
+sudo logrotate -f /etc/logrotate.d/audit
+sudo truncate -s 0 /var/log/audit/audit.log
+
+</code></pre>
+
+<h2>Policies</h2>
+
+<p>RHEL's  default policy is <code>selinux-policy-targeted</code></p>
+
+<p><strong>Check policy</strong>:</p>
+
+<pre><code class="language-bash">☩ sestatus 
+SELinux status:                 enabled
+SELinuxfs mount:                /sys/fs/selinux
+SELinux root directory:         /etc/selinux
+Loaded policy name:             targeted
+Current mode:                   enforcing
+Mode from config file:          enforcing
+Policy MLS status:              enabled
+Policy deny_unknown status:     allowed
+Memory protection checking:     actual (secure)
+Max kernel policy version:      33
+</code></pre>
+
+<p>This misleading report, &quot;<code>Policy MLS status:      enabled</code>&quot;,<br>
+wrongly implies the system has <strong>Multi-Level Security</strong> (MLS) enabled.</p>
+
+<ul>
+<li>MLS is <strong>extremely strict</strong> and <strong>rarely used outside classified environments</strong>
+  (military, government, etc.).</li>
+<li>Many tools and daemons assume the targeted policy and may misbehave or log extra AVCs under MLS.</li>
+<li>Some policy modules may not behave the same under mls as they do under targeted.</li>
+</ul>
+
+<p>MLS is not enforced, even though the policy has MLS support enabled.</p>
+
+<p>This just allows contexts like <code>s0:c123,c456</code> to exist and be meaningful
+(common in containers and multi-tenant environments).
+It does not mean you're in a DoD-style sensitivity hierarchy.</p>
+
+<h2>FS (folder/file) Solutions</h2>
+
+<h3><code>fcontext</code> : <code>cotnainer_file_t</code></h3>
+
+<pre><code class="language-bash"># Set context
+sudo chcon -t container_file_t $file
+# z (container)
+docker run --mount type=bind,source=$host_path,target=$ctnr_path,z ...
+# 
+podman ... --security-opt label=type:container_file_t
+</code></pre>
+
+<h3><code>fcontext</code> : <code>public_content_rw_t</code></h3>
+
+<pre><code class="language-bash"># Fix at NFS server export /srv/nfs/k8s
+sudo semanage fcontext -a -t public_content_rw_t '/srv/nfs/k8s(/.*)?'
+sudo restorecon -Rv /srv/nfs/k8s
+</code></pre>
+
+<h2>Container Bind Mount</h2>
+
+<p>Changing a file that is bind-mounted between a host and a container to a symbolic link can cause an SELinux denial. This is because SELinux enforces strict access controls based on security contexts, and symbolic links can introduce unexpected behavior that violates SELinux policies.</p>
+
+<p>Here’s why this can happen:</p>
+
+<ol>
+<li><p><strong>Security Context Mismatch</strong>:</p>
+
+<ul>
+<li>SELinux assigns security contexts (labels) to files, which define their type, role, and domain. A bind-mounted file has a specific SELinux context based on its original location on the host. When you replace this file with a symbolic link, the link may have a different context or point to a file with a context that doesn't match the expectations of the SELinux policy for the container or the process accessing it.</li>
+<li>For example, if the container expects a file with a context like <code>container_file_t</code> but the symbolic link resolves to a file with a different context (e.g., <code>default_t</code> or <code>user_home_t</code>), SELinux may deny access.</li>
+</ul></li>
+
+<li><p><strong>Symbolic Link Resolution</strong>:</p>
+
+<ul>
+<li>When a symbolic link is followed, SELinux evaluates the security context of the target file, not just the link itself. If the target file’s context is not permitted by the SELinux policy for the process (e.g., the container’s runtime), a denial occurs.</li>
+<li>Containers often run in confined SELinux domains (e.g., <code>container_t</code>), which restrict access to files outside specific labeled directories. If the symbolic link points to a file outside the allowed paths or with an incompatible context, SELinux will block access.</li>
+</ul></li>
+
+<li><p><strong>Bind Mount Behavior</strong>:</p>
+
+<ul>
+<li>Bind mounts expose host files directly to the container, and SELinux enforces policies on these files based on their host context. If the bind-mounted file is replaced with a symbolic link, the link’s target might not align with the expected context or permissions, leading to a denial.</li>
+<li>For instance, if the link points to a file in a location that the container’s SELinux domain cannot access (e.g., <code>/home/user</code> instead of <code>/var/lib/docker</code>), SELinux will deny the operation.</li>
+</ul></li>
+
+<li><p><strong>SELinux Policy Restrictions</strong>:</p>
+
+<ul>
+<li>SELinux policies for containers (e.g., those defined by container runtimes like Docker or Podman) are often strict, allowing access only to specific file types or paths. Replacing a file with a symbolic link might violate these policies if the link’s target is not explicitly allowed.</li>
+</ul></li>
+</ol>
+
+<h3>Example Scenario</h3>
+
+<ul>
+<li>You bind-mount a file <code>/host/data.txt</code> into a container at <code>/container/data.txt</code>.</li>
+<li>The file <code>/host/data.txt</code> has the SELinux context <code>container_file_t</code>, which the container’s process (<code>container_t</code>) is allowed to access.</li>
+<li>You replace <code>/host/data.txt</code> with a symbolic link pointing to <code>/host/other_data.txt</code>, which has a context like <code>user_home_t</code>.</li>
+<li>The container tries to access <code>/container/data.txt</code>, which now resolves to <code>/host/other_data.txt</code>. Since <code>container_t</code> is not allowed to access <code>user_home_t</code>, SELinux issues a denial.</li>
+</ul>
+
+<h3>How to Diagnose</h3>
+
+<ul>
+<li><p>Check the SELinux denial logs using <code>audit2why</code> or <code>sealert</code>:</p>
+
+<pre><code class="language-bash">sudo ausearch -m avc -ts recent | audit2why
+</code></pre>
+
+<p>This will show the specific denial and the SELinux rule that caused it.</p></li>
+
+<li><p>Inspect the file contexts:</p>
+
+<pre><code class="language-bash">ls -Z /host/data.txt
+ls -Z /host/other_data.txt
+</code></pre>
+
+<p>Compare the contexts to ensure they match what the container’s SELinux policy expects.</p></li>
+</ul>
+
+<h3>Possible Fixes</h3>
+
+<ol>
+<li><p><strong>Ensure Correct SELinux Context</strong>:</p>
+
+<ul>
+<li><p>Set the correct SELinux context on the target file to match what the container expects:</p>
+
+<pre><code class="language-bash">sudo chcon -t container_file_t /host/other_data.txt
+</code></pre></li>
+
+<li><p>Alternatively, use a context specifically allowed by the container runtime, such as <code>svirt_sandbox_file_t</code>.</p></li>
+</ul></li>
+
+<li><p><strong>Use SELinux Mount Options</strong>:</p>
+
+<ul>
+<li><p>When bind-mounting, specify the correct SELinux context using mount options. For example, with Docker:</p>
+
+<pre><code class="language-bash">docker run --mount type=bind,source=/host/data.txt,target=/container/data.txt,z ...
+</code></pre>
+
+<p>The <code>z</code> option sets a shared SELinux label (<code>container_file_t</code>) for the bind-mounted file.</p></li>
+</ul></li>
+
+<li><p><strong>Avoid Symbolic Links</strong>:</p>
+
+<ul>
+<li>If possible, avoid replacing bind-mounted files with symbolic links. Instead, copy or move the actual file to the bind-mounted location to maintain consistent SELinux contexts.</li>
+</ul></li>
+
+<li><p><strong>Update SELinux Policy</strong>:</p>
+
+<ul>
+<li><p>If the symbolic link is necessary and the target file’s context cannot be changed, create a custom SELinux policy module to allow the container’s domain (<code>container_t</code>) to access the target file’s context:</p>
+
+<pre><code class="language-bash">audit2allow -a -M mypolicy
+semodule -i mypolicy.pp
+</code></pre>
+
+<p>Be cautious, as this may reduce security.</p></li>
+</ul></li>
+
+<li><p><strong>Use Container-Specific Paths</strong>:</p>
+
+<ul>
+<li>Ensure the symbolic link’s target is in a directory that the container’s SELinux policy allows,
+such as <code>/var/lib/docker</code> or a directory labeled with <code>container_file_t</code>.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+## https://docs.docker.com/compose/compose-file
+version: '3.8' ## @ Docker Engine 19.03.0+
+
+volumes:  
+    dbp1_data:
+        external: true
+    rds1_data:
+        external: true
+
+networks:
+    pvt1:
+        driver: overlay
+        external: true
+
+secrets:
+    pg_pw_app_user:
+        external: true
+    # test:
+    #     # external: true
+    #     # file: ${PATH_ABS_HOST_ASSETS}/keys/test.secrets
+    #     file: ${PATH_ABS_HOST_ASSETS}/keys/tls/mkcert/swarm.foo/swarm.foo+4.pem
+    private.pem:
+        # file: ${PATH_ABS_HOST_ASSETS}/keys/private.pem
+        external: true
+
+services:
+    cli: ## ADMin : db etal
+        image: ${HUB}/${PRJ}.cli-${ARCH} # :${VER_CLI}
+        # user: "1000"
+        user: "${CTNR_USER}:${CTNR_GROUP}"
+        # shm_size: 256m ##... Unsupported
+        volumes:
+            - ${PATH_ABS_VM_ASSETS}:/app/assets
+            #- dbp1_data:/app/assets/dbp1_data
+        networks:
+            - pvt1
+        secrets:
+            - source: pg_pw_app_user
+              target: pg_pw_app_user
+              uid: "${CTNR_USER}"
+              gid: "${CTNR_GROUP}"
+              mode: 0440
+            - source: private.pem
+              target: private.pem
+              uid: "${CTNR_USER}"
+              gid: "${CTNR_GROUP}"
+              mode: 0440
+        env_file:
+            - ${PATH_ABS_HOST_ASSETS}/.env/cli.env
+            - ${PATH_ABS_HOST_ASSETS}/.env/pgha.env
+        environment:
+            #- APP_DB_HOST=${DB_HOST}
+            #- APP_DB_PASSWORD_FILE=/run/secrets/pg_pw_app_user
+            - APP_AUTH_PRIVATE_KEY_FILE=/run/secrets/private.pem
+            ##... not implemented @ Golang : os.ReadFile(os.Getenv("APP_DB_PASSWORD_FILE"))
+            #- APP_AUTH_PRIVATE_KEY_FILE=${PATH_ABS_HOST_ASSETS}/keys/private.pem
+        command: ["sleep", "1h"]
+        deploy:
+            replicas: 1
+            restart_policy:
+                condition: none
+            placement:
+                constraints:
+                    ## Must access docker node 
+                    - node.role == manager

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>RHEL.Install</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>CentOS 7  Install</h1>
+
+<h3>on VM @ Hyper-V (<a href="h3>
+
+<h2>per GUI</h2>
+
+<p>The pre-installation <strong>menu/selection</strong> scheme is a <strong>star pattern</strong>, not sequenial. Select/click a category from the menu, set the parameters therein, then &quot;Done&quot; (button) back to the main menu, to select another category. <strong>Do not advance</strong> from that one page (&quot;Begin&quot; button) until satisfied with the settings within each and every category on that menu:</p>
+
+<ul>
+<li><p>Installation Source</p>
+
+<ul>
+<li>Auto-detected installation media
+
+<ul>
+<li>Device: <code>sr0</code><br></li>
+<li>Label: <code>CentOS_7_x86_64</code></li>
+</ul></li>
+</ul></li>
+
+<li><p>Installation Destination</p>
+
+<ul>
+<li><p>Local Standard Disks<br>
+<code>40 GiB</code><br>
+<code>...</code><br>
+<code>sda / 2014.5 KiB free</code></p>
+
+<ul>
+<li>E.g., per VM config @ <a href="li>
+</ul></li>
+</ul></li>
+
+<li><p>Network</p>
+
+<ul>
+<li>Ethernet (<code>eth0</code>)</li>
+<li>Host name: <code>HOSTNAME.LANDOMAIN</code><br>
+<br></li>
+</ul>
+
+<p>All else defaults:</p>
+
+<pre><code>          MAC: 00:15:5D:4E:BB:32  
+        Speed: 1000 Mb/s   
+   IP Address: 192.168.1.10   
+  Subnet Mask: 255.255.255.0   
+Default Route: 192.168.1.1   
+          DNS: 192.168.1.1   
+</code></pre></li>
+
+<li><p>Software Selection</p>
+
+<ul>
+<li>Base Environment<br>
+
+<ul>
+<li><strong>Server with GUI</strong><br>
+(or whatever)</li>
+</ul></li>
+<li>Add-Ons<br>
+
+<ul>
+<li>Network File System Client</li>
+<li>Virtualization Platform</li>
+<li>Development Tools</li>
+<li>System Administration Tools</li>
+</ul></li>
+</ul></li>
+
+<li><p>Security Policy</p>
+
+<ul>
+<li>&quot;Standard <strong>Docker Host</strong> Security Profile&quot;<br>
+(or whatever)</li>
+</ul></li>
+</ul>
+
+<h3>Configure User Settings</h3>
+
+<ul>
+<li>Root Password</li>
+<li>User Creation
+
+<ul>
+<li>Name<br></li>
+<li>Password</li>
+<li>&quot;<strong>Make this user Administrator</strong>&quot; (<strong>check-box</strong>)<br>
+Else per <code>root</code> acct login; add the user to <code>wheel</code> group:<br>
+<code>usermod -aG wheel TARGET_USERNAME</code></li>
+</ul></li>
+</ul>
+
+<h3>Admin</h3>
+
+<h4><a href="h4>
+
+<ul>
+<li><p>@ Server (CentOS)<br>
+Enable remote access per SSH public-key.</p>
+
+<pre><code class="language-bash"># Config client (user acct)
+mkdir ~/.ssh 
+chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Config server (sshd)
+sudo vim /etc/ssh/sshd_config
+PubkeyAuthentication yes
+# required by ssh-copy-id (to receive pub key):
+PasswordAuthentication yes
+</code></pre>
+
+<ul>
+<li><p><code>ssh ...</code> Pubkey login WILL FAIL if owner|perms|SELinux-context is wrong.<br>
+Debug login issues:</p>
+
+<pre><code>ls -ZA ~/.ssh
+systemctl status sshd -l     
+grep AVC /var/log/{secure,audit.log}
+</code></pre></li>
+</ul></li>
+
+<li><p>@ Client (Remote machine)</p>
+
+<ul>
+<li><p>Create key-pair; send public key to host (CentOS machine).</p>
+
+<pre><code class="language-bash"># Generate key pair 
+ssh-keygen -t ed25519 -a 100  
+# ... prompts for save-path &amp; passphrase 
+# Send newly generated pub key to host user acct @ ~/.ssh/authorized_keys
+ssh-copy-id -i $_ID_FILE $_USER@$_HOST_IP_or_HOST_dot_DOMAIN
+# ... prompts for password
+</code></pre>
+
+<ul>
+<li>Sending the key requires <code>PasswordAuth...</code> enabled @ <code>sshd_config</code> .<br>
+Disable that afterward (at server; CentOS) to better secure.</li>
+</ul></li>
+
+<li><p>Add <a href="file:///S:/HOME/.ssh/config">identity @ <code>~/.ssh/config</code></a></p>
+
+<pre><code class="language-bash">Host $_HOST
+  HostName $_HOST_IP_or_HOST_dot_DOMAIN
+  User $_USER
+  CheckHostIP yes
+  IdentityFile ~/.ssh/centosvm_ed25519
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h4>SSH access (thereafter)</h4>
+
+<ul>
+<li><p><code>ssh $_HOST</code>, or override User with <code>$_USER@$_HOST</code>.<br>
+    Either one references this configuration. Note &quot;Host&quot; name<br>
+    has no meaning beyond this SSH tool; can be any name;<br>
+    is merely the SSH configuration reference.</p>
+
+<ul>
+<li>Sessions (concurrent)<br>
+<code>tty1</code> @ first connect (terminal 1).<br>
+<code>tty2</code>-<code>tty6</code> (Up @ <code>Alt+RightArrow</code>; Down @ <code>Alt  +LeftArrow</code>)<br>
+<code>tty</code> to see current terminal number.<br></li>
+</ul></li>
+</ul>
+
+<h4>Backup <code>/home</code></h4>
+
+<ul>
+<li><p>@ CentOS</p>
+
+<pre><code class="language-bash">cd /home
+sudo tar -caf /home/$USER.tgz -C /home $USER
+</code></pre></li>
+</ul>
+
+<h3>Backup <code>/home</code> to <code>~/etc/platforms/$_HOST/</code></h3>
+
+<ul>
+<li><p>@ Remote</p>
+
+<pre><code class="language-bash">rsync -auz root@$_HOST:/home/$_USER.tgz ~/etc/platforms/$_HOST/$_USER.tgz
+</code></pre></li>
+</ul>
+
+<h4>Update home</h4>
+
+<ul>
+<li><p>@ Remote</p>
+
+<pre><code class="language-bash"># .tgz selected files and folders @ ~
+find ~ -maxdepth 1 \( \
+    -name 'etc' \
+    -o -name '.passgo' \
+    -o -name '.bash*' \
+    \) | tar -caf updates.tgz --files-from -
+# push the .tgz
+rsync -auz updates.tgz $_USER@$_HOST_:/home/$_USER/updates.tgz
+</code></pre></li>
+</ul>
+
+<h4>Other install/search</h4>
+
+<pre><code class="language-bash">su
+yum check-update
+yum update
+# EPEL [Extra Packages for Enterprise Linux]  https://fedoraproject.org/wiki/EPEL
+yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# And to better handle dependencies (though does not work @ Hyper-V, nor containers):
+#subscription-manager repos --enable &quot;rhel-*-optional-rpms&quot; --enable &quot;rhel-*-extras-rpms&quot;
+yum list install httpd 
+shutdown now     # poweroff
+shutdown -r now  # reboot 
+reboot           # works too
+</code></pre>
+
+<pre><code class="language-bash"># Install VS Code
+rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sh -c 'echo -e &quot;[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc&quot; &gt; /etc/yum.repos.d/vscode.repo'
+
+yum check-update
+sudo yum install code
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

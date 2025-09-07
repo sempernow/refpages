@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vagrant</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.vagrantup.com/" title="HashiCorp">Vagrant</a> | <a href="https://app.vagrantup.com/boxes/search">Boxes</a> | <a href="https://www.vagrantup.com/docs/index.html">Docs</a></h1>
+
+<h2><a href="https://www.vagrantup.com/intro/index.html" title="Configuration Management Intro @ vagrantup.com">CM</a> for VM-based Development Environments</h2>
+
+<blockquote>
+<p>Why not docker container?<br>
+Docker designed for <strong>single process</strong>; no <code>systemd</code>, etc.<br>
+Why not <code>docker-machine</code> VM?<br>
+Vagrant does <strong>synched folders</strong>, whereas <code>docker-machine mount</code> fails @ Win/WSL.</p>
+</blockquote>
+
+<ul>
+<li><p><strong>Vagrant Project</strong> is a Vagrant box. It is created at the host.</p>
+
+<ul>
+<li>Best practice is to build each project at its own directory,<br>
+with its own <code>Vagrantfile</code>, and use (git) versioning.<br></li>
+</ul></li>
+
+<li><p><strong>Vagrant box</strong> is a VM, configurated per (<strong>ruby</strong>) <code>Vagrantfile</code>, and run as<br>
+a guest machine on a <a href="https://www.vagrantup.com/docs/providers/">Vagrant-supported <code>provider</code></a> (hypervisor or similar),<br>
+such as VirtualBox, Hyper-V, Docker, AWS EC2, .... The list is growing.</p>
+
+<ul>
+<li><p>Many <a href="https://app.vagrantup.com/generic">current boxes @ <code>generic/...</code></a>, from <a href="https://roboxes.org/">Roboxes.org</a>; <a href="https://www.packer.io/">Packer</a> project.</p></li>
+
+<li><p>Namespaced (MAKER/BOX) per Vagrant repo: <code>username/boxname</code></p></li>
+
+<li><p>Stored globally for current user.</p>
+
+<ul>
+<li>An <strong>immutable initial image</strong> usable by multiple projects;<br>
+modifications per project are orthogonal to other projects.<br></li>
+</ul></li>
+
+<li><p>Some <a href="https://app.vagrantup.com/boxes/search?provider=hyperv" title="Discover Vagrant Boxes :: hyperv">Vagrant boxes</a> support <strong>Hyper-V</strong> <strong><code>provider</code></strong>,<br>
+but <strong>VirtualBox</strong> is its <a href="https://app.vagrantup.com/boxes/search" title="Discover Vagrant Boxes :: all">most supported</a>.</p></li>
+</ul></li>
+
+<li><p>Integrates with <a href="https://www.packer.io/" title="Build Automated Machine Images @ Packer.io">Packer</a>, for <a href="https://www.vagrantup.com/docs/vagrant-cloud/boxes/create.html">creating new boxes</a>.</p></li>
+</ul>
+
+<h2>Install (<a href="h2>
+
+<h2>Usage @ Windows</h2>
+
+<ul>
+<li>@ <code>SystemDrive</code>, else fails security check(s).</li>
+<li>Run as Administrator.
+
+<ul>
+<li>@ <code>cmd</code>, PowerShell, or <code>mintty</code> (<a href="https://gitforwindows.org/">Git-for-Windows</a>) shell.<br>
+
+<ul>
+<li>@ <code>mintty</code>, some vagrant commands fail.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Commands</h2>
+
+<h4>Ad hoc</h4>
+
+<pre><code class="language-bash"># Verify (List Commands)
+vagrant
+# Init (creates VagrantFile)
+vagrant init
+# Add the Box (Download box image)
+vagrant box add $_MAKER/$_BOX
+# Start/Boot the VM/OS [per specified provider]
+vagrant up [--provider=hyperv|virtualbox|vmware|libvirt|docker|...]  
+</code></pre>
+
+<h4>Configured</h4>
+
+<pre><code class="language-bash"># Create(Download)/Start/Boot the image/VM/OS 
+vagrant up 
+# (Re)Provision (if up already)
+vagrant provision
+# Restart [+(Re)Provision] 
+vagrant reload [--provision] [--debug] 
+# Login 
+vagrant ssh 
+</code></pre>
+
+<ul>
+<li><p>@ box</p>
+
+<pre><code class="language-bash">vagrant@$_BOX:~$  # In the box!
+# CTRL+D to exit, or ...
+vagrant@$_BOX:~$ logout
+Connection to 192.168.1.23 closed.
+</code></pre>
+
+<pre><code class="language-bash"># SSH config (if issues)
+vagrant ssh-config 
+# Box ...
+vagrant box add|remove|prune|list|...
+</code></pre></li>
+</ul>
+
+<h4>VM per se</h4>
+
+<pre><code class="language-bash"># VM commands (pause|resume|stop)
+vagrant up|suspend|resume|halt
+# Terminate VM (Removes @ Hyper-V)
+vagrant destroy
+# Remove the (downloaded) Box
+vagrant box remove
+</code></pre>
+
+<h2>Project Setup  (<a href="https://www.vagrantup.com/intro/getting-started/project_setup.html" title="www.vagrantup.com">Getting Started</a>)</h2>
+
+<ul>
+<li>Run as <strong>Administrator</strong> (console with elevated privileges).</li>
+
+<li><p>Work from a per-project folder</p>
+
+<pre><code class="language-bash"># Create/GoTo new project dir
+mkdir $_PROJECT; cd $_PROJECT
+</code></pre></li>
+
+<li><p>If using <code>mintty</code>, then subshell per <code>winpty bash</code> command,<br>
+else can't hide password on SMB connect; error message:<br>
+<code>&quot;Error! Your console doesn't support...&quot;</code></p>
+
+<h2>Select a <a href="https://app.vagrantup.com/boxes/search" title="Vagrant Boxes @ app.vagrantup.com/boxes/">Vagrant Box</a></h2>
+
+<h3><a href="https://app.vagrantup.com/boxes/search?provider=hyperv&amp;q=generic&amp;sort=downloads" title="hyperv :: generic/... @ Vagrant Boxes"><code>generic/ubuntu1604</code> Roboxes.org</a></h3></li>
+
+<li><p><a href="https://roboxes.org">Roboxes</a>, a <a href="https://www.packer.io/">Packer</a> project, has many current Vagrant boxes.</p></li>
+</ul>
+
+<h2>Configure</h2>
+
+<h3><a href="https://www.vagrantup.com/docs/vagrantfile/" title="Vagrant Docs @ www.vagrantup.com/docs/..."><code>Vagrantfile</code></a> (<a href="https://www.vagrantup.com/docs/hyperv/configuration.html" title="Vagrant/docs/hyperv">Hyper-V specific</a>)</h3>
+
+<pre><code class="language-ruby"># if Vagrant API Version: &quot;2&quot;
+Vagrant.configure(&quot;2&quot;) do |config|
+
+    # Base box
+    config.vm.box = &quot;generic/ubuntu1604&quot;
+
+    # @ Hyper-V 
+    config.vm.provider &quot;hyperv&quot; do |h|
+        # VM name
+        h.vmname = &quot;vagrant.generic.ubuntu1604&quot;
+        # Improve spin-up time
+        h.enable_virtualization_extensions = true
+        # h.differencing_disk = true # depricated
+        h.linked_clone = true
+    end
+
+    # Network  
+    config.vm.network &quot;public_network&quot;
+    
+    # Synched Folder(s)
+    # Disable (SMB) a Synched Folder (default @ Hyper-V)
+    config.vm.synced_folder &quot;.&quot;, &quot;/vagrant&quot;, disabled: true
+    # Enable (SMB) a Synched Folder (required @ Hyper-V)
+    config.vm.synced_folder &quot;.&quot;, &quot;/vagrant&quot;
+
+    # Upload file(s) to guest (VM)
+    config.vm.provision &quot;file&quot;, source: &quot;~/.gitconfig&quot;, destination: &quot;.gitconfig&quot;
+
+    # Run host script(s) @ guest (VM)
+    config.vm.provision :shell, path: &quot;bootstrap.sh&quot;
+end
+</code></pre>
+
+<ul>
+<li><p><a href="https://www.vagrantup.com/docs/synced-folders/basic_usage.html">Synched Folders</a></p>
+
+<ul>
+<li><p><strong>Box path</strong> must be <strong>absolute</strong>; host path can be relative (to project <code>Vagrantfile</code> root).</p>
+
+<pre><code class="language-ruby"># Enable (SMB) a Synched Folder (required @ Hyper-V)
+config.vm.synced_folder &quot;.&quot;, &quot;/vagrant&quot;
+# Synch AWS-creds folder @host to @box
+config.vm.synced_folder &quot;./../../.aws/&quot;, &quot;/home/vagrant/.aws&quot;
+# ... + create [Abs/Rel]-host-path, owner, group, mount options
+config.vm.synced_folder &quot;/abs/path/foo/&quot;, &quot;/home/vagrant/foo&quot;, create: true, 
+owner: &quot;vagrant&quot;, group: &quot;vagrant&quot;, mount_options: [&quot;uid=1000&quot;, &quot;gid=1000&quot;]
+</code></pre></li>
+</ul></li>
+
+<li><p><a href="https://www.vagrantup.com/docs/providers/">Providers</a>: <code>hyperv</code> | <code>virtualbox</code> | <code>vmware</code> | <code>libvirt</code> | <code>docker</code> | <code>...</code></p></li>
+
+<li><p><a href="https://www.vagrantup.com/docs/provisioning/">Provisioners</a>: <code>shell</code> | <code>file</code> | <code>docker</code> | <code>ansible</code> | <code>chef_...</code> | <code>puppet_...</code> | <code>...</code></p>
+
+<pre><code class="language-ruby"># Shell Provisioner :: Run script(s) @ box, @ up 
+
+# Inline (type:shell, key:inline, val:&quot;...&quot;)
+config.vm.provision &quot;shell&quot;, inline: &quot;echo hello&quot;
+
+# External script(s); path rel to project Vagrantfile
+config.vm.provision &quot;shell&quot;, path: &quot;test1.sh&quot;
+# External script(s); run as &quot;vagrant&quot; user (default is as &quot;root&quot;)
+config.vm.provision &quot;shell&quot;, path: &quot;test2.sh&quot;, privileged: false
+# expect: '/home/vagrant/vagrant-shell.ran2'
+# Guest script; if script is already @ guest
+config.vm.provision &quot;shell&quot;,
+inline: &quot;/bin/sh /path/at/guest/guest.sh&quot;
+
+# Named provisioner (name:bootstrap)
+config.vm.provision &quot;bootstrap&quot;, type: &quot;shell&quot; do |s|
+    s.inline = &quot;echo foo&quot;
+end
+# Define, for multiple provisioners (Chef uses)
+config.vm.define &quot;web&quot; do |web|
+    web.vm.provision &quot;shell&quot;, inline: &quot;echo bar&quot;
+end
+config.vm.provision &quot;shell&quot;, inline: &quot;echo baz&quot;
+
+# ... @ `vagrant up`, the run order: hello, foo, baz, bar
+
+# File Provisioner :: Upload file(s) to guest (VM)
+# will CREATE (sub)folder(s) @ box, if not exist
+config.vm.provision &quot;file&quot;, source: &quot;~/.gitconfig&quot;, destination: &quot;.gitconfig&quot;
+config.vm.provision &quot;file&quot;, source: &quot;~/Vagrant/test/foodir&quot;, destination: &quot;root.newfoodir&quot;
+config.vm.provision &quot;file&quot;, source: &quot;~/Vagrant/test/foodir&quot;, destination: &quot;$HOME/remote/sub.newfoodir&quot;
+</code></pre>
+
+<ul>
+<li><strong>File Provisioner</strong> (based) <strong>uploads</strong> are <strong>run as</strong> the <em>SSH user</em> (per <code>vagrant ssh-config</code>), or as <em>PowerShell user</em>. Best practice is to <strong>script the uploads</strong> using <strong>Shell Provisioner</strong>, explicitly setting the <code>privileged:</code> boolean thereof.</li>
+</ul></li>
+
+<li><p><a href="https://www.vagrantup.com/docs/networking/basic_usage.html">Networking</a></p>
+
+<pre><code class="language-ruby"># Config for &quot;public&quot; or &quot;private&quot; IP address
+# (Meanings vary per provider; both functioned @ Hyper-V)
+config.vm.network &quot;public_network&quot;
+# Let DHCP server provide IP address
+config.vm.network &quot;private_network&quot;, type: &quot;dhcp&quot;
+# Static IP
+config.vm.network &quot;private_network&quot;, ip: &quot;192.168.1.55&quot;
+# Port forwarding
+config.vm.network &quot;forwarded_port&quot;, guest: 80, host: 8080
+# Specifiy Interface (Adapter; no effect @ Hyper-V)
+config.vm.network &quot;public_network&quot;, bridge: &quot;en1: External-GbE&quot;
+</code></pre>
+
+<pre><code class="language-ruby"># Synch folder(s); @host, @box
+config.vm.synced_folder &quot;.&quot;, &quot;/vagrant&quot;  # &quot;default&quot;
+</code></pre>
+
+<ul>
+<li><p>Hyper-V requires explicitly enabling synch, even for the &quot;default&quot; synched folder, which is the above. SSH uploads may fail without it.</p></li>
+
+<li><p>If <strong>Synch Folder</strong>(s) <strong>enabled</strong>, then @ <code>vagrant up</code> ...</p>
+
+<pre><code class="language--">==&gt; web: Preparing SMB shared folders...
+...
+web: Username: 
+web: Password (will be hidden): 
+...
+</code></pre>
+
+<ul>
+<li><p>If console has no <code>tty</code> (fix <code>mintty</code> @ <code>winpty bash</code>)<br>
+an error is reported, but the process continues.</p>
+
+<pre><code>Error! Your console doesn't support hidden ...
+...
+</code></pre></li>
+</ul></li>
+</ul></li>
+
+<li><p><a href="https://blogs.technet.microsoft.com/virtualization/2017/07/06/vagrant-and-hyper-v-tips-and-tricks/" title="technet.Microsoft.com, 2017">Tips &amp; Tricks @ Hyper-V</a><br>
+Vagrant uses <code>SMBv1</code>; check if enabled (PowerShell)</p>
+
+<pre><code class="language-powershell"># Vagrant uses SMBv1; check if enabled 
+Get-SmbServerConfiguration
+</code></pre></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

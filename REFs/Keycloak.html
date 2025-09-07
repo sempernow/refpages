@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Keycloak</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Keycloak : <a href="https://www.keycloak.org/docs/latest/server_admin/index.html" title="keycloak.org">Server Admin Guide</a> | <a href="https://www.keycloak.org/documentation">App Documentation</a></h1>
+
+<h3>User Federation</h3>
+
+<p>User federation allows Keycloak to connect to external user databases, such as <strong>LDAP</strong> or <strong>Active Directory</strong>, enabling <strong>authentication and user data synchronization</strong> without migrating existing user data into Keycloak. This feature is essential for organizations that maintain centralized user directories and wish to leverage Keycloak for authentication and authorization.</p>
+
+<h3><a href="https://www.keycloak.org/docs/latest/server_admin/index.html#_ldap">Configuring User Federation</a></h3>
+
+<p>To set up user federation in Keycloak:</p>
+
+<ol>
+<li><strong>Access the Admin Console</strong>: Log in to the Keycloak Admin Console.</li>
+<li><strong>Navigate to User Federation</strong>: In the left-hand menu, click on &quot;User Federation.&quot;</li>
+<li><strong>Add a Provider</strong>: Click on &quot;Add provider&quot; and select the type of external user store you wish to integrate, such as LDAP or Kerberos.</li>
+<li><strong>Configure Connection Settings</strong>: Provide the necessary connection details, including connection URL, bind DN, and credentials.</li>
+<li><strong>Set Synchronization Options</strong>: Choose synchronization settings to control how and when user data is synced between Keycloak and the external store.</li>
+<li><strong>Define Mappers</strong>: Configure mappers to map attributes from the external user store to Keycloak's user model.(<a href="https://www.keycloak.org/securing-apps/token-exchange?utm_source=chatgpt.com" title="Configuring and using token exchange - Keycloak">Keycloak</a>, <a href="https://www.keycloak.org/docs/latest/server_development/index.html?utm_source=chatgpt.com" title="Server Developer Guide - Keycloak">Keycloak</a>, <a href="https://www.keycloak.org/docs/latest/server_admin/index.html?utm_source=chatgpt.com" title="Server Administration Guide - Keycloak">Keycloak</a>)</li>
+</ol>
+
+<p>For detailed guidance on each of these steps, refer to the <a href="https://www.keycloak.org/docs/latest/server_admin/index.html">Keycloak Server Administration Guide</a>.(<a href="https://www.keycloak.org/docs/latest/server_admin/index.html?utm_source=chatgpt.com" title="Server Administration Guide - Keycloak">Keycloak</a>)</p>
+
+<h3>Advanced Configuration and Custom Providers</h3>
+
+<p>If your organization uses a custom user store or requires advanced integration, Keycloak offers the User Storage SPI (Service Provider Interface). This allows developers to implement custom providers to connect Keycloak with virtually any external user database. The <a href="https://www.keycloak.org/docs/latest/server_development/index.html">Keycloak Server Developer Guide</a> provides in-depth information on creating and deploying custom user storage providers.(<a href="https://www.keycloak.org/docs/latest/server_development/index.html?utm_source=chatgpt.com" title="Server Developer Guide - Keycloak">Keycloak</a>, <a href="https://www.keycloak.org/docs/latest/server_admin/index.html?utm_source=chatgpt.com" title="Server Administration Guide - Keycloak">Keycloak</a>)</p>
+
+<h3>Additional Resources</h3>
+
+<ul>
+<li><strong>Keycloak Documentation Overview</strong>: Explore all available guides and references at the <a href="https://www.keycloak.org/documentation">Keycloak Documentation page</a>.</li>
+<li><strong>Keycloak Admin REST API</strong>: For programmatic management of user federation and other configurations, consult the <a href="https://www.keycloak.org/docs-api/latest/rest-api/index.html">Keycloak Admin REST API documentation</a>.(<a href="https://www.keycloak.org/documentation?utm_source=chatgpt.com" title="Documentation - Keycloak">Keycloak</a>, <a href="https://www.keycloak.org/docs-api/latest/rest-api/index.html?utm_source=chatgpt.com" title="Keycloak Admin REST API">Keycloak</a>)</li>
+</ul>
+
+<p>If you need assistance with specific configurations, such as setting up LDAP synchronization or creating custom mappers, feel free to ask!</p>
+
+<p>Correct — the <strong>Storage SPI is not for storing AD DS user data</strong> retrieved via LDAP synchronization.</p>
+
+<h3>🔍 Clarification:</h3>
+
+<h4>✅ When You Use Built-in LDAP User Federation:</h4>
+
+<p>Keycloak <strong>does not store user data in its internal database</strong> after LDAP sync (unless you explicitly enable &quot;import&quot;). Instead, it <strong>queries the external store (e.g., AD DS)</strong> on-demand via LDAP unless configured otherwise. This is the <strong>default user federation model</strong>, and it uses a built-in LDAP provider — <strong>you do <em>not</em> need the Storage SPI</strong> to use this.</p>
+
+<blockquote>
+<p>You configure this via <strong>User Federation → Add provider → ldap</strong> in the Admin UI.</p>
+</blockquote>
+
+<h4>🛠️ The <strong>Storage SPI</strong> is for:</h4>
+
+<p>Creating <strong>custom providers</strong> to integrate with <strong>non-standard or unsupported user stores</strong>, such as:</p>
+
+<ul>
+<li>A legacy SQL database</li>
+<li>A flat file system</li>
+<li>A REST API for user authentication</li>
+<li>Custom LDAP variants with special behavior</li>
+</ul>
+
+<p>You'd implement Storage SPI if:</p>
+
+<ul>
+<li>The external user source is <em>not LDAP or Kerberos</em></li>
+<li>You need <em>custom mapping logic</em></li>
+<li>You want to integrate with a backend that doesn't have a built-in provider in Keycloak</li>
+</ul>
+
+<h3>✅ TL;DR</h3>
+
+<table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Use Built-in Federation (e.g. LDAP)</th>
+<th>Use Storage SPI</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>AD DS over LDAP</td>
+<td>✅ Yes</td>
+<td>❌ No</td>
+</tr>
+
+<tr>
+<td>Custom SQL or REST-based user store</td>
+<td>❌ No</td>
+<td>✅ Yes</td>
+</tr>
+
+<tr>
+<td>LDAP but need complex/unsupported logic</td>
+<td>⚠️ Maybe</td>
+<td>✅ Possibly</td>
+</tr>
+
+<tr>
+<td>You want to cache or import users</td>
+<td>✅ Yes (with Import option)</td>
+<td>❌ Not SPI’s job</td>
+</tr>
+</tbody>
+</table>
+
+<p>Let me know if you'd like a sample configuration for Keycloak's LDAP provider or an example Storage SPI plugin.</p>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
