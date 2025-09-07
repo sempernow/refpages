@@ -1,0 +1,30 @@
+5 AWS White Papers 
+==================
+  Suggested reading for the exams.  
+
+  # Security Processes [75pgs]  
+
+  - Use MFA  
+  - connect via SSL/TLS  
+  - log API/user activity  
+    - CloudTrail is logging  
+    - CloudWatch is monitoring  
+  - Storage Decommissioning  
+  - IPsec VPN between AWS VPC and customer data center  
+  - Amazon Corporate Segregation (from AWS)  
+  - AWS protects against DDoS, MITM, 
+    IP-spoofing
+      EC2 instances limited to its own source IP and MAC;  
+      unauthorized port scans by users violate AWS Acceptable Use Policy ; vulnerability scan MUST BE REQUESTED in adanced
+    Packet-sniffing,
+  - AWS Credentials: Passwords, MFA, Access Keys, Key pairs, X.509 Certificates  
+  - Trusted Advisor: inspects/recommends  performance & security issues  
+
+  - ELB: SSL is supported; passes identity origin IP Address on HTTPS or TCP load balancing 
+  - Direct Connect supports 802.1q VLANs (industry standard)
+
+
+
+
+
+

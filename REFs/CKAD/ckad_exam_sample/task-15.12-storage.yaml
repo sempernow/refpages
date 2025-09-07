@@ -1,0 +1,47 @@
+--- # PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: ckad-1312
+  name: 1312-pv
+  annotations:
+    pv.beta.kubernetes.io/gid: "1312"
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+--- # PVC 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: ckad-1312
+  name: 1312-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: manual
+  resources:
+    requests:
+      storage: 1Gi
+--- # Pod
+--- # @ kubernetes.io > Search > pods
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: ckad-1312
+  name: 1312-pod
+spec:
+  containers:
+  - name: ngx
+    image: nginx
+    volumeMounts:
+      - name: webdata
+        mountPath: /webdata
+  volumes:
+    - name: webdata
+      persistentVolumeClaim:
+        claimName: 1312-pvc

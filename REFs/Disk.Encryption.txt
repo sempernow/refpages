@@ -1,0 +1,42 @@
+Windows
+=======
+
+    VeraCrypt  https://www.veracrypt.fr/en/Home.html ; https://veracrypt.codeplex.com/
+    TrueCrypt  https://www.grc.com/misc/truecrypt/truecrypt.htm
+
+
+Linux  https://wiki.archlinux.org/index.php/Disk_encryption#Available_methods
+=====
+
+    STACKED FILESYSTEM ENCRYPTION 
+
+        a layer that stacks on top of an existing filesystem, causing all files written to an encryption-enabled folder to be encrypted on-the-fly before the underlying filesystem writes them to disk, and decrypted whenever the filesystem reads them from disk. 
+
+        eCryptfs  https://wiki.archlinux.org/index.php/ECryptfs 
+            distinguished feature is that the encryption is stacked on an existing filesystem; eCryptfs can be mounted onto any single existing directory and does not require a separate partition
+
+        EncFS  https://wiki.archlinux.org/index.php/EncFS
+
+            Advantages 
+                - Does not require any root privileges to implement; any user can create a repository of encrypted files. - Does not need to create a single file and create a file-system within that; it works on existing file-system without modifications.
+
+            Disadvantages
+                - The encrypted files are not stored in their own file; can still see the underlying directory structure, the number of files, their sizes and when they were modified. Only contents are encrypted.
+
+    BLOCK DEVICE ENCRYPTION 
+
+        operate below the filesystem layer; everything written to a certain block device, i.e. a disk/partition/file is encrypted, acting as a VIRTUAL LOOP-BACK DEVICE; when offline, the block device looks like a large blob of random data, with no visible filesystem or data; mounted to gain access to the protected container (the block device) at an arbitrary location in a special way. 
+
+        TrueCrypt/VeraCrypt
+            A portable format, supporting encryption of whole disks/partitions or file containers, with compatibility across all major operating systems. TrueCrypt was discontinued by its developers in May 2014. The VeraCrypt fork was audited in 2016.
+
+        loop-AES
+            loop-AES is a descendant of cryptoloop and is a secure and fast solution to system encryption. However, loop-AES is considered less user-friendly than other options as it requires non-standard kernel support. 
+
+        dm-crypt
+            dm-crypt is the standard device-mapper encryption functionality provided by the Linux kernel; full control over all aspects of partition and key management; per cryptsetup userspace utility. Types of block-device encryption: LUKS (default), plain, and has limited features for loopAES and Truecrypt devices.
+
+            - LUKS, used by default, is an additional convenience layer which stores all of the needed setup information for dm-crypt on the disk itself and abstracts partition and key management in an attempt to improve ease of use and cryptographic security.
+            
+            - plain dm-crypt mode, being the original kernel functionality, does not employ the convenience layer. It is more difficult to apply the same cryptographic strength with it. When doing so, longer keys (passphrases or keyfiles) are the result. It has, however, other advantages, described in the following comparison table. 
+

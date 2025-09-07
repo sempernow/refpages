@@ -1,0 +1,177 @@
+	
+WiFi TEST 2017
+==============
+
+  WiFi BEST/FASTEST Settings [RT-AC66U/Merlin-v380.58] 
+  
+    2.4GHz: "N Only"; "40 MHz"; Ch "3" 
+    
+            [most neighbors @ Ch 6] [Nirsoft > WirelessNetView]
+                    
+    5GHz  : "N/AC mixed"; "20/40/80"; "Auto" [Ch 149] + "...including band1 ..."
+            "N/AC mixed"; "80"      ; "Auto" [Ch 149]
+
+      # Results @ Edimax-AC1200 [Auto@USB3]
+
+        @ 7LOL [2.4GHz]; "N-Only"; "40"; Ch 3
+        
+          "300 Mbps"              @ Windows > WiFi [Adapter] Status
+          ~ 100/150 Mbps up/down  @ LAN_SpeedTest.exe
+          
+        @ 7LOH [5GHz]; "N/AC mixed"; "80"; "Auto" [Ch 149]
+        
+          "876 Mbps"              @ Windows > WiFi [Adapter] Status
+          ~ 200/200 Mbps up/down  @ LAN_SpeedTest.exe
+          
+        @ GbE [Gb Ethernet] [REFERENCE]
+        
+          "1.0 Gbps"              @ Windows > Eth0 [Adapter] Status
+          ~ 360/770 Mbps up/down  @ LAN_SpeedTest.exe 
+
+      # Available 5 GHz Channels @ AC66U Merlin 380.58 [2016-03-20]
+      
+        36/40/44/48/149/153/157/161  
+        ALL "control channel" are 20MHz !!! 
+        per https://en.wikipedia.org/wiki/List_of_WLAN_channels#United_States
+        # The router offers no 40/80/160 MHz "control channel" @ 5 GHz !!! 
+
+
+WLAN [Wireless LAN]
+===================
+
+	- 802.11n
+	
+		2.4 GHz (and 5 GHz, optionally); 54-600 Mbps @ 4 MIMO streams; 40 MHz bands; 64-QAM
+		
+	- 802.11ac 
+	
+		5 GHz; 433 Mbps per spatial stream, 1300 Mbps @ 8 MIMO streams; 80/160 MHz bands; 256-QAM.
+				
+		Control Channels @ .11 a/h/j/n/ac 
+		
+		  160MHz BW @ Control Channels: 50* 114* 
+		   80MHz BW @ Control Channels: 42 58* 106* 122* 138* 155
+		   40MHz BW @ Control Channels: 38 46 54* 62* 102* 110* 118* 126* 134* 142* 151 159
+			
+		  * only by DFS [Dynamic Frequency Selection]
+		
+	- Config @ Advanced/Wireless Setup Menu
+
+	- Always assign static IPs to network infrastructure nodes -- repeaters, bridges, etc --and set it to and address OUTSIDE THE RANGE served by the DHCP server, but having same Network ID [same subnet mask].
+          
+          
+ROUTER MODES
+============
+
+	AP mode
+	-------
+
+		Router used as Access Point [AP] only.
+		
+		- Connect the WAN port at [W]AP router to any LAN port at Gateway [main] router
+		
+		- ADVANCED > Advanced Setup > Wireless Settings
+		
+			- Select/Enable [Wireless] AP mode
+		
+				This should turn off DHCP & DNS functions.
+			
+			- IP Address setting; Get dynamically from Gateway [main] router
+		
+		
+	WiFi Bridge/Repeater modes
+	--------------------------
+
+		Wireless Access Point (WAP) modes; Vendor/chipset specific parameters/config. 
+		
+			- Wireless bridging
+			
+				WAPs communicate only with each other; don't allow client access.
+			
+			- Wireless repeating
+			
+				WAPs communicate with each other and with wireless clients.
+				Wireless throughput is reduced by at least 50%.
+	
+		Either may be referred to as 'WiFi Distribution System' [WDS] by router vendors; router manuals may use either term [bridge/repeater/WDS] to describe their implementation of some mix of such functionality.
+
+		May NOT provide seamless roaming to wireless clients. Also, wireless clients of WDS [bridge] have only half its original wireless speed due to the required two wireless hops; WiFi is inherently half-duplex; TX or RX, but NOT both simultaneously. https://en.wikipedia.org/wiki/Wireless_distribution_system
+			
+		
+		WiFi Bridge Mode
+		----------------
+
+			Router used as wireless bridge to the Gateway router's LAN; physically extends LAN to another area, wirelessly. Most effective for wired clients at [remote] bridge, else the double-WiFi-hop to base-station halves the effective speed.  https://en.wikipedia.org/wiki/Bridging_(networking)
+		
+			@ Gateway [main] router ...
+			
+			- Get WiFi info of Gateway [main] Router
+				- SSID
+				- Security info 
+					- mode (WEP/WPA2/WPA2-PSK)
+					- password
+				- Operating frequency info (2.4 and 5 GHz)
+					
+			@ Bridge router ...
+			
+			- ADVANCED > Advanced Setup > Wireless Settings
+			
+				- Enable Bridge Mode
+				
+					- Get IP Address Dynamically
+					- Get DNS Server Address Dynamically
+					- Select same security mode as at Gateway Router
+					
+				- Set Wireless Security to WPA2-PSK
+				
+				- Set same wireless info/settings used by the Gateway [main] router.
+				
+
+		 WiFi Distribution System [WDS] [WiFi Base + Repeater Stations]
+		---------------------------------------------------------------
+		
+			Router acts as a TX/RX repeater station [only]. Extends WiFi range of Base Station [a.k.a. Gateway, a.k.a. main] router. The double-WiFi-hop, client-to-repeater and repeater-to-base-station, halves the effective speed.  http://www.tomsguide.com/us/how-to-wds-bridge,review-253-2.html
+		
+			- Get Info 
+			
+				- Wireless MAC[s] of Base Station & Repeater[s]
+				
+					For 'active' WDS, which is detailed here, each router [base and repeater] must know the other's MAC; this is vendor/chipset specific. Some vendors/chipsets can be configured for 'passive' WDS, where only the repeater is configured, leaving the base-station config untouched.
+				
+			- Base Station Setup [BEFORE repeater-station setup]
+			
+				- Disable Wireless Security for the band used as repeater [use 5 GHz band].
+
+				- ADVANCED > Advanced Setup > Wireless Repeating
+				
+					- Enable Wireless Repeating; 'Wireless Base Station' function (5GHz a/n/ac)
+					
+					- Disable Wireless Client Association; provides security; prevents WiFi clients from associating with the repeater; allowing LAN client associations only.
+				
+					- Enter Repeater MAC Address
+				
+			- Repeater Station Setup [AFTER base-station setup]
+			
+				- Disable Wireless Security for the band used as repeater [use 5 GHz band].
+
+				- ADVANCED > Advanced Setup > Wireless Repeating
+			
+					- Enable Wireless Repeating; 'Wireless Repeater' Function (5GHz a/n/ac)
+					
+					- Enter [set] this Repeater router's IP Address; must be same subnet, but different address, of Base Station router. E.g., if Base Station IP is 192.168.1.1, set this repeater's IP to 192.168.1.99
+					
+					- Disable Wireless Client Association; provides security; prevents WiFi clients from associating with the repeater; allowing LAN client associations only.
+				
+		
+WiFi TEST 2014
+==============
+  Edimax AC1200 <==> AC66U @ 7LOH [5 GHz]
+
+    @ AC1200 setting: "Wireless Mode" > IEEE 802.11ac
+
+    Config/Setup               OS Reports  LANSpeedTest Results
+    ------------------------   ----------  --------------------
+    7LOH @ N only               144 Mbps
+    7LOH @ Auto                 867 Mbps    90/ 90 Mbps [11/11 MB/s]
+    7LOH @ Auto 80MHz[ch-BW]    867 Mbps   150/200 Mbps [19/26 MB/s] [~20% of GiB Eth speed]
+

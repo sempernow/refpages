@@ -1,0 +1,47 @@
+		
+C History
+=========		
+	K&R C						1972-1989
+	C89 / ANSI-C				1989-1990	So, "ANSI-C" is obsolete C
+	C90 / ISO-9899:1990			1990-1999
+	C99 / ISO-9899:1999			1999-2011	Most Common
+	C11 / ISO 9899:2011			2011		Current
+
+	"GNU C" has 2 meanings
+
+		1. gcc compiler 
+			
+			- gcc program.c doesn't compile according to the C standard
+			
+			- To compile in C standard using gcc compiler ...
+				gcc -std=c99 -pedantic-errors
+				gcc -std=c11 -pedantic-errors
+			
+		2. The non-standard GNU setup 
+			
+			- Linux uses this "GNU C" compiler config
+
+		
+	... Summarizes ...
+	
+    Everything before standardization is generally called "K&R C", after the famous book, with Dennis Ritchie, the inventor of the C language, as one of the authors. This was "the C language" from 1972-1989.
+
+    The first C standard was released 1989 nationally in USA, by their national standard institute ANSI. This release is called C89 or ANSI-C. From 1989-1990 this was "the C language".
+
+    The year after, the American standard was accepted internationally and published by ISO (ISO 9899:1990). This release is called C90. Technically, it is the same standard as C89/ANSI-C. Formally, it replaced C89/ANSI-C, making them obsolete. From 1990-1999, C90 was "the C language".
+
+    Please note that since 1989, ANSI haven't had anything to do with the C language. Programmers still speaking about "ANSI C" generally haven't got a clue about what it means. ISO "owns" the C language, through the standard ISO 9899.
+
+    In 1999, the C standard was revised, lots of things changed (ISO 9899:1999). This version of the standard is called C99. From 1999-2011, this was "the C language". Most C compilers still follow this version.
+
+    In 2011, the C standard was again changed (ISO 9899:2011). This version is called C11. It is currently the definition of "the C language".
+	
+	---
+	
+	"C99 strict" likely refers to a compiler setting forcing a compiler to follow the standard by the letter. There is a term conforming implementation in the C standard. Essentially it means: "this compiler actually implements the C language correctly". Programs that implement the C language correctly are formally called strictly conforming programs.
+
+	"GNU C" can mean two things. Either the C compiler itself that comes as part of the GNU Compiler Collection (GCC). Or it can mean the non-standard default setup that the GCC C compiler uses. If you compile with gcc program.c then you don't compile according to the C standard, but rather a non-standard GNU setup, which may be referred to as "GNU C". For example, the whole Linux kernel is made in non-standard GNU C, and not in standard C.
+
+	If you want to compile your programs according to the C standard, you should type gcc -std=c99 -pedantic-errors. Replace c99 with c11 if your GCC version supports it.
+
+	http://stackoverflow.com/questions/17206568/what-is-the-difference-between-c-c99-ansi-c-and-gnu-c-a-general-confusion-reg

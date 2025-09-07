@@ -1,0 +1,27 @@
+Windows 10 Version History
+==========================
+# https://en.wikipedia.org/wiki/Windows_10_version_history 
+
+2.1 Version 1507
+2.2 Version 1511 "November Update"
+2.3 Version 1607 "Anniversary Update" 
+2.4 Version 1703 "Creators Update"       RS2  (Redstone 2)
+2.5 Version 1709 "Fall Creators Update"  RS3  [Oct 17, 2017]              
+2.6 Version 1803 "April 2018 Update"     RS4  [Apr 30, 2018] KB4464218 Bld 17134.286  
+2.7 Version 1809 "October 2018 Update"   RS5  [Nov 13, 2018]           Bld 17763
+2.8 Version 1903 "May 2019 Update"      19H1  [May 21, 2019] KB4524570 Bld 10.0.18362
+    Version 1909 "November 2019 Update" 19H2  [Nov 12, 2019] KB4549951 Bld 10.0.18363
+    Version 2004 "May 2020 Update"      20H1                           Bld 10.0.19041
+    
+
+Current
+=======
+
+HTPC [Win10-Pro-x64] [2009.19042.1466] [20H2] [KB5009543] [2022-01-11]
+XPC  [Win10-Pro-x64] [2009.19042.1466] [20H2] [KB5009543] [2022-01-11]
+
+
+ISSUES
+======
+
+@ 2009.19042.1466           docker-machine (PowerShell) runs slower.

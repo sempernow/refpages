@@ -1,0 +1,86 @@
+Unified Extensible Firmware Interface (UEFI)
+
+  replaces the Basic Input/Output System (BIOS) firmware interface originally present in all IBM PC-compatible personal computers,  https://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface
+  
+GUID partition table (GPT) 
+
+  a standard for partition table layout on a physical storage device, e,g., HDD and SSD, using globally unique identifiers (GUID); forms a part of UEFI standard; boot-loader and OS must be GPT-aware; uses Logical Block Addressing (LBA), like modern MBRs. also used on some BIOS systems because of the limitations of master boot record (MBR) partition tables, which use 32 bits for storing logical block addresses (LBA) and size information on a traditionally 512 byte disk sector.  
+  
+  The protective MBR is contained in LBA 0, the GPT header (Partition Table Header) is in LBA 1, and the GPT header has a pointer to the partition table, or Partition Entry Array, typically LBA 2. The UEFI specification stipulates that a minimum of 16,384 bytes, regardless of sector size, be allocated for the Partition Entry Array (LBA 2). On a disk having 512-byte sectors, a partition entry array size of 16,384 bytes and the minimum size of 128 bytes for each partition entry, LBA 34 is the first usable sector on the disk.
+
+  - GPT allows 1 to 128 partitions.
+
+  - Each GPT partition has max 18 exabytes (~18.8 million terabytes).
+  
+  https://en.wikipedia.org/wiki/GUID_Partition_Table
+  
+  Install Windows 7 x64 on MBR 
+  
+    During install, at the target-disk selection segment, press
+    
+    SHIFT+F10 to get command-prompt
+    
+      diskpart 
+      select disk 0
+      clean
+      convert mbr
+      
+      
+  Install Windows 10 on GPT 
+
+      diskpart 
+      select disk 0
+      clean
+      convert gpt
+  
+  https://technet.microsoft.com/en-us/library/hh824839.aspx
+  
+  Applying Windows, System, and Recovery Partitions by using a Deployment Script ...
+  https://technet.microsoft.com/en-us/library/hh825089.aspx
+    
+  
+  Configure System Partition 
+    Copy and configure system partition files by using files ... 
+    FROM the Windows partition 
+    TO the boot partition (EFI; "System"; NOT to the "Windows" partition)
+  
+    bcdboot C:\Windows /s S: /f UEFI 
+
+  
+  REAgentC :: Register the location of the WindowsRE tools
+   https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-8.1-and-8/hh825089(v=win.10)
+
+        rem === In the System partition, set the location of the Windows partition ===
+        W:\Windows\System32\reagentc /setosimage /path R: /target W:\Windows /index 1
+
+        rem === In the System partition, set the location of the WinRE tools =========
+        W:\Windows\System32\reagentc /setreimage /path T:\Recovery\WindowsRE /target W:\Windows
+
+   
+        rem -- if OS recovery image (wim) @ R: -- 
+        reagentc /setosimage /path R: /target C:\Windows /index 1
+        
+        rem -- if WinRE Tools image (wim) @ T: ---
+        reagentc /setreimage /path T:\Recovery\WindowsRE /target C:\Windows
+  
+    :: Options
+    /target       when applying offline
+    /enable       allow MODIFIED WindowsRE image 
+    
+  https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/reagentc-command-line-options
+
+
+Remove the UEFI or BIOS boot files
+==================================
+
+  If you want a PC to only BOOT INTO a CERTAIN MODE, you can remove the files that Windows PE or Windows Setup use to boot in UEFI or BIOS mode. Remove the following files, depending on the mode you want to boot to.
+
+  Boot only when in UEFI mode
+
+    Remove the bootmgr file from the root of the Windows PE or Windows Setup media. 
+    This prevents the device from starting in BIOS mode.
+  
+  Boot only when in BIOS mode
+
+    Remove the efi folder from the root of the Windows PE or Windows Setup media. 
+    This prevents the device from starting in UEFI mode.

@@ -1,0 +1,102 @@
+BOOT UTILITIES
+
+How to Access ADVANCED STARTUP OPTIONS (ASO), 
+which is Windows Recovery Environment (WinRE).
+
+	Method 1. Start Menu > Power > SHIFT + "Restart"
+	Method 2. Start Menu > Settings Menu > "Update & Security" > "Restart now"
+	Method 3. shutdown /r /o  (@cmd.exe terminal)  
+	Method 4. Per HW (UEFI) vendor method.
+
+	- WinRE/ASO includes optional boot into command line.
+
+	- Add a custom tool to WinRE  https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/add-a-custom-tool-to-the-windows-re-boot-options-menu
+
+
+bootfix.BAT [f06yBEAST]
+=======================
+	Use if system fails to boot; resets BCD boot store
+	Defaults to BCDboot.exe %SystemRoot% /s /v %SystemDrive%
+
+
+BCDboot.exe
+===========
+	@ %windir%\System32
+	@ %ProgramFiles%\Windows AIK\Tools\x86
+
+		BCD boot file CREATION and REPAIR tool.
+		Used to copy critical boot files to the system partition and to create a new system BCD store.
+
+		Fix/make hdd/cd/usb bootable ...
+		
+		BCDboot <source-windir-path> /s <target-system-drive> [/f UEFI|BIOS|ALL]
+
+			E.g., BCDboot c:\windows /s e:
+
+	Builds the Boot Configuration Data (BCD) store from source %windir% config [\System32\Config\BCD-Template]; writes it to target drive <root>\Boot.
+
+	https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdboot-command-line-options-techref-di
+
+
+BCDedit.exe
+===========
+	@ %windir%\System32
+
+	BCDedit 		- shows the BCD store data [the boot options]
+	BCDedit /enum 	- <same as no option>
+	BCDedit /v 		- shows actual [GUID] values for all fields
+
+	BCDedit /export <path-fname> 	-  copy BCD
+	BCDedit /import <path-fname> 	- restore from prior "/export" 
+
+	BCDedit /SET - to make changes to BCD. E.g., ...
+	BCDedit /SET {current} path \BackupWindows\system32\winload.exe
+
+	BCDedit /store "<path-of-BCD>" /<option>	- sets BCD to be used
+	(can't use with createstore, import, export )
+
+	https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/bcdedit-command-line-options
+
+
+BootRec.exe
+===========
+	@ boot.wim of WinPE/RE.iso
+	@ <root>\sources\boot.wim\Windows\System32\BootRec.exe
+
+	Troubleshoot a "Bootmgr Is Missing" error @ Window RE ...
+	WinRE OS > System Recover Options > Command Prompt > BootRec.exe
+
+	BootRec /FixMbr			- fix boot record (MBR) corruption issues
+	BootRec /FixBoot		- fix damaged boot sector
+	BootRec /ScanOs			- scans all disks; shows options not in boot menu 
+	BootRec /RebuildBcd		- scans all disks; shows options to rebuild
+
+	http://support.microsoft.com/kb/927392
+
+	Recovery: WinRE; accessed by (1) Install disk; "Repair" (2)  F8 option on boot; "Repair Your Computer" (3) Create a system repair disk, and use that. 
+
+
+bootsect.exe
+============
+	Legacy tool for XP. 
+	
+	Also used to make USB bootable.
+	
+	Bootsect.exe updates the master boot code for hard disk partitions to switch between /nt60 {BOOTMGR (Vista)} and /nt52 {NTLDR (XP)}. You can use this tool to restore the boot sector on your computer. This tool replaces FixFAT and FixNTFS.
+	Bootsect Command-Line Options
+
+	Bootsect uses the following conventions:
+
+	bootsect.exe {/help | /nt52 | /nt60} {SYS | ALL | DriveLetter:} [/force] /mbr
+
+	e.g., to make a bootable USB drive for Windows installations ...
+
+	pushd "s:\boot"
+	bootsect.exe /nt60 d: 
+	popd
+
+		Where 's:' is source [mounted Windows install ISO] and 'd:' is the target USB drive.
+		Then extract/clone the Windows Installation ISO to the target USB drive.
+
+	http://msdn.microsoft.com/en-us/library/ff794683%28v=winembedded.60%29.aspx
+	

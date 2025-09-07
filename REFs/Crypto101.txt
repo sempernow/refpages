@@ -1,0 +1,519 @@
+# https://github.com/crypto101
+
+Ch 5. XOR
+
+	Associative & Communative 
+	
+	bitwize XOR ...
+	
+		a ^ b ^ c = c ^ b ^ a
+		
+		a ^ a = 0
+		
+		a ^ b ^ a = a
+	
+	A "One-time Pad", as in written on a pad of paper and used only once, is the key in the schemes so named. Generating a cryptext (C) by an XOR operation (^) between the plaintext (P), private message, and the key (k) is one such scheme. The key is the "shared secret"; both parties must have it beforehand. Cryptext is what's sent/received across the untrusted/unsafe communication channel.
+	
+	Encrypt: P ^ k = C  	
+	Decrypt: C ^ k = P 
+	
+	But if the One-time Pad (the key, "k") is used even twice, then
+	
+	P1 ^ k = C1
+	P2 ^ k = C2 
+	
+	Now see what results from XOR-ing just the two cyphertexts:
+	
+	C1 ^ C2 = ( P1 ^ k ) ^ ( P2 ^ k )
+	        = P1 ^ P2 ^ ( k ^ k )
+            = P1 ^ P2 ^ 0
+            = P1 ^ P2. 
+    
+	That's right! An XOR of the two cryptexts (C1, C2) is EXACTLY EQUAL to an XOR of the two plaintexts (P1, P2). And that contains LOTS of info about both plaintexts. It may even contain sufficient information to effectively recover both P1 and P2. E.g., if P1, P2 are both black & white images, say text/graphics, then their XOR is a perfect superposition of the two.
+
+	So, the One-time Pad, though 'perfect' security, is highly impractical. 
+
+		Must be truly random. 
+		
+		Must be used only once, else "Crib-dragging" used to break it.
+		
+		Must be at least as long as messages (sum of all messages) sent thereunder.
+		
+		Must be shared beforehand w/ all recipients.
+		
+	There are many such schemes available. The real issue today is key management.
+
+		"
+		...symmetric encryption algorithms aren’t the pain point of
+		modern cryptosystems. Cryptographers have designed plenty of those,
+		while practical key management remains one of the toughest challenges
+		facing modern cryptography. One-time pads may solve a problem, but
+		it’s the wrong problem.
+		"
+	
+Ch 6.	Block Cipher [Symmetric-key Encryption Scheme]
+
+	A block cipher is an algorithm to encrypt blocks of a fixed length.
+	
+	Message length is limited thereto.
+	
+		Encryption function 	E 
+		Plaintext blocks 		P 
+		Ciphertext blocks 		C
+		Secret key 				k
+	
+		C = E(k, P)
+		
+		P, C are ALWAYS SAME SIZE; set by the CIPHER BLOCK SIZE
+		
+		Keyspace - the set of all possible keys.
+		
+		Decryption function 	D
+
+		P = D(k, C) 
+		
+		A block cipher is a KEYED PERMUTATION. It’s a permutation, because the block cipher maps every possible block to some other block. It’s also a keyed permutation, because the key determines exactly which blocks map to which.
+		
+		128 bit Block Cipher has (2^^128)! possible blocks, but key size of 128 bits limits that to 2^^128 [39 digits].
+		
+	AES, Advanced Encryption Standard, is the most common block cipher in current use. It's 'Rijndael', w/ parameters restricted to a block size of 128 bits and keys sizes of 128, 192 and 256 bit.
+	
+	AES has many independent steps; SubBytes, ShiftRows, MixCollumns, AddRoundKey; lots of XOR-ing; it's a substitution-permutation network.
+		
+		Key schedule - AES requires separate keys for each round in the next steps. The key schedule is the process which AES uses to derive 128-bit keys for each round from one master key.
+
+	There are no practical attacks known against AES.
+	
+	DES, Data Encryption Standard, was predecessor; one of the oldest block ciphers that saw widespread use. It was published as an official FIPS standard in 1977. It is no longer considered secure; key size of 56 bits. (The DES algorithm actually takes a 64 bit key input, but the remaining 8 bits are only used for parity checking, and are discarded immediately.) It shouldn’t be used in new systems. On modern hardware, DES can be brute forced in less than a day. 
+	
+	3DES, a 3-key implementation, invented/used briefly to extend life.
+	
+	AES is more secure AND faster. 
+	
+		AES-128 only takes 12.6 cycles per byte.
+		3DES takes up to 134.5 cycles per byte. 
+		
+	Block cipher has (standalone) issues:
+	
+		- Limited length messages; solved by stream-ciphers.
+		- How to share (secret) keys; solved by key-exchange protocol.
+	
+Ch 7. Stream Ciphers
+
+	A stream cipher is a symmetric-key encryption algorithm that encrypts a stream of bits. Ideally, that stream could be as long as we’d like; real-world stream ciphers have limits, but they are normally sufficiently large that they don’t pose a practical problem.	
+	
+	ECB Mode (Electronic Code Book Mode) is a naive attempt @ stream cipher:
+	Divide stream into blocks and encyrpt each block. Security flaws: 
+	
+		Identical input (P) blocks have identical output (C) blocks. So, an attacker would be able to see that a ciphertext block, and therefore a plaintext block, was repeated. 
+		
+		Passive Attack 
+			
+			The visual/global structure of any image encrypted by ECB Mode is preserved; identical blocks of pixels in the plaintext are map to identical blocks of pixels in the ciphertext; the macrostructure of the image remains visible in all but the most extreme block sizes.
+
+		Active Attack 
+		
+			Attackers can often decrypt messages encrypted in ECB mode by communicating with the person performing the encryption.
+			
+			Encryption Oracle Attack
+			
+				Attacker guesses/decrypts, block by block, by sending/recieving carefully constructed messages exploiting the known structure/parameters of the oracle (encryption function).
+
+				This allows them to brute-force a block in p * b attempts, where p is the number of possible values for each byte and b is the block size. Whereas a regular brute-force attack requires p raised to the power of b.
+				
+				Ex. 
+					p = 256 (8 bits per byte)
+					b = 16 bytes (128 bits)
+				
+					Number of tries needed ...
+				
+					All possible combinations: 256 ^^16 = <39-digit-number>
+					
+					Encryption Oracle Attack:  256 * 16 = 4096
+					
+	So, w/ ECB Mode, an attacker can both analyze ciphertexts to recognize repeating patterns, and even decrypt messages when given access to an encryption oracle.		
+
+	Block Cipher Modes of Operation 
+	
+		ECB is just one such mode. Many others -- much better --exist.
+					
+	CBC (Cipher Block Chaining) Mode
+	
+		Plaintext block XOR-ed with previous ciphertext block, then encrypted by the block cipher. 
+		
+		Initialization Vector (IV) - a random number that takes the place of the nonexistent 1st ciphertext block in this construction. The 1st plaintext block is XOR-ed with it. IV must be unpredictable, but doesn't need to be secret. I.e., scheme requires that an attacker must not be able to predict ahead-of-time what a given IV will be. IVs are typically just added to ciphertext messages in plaintext.
+		
+		TLS 1.0 was a flawed implementation of a CBC mode scheme; used PREDICTABLE initialization vectors; led to the "Browser Exploit Against SSL/TLS" (BEAST) attack.
+		
+	Attacks on CBC mode with predictable IVs
+	
+		Attacker encrypts a guess --a plaintext prediction (Pp) --using their predicted IV (IVp) ALONG WITH existing IV (IVe) of target ciphertext (remember, IVs are predictable here).
+		
+			Pp = IVp*IVe*guess
+			
+			Cp = E(IVp^Pp)
+			   = E(IVp^(IVp*IVe*guess))
+			   = E(IVe*guess)
+		
+		and checks against existing ciphertext 
+		
+			Ce = E(IVe^Pe)
+		
+		If same, then they know Pe.
+		
+		Guess may not be too difficult; say, one-of-# of possible entries @ a database field; criminal record, "X", or not; "positive" or "negative" on test of some disease.
+		
+	Attacks on CBC mode with the key as the IV
+	
+		Key = IV is completeley insecure. If attacker can intercept and modify messages, then attacker can recover the key.
+	
+	CBC bit flipping attacks
+	
+		Attackers can modify ciphertexts encrypted in CBC mode so that it will have a predictable effect on the plaintext. XOR ciphertext with modified/desired plaintext results in modified/desired plaintext upon decryption; a phenomenon due to CBC's successive XORs with previous ciphertext.
+		
+		Reveals need for authentication. Encryption alone does NOT authenticate.
+		
+	Padding 
+	
+		If message is NOT some multiple of block-size --for AES, that's 16 bytes --then "padding" is the process to make them fit. 
+		
+			Zero Padding
+			
+				leaves recipient unable to distinguish padding bits from message bits. 
+				
+			PKCS#5/PKCS#7 Padding (and CMS Padding)
+			
+				Take the number of bytes you have to pad, and pad them with that many times the byte with that value.
+			
+	CBC Padding Attacks
+
+		CBC bit flipping attacks to trick a recipient into decrypting arbitrary messages. If attacker has the padding oracle AND a target ciphertext, attacker can construct paddings to systematically decrypt a message. Exploits systems which do not hide whether padding of block was valid or not. Even if system doesn't report (in)valid, the time difference in processing --IF AUTHENTICATION performed AFTER (oracle) DECRYPTION --yields another attack vector known as a TIMING ATTACK, which is a special case of SIDE-CHANNEL ATTACK.
+		
+		Many systems decrypt (and remove padding) before authenticating the message; so the information about the padding being valid or not has already leaked.
+		
+	Native Stream Ciphers
+
+		Synchronous Stream Cipher
+		
+			Produce a long stream of pseudoran-random bits from a secret symmetric key. This stream, called the keystream, is then XORed with the plaintext to produce the ciphertext. Decryption is the identical operation as encryption, just repeated: the keystream is produced from the key, and is XORed with the ciphertext to produce the plaintext.
+			
+			Like a spontaneously-generated, message-long one-time pad.
+		
+		Asynchronous [Self-synchronizing] Stream Cipher 
+		
+			Keystream bit produced from previous ciphertext bit. Not used. Undesirable effect.
+			
+		A competition, NESSIE, failed to produce any new Native Stream Ciphers that survived unbroken by competition end. 
+			
+		RC4 (a.k.a. ARC4, ARCFOUR)
+		
+			Owned by RSA Security, Inc, is most common native stream cipher. Simple and fast. 13.9 cycles per byte.
+	
+		Salsa20 [Salsa20/12, Salsa20/8, ChaCha]
+		
+			State of the art of modern stream ciphers. There are currently no publicly known attacks against Salsa20, ChaCha, nor against any of their recommended reduced-round variants, that break their practical security. 3x faster than AES-CTR; about as fast as AES-GCM.
+			
+			Salsa20 allows decryping any subsection of the message, by itself, e.g., do random reads in the middle of a large [encrypted] file.
+			
+		CTR Mode [of a Block Cipher]
+		
+			Counter mode, is a mode of operation that works by concatenating a nonce with a counter. 
+			
+			CTR encryption and decryption is the same thing: in both cases you produce the keystream, and you XOR either the plaintext or the ciphertext with it in order to get the other one.
+			
+			Like Salsa20, CTR mode has the interesting property that you can jump to any point in the keystream easily: just increment the counter to that point.
+			
+			Both synchronous stream ciphers and CTR Mode block ciphers are vulnerable to bit flipping attacks, but CTR is less so.
+		
+Ch 8. Key Exchange
+		
+	Diffie-Hellman Protocol 
+	
+		Solves the problem of sharing a secret while only communicating over the insecure channel. Attacker has all the info sent/received over the channel, but still can't figure out the shared secret.
+		
+		Public-Private Key Pair
+
+		Host1 & Host2 agree on common params of discrete log function ...
+		
+			Prime   P		Prime number; "Prime Modulus"
+			Integer G		Base; "Generator"
+		
+		Each Generates a PRIVATE KEY 
+		
+			Pri = RandomInteger(pass)
+			 
+		Each Generates (PAIRED) PUBLIC KEY using DHKE function
+
+			DHKE(R,G,P) = G**Pri Mod P			A one-way trapdoor function
+			
+			Host1 :: DHKE(R=Pri1) => Pub1		Generate Pub1 (PAIRED to Pri1) Key
+			Host2 :: DHKE(R=Pri2) => Pub2		Generate Pub2 (PAIRED to Pri2) Key
+
+		Encrypt/Decrypt
+			
+			Host1 encrypts a message to Host2 using public key of Host2.
+			Host2 decrypts it using their private key. And vice versa.
+		
+			Host1 :: DHKE(R=Pri1,G=Pub2)        Generate Shared-Secret
+			Host2 :: DHKE(R=Pri2,G=Pub1)        Generate Shared-Secret
+
+		which is ...
+			
+			Pub2**Pri1 Mod P = (G**Pri2 Mod P)**Pri1 Mod P 
+			Pub1**Pri2 Mod P = (G**Pri1 Mod P)**Pri2 Mod P
+
+		Those 2 are equal :: Shared-Secret
+
+			Pub2^Pri1 Mod P == Pub1^Pri2 Mod P 
+		
+		Elliptic curve variant yields same security using much smaller key size relative to that of the discrete log (older/current/original) variant.
+		
+		Man-in-the-Middle (MITM) Atttack 
+		
+			Attacker impersonates recipient when communicating with sender, and impersonates sender when communicating with recipient. Neither sender/recipeint have any way to prove they are not the attacker and vice verse. Thus, AUTHENTICATION is necessitated.
+
+Ch 9. Public Key Encryption	
+	
+	Asymmetric key (public-private key) algorighms are ~ 4000x slower compared to symmetric (secret-key) algorithms.
+	
+	RSA was first public-key algo of practical use.
+	
+	Breaking RSA 
+	
+		Bad implementations
+	
+	PKCSv1.5 padding 
+	
+		Salt; python implementation; 'crypt' module worthless; cyphertext = plaintext.
+			
+	OAEP (Optimal Asymmetric Encryption Padding)
+		
+	Unauthenticated Encryption 
+	
+		Message Authentication Codes
+		
+			Private-key (symmetric) authentication code 
+			
+		Signature 
+		
+			Public-key authentication code.
+			
+Ch 10. Hash Functions
+
+	Functions that take an input of indeterminate length and produce a fixed-length value, also known as a ”digest”. For two identical inputs, they’ll produce an identical output. No guarantee that two identical outputs imply that the inputs were the same.
+	
+	Cryptographic Hash Functions
+	
+		Cryptographically Secure functions can be used to build secure (symmetric) message authentication algorithms, (asymmetric) signature algorithms, and various other tools such as random number generators. We’ll see some of these systems in detail in future chapters. Cryptographic hash functions have much stronger requirements/properties than regular hash functions: 
+		
+		Should be impossible to:
+		
+			1. modify a message without changing the hash. 
+			
+				Want 'avalanch effect'.
+				
+			2. generate a message that has a given hash.
+			
+				Want 'pre-image resistance'
+				
+			3. find two different messages with the same hash.
+			
+				Want 'second pre-image resistance'
+
+	Password Storage 
+	
+		Store only hash of password. Since the hash function is impossible for an attacker to inverse, they wouldn’t be able to turn those back into the original passwords. 
+		
+		OR SO PEOPLE THOUGHT.
+		
+		Rainbow Tables
+		
+			Simply try many passwords, creating huge tables mapping essentially sorted lists of hash function outputs; such are more or less randomly distributed. When written down in hexadecimal formats, this reminded some people of color specifications like the ones used in HTML, e.g. #52f211. Hence the term "rainbow tables".
+		
+		Salts 
+		
+			No longer secure. To a modern attack, salts quite simply don’t help. Modern attacks take advantage of the fact that the hash function being used is easy to compute. Using faster hardware, in particular video cards, we can simply enumerate all of the passwords, regardless of salt.
+			
+			Append/Prepend password w/ some random string; store salt AND hash of password. Solved ahead-of-time attacks like rainbow tables by picking sufficiently large (say, 160 bits/32 bytes), cryptographically random salt.
+			
+			Today, systems that use a cryptographic hash, even with a per-user salt, are still considered fundamentally broken today; they are just harder to crack, but not at all secure.
+			
+			In order to protect passwords, you need a (low-entropy) key derivation function.
+		
+		
+		Length Extension Attacks 
+		
+			In many hash functions, the internal state kept by the hash function is used as the digest value. In some poorly engineered systems, that causes a critical flaw.
+			
+			SHA-3-era hash functions not only a bit more foolproof, but also enables them to produce simpler schemes for message authentication.
+		
+
+		Hash Trees
+		
+			Trees where each node is identified by a hash value, consisting of its contents and the hash value of its ancestor. Merkle Tree is a hash tree with restrited rules. used by many systems, particularly distributed systems. Examples include distributed version control systems such as Git, digital currencies such as Bitcoin, distributed peerto-peer networks like Bittorrent, and distributed databases such as Cassandra.
+			
+			https://en.wikipedia.org/wiki/Merkle_tree
+			
+				"
+				Currently the main use of hash trees is to make sure that data blocks received from other peers in a peer-to-peer network are received undamaged and unaltered, and even to check that the other peers do not lie and send fake blocks
+				"
+			
+	Message Authentication Codes (MAC)
+
+		Called tags; a small bit of information that can be used to check the authenticity and the integrity of a message. These are used in symmetric-key algorithms.
+		
+		A MAC algorithm takes a message of arbitrary length and a secret key of fixed length, and produces the tag. The MAC algorithm also comes with a verification algorithm that takes a message, the key and a tag, and tells you if the tag was valid or not. (It is not always sufficient to just recompute a tag and check if they are the same; many secure MAC algorithms are randomized, and will produce different tags every time you apply them.)
+		
+		Using MACs to achieve authenticated encryption, the message will always be a ciphertext.
+		
+	Secure MAC 
+		
+		Attacker tries to produce forged tags that validate. MAC is insecure if such validates.
+
+	Combining MAC and Message [Ciphertext]
+		
+		Encrypt-then-authenticate is unequivocally the best option.
+		
+	Prefix-MAC	
+	
+		Prefix the ciphertext with the secret key and hash the whole thing.
+		
+		Completely insecure for most hash functions, including SHA-2. Length Extension Attack.
+		
+	HMAC 
+	
+		Hash-based Messac Authentication Code; standard to produce a MAC with a cryptographic hash function as a parameter. 
+	
+	One-time MAC
+	
+		MAC functions that can only securely be used once with a single key. Has performance benefits.
+		
+	Carter-Wegman MAC 
+	
+		Turns any secure one-time MAC into a secure many-time MAC while preserving most of the performance benefit. Takes two keys.
+	
+	Authenticated Encryption Modes
+	
+		Make encryption and authentication one atomic process; authentication (sign/verify) a part of the encryption/decryption process.
+		
+		AEAD (Authenticated Encryption with Assoicated Data)
+		
+			GCM (Galois Counter) Mode 
+			
+	Signature Algorithms
+	
+		Public-key equiv of MAC
+		
+	RSA-Based Signatures 
+	
+	DSA (Digital Signature Algorithm)
+	
+		US gov standard for digital signatures.
+	
+	Key Derivation Functions 
+	
+	Cryptographically Secure Pseudorandom Number Generators
+	
+		LinuxBSD/OSX: 	/dev/urandom
+	
+		Windows: 		CryptGenRandom
+		
+		Python:			os.urandom, random.SystemRandom
+		
+		Avoid userspace types like OpenSSL
+		
+Ch 15.  SSL and TLS
+
+	Secure Socket Layer (SSL)
+	
+		Cryptographic protocol invented by Netscape. 
+		
+	Transport Layer Security (TLS)
+	
+		Supercedes SSL. The term 'SSL' is still used often when referring to TLS.
+		
+		"
+		TLS is the world’s most common cryptosystem.
+		
+		TLS is a hybrid cryptosystem, using symmetric and asymmetric algorithms in unison. E.g., asymmetric algorithms such as signature algorithms can be used to authenticate peers, while public key encryption algorithms or Diffie-Hellman exchanges can be used to negotiate shared secrets and authenticate certificates. On the symmetric side, stream ciphers (both native ones and block ciphers in a mode of operation) are used to encrypt the actual data being transmitted, and MAC algorithms are used to authenticate that data.
+		
+		 Over the years, many flaws have been discovered in SSL and TLS, despite many of the world’s top cryptographers contributing to and examining the standard. As far as we know, the current versions of TLS are secure, or at least can be configured to be secure.
+		 "
+		 
+		
+		Downgrade attacks
+
+			SSL 2.0 made the mistake of not authenticating handshakes. This made it easy to mount downgrade attacks. A downgrade attack is a man-in-the-middle attack where an attacker modifies the handshake messages that negotiate which ciphersuite is being used.
+		
+		Certificate Authorities
+		
+			TLS certificates can be used to authenticate peers, but the certificate is authenticated only by trusted certificate authorities. TLS clients come with a list of trusted certificate authorities, commonly shipped with your operating system or your browser. These are special, trusted certificates, that are carefully guarded by their owners. For a fee, these owners will use their certificate authority to sign other certificates. When a TLS client connects to a server, that server provides a certificate chain. Typically, their own certificate is signed by an intermediary CA certificate, which is signed by another, and another, and one that is signed by a trusted root certificate authority. Since the client already has a copy of that root certificate, they can verify the signature chain starting with the root.
+			
+			This is a "total racket".
+		
+		Self-signed Certificates
+		
+		Client Certificates
+		
+		In public-key schemes we’ve seen so far, all peers typically had one or more key pairs of their own. There’s no reason users can’t have their own certificates, and use them to authenticate to the server. The TLS specification explicitly supports client certificates. This feature is only rarely used, even though it clearly has very interesting security benefits. Client certificates are a great solution for when you control both  ends of the wire and want to securely authenticate both peers in a TLS  connection. By producing your own certificate authority, you can even  sign these client certificates to authenticate them.
+	
+	
+		Perfect Forward Secrecy 
+		
+			TLS allows for peers to agree on the pre-master secret using a Diffie-Hellman exchange, either based on discrete logs or elliptic curves.
+			
+			Assuming both peers discard the keys after use like they’re supposed to, getting access to the secret keys wouldn’t allow an attacker to decrypt previous communication. That property is called perfect forward secrecy. The term ”perfect” is a little contested, but the term ”forward” means that communications can’t be decrypted later if the long-term keys (such as the server’s private key) fall into the wrong hands.
+	
+		Attacks 
+		
+			SSL/TLS has suffered many successful attacks.
+			
+			CRIME; name of an attack by the authors of BEAST; an innovative side-channel attack that relies on TLS compression leaking information about secrets in the plaintext.
+			
+			In order to defend against CRIME, disable TLS compression.
+			
+			BREACH; related attack.
+			
+			In order to defend against BREACH, there’s a number of possible options:
+			
+				Don’t allow the user to inject arbitrary data into the request.
+				
+				Don’t put secrets in the response bodies.
+				
+				Regenerate secrets such as CSRF tokens liberally.
+			
+			Web apps that consist of a static front-end (say, using HTML5,JS, CSS) and that only operate using an API, say, JSON over REST, are particularly easy to immunize against this attack. Just disable compression on the channel that actually contains secrets.
+			
+		HTTP Strict Transport Security (HSTS)
+		
+			HSTS is a way for websites to communicate that they only support secure transports. This helps protect the users against all sorts of attacks including both passive eavesdroppers (that were hoping to see some credentials accidentally sent in plaintext), and active manin-the-middle attacks such as SSL stripping. HSTS also defends against mistakes on the part of the web server.
+		
+		Certificate Pinning
+		
+			Similar to HSTS, taken a little further: instead of just remembering that a particular server promises to support HTTPS, we’ll remember information about their certificates; Browsers originally implemented certificate pinning by coming shipped with a list of certificates from large, high-profile websites.
+			
+		Secure Configurations 
+		
+			This is always changing.
+			
+	
+Ch 16.	OpenPGP and GPG 
+
+	OpenPGP is an open standard that describes a method for encrypting and signing messages. GPG is the most popular implementation of that standard available under a free software license. GPG2 also implements S/MIME, unrelated to OpenPGP standard.
+	
+	Unlike TLS, which focuses on data in motion; a communication session. Whereas OpenPGP focuses on data at rest; the sender computes the entire message up front using information shared ahead of time. In fact, OpenPGP is used without sending anything at all. E.g., it can be used to sign software releases.
+	
+	Like TLS, OpenPGP is a hybrid cryptosystem. Users have key pairs consisting of a public key and a private key. Public key algorithms are used both for signing and encryption. Symmetric key algorithms are used to encrypt the message body; the symmetric key itself is protected using public-key encryption. This also makes it easy to encrypt a message for multiple recipients: only the secret key has to be encrypted multiple times.
+	
+	Where TLS uses trusted root certificates from Certification Authorities (CA), OpenPGP relies on a system called Web of Trust; a friend-of-a-friend honor system that relies on physical meetings where people verify identities.
+		
+Ch 17. Off-The-Record Messaging (OTR) 
+
+	A protocol under development for securing instant messaging comms. 
+	
+	Intends to be the online equivalent of a private, real-life conversation. It encrypts messages, preventing eavesdroppers from reading them. It also authenticates peers to  each other, so they know who they’re talking to. Despite authenticating peers, it is designed to be deniable: participants can later deny to third parties anything they said to each other. It is also designed to have perfect forward secrecy: even a compromise of a long-term public key pair doesn’t compromise any previous conversations.
+	
+	Also uses Socialist Millionaire Protocol (SMP) ???-WTF-???
+	https://en.wikipedia.org/wiki/Socialist_millionaires
+
+	

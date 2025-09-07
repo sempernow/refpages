@@ -1,0 +1,276 @@
+REFs
+====
+  https://learncryptography.com/cryptanalysis  
+
+OAuth
+=====
+    For secure delegated access; AUTHORIZATION protocol for granting account access to 3rd parties without sharing password(s); an open standard for access delegation, commonly used as a way for Internet users to grant websites or applications access to their information on other websites without surrendering any password(s). 
+    
+    OAuth 2 is a Framework and Bearer Token Usage spec for 3rd party authorization flows, for web/desktop/mobile applications; 2012; NOT backward compatible with OAuth verions 1. Oauth 2 has been proven under strong attacker models using formal analysis, and is widely utilized, including all the major internet companies.  https://en.wikipedia.org/wiki/OAuth#OAuth_2.0
+
+OpenID Connect 
+==============
+    AUTHENTICATION layer on top of OAuth 2.0 (authorization) protocol for 3rd party and Single Sign-on (SSO); utilizes RESTful HTTP API, using JSON as a data format.  https://en.wikipedia.org/wiki/OpenID_Connect
+
+OEAP 
+====
+    Optimal Asymmetric Encryption Padding (OEAP) is a padding scheme often used together with RSA encryption; standardized in PKCS#1 v2 and RFC 2437. https://en.wikipedia.org/wiki/Optimal_asymmetric_encryption_padding 
+    Golang rsa pkg  https://pkg.go.dev/crypto/rsa?tab=doc#EncryptOAEP  
+
+    OAEP satisfies the following two goals:
+        1. Add an element of randomness which can be used to convert a deterministic encryption scheme (e.g., traditional RSA) into a probabilistic scheme.
+        2. Prevent partial decryption of ciphertexts (or other information leakage)
+
+Authenticated Encryption 
+========================
+    AE, AEAD (Authenticated Encryption with Associated Data); a form of encryption which simultaneously provides confidentiality, integrity, and authenticity assurances on the data. These attributes are provided under a single, easy to use programming interface. Solution to the problems/attacks arising from handling confidentiality and authentication separately.
+
+    https://en.wikipedia.org/wiki/Authenticated_encryption#Authenticated_encryption_with_associated_data
+
+NaCl (Salt)
+===========
+    "Networking and Cryptography library"; public domain, high-speed software library for network communication, encryption, decryption, signatures, etc; created 2008 to "avoid various types of cryptographic disasters suffered by previous cryptographic libraries".
+
+    Name conflicts with "Google NaCl", that is "Google Native Client"; a sandboxed-browser technology.
+
+    https://en.wikipedia.org/wiki/NaCl_(software)  
+
+Public Key Certificate 
+======================
+    a.k.a. Digital Certificate a.k.a. Identity Certificate; a document [file], typically X.509 (RFC 5280) format spec, used to prove the ownership of a public key, esp. in a public-key infrastructure (PKI) scheme, e.g., PKIX: "Public-Key Infrastructure (X.509)"; includes information about the key, the identity of its owner (subject), and the digital signature of an ISSUER, i.e., TRUSTED Certificate Authority (CA); key referenced therein used to communicate securely with the certificate's owner/subject across an otherwise untrusted network; @ use cases such as email, code signing, and e-signature systems, the owner/subject is typically a person or org; @ SSL/TLS (HTTPS), the owner/subject is typically a machine  
+
+    @ PKI schemes, e.g., PKIX, a CA charges to sign/issue certificates to customers;  
+    @ Web of Trust (WoT) schemes, e.g., PGP, individuals sign each other's keys directly;  
+
+    Wikipedia                https://en.wikipedia.org/wiki/Public_key_certificate   
+    Certificate Authorities  https://en.wikipedia.org/wiki/Public_key_certificate#Certificate_authorities  
+    Types of Certificates    https://en.wikipedia.org/wiki/Public_key_certificate#Types_of_certificate  
+    Root Certificate         https://en.wikipedia.org/wiki/Root_certificate  
+
+  X.509  
+  ----- 
+    a STANDARD for PUBLIC KEY CERTIFICATES, defining the FORMAT and other specifications thereof; used by web security protocols such as HTTPS (SSL/TLS) and by network security libraries such as OpenSSL; used in offline apps, e.g., electronic signatures; an X.509 certificate contains both a public key and an identity (hostname, org, or individual); SIGNED by a TRUSTED Certificate Authority (CA), or self-signed; CAs act as an introduction between two parties, which means that a CA acts as a trusted third party.  
+
+    Assumes a strict hierarchical system of CERTIFICATE AUTHORITIES (CAs) for issuing certificates; UNLIKE WEB OF TRUST MODELs, like PGP, where anyone (not just trusted CAs) may sign/attest to the validity of others' key certificates; X.509 v3+ includes the flexibility to support other topologies such as bridges and meshes; can be used in a peer-to-peer, OpenPGP-like web of trust, but rarely used that way; The X.500 system has only been implemented by sovereign nations for state identity information sharing treaty fulfillment purposes.  
+    
+    IETF's "Public-Key Infrastructure (X.509)", or PKIX, adapted the standard to the Internet; the term "X.509 certificate" usually refers to the IETF's PKIX certificate and CRL Profile of the X.509 v3 certificate standard; X.509 specifies CERTIFICATE REVOCATION LISTS as a means to distribute information about certificates that are no longer valid, and a CERTIFICATION PATH VALIDATION ALGORITHM, which allows for certificates to be signed by intermediate CA certificates, which are in turn signed by other certificates, eventually reaching a trust anchor; X.509 is one of the X.500 series standards defined by ITU-T, based on ASN.1, an ITU-T standard; CRITICISM: https://en.wikipedia.org/wiki/X.500#Criticism  
+
+    Wikipedia  https://en.wikipedia.org/wiki/X.509  
+
+OpenSSL 
+=======
+  library of utilities to implement SSL and TLS protocols; is NOT OpenSSH; creates/manages X.509 Certificates  
+
+    OpenSSL            https://en.wikipedia.org/wiki/OpenSSL  
+
+    OpenVPN is based on OpenSSL  
+
+    OpenVPN            https://openvpn.net/index.php/open-source/overview.html  
+    OpenVPN Wikipedia  https://en.wikipedia.org/wiki/OpenVPN  
+    OpenVPN GitHub     https://github.com/OpenVPN  
+
+  # Certificates  
+
+    PEM file; contains BOTH Private Key(s) AND Certificate(s) 
+
+    Encodings (also used as extensions)
+    -----------------------------------
+      .DER; for binary DER encoded certificates; 
+      .CER or .CRT extensions also used for DER encoded certificates. 
+
+      .PEM; for different types of X.509v3 files which contain ASCII (Base64) armored data prefixed with a “—– BEGIN …” line.
+
+    Common Extensions
+    -----------------
+      .CRT (nix) or .CER (Microsoft); used for certificates; may be encoded as binary DER, or as ASCII PEM; most common among *nix systems
+
+      Can convert .CRT to .CER; either DER encoded or base64[PEM] encoded  
+
+      .CER is recognized by IE as a command to run a MS cryptoAPI command, `rundll32.exe cryptext.dll,CryptExtOpenCER`, which displays a dialogue for importing and/or viewing certificate contents.
+
+      .KEY; used both for public and private PKCS#8 keys; may be encoded as binary DER or as ASCII PEM.
+
+    The only time CRT and CER can safely be interchanged is when the encoding type can be identical.  (ie  PEM encoded CRT = PEM encoded CER)
+
+    View PEM Encoded Cert 
+    ---------------------
+      openssl x509 -in cert.pem -text -noout  # or .cer or .crt
+    
+    View DER Encoded Cert
+    ---------------------
+      openssl x509 -in cert.der -inform der -text -noout
+
+    Transform
+    ---------
+      PEM to DER
+        openssl x509 -in cert.crt -outform der -out cert.der
+      DER to PEM
+        openssl x509 -in cert.crt -inform der -outform pem -out cert.pem
+
+OpenSSH/SSH  
+===========
+    library of utilities to implement Secure Shell (SSH) protocol for secure comms across an untrusted network; symmetric key (session key) per automated asymmetric (DHKE) scheme; authentication is either by user/password, or by preshared public-private key-pairs of a managed key config/scheme; does NOT utilize certificates; is NOT OpenSSL; added support for ECDSA (Curve25519 algo), which is independent of OpenSSL library (per news on NSA regarding DSA); type/format for private-public key-pair: "PEM RSA private key" and "OpenSSH RSA public key"; Amazon, GitHub, etc utilitze OpenSSH RSA formatted key pairs. 
+
+    Use/Utilities/Capabilities:
+
+     - secure copy/ftp => scp/sftp  
+     - VPN per SSH protocol tunnel   [OpenSSH] 
+     - VPN per SOCKS protocol tunnel [SSH]
+     - SSHFS; SSH Filesystem  https://en.wikipedia.org/wiki/SSHFS  
+
+    OpenSSH  https://en.wikipedia.org/wiki/OpenSSH  
+    SSH      https://en.wikipedia.org/wiki/Secure_Shell  
+
+OpenPGP 
+=======
+    for file encrypt/decrypt/sign/authenticate; a mess, legally and organizationally; keys and certificates are NOT compatible with OpenSSL (X.509); widely used for encrypted email.
+
+    OpenPGP.org  http://openpgp.org/
+    Wikipedia    https://en.wikipedia.org/wiki/Pretty_Good_Privacy
+    Symantec     https://www.symantec.com/products/encryption
+
+    GNU Privacy Guard (GnuPG)
+    -------------------------
+        free replacement for Symantec's PGP suite; coplies with IETF spec of OpenPGP (RFC 4880); interoperable with GnuPG and other OpenPGP-compliant systems; a GNU Project; received major funding from the German government; Libgcrypt vulnerability reported June 2017 (CVE-2017-7526), which affects RSA 1024 & 2048 -bit keys.
+
+        GnuPG      https://gnupg.org/
+        Wikipedia  https://en.wikipedia.org/wiki/GNU_Privacy_Guard
+
+OpenVPN
+=======
+    Open-source commercial software that implements virtual private network (VPN) techniques to create secure point-to-point or site-to-site connections in routed or bridged configurations and remote access facilities. It uses a custom security protocol that utilizes SSL/TLS for key exchange. It is capable of traversing network address translators (NATs) and firewalls; published under the GNU General Public License (GPL).  https://en.wikipedia.org/wiki/OpenVPN
+
+SCTP 
+====
+    Stream Control Transmission Protocol; a transport-layer protocol; similar role as TCP and UDP; provides some of the same service features of both UDP and TCP, but also handles multi-homing and redundant paths to increase resilience and reliability; if unsupported natively by platform, SCTP can tunnel over UDP, and map TCP API calls to SCTP calls; reference implementation @ FreeBSD v7; subsequently widely ported.
+
+    Message-based multi-streaming
+
+    SCTP applications submit their data in messages (groups of bytes) to SCTP transport layer; can TRANSMIT SEVERAL INDEPENDENT STREAMS OF CHUNKS IN PARALLEL, e.g., transmit web page images together with the web page text; bundling several connections into a single SCTP association, operating on messages (or chunks) rather than bytes.
+
+    SCTP  https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol
+
+CBCrypt  
+=======
+    Encrypt from the client rather than send passwords to servers (cbcrypt.org) https://github.com/rahvee/CBcrypt
+
+Bcrypt
+======
+    Replaces MD5_crypt in BSD distros. https://en.wikipedia.org/wiki/Bcrypt
+
+Host ID
+=======
+    MAC Address of server (one of its hardware components); 12 digit hex.
+
+PAKE
+====
+    Password-authenticated key agreement; interactive method for two or more parties to establish cryptographic keys based on one or more party's knowledge of a password.
+
+Public-Key (Asymmetric) Encryption (Cryptography) 
+=================================================
+    Any cryptographic system that uses pairs of keys; public keys that may be widely disseminated PAIRED with private keys which are known only to the user. A key used for encryption is not the same as the key used for decryption. 
+    
+    TWO FUNCTIONS that can be achieved:
+
+        Public-key encryption (PKE) :: CONFIDENTIALITY
+        a message is encrypted with a recipient's public key, and decrypted only by the recipient's MATCHING private key. Slow. Faster; create private session (symmetric) key (shared secret) known only by/between 2 parties who each know only each other's public-key; session-key is DFKEmap(public1*private2) = DFKEmap(public2*private1). This is the process used by PGP and GPG https://en.wikipedia.org/wiki/Session_key
+
+        Digital signatures :: AUTHENTICATION / VERIFICATION
+        a message is encrypted (signed) with a sender's (signer's) private key, and decrypted (verified) with sender's public key. A "digital signature" is the "message digest" [hash of the message] that's encrypted with sender's private key. This verification proves that the sender had access to the private key, and therefore is likely to be the person associated with the public key. This also ensures that the message has not been tampered with between sender/reciever (signer/verifier), as any manipulation of the message will result in changes to the encoded message digest.
+
+    Some public key algorithms provide key distribution and secrecy, e.g., Diffie–Hellman key exchange (DHKE), some provide digital signatures, e.g., Digital Signature Algorithm (DSA), and some provide both, e.g., RSA.
+    
+        DHKE    key distribution and secrecy    (confidentiality)
+        DSA     digital signatures              (authenticity)
+        RSA     both                            (confidentiality and authenticity)
+
+    Must be computationally easy for a user to generate a PUBLIC/PRIVATE KEY-PAIR to be used for encryption and decryption. The strength of a public-key cryptography system relies on the degree of difficulty (computational impracticality) for a properly generated private key to be determined from its corresponding public key. Much more computationally intensive than symmetric-key algos, so used to encrypt only the "Symmetric Encryption Key" a.k.a. "Session Key", which is then used to decrypt the [much bigger] symmetric-key-encrypted payload; e.g., an AES-encrypted file. 
+
+    https://en.wikipedia.org/wiki/Public-key_cryptography
+
+DHKE 
+====
+    Diffie-Hellman Key Exchange (DHKE): 
+        A scheme for 2 parties to exchange 
+        ASYMMETRIC CYPHER KEYs over an UNTRUSTED NETWORK.
+        https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
+        
+    Host1            Host2      
+    -----            -----      
+    Prime   P        Prime   P    Prime number; "Prime Modulus"
+    Integer G        Integer G    Base; primitive root modulo P; "Generator"
+    
+        The resulting SHARED SECRET (encrypted payload)
+        can take on any value from 1 to P–1.
+        So, choose P that is big enough to hold the payload, 
+        which is typically a SESSION KEY; a key to a symmetric cypher,
+        by which all subsequent (session) messages are encrypted/decrypted.
+
+    Generate "Public/Private Key Pair"
+    ----------------------------------
+
+        Generate a PRIVATE KEY 
+        ----------------------
+        Pri = RandomInteger(pass)
+
+        Generate PUBLIC KEY using DHKE function
+        ---------------------------------------
+        DHKE(R,G,P) = G^R Mod P        A one-way trapdoor function
+
+        Host1 :: DHKE(R=Pri1) => Pub1    Generate Pub1 (PAIRED to Pri1) Key
+        Host2 :: DHKE(R=Pri2) => Pub2    Generate Pub2 (PAIRED to Pri2) Key
+        -----------------------------
+        Pub1 = G^Pri1 Mod P
+        Pub2 = G^Pri2 Mod P
+
+        Encrypt/Decrypt
+        ---------------
+        Host1 encrypts a message to Host2 using public key of Host2.
+        Host2 decrypts it using their private key. And vice versa.
+
+        Host1 :: DHKE(R=Pri1,G=Pub2)        Generate Shared-Secret
+        Host2 :: DHKE(R=Pri2,G=Pub1)        Generate Shared-Secret
+        ----------------------------
+        Pub2^Pri1 Mod P = (G^Pri2 Mod P)^Pri1 Mod P 
+        Pub1^Pri2 Mod P = (G^Pri1 Mod P)^Pri2 Mod P
+
+        Those 2 are equal :: Shared Secret
+        ----------------------------------
+        Pub2^Pri1 Mod P == Pub1^Pri2 Mod P    
+
+        * That is, under Mod P, Pub2^Pri1 == Pub1^Pri2   [That's the magic of DHKE]
+
+        * Shared Secret can be the key for a symmetric cipher;
+        "Symmetric Encryption Key" a.k.a. "Session Key"
+        E.g., AES block-cipher.
+
+PASSWORD STRENGTH
+=================
+
+    http://en.wikipedia.org/wiki/Password_strength
+
+    Entropy/symbol
+
+        H = L\log_2(N) = L {log(N) \ log(2)} 
+
+    where N is the number of possible symbols and L is the number of symbols in the password
+
+    NIST :: Bits of entropy for human generated passwords ...
+
+    * the entropy of the first character is four bits;
+    * the entropy of the next seven characters are two bits per character;
+    * the ninth through the twentieth character has 1.5 bits of entropy per character;
+    * characters 21 and above have one bit of entropy per character.
+
+    4+(7*2)+(20-8) + N-20  
+
+    E.g., 40 characters
+
+    4 + (7 * 2) + (20 - 8) + (40 - 20) = 50
+
+    whereas completely random, lower-case alphabet (26 letters),
+    is 4.7 bits/character. So,
+
+    4.7 * N
+    4.7 * 40 = 188
+  

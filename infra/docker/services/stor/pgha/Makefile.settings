@@ -1,0 +1,6 @@
+### Absolute paths @ host 
+# export PATH_ABS_HOST_ROOT   := $(CURDIR)
+# export PATH_ABS_HOST_ASSETS := ${PATH_ABS_HOST_ROOT}/../../../../../assets
+
+# @ session from temporary (client) container
+export SESSION_USER_DB ?= -U ${APP_DB_USER} -d ${APP_DB_NAME}

@@ -1,0 +1,74 @@
+UTILITIES:
+
+BCDboot.exe
+-----------
+@ %windir%\System32
+@ %ProgramFiles%\Windows AIK\Tools\x86\
+
+Fix/make hdd/cd/usb bootable ...
+BCDboot <source-windir-path> /s <target-system-drive> [/f ALL {if Win8 - for BIOS and UEFI}]
+
+	E.g., BCDboot c:\windows /s e:	
+
+Builds the Boot Configuration Data (BCD) store from source %windir% config [\System32\Config\BCD-Template]; writes it to target drive <root>\Boot.
+
+Win7:	http://technet.microsoft.com/en-us/library/dd744347%28v=WS.10%29.aspx
+Win8:	http://technet.microsoft.com/en-us/library/hh824874.aspx
+
+
+BCDedit.exe
+-----------
+@ %windir%\System32
+
+BCDedit 		- shows the BCD store data [the boot options]
+BCDedit /enum 	- <same as no option>
+BCDedit /v 		- shows actual [GUID] values for all fields
+
+BCDedit /export <path-fname> 	-  copy BCD
+BCDedit /import <path-fname> 	- restore from prior "/export" 
+
+BCDedit /SET - to make changes to BCD. E.g., ...
+BCDedit /SET {current} path \BackupWindows\system32\winload.exe
+
+BCDedit /store "<path-of-BCD>" /<option>	- sets BCD to be used
+(can't use wit createstore, import, export )
+
+
+http://technet.microsoft.com/library/cc709667.aspx
+http://technet.microsoft.com/en-us/library/cc731662.aspx
+
+FAQ:	http://technet.microsoft.com/en-us/library/cc721886%28v=WS.10%29.aspx
+
+BootRec.exe
+-----------
+@ boot.wim of WinPE/RE.iso
+@ <root>\sources\boot.wim\Windows\System32\BootRec.exe
+
+Troubleshoot a "Bootmgr Is Missing" error @ Window RE ...
+WinRE OS > System Recover Options > Command Prompt > BootRec.exe
+
+BootRec /FixMbr			- fix boot record (MBR) corruption issues
+BootRec /FixBoot		- fix damaged boot sector
+BootRec /ScanOs			- scans all disks; shows options not in boot menu 
+BootRec /RebuildBcd		- scans all disks; shows options to rebuild
+
+http://support.microsoft.com/kb/927392
+
+Recovery: WinRE; accessed by (1) Install disk; "Repair" (2)  F8 option on boot; "Repair Your Computer" (3) Create a system repair disk, and use that. 
+
+
+bootsect.exe
+------------
+(legacy tool for XP)
+Bootsect.exe updates the master boot code for hard disk partitions to switch between /nt60 {BOOTMGR (Vista)} and /nt52 {NTLDR (XP)}. You can use this tool to restore the boot sector on your computer. This tool replaces FixFAT and FixNTFS.
+Bootsect Command-Line Options
+
+Bootsect uses the following conventions:
+
+bootsect.exe {/help | /nt52 | /nt60} {SYS | ALL | DriveLetter:} [/force] /mbr
+
+e.g., 
+
+bootsect.exe /nt60 c: 
+
+http://msdn.microsoft.com/en-us/library/ff794683%28v=winembedded.60%29.aspx

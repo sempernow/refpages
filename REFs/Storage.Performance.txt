@@ -1,0 +1,111 @@
+NOTES
+-----
+    Performance parameters/affects   
+    
+        - MB/Driver :: SIGNIFICANT  
+
+            WD3red (USB3 HDD) :: WDE partition R/W [MB/s]  
+            120/112 @ HTPC (ASMedia XHCI driver)  
+             56/56  @ XPC  (Intel XHCI driver)  
+             
+        - UEFI Settings :: UNDETECTABLE  
+            - Legacy Enable/Disable, etc  
+            
+        - OS Settings :: UNDETECTABLE (below 60 MB/s)  
+            - Device Manager :: Policies:  
+                "Quick Removal" (default) vs "Better Performance"  
+
+
+TEST @ CrystalDiskMark 5.2.1 x64
+--------------------------------
+
+
+@ XPC [SATA 3] [H270]
+---------------------
+
+  64-BIT OS CONFIG
+	
+		C:/S:  RAID 0 1xSSD    1x 120 GB ~ 537/134 [MB/s] Seq. Read/Write  [Crucial M500 SATA3 [500/130 r/w] SSD]
+
+		D:     RAID 0 2T       2x 1   TB ~ 160/165 [MB/s] Seq. Read/Write  [WD Caviar Green [SATA2/~/16MB; 74 MB/s]]
+		
+
+TEST @ CrystalDiskMark 3.0.3
+----------------------------
+
+
+@ XPC [SATA 2]
+--------------
+
+  64-BIT OS CONFIG
+	
+		C:/S:  RAID 0 1xSSD    1x 120 GB ~ 270/130 [MB/s] Seq. Read/Write  [Crucial M500 SATA3 [500/130 r/w] SSD]
+		----------------------
+		D:     RAID 0 3xWD500  3x 500 GB ~ 300/240 [MB/s] Seq. Read/Write  [WD RE3 [SATA2/7200/16MB; 113 MB/s]]
+		B:     RAID 0 2T       2x 1   TB ~ 170/150 [MB/s] Seq. Read/Write  [WD Caviar Green [SATA2/~/16MB; 74 MB/s]]
+		----------------------
+		D:     RAID 0 3xWD500 <==  WD RE3        500 GB SATA HD [WD5002ABYS] SATA 2 (300 MB/s)
+		B:     RAID 0 2T      <==  WD Caviar Green 1 TB SATA HD [WD10EACS]   SATA 2 (300 MB/s)  
+
+		SPECs
+		-----    
+		Crucial M500    500/130 MB/s [R/W]  [SATA3/SSD]       3/1/0.5 W
+		WD RE3          113 MB/s sustained  [SATA2/7200/16MB]  8/8/1   W
+		WD Red          145 MB/s sustained  [SATA3/~/64MB]     5/~/0.6 W 
+
+		CONCLUSIONS
+		-----------
+		- SATA II [3 Gbps; 2.4 Gbps; 300 MB/s effective] is sufficient for all HDD 
+		- 4x WD Red HDD @ SATA 2 [each @ 145 MB/s] => USB 3 :: Ext RAID 0 using 2 disks ~ 600 MB/s
+		- Read @ SSD is SATA2-limited; Write is SSD-[self]-limited
+		- R/W @ 3xWD-RE3 is HDD-[self]-limited, but near SATA2 limit
+		- R/W @ 2xWDGrn is HDD-[self]-limited, well below SATA2 limit
+
+		4 x SATA2/HDD @ RAID0 ~= USB3 ~=   1 x SATA3/SSD
+		---------------------    ----      -------------
+			 450 MB/s              500 MB/s  500 MB/s   
+
+  32-BIT OS CONFIG
+	
+		D:        RAID 0 3xWD500  3x 500 GB  ~ 200/200 [MB/s] Seq. Read/Write
+		B:/C:/S:  RAID 0 2T       2x 1   TB  ~ 100/100 [MB/s] Seq. Read/Write
+		USB WD-Elements              1   TB  ~  33/ 27 [MB/s] Seq. Read/Write
+		USB LaCie d2 Quadra          460 GB  ~  34/ 32 [MB/s] Seq. Read/Write
+
+@ HTPC [SATA 2]
+---------------
+	
+	- MBs are SATA 2 (3 Gbps = 300 MB/s)  (Asus P5N7A-VM, Intel DX48BT2)
+	- SSD-RAID @ RAID0 - "span" [single disk]
+
+  @ AHCI
+	
+		SATA 3 SSD/AHCI/Crucial       128 GB  ~ 270/140 [MB/s] Seq. Read/Write
+		SATA 2 SSD/AHCI/OCZ-Vertex     64 GB  ~ 170/ 44 [MB/s] Seq. Read/Write
+
+  @ RAID [span]
+	
+		SSD/SATA-RAID/Crucial         128 GB  ~ 140/115 [MB/s] Seq. Read/Write
+		SSD/SATA-RAID/OCZ-Vertex       64 GB  ~ 130/ 70 [MB/s] Seq. Read/Write
+		USB WD-MyPassport             295 GB  ~  35/ 35 [MB/s] Seq. Read/Write
+
+  RAID [D:] <==> SSD [S:] @ 4 GB .mp4 file copy
+
+		D: => S:   @ 200 MB/s; initial burst @ 400 MB/s
+		S: => D:   <about the same>
+
+USB 3.0
+--------
+
+  WD Passport Ultra 1 TB 
+  
+		@ 2 partitions
+
+		#1   64 GB  ~ 110 MB/s
+		#2   867 GB ~  60 MB/s  ... when 80% full.
+
+		@ 1 partition
+
+		#1   930 GB ~ 110 MB/s  ... when empty.
+		            ~  60 MB/s  ... when 80% full.
+
