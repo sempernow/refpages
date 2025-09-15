@@ -201,9 +201,11 @@ systemctl restart sssd  # Restart sssd (to apply changes)
         install  $pkg --nobest --allowerasing 
         download $pkg --archlist x86_64,noarch --alldeps --resolve
         remove   $pkg 
-        info     $pkg   # Application details; version and such
-        list --showduplicates COMMAND   # List ALL versions
-        list available COMMAND          # List NEWER versionS (vs. that already installed)
+        info     $pkg               # Application details; version and such
+        repoquery -l $pkg           # List package content (CLI utilities, config files, ...)
+        list installed $pkg         # Verify package is installed
+        list --showduplicates $pkg  # List ALL versions
+        list available $pkg         # List NEWER versionS (vs. that already installed)
         repolist
         repodiff --repo-old old1 --repo-new new1
         config-manager --disable $repo 

@@ -1661,8 +1661,17 @@ exit
             # E.g., Compare app versions at a particular resource (kind) 
                 doc (){ yq 'select(.kind == "'$1'")' $2; }
                 diff <(doc $kind $blue) <(doc $kind $green)
+        # Helm chart images
+            template=helm.template
+            helm -n $ns template $chart |tee $template.yaml
+            rm $template.images
+            for kind in DaemonSet Deployment StatefulSet; do
+                yq 'select(.kind == "'$kind'") |.spec.template.spec.containers[].image' $template.yaml \
+                    |tee -a $template.images
+            done
 
-    envsubst # Substitutes environment variables : Better than sed method
+
+    envsubst # Substitutes environment variables : Better than sed method : setenvar
         # Use to process templates safely (sans regex) and declaratively.
         envsubst < /path/to/template > /path/to/result  # See `man envsubst` 
         # E.g., Process a YAML file that has environment variables as values

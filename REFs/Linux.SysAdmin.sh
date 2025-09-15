@@ -63,23 +63,23 @@ exit 0
             service ntpd restart
 
             # Install
-            sudo apt update
-            sudo apt install ntp
+            apt update
+            apt install ntp
 
             # Enable (per timedatectl)
-            sudo timedatectl set-ntp true
+            timedatectl set-ntp true
 
         # ntpq : https://linux.die.net/man/8/ntpq : https://doc.ntp.org/archives/3-5.93e/ntpq/
             # Vital @ private-subnet nodes whereof network synch is required yet
             # their web access is only thru SOCKS5 proxy; timedatectl FAILs thereof.
-            sudo apt update
-            sudo apt install ntp
+            apt update
+            apt install ntp
 
             # Inspect settings : pool of servers
             ntpq -p
 
             # Enable per timedatectl
-            sudo timedatectl set-ntp true  # disable per `false`
+            timedatectl set-ntp true  # disable per `false`
 
 # MACHINE RESOURCES
 
@@ -227,12 +227,12 @@ exit 0
         /etc/systemd/system # Location of all unit (service) files
 
         # Create a service for COMMAND (quickly)
-            sudo systemctl enable --now COMMAND
+            systemctl enable --now COMMAND
         # Delete a service
-            sudo systemctl disable --now COMMAND
+            systemctl disable --now COMMAND
 
         # Create : Example : ssh-user-sessions.service
-            sudo vi /etc/systemd/system/ssh-sessions.service # Edit:
+            vi /etc/systemd/system/ssh-sessions.service # Edit:
 
                 [Unit]
                 Description=Shutdown all ssh sessions before network
@@ -251,7 +251,7 @@ exit 0
                 RequiredBy=sleep.target
 
         # Create : Example : keepAwake.service
-            sudo vi /etc/systemd/system/keepAwake.service # Edit:
+            vi /etc/systemd/system/keepAwake.service # Edit:
 
                 [Unit]
                 Description=Inhibit suspend
@@ -341,15 +341,15 @@ exit 0
             search|show PKG
 
         # List installed packages
-        sudo dpkg -l
+        dpkg -l
         # List all possible residue
-        sudo dpkg --get-selections | grep deinstall
+        dpkg --get-selections | grep deinstall
 
         # Remove all packages of KEYWORD
-        sudo dpkg -l |grep KEYWORD |awk '{print $2}' |xargs -I {} sudo apt remove -y {}
+        dpkg -l |grep KEYWORD |awk '{print $2}' |xargs -I {} sudo apt remove -y {}
 
         # Remove all configuration residue that `apt remove` fails to remove.
-        sudo dpkg --purge $(dpkg --get-selections | grep deinstall | cut -f1)
+        dpkg --purge $(dpkg --get-selections | grep deinstall | cut -f1)
 
 # SYSTEM
 
@@ -359,7 +359,7 @@ exit 0
 
     # Kernel Modules
         lsmod                   # List all loaded kernel modules
-        sudo modprobe $module   # Load a kernel module now (ephemeral)
+        modprobe $module   # Load a kernel module now (ephemeral)
         # Load a set (containerd.conf) of kernel modules on boot :
         ## @ /etc/modules-load.d/
         kernel_modules='
@@ -496,7 +496,7 @@ exit 0
                 # Create a local service account having no login shell
                 alt=/srv/git
                 mkdir -p $alt/repos
-                sudo adduser --system --shell /usr/bin/git-shell -d $alt git
+                adduser --system --shell /usr/bin/git-shell -d $alt git
 
                 ## Configure a non-standard ($alt) HOME for local user that SELinux treats as it would those of /home
                 ## - Idempotent
@@ -596,22 +596,32 @@ exit 0
                     # a whitelist for environment variables.
 
         # sudo -u v. su : Shell requirements
-            Command      Requires Login Shell?   Works with nologin?         Best For
-            sudo -u $u   ❌ No                   ✅ Yes (ignores shell)      Service accounts
-            su - $u      ✅ Yes (/bin/bash)      ❌ No (nologin fails)       Interactive sessions
+            #   Command     Requires Login Shell?      Works with nologin?         Best For
+            #   ----------  ---------------------      ----------------------      --------------------
+                sudo -u $u  # ❌ No                   ✅ Yes (ignores shell)      Service accounts
+                su - $u     # ✅ Yes (/bin/bash)      ❌ No (nologin fails)       Interactive sessions
 
+            # Has dizzying array of affects
             sudo -l                 # List commands allowed a sudoer
             sudo -u $u $command     # Run $command as user $u, sans shell
-            sudo su $u              # Shell at PWD
-            sudo su - $u            # Login shell
-            sudo -i su $u           # Login shell and PWD at /root
+            sudo su $u              # Shell (/bin/sh) at PWD as user $u 
+            sudo su - $u            # Full login shell (/bin/bash) as user $u
+    
+            sudo -i su $u           # Full login shell (/bin/sh) and PWD at /root
             sudo su -s /bin/bash $u # Force login shell
             sudo -E su $u           # Preserve environment
             su $u                   # Switch User : to $u
             su - $u                 # Switch User : to $u's login shell
+    
+    sudoedit /a/b # Safe and recommended way for users with sudo privileges to edit arbitrary files. 
+        #... editor does *not* run as root
+        EDITOR=vim sudoedit /etc/nginx/nginx.conf
 
     # sudoers FILE
         /etc/sudoers # The baseline sudoers file
+        
+        visudo # Exclusively for editing /etc/sudoers* files. 
+
             sudo visudo /etc/sudoers # To edit, but don't. Rather:
             # - Best practice is to leave that file untouched,
             #   and rather add/edit file(s) at /etc/sudoers.d/.
