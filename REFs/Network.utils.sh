@@ -557,8 +557,8 @@ exit
 # CONNECTIVITY
 
     # PING
-        ping -c 1 ROUTER_IP # CONNECTIVITY TEST to Gateway Router; 1 ping
-        ping -f ROUTER_IP   # FLOOD ping; BANDWIDTH TEST : @ LAN only!
+        ping -c1 $ip  # CONNECTIVITY TEST 1 ping
+        ping -f $ip   # FLOOD ping; BANDWIDTH TEST : Use at LAN only!
 
         # Scan subnet for hosts : /24
             seq 254 |xargs -n1 /bin/bash -c '
@@ -575,6 +575,7 @@ exit
 # NETWORKs / SUBNETs
 
     traceroute -n -T -p $port $ip # TCP
+    sudo traceroute -I $ip # Use ICMP instead
 
     mtr # My Traceroute : combine traceroute + ping
         # https://en.wikipedia.org/wiki/MTR_(software)
@@ -653,6 +654,8 @@ exit
             ss -u -a
         # Display all established ssh connections.
             ss -o state established '( dport = :ssh or sport = :ssh )'
+        # Check for listener on port 9418 (git daemon)
+            ss -ltnp |grep 9148
 
     netstat # Print network connections, routing tables, interface stats, ...
         netstat -i       # Interface Table; packet info for network cards

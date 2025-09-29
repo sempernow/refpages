@@ -63,8 +63,8 @@ exit
             firewall-cmd --zone=$zone --list-all    # Service ports and such are *not* listed here
             firewall-cmd --direct --get-all-rules   # Direct Rules are *not* scoped to zone or service
             # List all ports and such for EVERY SERVICE of declared zone.
-            printf "%s\n" $(sudo firewall-cmd --list-services --zone=$zone) \
-                |xargs -I{} sudo firewall-cmd --info-service={}
+            printf "%s\n" $(sudo firewall-cmd --list-services --zone=$zone) |
+                xargs -I{} sudo firewall-cmd --info-service={}
 
         # GET : get|list|info|query
             firewall-cmd --list-all                 # List ONLY that which is NOT OF any service (of default zone unless declared).

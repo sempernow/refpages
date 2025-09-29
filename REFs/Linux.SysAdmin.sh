@@ -224,7 +224,12 @@ exit 0
         # List all unit files and their status
         systemctl list-unit-files
 
-        /etc/systemd/system # Location of all unit (service) files
+        # LOCATION matters
+            /etc/systemd/system         # Managed by admins; survives updates; overrides /usr/...
+            /run/systemd/system         # Managed by admins; runtime; survives updates; overrides /usr/...
+            /usr/lib/systemd/system     # Managed by vendor (OS pkg mgr); updates overrite existing
+
+            systemctl cat $name.service  # Prints the EFFECTIVE config; merged totality of all configs.
 
         # Create a service for COMMAND (quickly)
             systemctl enable --now COMMAND
@@ -376,9 +381,13 @@ exit 0
     df -hT # Disk space per device/mount : human-readable + type
     du -sh # Disk Usage : summary (all therunder) + human-readable
 
-    # Create symlink : Removing (rm) symlink does not affect the actual (target) file
-    ln -s /path/to/target/file [/path/to/sym/link] # Default symlink path is $(pwd)/file
-
+    # Symlink
+        # Create
+        ln -s SOURCE LINK   # SOURCE is file or directory 
+        ln -sf SOURCE LINK  # Omnipotent
+        # Delete
+        rm LINK # NOT `rm -rf LINK/`, which deletes all SOURCE content
+    
     # FILE OWNER
         chown USER:GRP FILE
         chown -R USER:GRP DIR  # Recurse; all thereunder

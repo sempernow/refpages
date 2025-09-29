@@ -161,7 +161,18 @@ ctnr_path=/usr/share/nginx/html/index.html
 local_path=index.pulled.html
 kubectl cp -p $ctnr_host:$ctnr_path $local_path
 
-# PATCH : https://chatgpt.com/share/a45d346d-270e-4919-94a7-dccabb1e1246
+# SET (imperative changes) limited to a short list of params : image, resources, env, sa, selector, subject
+# Modifying resource requests/limits
+kubectl set resources deployment/$app --limits=cpu=500m,memory=512Mi
+# Update image ($img) of container ($ctnr) of deployment ($app)
+kubectl set image deployment/$app $ctnr=$img # img=nginx:1.21 (set beforehand)
+# Rollback to previous image across multiple deployments
+for deploy in frontend backend worker; do
+    kubectl set image deployment/$deploy $ctnr=$img
+    kubectl rollout status deployment/$deploy
+done
+
+# PATCH : change(s) to ANY param of ANY resource : https://chatgpt.com/share/a45d346d-270e-4919-94a7-dccabb1e1246
 # JSON Patch (RFC 6902) : Modify an existing resource in-place (cluster's data-store content)
 kubectl patch $kind $name --type='json' \
     -p='[{"op": "replace", "path": "/spec/replicas", "value": 3}]'
@@ -179,6 +190,7 @@ kubectl patch node k8s-node-1 -p '{"spec":{"unschedulable":true}}'
 kustomize build $folder |kubectl apply -f -
 # Equivalent:
 kubectl kustomize $folder |kubectl apply -f -
+
 
 # ROLLOUT : https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/
 # Rollback to previous deployment : All having labels subkey 'type' set to 'canary'
@@ -280,7 +292,7 @@ metadata:
 EOH
 kubectl create -f namespace-01.yaml
 
-# CONFIGURATION : kubeconfig : Includes Authorization (Authn) 
+# CONFIGURATION : kubeconfig : Includes AuthN
 # Identity is per subject of X.509 (typically) or ServiceAccount (uncommon)
 # https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
 kubectl config view [--raw] 
@@ -355,7 +367,7 @@ kubectl config set-context --current --namespace=$ns
 # Validate it
 kubectl config view --minify |grep namespace:
 
-# Authorization (Authz) : by ServiceAccount (sa) token
+# AuthZ : by ServiceAccount (sa) token
 # (Use to access protected K8s API endpoints by any client).
 # Set cluster server URL : See `k config view`, else `k get node -o wide`, else `k get svc -A`
 name=default # config.clusters[].cluster.name
@@ -379,8 +391,16 @@ curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
 curl -k -H "Authorization: Bearer $tkn" https://$ep/openapi/v2 \
     |jq -Mr '.paths | keys[] | select(test("^/api"))' 
     #… |wc -l # Print the number of URLs : @ K3S, 485 of "/api"; 112 of "/api/v1"
-
-# RBAC (Authz) : API Access : Subject is EITHER a user, group, or ServiceAccount
+# kubectl : Get AuthN params from environment and secrets mounted in container of Pod
+kubectl --server=https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT \
+    --token="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    --certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    -n "$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)" \
+    get pods
+# RBAC (AuthZ) : API Access : Subject is EITHER a user, group, or ServiceAccount
+# - Limited ns-scoped access to 1 ns : Role + RoleBinding
+# - Limited cluster-scoped access to 1 ns : ClusterRole + RoleBinding
+# - Limited access across all ns : ClusterRole + ClusterRoleBinding
 group=team-1
 role=developer
 ns=foo
@@ -395,8 +415,8 @@ kubectl create clusterrole $role --verb=get --resource=pv --resource-name=app-1-
 kubectl create clusterrole $role --verb=get --non-resource-url=/logs/*
 # - aggregationRule
 kubectl create clusterrole $role --aggregation-rule="rbac.example.com/aggregate-to-monitoring=true"
-# RoleBinding : Binds subject to EITHER (Cluster)Role to namespace, REGARDLESS.
-# - This pattern is commonly used to apply cluster-wide policies (roles) to selected namespaces (groups).
+# RoleBinding : Binds subject (Cluster)Role to a namespace
+# - This pattern is how to restrict an authenticated subject's AuthZ to a target namespace.
 kubectl create rolebinding $role-rb-$group --clusterrole=$role --user=u1 --user=$USER --namespace=$ns
 kubectl create rolebinding $role-rb-$group --role=$role --serviceaccount=acme:myapp --namespace=$ns
 # ClusterRoleBinding : Binds subject to ClusterRole ONLY.

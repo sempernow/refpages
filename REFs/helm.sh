@@ -6,33 +6,36 @@
 #  @ https://artifacthub.io/packages/search?category=7&sort=relevance&page=1
 #
 #  Docs     : https://helm.sh/docs/
+#  Install  : https://helm.sh/docs/intro/install/
 #  Releases : https://github.com/helm/helm/releases
 # -----------------------------------------------------------------------------
 
-# Install Helm : https://helm.sh/docs/intro/install/
-## Releases    : https://github.com/helm/helm/releases
-
-## Install the latest release binary by trusted script:
+##########
+# Install
+## Option 1. Latest release binary by trusted script:
 ok(){
     url=https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
     curl -sSL $url |/bin/bash 
-    which helm && helm version || return 1
+    which helm &&
+        helm version
 }
-## Install declared version binary if not exist (idempotent)
+## Option 2. Declared version binary if not already (idempotent)
 ok(){
-    v=v3.17.3
-    what=linux-amd64
-    url=https://get.helm.sh/helm-$v-$what.tar.gz
-    type -t helm > /dev/null 2>&1 &&
-        helm version |grep x$v > /dev/null 2>&1 || {
-            echo '  INSTALLing helm'
+    ver=v3.18.6
+    arch=linux-amd64
+    url=https://get.helm.sh/helm-$ver-$arch.tar.gz
+    type -t helm >/dev/null 2>&1 &&
+        helm version 2>/dev/null |grep -q $ver || {
             curl -sSfL $url |tar -xzf - &&
-                sudo install $what/helm /usr/local/bin/ &&
-                    rm -rf $what &&
-                        echo ok || return $?
+                sudo install $arch/helm /usr/local/bin/ &&
+                    rm -rf $arch ||
+                        return $?
         }
+    
+    helm version
 }
 
+#######
 # Repos
 ## Add repo of ArtifactHUB.io 
 helm repo add hub $url
@@ -44,14 +47,18 @@ helm env
 helm repo list 
 ## List releases (installed charts) of all namespaces
 helm list -A # --all-namespaces
+
+#######################
 # Repos/Charts : Search
 repo=bitnami
 chart=nginx
-## Search for a chart @ ArtifactHub.io (hub)
+## Search for chart LOCALLY : Against all repos of `help repo list`
+helm search repo $chart 
+## Search for chart at ArtifactHub.io (hub)
 helm search hub $repo 
 helm search hub $repo |grep $chart
-## Search for chart locally : against all repos of `helm repo list`
-helm search repo $chart 
+
+########################################
 # Charts : Install/Upgrade : Methods (*)
 ## * Pull and install a chart : Creating a release (Helm lingo)
 release=$chart
@@ -72,12 +79,13 @@ cp $chart/values.yaml .
 vi values.yaml
 ## OR Copy by pull
 helm show values $repo/$chart --version $ver |tee $values
-## 3. Modify values to fit your environment : Ok to delete all k-v pairs except for those differing from default values.yaml
+## 3. Modify values to fit your environment
+#  Ok to delete all k-v pairs except for those differing from default values.yaml
 vim $values
 ## 4. Install/Upgrade the local chart, overriding default values with those of $values file.
 helm upgrade $release $chart --install --values $values 
     ## Some (other) flags : not all are compatible with --values flag.
-    --values, -f        # Specify values in a YAML file or URL.
+    --values, -f FILE   # Specify the values-override (YAML) file (Local or URL).
     --timeout 20s       # Set max install time beyond which fail.
     --atomic            # Teardown on fail; some objects require out-of-band deletion, e.g., pv.
     --debug             # Report progress during install/upgrade
@@ -89,7 +97,7 @@ helm upgrade $release $chart --install --values $values
     --reset-values      # Reset values to those of chart (default).
     --reuse-values      # Reuse installed values and merge in overrides via --set and -f
                         #... This is *ignored* if '--reset-values' is declared too.
-    --set k1=v1,k2=v2   # Set the declared values
+    --set k1=v1,k2=v2   # Set the declared values; multiple --set ... declarations ok
     --wait              # Wait until all K8s-API resources are created else timeout.
  
 ## Alternate (bad) install method : Don't use; subsequent update requires teardown.
