@@ -433,13 +433,52 @@ exit
 
 # MOUNT FILESYSTEM
 
-    mount # TEMPORARY; does NOT survive reboot
-     # 'man mount(8)'  https://linux.die.net/man/8/mount 
+   # Use mount for TEMPORARY mounts; does NOT survive reboot
+        mount # man mount(8) : https://linux.die.net/man/8/mount 
+        # To persist, add entry in /etc/fstab (See below)
+        
+        mount               # Show all existing mounts
+        findmnt [SUBJECT]   # Better; info is organized
+   
+    # MOUNT ALL (REFRESH) per /etc/fstab settings
+        mount -a    # man fstab(5)  
+    # UNMOUNT per PARTITION or MOUNT_POINT; e.g., ...
+        umount /dev/sdb1
+        umount /mnt/foo 
+
+    # SYNTAX
         mount -t TYPE DEVICE DIRECTORY      # TYPE (FS); ext3/xfs/ntfs/...
         mount -t TYPE PARTITION MOUNT_POINT # prefer source ID per (immutable) UUID, not per '/dev/...' 
-            /mnt  # is intended FOR TEMPORARY MOUNT POINTS; for this purpose specifically
-    # mount BLOCK DEVICE 'sdb1', of FS type Ext3, at mount point /mnt/foo (path must exist)
-        mount -t ext3 /dev/sdb1 /mnt/foo
+
+    # DEVICEs : List all BLOCK DEVICEs
+        ls -l /dev/sd*  # One per line
+        lsblk -l        # One per line; ok, but does not provide full path
+        lshw -short     # All devices, including storage
+        fdisk -l        # Disk, Units, Sector size, I/O size (min/optimal); redundant listings
+        pvs             # Those under LVM only
+
+    # LOCATION
+        /mnt # FHS designated for this purpose specifically; TEMPORARY mount points
+        # However, is often used for all mounts; does not break SELinux; okay across distros
+        
+        # ENTRIES in /etc/fstab : By the book (FHS), mounts declared at /etc/fstab should be:
+            /srv # "data served by this system" : nfs, web, ftp, git (repos), ...
+            /opt # Add-on software trees.
+            /var/lib/foo    # Persistent app data.
+            # Not in FHS, but widely adopted by enterprise data centers
+            /data/{db,logs,backup} # General purpose for large mounted volumes
+
+    # mount BLOCK DEVICE 'sdb1', having FS type Ext3, at mount point /mnt/abc
+        mkdir -p /mnt/abc
+        mount -t ext3 /dev/sdb1 /mnt/abc
+    # Bind mount : Target is effectively a pointer to source
+        mkdir -p $target
+        mount --bind $source $target        # Quirks WRT du, chroot, ...
+        mount --rbind $source $target       # Recursively; bind mount all links of source too
+        mount --bind -o ro $source $target  # Mount target as read-only : Newer kernels only
+        # Robust read-only : Applies to mount point and *everything* thereunder regardless of kernel
+        mount --bind $source $target &&
+            mount -o remount,bind,ro $target 
     # mount USB (@ WSL)
         sudo mkdir /mnt/g
         sudo mount -t drvfs g: /g
@@ -461,43 +500,31 @@ exit
         losetup -f                                      # Get available loop device(s)
         umount /mnt/target                              # Unmount the ISO
     
-    # Use LABEL or UUID, whichever is immutable (per platform) 
-    # instead of DEVICE NAME, because, e.g., '/dev/sdb1', is set PER BOOT
+    # Use UUID (unique) or LABEL (not unique), which is immutable (across machines) 
+        # Whereas DEVICE name, e.g., /dev/sdb1, is set *per boot*.
 
-    # Mount by UUID
-        mount LABEL=foo /mnt/bar 
+    # Mount by UUID (LABEL)
+        mount LABEL=foo /mnt/bar # Label support is per FS (ext4, xfs, btrfs, ...)
         mount UUID="1361a3b1-2072-4fee-aa0f-91c7480252a1" /mnt/bar 
         mount UUID=$(blkid /dev/sde1 -sUUID -ovalue) /mnt/bar 
-
-        # Get device LABEL and UUID (utilities)
-            e2label /dev/sda1 
-            lsblk /dev/sda1 
-            blkid /dev/sda1 
-            # Get available loop device(s)
-            losetup -f
 
         # Note: Udev rule mounts removable media to ...
             /media/<user>/<LABEL>  # if LABEL exits
             /media/<user>/<UUID>   # otherwise
 
-        # SET device LABEL (e2fsprogs  utilities)
-            e2label /dev/sda1 Boot
-            # OR
-            tune2fs -L Boot /dev/sda1
+        # LABEL : Set : UNMOUNT the device beforehand 
+            e2label /dev/sdb1 PROJECTS      # ext4 (16 chars), ext3, ext2 : e2fsprogs pkg
+            tune2fs -L Boot /dev/sda1       # ext4 (16 chars), ext3, ext2
+            xfs_admin -L ARCHIVES /dev/sdb2 # XFS  (12 chars)
+            fatlabel /dev/sdc1 BACKUP       # FAT  (11 chars UPPERCASE)
+            ntfslabel /dev/sdc1 DATA        # NTFS (32 chars)
+        # LABEL : Get : Use same command sans label (as a general rule)
+            e2label /dev/sda1 
+            lsblk   /dev/sda1 
+            blkid   /dev/sda1 
+            losetup -f
 
-    # show all mounts
-        mount 
-    # show all /dev/* mounts
-        mount | grep '/dev'*
-    
-    # MOUNT ALL (REFRESH) per '/etc/fstab' settings; man fstab(5)  
-        mount -a 
-
-    # UNMOUNT per PARTITION or MOUNT_POINT; e.g., ...
-        umount /dev/sdb1
-        # OR
-        umount /mnt/foo 
-    
+   
     # @ 'fstab' (AUTOMOUNT on boot) ('Legacy', but also 'PREFERRED') 
         /etc/fstab  # man fstab(5) http://man7.org/linux/man-pages/man5/fstab.5.html   
         # @ RHEL   http://www.unix.com/man-page/centos/5/fstab/ 

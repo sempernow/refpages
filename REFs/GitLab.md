@@ -175,6 +175,27 @@ spec:
 [Steps after installing GitLab](https://docs.gitlab.com/ee/install/next_steps.html)
 
 
+## [GitLab Runner](https://gitlab.com/gitlab-org/gitlab-runner) | [Releases](https://gitlab.com/gitlab-org/gitlab-runner/-/releases)
+
+
+### [Helm chart : How To](https://docs.gitlab.com/runner/install/kubernetes/)
+
+```bash
+repo=gitlab
+chart=gitlab-runner
+ver=0.76.3 # runner: v17.11.3
+
+# Add repo
+helm repo update $repo ||
+    helm repo update $repo
+
+# Available versions : chart vs. runner
+helm search repo -l $repo/$chart
+
+helm template $repo/$chart --version $ver
+
+```
+
 ## [GitLab Agent for Kubernetes](https://chatgpt.com/share/680b9e25-1020-8009-83d4-12758edf02b1)
 
 ## CI/CD Pipelines 

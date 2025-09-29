@@ -2,15 +2,15 @@
 
 ## Q:
 
-What is the appropriate K8s RBAC resources to configure a gitlab-runner in namespace "`gitlab-runner`" that allows for deploying and managing workloads (`pods`, `deployment`, `secrets`, ...) but only in namespace "teams"
+What is the appropriate K8s RBAC resources to configure a glr-manager in namespace "`glr-manager`" that allows for deploying and managing workloads (`pods`, `deployment`, `secrets`, ...) but only in namespace "teams"
 
 ## A:
 
-To allow a `gitlab-runner` (in namespace `gitlab-runner`) to deploy and manage workloads such as `Pods`, `Deployments`, `Secrets`, etc., but **only within the `teams` namespace**, you need to:
+To allow a `glr-manager` (in namespace `glr-manager`) to deploy and manage workloads such as `Pods`, `Deployments`, `Secrets`, etc., but **only within the `teams` namespace**, you need to:
 
 ---
 
-### ✅ 1. Use a **ServiceAccount** in `gitlab-runner` namespace
+### ✅ 1. Use a **ServiceAccount** in Namespace `glr-manager`
 
 This is the identity your GitLab Runner pods use.
 
@@ -18,22 +18,21 @@ This is the identity your GitLab Runner pods use.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: gitlab-runner
-  namespace: gitlab-runner
+  name: glr-manager
+  namespace: glr-manager
 ```
 
 ---
 
-### ✅ 2. Create a **Role** in the `teams` namespace
+### ✅ 2. Create a **ClusterRole** in Namespace `teams` 
 
 This defines what actions are allowed within the `teams` namespace.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: gitlab-deployer
-  namespace: teams
+  name: glr-access
 rules:
 - apiGroups: ["", "apps", "batch"]
   resources: ["pods", "pods/log", "services", "secrets", "configmaps", "deployments", "replicasets", "jobs", "cronjobs"]
@@ -44,21 +43,21 @@ rules:
 
 ### ✅ 3. Create a **RoleBinding** in the `teams` namespace
 
-This binds the service account in the `gitlab-runner` namespace to the role in `teams`.
+This binds the service account in the `glr-manager` namespace to the role in `teams`.
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: gitlab-deployer-binding
+  name: glr-access-binding
   namespace: teams
 subjects:
 - kind: ServiceAccount
-  name: gitlab-runner
-  namespace: gitlab-runner
+  name: glr-manager
+  namespace: glr-manager
 roleRef:
-  kind: Role
-  name: gitlab-deployer
+  kind: ClusterRole
+  name: glr-access
   apiGroup: rbac.authorization.k8s.io
 ```
 
@@ -68,16 +67,16 @@ roleRef:
 
 | Component      | Namespace       | Purpose                                     |
 | -------------- | --------------- | ------------------------------------------- |
-| ServiceAccount | `gitlab-runner` | Used by GitLab Runner                       |
-| Role           | `teams`         | Grants workload management permissions      |
+| ServiceAccount | `glr-manager` | Used by GitLab Runner                       |
+| ClusterRole    | N/A             | Grants workload management permissions      |
 | RoleBinding    | `teams`         | Allows above ServiceAccount to use the Role |
 
-> 💡 This setup ensures **namespace isolation**: the runner can only manage workloads in `teams`, even though it's running in `gitlab-runner`.
+> 💡 This setup ensures **namespace isolation**: the runner can only manage workloads in `teams`, even though it's running in `glr-manager`.
 
 
 ## Additionally, 
 
-The gitlab-runner must be allowed to create resources in its own namespaces, so 
+The `glr-manager` must be allowed to create resources in its own namespaces, so 
 
 
 ```yaml
@@ -85,24 +84,24 @@ The gitlab-runner must be allowed to create resources in its own namespaces, so
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: gitlab-runner-job-binding
-  namespace: gitlab-runner
+  name: glr-manager-job-binding
+  namespace: glr-manager
 subjects:
 - kind: ServiceAccount
-  name: gitlab-runner
-  namespace: gitlab-runner
+  name: glr-manager
+  namespace: glr-manager
 roleRef:
   kind: Role
-  name: gitlab-runner-job-manager
+  name: glr-manager-job-manager
   apiGroup: rbac.authorization.k8s.io
 ```
 ```yaml
-# Role for managing job pods and related resources in gitlab-runner namespace
+# Role for managing job pods and related resources in glr-manager namespace
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: gitlab-runner-job-manager
-  namespace: gitlab-runner
+  name: glr-manager-job-manager
+  namespace: glr-manager
 rules:
 - apiGroups: ["", "apps", "batch"]
   resources:
@@ -116,11 +115,11 @@ rules:
 
 ```
 
-## How to protect the gitlab-runner then
+## How to protect the glr-manager then
 
 That's an excellent and subtle insight — and here's the nuanced answer:
 
-> ✅ **Yes, you *can* protect the GitLab Runner controller from teams**, **but only if you separate execution and deployment namespaces** — **and don’t run ephemeral CI jobs in `gitlab-runner`**.
+> ✅ **Yes, you *can* protect the GitLab Runner controller from teams**, **but only if you separate execution and deployment namespaces** — **and don’t run ephemeral CI jobs in `glr-manager`**.
 
 ---
 
@@ -128,7 +127,7 @@ That's an excellent and subtle insight — and here's the nuanced answer:
 
 If:
 
-* CI jobs (ephemeral runner pods) run in `gitlab-runner`, and
+* CI jobs (ephemeral runner pods) run in `glr-manager`, and
 * Those pods run developer-supplied code (`script:` in `.gitlab-ci.yml`),
 
 Then:
@@ -147,10 +146,10 @@ So **yes — it's a real attack surface**, and many don't realize this.
 
 To **truly isolate the GitLab Runner controller from developers**, follow this model:
 
-### 🧩 Runner controller in `gitlab-runner` namespace
+### 🧩 Runner controller in `glr-manager` namespace
 
 * Long-lived Deployment
-* Uses a ServiceAccount: `gitlab-runner`
+* Uses a ServiceAccount: `glr-manager`
 * Only binds that SA with RBAC to target namespace(s), like `teams`
 
 ### 🧩 CI job pods run in a separate namespace (`teams`)
@@ -162,13 +161,13 @@ To **truly isolate the GitLab Runner controller from developers**, follow this m
     namespace: teams
   ```
 * This causes job pods to spawn **in `teams`**
-* Developers control `teams`, but **have no access to `gitlab-runner`**
+* Developers control `teams`, but **have no access to `glr-manager`**
 
 ### ✅ Net result:
 
 | Namespace       | What Happens There         | Who Has Access         |
 | --------------- | -------------------------- | ---------------------- |
-| `gitlab-runner` | Runner controller pod      | Infra team only        |
+| `glr-manager` | Runner controller pod      | Infra team only        |
 | `teams`         | CI job pods, app workloads | Developers + runner SA |
 
 Developers can:
@@ -197,7 +196,7 @@ If ephemeral jobs run in the same namespace as the controller:
 ## 🛡 Additional Hardening (if needed)
 
 * Set `automountServiceAccountToken: false` for CI jobs to prevent API access
-* Use OPA/Gatekeeper to prevent pods in `gitlab-runner` from accessing runner resources
+* Use OPA/Gatekeeper to prevent pods in `glr-manager` from accessing runner resources
 * Use Kubernetes `NetworkPolicy` to prevent job pods from talking to the controller pod
 
 ---
@@ -205,7 +204,7 @@ If ephemeral jobs run in the same namespace as the controller:
 ## ✅ TL;DR: You *Can* Isolate — but Only if:
 
 * CI job pods run in a **different namespace** (e.g., `teams`)
-* You do **not** run any dev-controlled code in the `gitlab-runner` namespace
+* You do **not** run any dev-controlled code in the `glr-manager` namespace
 
 ## `values.yaml`
 
@@ -215,10 +214,10 @@ Here’s a **secure and minimal `values.yaml`** for the official GitLab Runner H
 
 ### ✅ Goals:
 
-* Deploy the GitLab Runner **controller** in namespace: `gitlab-runner`
+* Deploy the GitLab Runner **controller** in namespace: `glr-manager`
 * Ensure **ephemeral job pods** run in namespace: `teams`
 * Use a `ServiceAccount` that only has RBAC permissions in `teams`
-* Prevent CI job pods from touching anything in `gitlab-runner`
+* Prevent CI job pods from touching anything in `glr-manager`
 
 ---
 
@@ -244,7 +243,7 @@ runners:
   podSecurityContext:
     runAsNonRoot: true
     runAsUser: 1000
-  serviceAccountName: gitlab-runner
+  serviceAccountName: glr-manager
 
   ## Optional: Add limits to CI job pods
   resources:
@@ -260,10 +259,10 @@ runners:
     cleanup.after.success: "true"
     cleanup.after.failure: "true"
 
-## Install ServiceAccount in gitlab-runner namespace
+## Install ServiceAccount in glr-manager namespace
 serviceAccount:
   create: true
-  name: gitlab-runner
+  name: glr-manager
 
 ## Optional: Use RBAC just for the namespace it runs jobs in
 rbac:
@@ -281,7 +280,7 @@ metrics:
 ### 1. Create Namespace(s)
 
 ```bash
-kubectl create namespace gitlab-runner
+kubectl create namespace glr-manager
 kubectl create namespace teams
 ```
 
@@ -291,12 +290,12 @@ kubectl create namespace teams
 helm repo add gitlab https://charts.gitlab.io
 helm repo update
 
-helm upgrade --install gitlab-runner gitlab/gitlab-runner \
-  -n gitlab-runner \
+helm upgrade --install glr-manager gitlab/gitlab-runner \
+  -n glr-manager \
   -f values.yaml
 ```
 
-### 3. Create RBAC for ServiceAccount (`gitlab-runner`) in `teams`
+### 3. Create RBAC for ServiceAccount (`glr-manager`) in `teams`
 
 You **must manually** create the Role/RoleBinding to allow deployments in `teams`:
 
@@ -306,7 +305,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   namespace: teams
-  name: gitlab-deployer
+  name: glr-access
 rules:
 - apiGroups: ["", "apps", "batch"]
   resources: ["pods", "deployments", "replicasets", "services", "jobs", "cronjobs", "secrets", "configmaps", "persistentvolumeclaims"]
@@ -317,14 +316,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   namespace: teams
-  name: gitlab-deployer-binding
+  name: glr-access-binding
 subjects:
 - kind: ServiceAccount
-  name: gitlab-runner
-  namespace: gitlab-runner
+  name: glr-manager
+  namespace: glr-manager
 roleRef:
   kind: Role
-  name: gitlab-deployer
+  name: glr-access
   apiGroup: rbac.authorization.k8s.io
 ```
 
@@ -341,10 +340,10 @@ kubectl apply -f rolebinding.yaml
 
 | Component                  | Namespace       | Access                            |
 | -------------------------- | --------------- | --------------------------------- |
-| GitLab Runner (control)    | `gitlab-runner` | Has **no rights** there           |
+| GitLab Runner (control)    | `glr-manager` | Has **no rights** there           |
 | CI Job Pods                | `teams`         | Full access to workloads          |
 | Developers                 | `teams`         | Can deploy, but not modify runner |
-| Secrets in `gitlab-runner` | `gitlab-runner` | Not readable by CI jobs           |
+| Secrets in `glr-manager` | `glr-manager` | Not readable by CI jobs           |
 
 This is the secure separation you're aiming for. Let me know if you'd like to also:
 
