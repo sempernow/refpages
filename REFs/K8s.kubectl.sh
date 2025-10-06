@@ -218,6 +218,8 @@ kubectl get node -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP"
 # Get endpoints and services having a label key and value
 kubectl -n kube-system ep,svc -l 'kubernetes.io/cluster-service=true'
 kubectl get pods -o wide # Monitor the startup process including node
+# Access a dot-name key
+kubectl get cm gitlab-runner -o yaml |yq .data'.["config.template.toml"]'
 # Get all pod names of this namespace
 kubectl get po -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
 # Get all images running in the cluster, across all namespaces. (Either method outputs a flat list.)

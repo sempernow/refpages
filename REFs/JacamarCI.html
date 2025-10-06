@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JacamarCI</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://gitlab.com/ecp-ci/jacamar-ci" title="gitlab.com/ecp-ci/jacamar-ci">Jacamar CI</a></h1>
+
+<p>Jacamar CI is the HPC focused CI/CD driver using GitLab’s
+custom executor model.
+The core goal of this project is to establish a maintainable, yet extensively configurable
+tool that will allow for the use of GitLab’s robust testing
+on unique resources. Allowing code teams to integrate potentially existing
+pipelines on powerful scientific development environments.</p>
+
+<h2>AuthN/AuthZ</h2>
+
+<p>In Jacamar CI (and in similar systems like GitLab CI with KAS, or GitHub Actions with OIDC),
+the JWT that a job gets is not just a random bearer token;
+it’s a <strong>cryptographically-signed identity assertion</strong> that the external service
+(HPC service in this case) can verify.</p>
+
+<p>Here’s what the JWT contains and why the HPC service can trust it:</p>
+
+<hr>
+
+<h3>1. <strong>Issuer and Signing</strong></h3>
+
+<ul>
+<li>The JWT is issued by Jacamar CI’s identity service (often backed by its own OIDC/JWT issuer).</li>
+<li>It’s signed with the CI system’s private key.</li>
+<li>The HPC service only needs Jacamar’s <strong>public key / JWKS endpoint</strong> to verify the signature.</li>
+</ul>
+
+<p>This means the HPC service never has to trust the runner VM/container directly — only Jacamar as the authority.</p>
+
+<hr>
+
+<h3>2. <strong>Claims in the Job Token</strong></h3>
+
+<p>The JWT includes structured claims that prove context:</p>
+
+<ul>
+<li><strong><code>iss</code></strong> – the Jacamar CI issuer identifier (trusted authority).</li>
+<li><strong><code>sub</code></strong> – the subject, typically encoding the project/job identity.</li>
+<li><strong><code>aud</code></strong> – audience claim, often restricted to the intended service (e.g., <code>hpc-service.lan</code>).</li>
+<li><strong><code>exp</code></strong> – expiration, usually just a few minutes, preventing reuse.</li>
+
+<li><p><strong>Job metadata claims</strong> such as:</p>
+
+<ul>
+<li>project ID or repo path,</li>
+<li>pipeline/job ID,</li>
+<li>branch/commit hash,</li>
+<li>runner info (sometimes).</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3>3. <strong>Why HPC Can Trust It</strong></h3>
+
+<ul>
+<li>The HPC service validates the JWT’s <strong>signature</strong> and <strong>audience</strong> against its configured trust.</li>
+<li>It can enforce <strong>short-lived token acceptance</strong> (reject expired tokens).</li>
+<li>It can use claims (e.g., project or branch) to authorize access to certain HPC queues or resources.</li>
+<li>Since the job never gets long-lived secrets, compromise of a job pod/runner doesn’t expose permanent credentials.</li>
+</ul>
+
+<hr>
+
+<h3>4. <strong>Typical Flow</strong></h3>
+
+<ol>
+<li>Jacamar CI job requests a JWT for &quot;HPC access&quot;.</li>
+<li>Jacamar signs and issues the JWT with appropriate claims.</li>
+<li>Job presents the JWT to the HPC service.</li>
+
+<li><p>HPC service validates:</p>
+
+<ul>
+<li>Signature (via Jacamar’s public key).</li>
+<li>Audience = itself.</li>
+<li>Expiry not passed.</li>
+</ul></li>
+
+<li><p>If valid, HPC grants job the requested resource access.</p></li>
+</ol>
+
+<hr>
+
+<p>✅ <strong>In short</strong>:
+The HPC service doesn’t trust the job directly — it trusts <strong>Jacamar’s signature</strong> on the JWT,
+and uses the <strong>claims (sub, aud, exp, etc.)</strong> to safely map the CI job to an HPC identity/authorization profile.</p>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
