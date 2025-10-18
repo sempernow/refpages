@@ -21,7 +21,7 @@ getrefs() {
 
     # Dump all REF.* files to tmp folder under $TEMP dir unless done less than 5min ago
     tmp(){ find /c/TEMP -type d -ctime -.003 -iname 'tmp.*' |tail -n1; }
-    [[ -d $(tmp) ]] && echo "... copying the recently  cached set of REFs ..." || refsync temp
+    [[ -d $(tmp) ]] && echo "... copying the recently-cached set of REFs ..." || refsync temp
     cp -rp $(tmp)/* REFs/
 
     # Remove some
