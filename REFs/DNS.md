@@ -247,6 +247,9 @@ Example of a CNAME record:
 This CNAME record for `blog.example.com` points to `example.com` with a TTL of 9 hours. 
 From our example A record, we know this resolves to IPv4 address `192.0.2.1`.
 
+---
+---
+
 ## TLD of Private (RFC1918) Network
 
 This is a critical design decision for any air-gapped or private network, 
@@ -260,20 +263,38 @@ First, a critical principle: **You should never use a TLD for your internal netw
 
 **Why?** Because it creates a **name collision** risk. If you use `internal.corp` and someone registers that domain publicly, or if a software vendor hardcodes a reference to it, your internal DNS resolution can break or, worse, be hijacked if a device ever gets exposed to the internet (even temporarily via a VPN misconfiguration or a laptop leaving the site). This is a serious security and stability anti-pattern.
 
----
+### TL;DR
+
+If an enterprise owns the publicly registered domain __`www.abiz.com`__, 
+then the domain or parent of subdomains of any of its private (RFC1918) networks should use:
+
+1. Best choice: __`a.abiz.com`__ 
+
+2. Second-best choice: __`a.internal`__
+
+Where "`a.`" is any subdomain other than any used publicly by `abiz.com`.
+
+#### Example 
+
+An enterpise __`abiz.com`__ has a project __`prj`__ that has two enterprise-grade air-gapped networks:
+
+- __`one.prj.abiz.com`__
+- __`two.prj.abiz.com`__
 
 ### Analysis of TLDs
 
 #### 1. `.local`
-* **Reserved by IETF ([RFC 6762](https://www.rfc-editor.org/rfc/rfc6762))** for *mDNS / Bonjour / Zeroconf*, so it will **never** be delegated in the public DNS root. Many OSes (especially macOS, iOS, and Linux with [Avahi](https://en.wikipedia.org/wiki/Avahi_%28software%29)/Avahi-compat libs) *hard-code* `.local` for __link-local multicast DNS__.
-    * Can cause name resolution conflicts and odd behavior: Windows may try AD DNS resolution, while macOS/Linux may intercept with mDNS.
-    * TLS SANs with `.local` domains are non-compliant with CA/B Forum Baseline Requirements (public CAs won't issue certs for them). Internal CAs can, but tooling may reject.
+* **Reserved by IETF ([RFC 6762](https://www.rfc-editor.org/rfc/rfc6762))** for *mDNS / Bonjour / Zeroconf*, so it will **never** be delegated in the public DNS root. However, many OSes (especially macOS, iOS, and Linux with [Avahi](https://en.wikipedia.org/wiki/Avahi_%28software%29)/Avahi-compat libs) *hard-code* `.local` for __link-local multicast DNS__.
 *   **Pros:**
     *   **No Collision Risk:** It's safe from public registration.
     *   **Widely Recognized:** Many consumer-grade devices (printers, IoT, Apple Bonjour services) use it by default.
 *   **Cons:**
-    *   **The Active Directory Incompatibility:** This is the **primary and absolute deal-breaker for an enterprise with a Windows Domain Controller**. Microsoft Active Directory Domain Services (AD DS) is built upon DNS. An AD domain *must* be a DNS domain. Using a `.local` domain for AD requires "single-label" DNS names or other workarounds that break standard DNS compliance and can cause significant issues with Microsoft and third-party applications, SQL Server, and PKI/certificate services.
+    *   **AD Incompatibility:** This is the **primary and absolute deal-breaker for an enterprise with a Windows Domain Controller**. Active Directory Domain Services (AD DS) is built upon DNS. An AD domain *must* be a DNS domain. Using a `.local` domain for AD requires "single-label" DNS names or other workarounds that break standard DNS compliance and can cause significant issues with Microsoft and third-party applications, SQL Server, and PKI/certificate services.
+        * __Microsoft's Guidance__: Microsoft strongly discourages using .`local` or other non-standard TLDs for AD domains. Instead, they recommend using a subdomain of a registered, globally resolvable domain (e.g., corp.example.com) or a private TLD like `.corp` or `.lan` (though these are not officially reserved). This ensures DNS compliance and avoids conflicts.
     *   **mDNS Interference:** Since `.local` is used for mDNS, you can get unexpected resolution behavior on networks where both a unicast DNS server (like your internal BIND/Windows DNS) and mDNS are active.
+        * May cause name resolution conflicts and odd behavior: Windows may try AD DNS resolution, while macOS/Linux may intercept with mDNS.
+    * [Non-compliant with __CA/Browser Forum__ Baseline Requirements](https://cabforum.org/working-groups/server/baseline-requirements/certificate-contents/), so public CAs won't issue certs for them. 
+      Though internal CAs can, tooling may reject.
 *   **Verdict:** **Avoid `.local`** for enterprise AD or air-gap root domains 
     unless you want headaches with mDNS conflicts.
 
@@ -289,7 +310,7 @@ First, a critical principle: **You should never use a TLD for your internal netw
     otherwise avoid in enterprise-grade networks.
 
 #### 3. `.corp`
-*   **Technical Status:** This is a **particularly dangerous choice**. For many years, `.corp` was the *de facto* example of an internal TLD used in Microsoft documentation and training. However, it was **delegated as a real gTLD** and is now owned by a registry in the public DNS.
+*   **Technical Status:** This is a **particularly dangerous choice**. For many years, `.corp` was the *de facto* example of an internal TLD used in Microsoft documentation and training. However, it was **delegated as a real gTLD** and is ___now owned by a registry in the public DNS___.
 *   **Pros:**
     *   *None that outweigh the severe risks.*
 *   **Cons:**
@@ -299,14 +320,13 @@ First, a critical principle: **You should never use a TLD for your internal netw
 
 #### 4. `.home.arpa` 
 *  This is a Special-Use Domain Name designated for use in **residential home networks**. The `.arpa` TLD is reserved for **Internet infrastructure** purposes, and `.home.arpa` is a special subdomain to prevent DNS conflicts.
----
 
 ### The Advised Best Practice for Enterprise Air-Gapped Networks
 
 The correct, enterprise-grade approach is to use a **subdomain of a publicly registered domain name that you own.**
 
 #### Recommended Syntax:
-`internal.your-company-domain.com` or `private.your-company-domain.com` or `corp.your-company-domain.com`
+`internal.abiz.com` or `private.abiz.com` or `corp.abiz.com`
 
 **Examples:**
 *   If your public website is `example.com`, use `ad.example.com` or `internal.example.com` for your Active Directory domain.
@@ -316,21 +336,32 @@ The correct, enterprise-grade approach is to use a **subdomain of a publicly reg
 
 1.  **No Name Collisions:** You own the domain. You have absolute control over its namespace. There is no risk of conflict with public DNS.
 2.  **Maximum Compatibility:**
-    *   **Active Directory:** Works flawlessly. You can create a domain like `ad.airgapco.com` without any issues.
-    *   **TLS/CA Services (PKI):** This is critical. Public Certificate Authorities (and your own internal CA) will only issue certificates for domains you can prove you own. If your AD domain is `ad.airgapco.com`, you can easily get a publicly trusted certificate for `server1.ad.airgapco.com` if needed, or more importantly, your internal CA will be managing a namespace you legally control. Using a fake TLD like `.corp` makes certificate management a nightmare.
-    *   **DNS and DHCP:** All standard-compliant tools work perfectly with this model.
-3.  **Clarity and Consistency:** It's logically organized. `server1.internal.airgapco.com` is clearly an internal resource, while `www.airgapco.com` is public.
-4.  **Security:** It enforces a clear boundary. Even if a machine accidentally receives a public DNS server (e.g., 8.8.8.8), it will not be able to resolve your internal domain names, which is a good safety measure.
+    * **Active Directory:** Works flawlessly. You can create a domain like `ad.airgapco.com` without any issues.
+    * **TLS/CA Services (PKI):** This is critical. 
+    Public Certificate Authorities (and your own internal CA) will only issue certificates for domains you can prove you own. 
+    If your AD domain is `ad.airgapco.com`, you can easily get a publicly trusted certificate for `server1.ad.airgapco.com` if needed, or more importantly, your internal CA will be managing a namespace you legally control. Using a fake TLD like `.corp` makes certificate management a nightmare.
+    * **DNS and DHCP:** All standard-compliant tools work perfectly with this model.
+3.  **Clarity and Consistency:** It's logically organized. 
+    `server1.internal.airgapco.com` is clearly an internal resource, while `www.airgapco.com` is public.
+4.  **Security:** It enforces a clear boundary. 
+    Even if a machine accidentally receives a public DNS server (e.g., 8.8.8.8), 
+    it will not be able to resolve your internal domain names, which is a good safety measure.
 
 ### Special Case: The __`.internal`__ pseudo-TLD
 
-There is a growing consensus and a draft RFC to formally reserve `.internal` as a Special Use Domain (like `.local`) specifically for this purpose: dedicated private networks where using a owned domain is not feasible. While not yet an official standard, it is a much safer choice than `.corp` or `.lan` because:
+There is a growing consensus and a draft RFC to formally reserve `.internal` 
+as a Special Use Domain (like `.local`) specifically for this purpose: 
+dedicated private networks where using a owned domain is not feasible. 
+While not yet an official standard, it is a much safer choice than `.corp` or `.lan` because:
 
 *   It is highly likely to be officially reserved.
 *   It has no existing use (unlike `.local`'s mDNS conflict).
 *   Major OS and tooling vendors are aware of the draft and are unlikely to conflict with it.
 
-**Verdict on `.internal`:** If you **absolutely cannot** use a subdomain of a domain you own (e.g., for legal or policy reasons), `.internal` is the best of the "fake TLD" options. It is far superior to `.lan` or `.local` for an enterprise AD environment. However, **using a subdomain you own is still the gold standard.**
+**Verdict on `.internal`:** If you **absolutely cannot** use a subdomain of a domain you own (e.g., for legal or policy reasons), 
+`.internal` is the best of the "fake TLD" options. 
+It is far superior to `.lan` or `.local` for an enterprise AD environment. 
+However, **using a subdomain you own is still the gold standard.**
 
 ### Summary & Final Recommendation
 
@@ -342,12 +373,13 @@ There is a growing consensus and a draft RFC to formally reserve `.internal` as 
 | **`.internal`** | **✅ Good Fallback** | Best "fake TLD"; likely to be standardized; no mDNS conflict. |
 | **`sub1.abiz.org`** | **✅✅ BEST PRACTICE** | No collisions, full PKI/TLS support, maximum compatibility. |
 
-For enterprise-grade air-gapped network, use a subdomain of a domain name owned by the enterprise
-For example: `ad.example.com` or `internal.example.com`
+---
 
-This approach is future-proof, secure, and universally compatible with enterprise services.
+## FreeIPA AD Integration 
 
-### &nbsp;
+See `AD-IPA.DNS` ([MD](/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.md)|[HTML](/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.html)) 
+
+# &nbsp;
 
 <!-- 
 
@@ -363,6 +395,7 @@ This approach is future-proof, secure, and universally compatible with enterpris
 
 README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
 
+__PATH__ : 
 # Bookmark
 
 - Target
