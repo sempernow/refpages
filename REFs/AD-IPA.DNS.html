@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AD-IPA.DNS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>DNS for AD-IPA Integration</h1>
+
+<p>See <code>DNS</code> (<a href="/1%20Data/IT/Network/DNS/DNS.md">MD</a>|<a href="/1%20Data/IT/Network/DNS/DNS.html">HTML</a>)</p>
+
+<h2>FreeIPA AD Integration</h2>
+
+<p>FreeIPA (Identity, Policy, Audit) is a Linux-based identity management solution
+that can interoperate with AD via <strong>cross-forest trusts</strong> or direct integration.
+Using <code>ipa.lime.abiz.com</code> as a <strong>subordinate domain</strong> under <code>lime.abiz.com</code> is a valid approach,
+as it maintains a clear DNS hierarchy and allows FreeIPA to leverage AD's DNS for resolution.</p>
+
+<p>See <code>AD-IPA.topology</code> (<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.topology.md">MD</a>|<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.topology.html">HTML</a>)</p>
+
+<p>DNS of hosts under RHEL IdM (a branded version of FreeIPA) is delegated to IdM by AD</p>
+
+<h3>TL;DR</h3>
+
+<p>Hosts under FreeIPA (e.g., <code>host1.ipa.lime.abiz.com</code>)
+should have their DNS records managed by the FreeIPA server's DNS service for the <code>ipa.lime.abiz.com</code> <strong>zone</strong>.
+This aligns with best practices for DNS hierarchy, ensures proper integration with FreeIPA's identity management features,
+and supports FIPS and security compliance in an air-gapped network.
+Proper DNS delegation from AD to FreeIPA and correct configuration of FreeIPA's DNS service are critical for seamless operation.
+For detailed guidance, refer to FreeIPA’s documentation on DNS management and Microsoft’s AD DNS delegation guidelines.</p>
+
+<h3>Subordinate FreeIPA Domain (<code>ipa.lime.abiz.com</code>)</h3>
+
+<ul>
+<li><strong>FreeIPA Integration</strong>: FreeIPA (Identity, Policy, Audit) is a Linux-based identity management solution
+that can interoperate with AD via <strong>cross-forest trusts</strong> or direct integration.
+Using <code>ipa.lime.abiz.com</code> as a <strong>subordinate domain</strong> under <code>lime.abiz.com</code> is a valid approach,
+as it maintains a clear DNS hierarchy and allows FreeIPA to leverage AD's DNS for resolution.</li>
+<li><strong>Trust Relationship</strong>: In an air-gapped network, a cross-forest trust between AD (<code>lime.abiz.com</code>)
+and FreeIPA (<code>ipa.lime.abiz.com</code>)
+can be established using <strong>Kerberos</strong> and <strong>LDAP</strong>.
+Both systems must use FIPS-validated cryptographic modules (e.g., OpenSSL in FIPS mode for FreeIPA, Microsoft's CNG for AD)
+to meet FIPS requirements.
+Ensure that Kerberos tickets and LDAP communications use FIPS-compliant algorithms (e.g., AES-256, SHA-256).</li>
+<li><strong>DNS Resolution</strong>: FreeIPA requires a properly configured DNS environment.
+The AD domain's DNS servers must host the zone for <code>lime.abiz.com</code>
+and delegate the <code>ipa.lime.abiz.com</code> subdomain to FreeIPA's DNS servers
+(if FreeIPA manages its own DNS).
+This ensures seamless resolution and avoids conflicts.</li>
+</ul>
+
+<h3>Why FreeIPA Should Manage DNS for Its Hosts</h3>
+
+<ul>
+<li><p><strong>DNS Delegation</strong>:</p>
+
+<ul>
+<li>In a properly configured environment, the AD domain's DNS servers (for <code>lime.abiz.com</code>) delegate the <code>ipa.lime.abiz.com</code> subdomain to FreeIPA's DNS servers. This means FreeIPA's DNS server is authoritative for the <code>ipa.lime.abiz.com</code> zone, and it should manage all DNS records for hosts within that subdomain (e.g., <code>host1.ipa.lime.abiz.com</code>).</li>
+<li>This delegation ensures that FreeIPA can <strong><em>handle dynamic DNS updates</em></strong>, service (<code>SRV</code>) records, and other DNS entries required for its hosts, such as those for <strong>Kerberos</strong> (<code>_kerberos._tcp.ipa.lime.abiz.com</code>) and <strong>LDAP</strong> (<code>_ldap._tcp.ipa.lime.abiz.com</code>).</li>
+</ul></li>
+
+<li><p><strong>FreeIPA's Integrated DNS</strong>:</p>
+
+<ul>
+<li>FreeIPA includes a <strong>built-in DNS server</strong> (based on <strong>BIND</strong>) designed to manage DNS for its clients. When a host like <code>host1.ipa.lime.abiz.com</code> enrolls in FreeIPA, it automatically registers its DNS records (e.g., <code>A</code>, <code>AAAA</code>, <code>PTR</code>, and <code>SRV</code> records) with the FreeIPA DNS server via secure dynamic updates (using <code>GSS-TSIG</code> with Kerberos).</li>
+<li>This integration simplifies management and ensures that FreeIPA-specific records (e.g., for Kerberos realms or LDAP services) are correctly maintained.</li>
+</ul></li>
+
+<li><p><strong>AD-FreeIPA Trust</strong>:</p>
+
+<ul>
+<li>In an AD-FreeIPA trust setup, AD clients resolve <code>lime.abiz.com</code> names via AD's DNS servers, while FreeIPA clients resolve <code>ipa.lime.abiz.com</code> names via FreeIPA's DNS servers. <strong><em>The trust relationship relies on proper DNS resolution</em></strong>, so FreeIPA hosts must have their DNS managed by FreeIPA to avoid resolution issues.</li>
+<li>For example, <code>host1.ipa.lime.abiz.com</code> needs its <code>A</code> record in the FreeIPA DNS zone to ensure FreeIPA clients and services (e.g., Kerberos, LDAP) can locate it.</li>
+</ul></li>
+
+<li><p><strong>FIPS and Security Compliance</strong>:</p>
+
+<ul>
+<li>Managing DNS records on FreeIPA's DNS server ensures compliance with security standards (e.g., FIPS) by using secure dynamic updates and supporting DNSSEC (if enabled). FreeIPA's DNS server can be configured to use FIPS-validated cryptographic modules (e.g., OpenSSL in FIPS mode) for secure operations.</li>
+</ul></li>
+</ul>
+
+<h3>Configuration Steps</h3>
+
+<p>To ensure that client hosts like <code>host1.ipa.lime.abiz.com</code> have their DNS managed by the FreeIPA server:</p>
+
+<p><strong>DNS Delegation</strong>:</p>
+
+<p><strong>At AD DNS host(s)</strong> (for <code>lime.abiz.com</code>), <strong>create a delegation</strong> for <code>ipa.lime.abiz.com</code>
+pointing to the FreeIPA server's IP address.
+This is done by adding <code>NS</code> (Name Server) records for the FreeIPA DNS server in the <code>lime.abiz.com</code> zone.</p>
+
+<pre><code class="language-text">ipa.lime.abiz.com.  IN  NS  ipa-server.ipa.lime.abiz.com.
+ipa-server.ipa.lime.abiz.com.  IN  A  192.168.1.10
+</code></pre>
+
+<ul>
+<li>Where <code>ipa-server</code> is the <strong>hostname</strong> of this RHEL IdM (FreeIPA) host.</li>
+</ul>
+
+<p><strong>FreeIPA DNS Setup</strong>:</p>
+
+<p><strong>At FreeIPA host</strong>, enable DNS service, and configured it to manage the <code>ipa.lime.abiz.com</code> zone.
+This can be set up during FreeIPA installation or later using the command: <code>ipa dnszone-add</code>.</p>
+
+<pre><code class="language-bash">zone=ipa.lime.abiz.com
+ipa dnszone-add $zone --name-server=$(hostname).$zone
+</code></pre>
+
+<p><strong>Host Enrollment</strong>:</p>
+
+<p><strong>At client host(s)</strong>, When enrolling a host (e.g., <code>host1.ipa.lime.abiz.com</code>) in FreeIPA,
+use the <code>ipa-client-install</code> command with the <code>--enable-dns-updates</code> option.
+This ensures the host's DNS records (e.g., <code>A</code>, <code>PTR</code>)
+are automatically registered in the <code>ipa.lime.abiz.com</code> zone.</p>
+
+<pre><code class="language-bash">zone=ipa.lime.abiz.com
+ipa-client-install --domain=$zone --server=$(hostname).$zone --enable-dns-updates
+</code></pre>
+
+<p><strong>Verify DNS Records</strong>:</p>
+
+<p><strong>At FreeIPA host</strong>, confirm that the host's DNS records are correctly registered in FreeIPA's DNS zone.</p>
+
+<pre><code class="language-bash">zone=ipa.lime.abiz.com
+ipa dnsrecord-find $zone
+</code></pre>
+
+<p>Output should include:</p>
+
+<pre><code class="language-text">Record name: host1
+A record: 192.168.1.100
+</code></pre>
+
+<p><strong>Client Configuration</strong>:</p>
+
+<p>Configure clients (e.g., RHEL hosts) to use the FreeIPA DNS server (e.g., <code>ipa-server.ipa.lime.abiz.com</code>) for name resolution.
+Update <code>/etc/resolv.conf</code> or NetworkManager settings to point to the FreeIPA server's IP address.</p>
+
+<p><strong>Additional Considerations</strong></p>
+
+<ul>
+<li><strong>Reverse DNS (PTR Records)</strong>: If FreeIPA manages reverse DNS for the RFC 1918 subnet
+(e.g., <code>1.168.192.in-addr.arpa</code> for <code>192.168.1.0/24</code>),
+ensure the reverse zone is delegated from AD's DNS to FreeIPA's DNS.
+This allows FreeIPA to manage PTR records for its hosts.</li>
+<li><strong>DNSSEC</strong>: Enable DNSSEC on FreeIPA's DNS server for added security,
+especially to meet stringent security requirements in an air-gapped network.</li>
+<li><strong>AD-FreeIPA Trust</strong>: Ensure the trust between <code>lime.abiz.com</code> (AD) and <code>ipa.lime.abiz.com</code> (FreeIPA) is configured correctly,
+with both domains resolving each others <code>SRV</code> records for Kerberos and LDAP.
+This <strong><em>may require conditional forwarders or stub zones</em></strong> in AD for <code>ipa.lime.abiz.com</code>.</li>
+<li><strong>Air-Gapped Environment</strong>: In an air-gapped network, all DNS resolution must occur internally.
+Ensure no external DNS servers are referenced, and all DNS traffic stays within the RFC 1918 network.</li>
+</ul>
+
+<h1>&nbsp;</h1>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

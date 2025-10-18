@@ -363,6 +363,10 @@ Its value here indicates this record is for the root domain, <code>example.com</
 <p>This CNAME record for <code>blog.example.com</code> points to <code>example.com</code> with a TTL of 9 hours.
 From our example A record, we know this resolves to IPv4 address <code>192.0.2.1</code>.</p>
 
+<hr>
+
+<hr>
+
 <h2>TLD of Private (RFC1918) Network</h2>
 
 <p>This is a critical design decision for any air-gapped or private network,
@@ -376,19 +380,34 @@ with long-lasting implications for security, manageability, and compatibility.</
 
 <p><strong>Why?</strong> Because it creates a <strong>name collision</strong> risk. If you use <code>internal.corp</code> and someone registers that domain publicly, or if a software vendor hardcodes a reference to it, your internal DNS resolution can break or, worse, be hijacked if a device ever gets exposed to the internet (even temporarily via a VPN misconfiguration or a laptop leaving the site). This is a serious security and stability anti-pattern.</p>
 
-<hr>
+<h3>TL;DR</h3>
+
+<p>If an enterprise owns the publicly registered domain <strong><code>www.abiz.com</code></strong>,
+then the domain or parent of subdomains of any of its private (RFC1918) networks should use:</p>
+
+<ol>
+<li><p>Best choice: <strong><code>a.abiz.com</code></strong></p></li>
+
+<li><p>Second-best choice: <strong><code>a.internal</code></strong></p></li>
+</ol>
+
+<p>Where &quot;<code>a.</code>&quot; is any subdomain other than any used publicly by <code>abiz.com</code>.</p>
+
+<h4>Example</h4>
+
+<p>An enterpise <strong><code>abiz.com</code></strong> has a project <strong><code>prj</code></strong> that has two enterprise-grade air-gapped networks:</p>
+
+<ul>
+<li><strong><code>one.prj.abiz.com</code></strong></li>
+<li><strong><code>two.prj.abiz.com</code></strong></li>
+</ul>
 
 <h3>Analysis of TLDs</h3>
 
 <h4>1. <code>.local</code></h4>
 
 <ul>
-<li><strong>Reserved by IETF (<a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a>)</strong> for <em>mDNS / Bonjour / Zeroconf</em>, so it will <strong>never</strong> be delegated in the public DNS root. Many OSes (especially macOS, iOS, and Linux with <a href="https://en.wikipedia.org/wiki/Avahi_%28software%29">Avahi</a>/Avahi-compat libs) <em>hard-code</em> <code>.local</code> for <strong>link-local multicast DNS</strong>.
-
-<ul>
-<li>Can cause name resolution conflicts and odd behavior: Windows may try AD DNS resolution, while macOS/Linux may intercept with mDNS.</li>
-<li>TLS SANs with <code>.local</code> domains are non-compliant with CA/B Forum Baseline Requirements (public CAs won't issue certs for them). Internal CAs can, but tooling may reject.</li>
-</ul></li>
+<li><strong>Reserved by IETF (<a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a>)</strong> for <em>mDNS / Bonjour / Zeroconf</em>, so it will <strong>never</strong> be delegated in the public DNS root. However, many OSes (especially macOS, iOS, and Linux with <a href="https://en.wikipedia.org/wiki/Avahi_%28software%29">Avahi</a>/Avahi-compat libs) <em>hard-code</em> <code>.local</code> for <strong>link-local multicast DNS</strong>.</li>
 <li><strong>Pros:</strong>
 
 <ul>
@@ -398,8 +417,18 @@ with long-lasting implications for security, manageability, and compatibility.</
 <li><strong>Cons:</strong>
 
 <ul>
-<li><strong>The Active Directory Incompatibility:</strong> This is the <strong>primary and absolute deal-breaker for an enterprise with a Windows Domain Controller</strong>. Microsoft Active Directory Domain Services (AD DS) is built upon DNS. An AD domain <em>must</em> be a DNS domain. Using a <code>.local</code> domain for AD requires &quot;single-label&quot; DNS names or other workarounds that break standard DNS compliance and can cause significant issues with Microsoft and third-party applications, SQL Server, and PKI/certificate services.</li>
-<li><strong>mDNS Interference:</strong> Since <code>.local</code> is used for mDNS, you can get unexpected resolution behavior on networks where both a unicast DNS server (like your internal BIND/Windows DNS) and mDNS are active.</li>
+<li><strong>AD Incompatibility:</strong> This is the <strong>primary and absolute deal-breaker for an enterprise with a Windows Domain Controller</strong>. Active Directory Domain Services (AD DS) is built upon DNS. An AD domain <em>must</em> be a DNS domain. Using a <code>.local</code> domain for AD requires &quot;single-label&quot; DNS names or other workarounds that break standard DNS compliance and can cause significant issues with Microsoft and third-party applications, SQL Server, and PKI/certificate services.
+
+<ul>
+<li><strong>Microsoft's Guidance</strong>: Microsoft strongly discourages using .<code>local</code> or other non-standard TLDs for AD domains. Instead, they recommend using a subdomain of a registered, globally resolvable domain (e.g., corp.example.com) or a private TLD like <code>.corp</code> or <code>.lan</code> (though these are not officially reserved). This ensures DNS compliance and avoids conflicts.</li>
+</ul></li>
+<li><strong>mDNS Interference:</strong> Since <code>.local</code> is used for mDNS, you can get unexpected resolution behavior on networks where both a unicast DNS server (like your internal BIND/Windows DNS) and mDNS are active.
+
+<ul>
+<li>May cause name resolution conflicts and odd behavior: Windows may try AD DNS resolution, while macOS/Linux may intercept with mDNS.</li>
+</ul></li>
+<li><a href="https://cabforum.org/working-groups/server/baseline-requirements/certificate-contents/">Non-compliant with <strong>CA/Browser Forum</strong> Baseline Requirements</a>, so public CAs won't issue certs for them.
+Though internal CAs can, tooling may reject.</li>
 </ul></li>
 <li><strong>Verdict:</strong> <strong>Avoid <code>.local</code></strong> for enterprise AD or air-gap root domains
 unless you want headaches with mDNS conflicts.</li>
@@ -428,7 +457,7 @@ otherwise avoid in enterprise-grade networks.</li>
 <h4>3. <code>.corp</code></h4>
 
 <ul>
-<li><strong>Technical Status:</strong> This is a <strong>particularly dangerous choice</strong>. For many years, <code>.corp</code> was the <em>de facto</em> example of an internal TLD used in Microsoft documentation and training. However, it was <strong>delegated as a real gTLD</strong> and is now owned by a registry in the public DNS.</li>
+<li><strong>Technical Status:</strong> This is a <strong>particularly dangerous choice</strong>. For many years, <code>.corp</code> was the <em>de facto</em> example of an internal TLD used in Microsoft documentation and training. However, it was <strong>delegated as a real gTLD</strong> and is <strong><em>now owned by a registry in the public DNS</em></strong>.</li>
 <li><strong>Pros:</strong>
 
 <ul>
@@ -446,8 +475,7 @@ otherwise avoid in enterprise-grade networks.</li>
 <h4>4. <code>.home.arpa</code></h4>
 
 <ul>
-<li>This is a Special-Use Domain Name designated for use in <strong>residential home networks</strong>. The <code>.arpa</code> TLD is reserved for <strong>Internet infrastructure</strong> purposes, and <code>.home.arpa</code> is a special subdomain to prevent DNS conflicts.
----</li>
+<li>This is a Special-Use Domain Name designated for use in <strong>residential home networks</strong>. The <code>.arpa</code> TLD is reserved for <strong>Internet infrastructure</strong> purposes, and <code>.home.arpa</code> is a special subdomain to prevent DNS conflicts.</li>
 </ul>
 
 <h3>The Advised Best Practice for Enterprise Air-Gapped Networks</h3>
@@ -456,7 +484,7 @@ otherwise avoid in enterprise-grade networks.</li>
 
 <h4>Recommended Syntax:</h4>
 
-<p><code>internal.your-company-domain.com</code> or <code>private.your-company-domain.com</code> or <code>corp.your-company-domain.com</code></p>
+<p><code>internal.abiz.com</code> or <code>private.abiz.com</code> or <code>corp.abiz.com</code></p>
 
 <p><strong>Examples:</strong>
 *   If your public website is <code>example.com</code>, use <code>ad.example.com</code> or <code>internal.example.com</code> for your Active Directory domain.
@@ -470,16 +498,24 @@ otherwise avoid in enterprise-grade networks.</li>
 
 <ul>
 <li><strong>Active Directory:</strong> Works flawlessly. You can create a domain like <code>ad.airgapco.com</code> without any issues.</li>
-<li><strong>TLS/CA Services (PKI):</strong> This is critical. Public Certificate Authorities (and your own internal CA) will only issue certificates for domains you can prove you own. If your AD domain is <code>ad.airgapco.com</code>, you can easily get a publicly trusted certificate for <code>server1.ad.airgapco.com</code> if needed, or more importantly, your internal CA will be managing a namespace you legally control. Using a fake TLD like <code>.corp</code> makes certificate management a nightmare.</li>
+<li><strong>TLS/CA Services (PKI):</strong> This is critical.
+Public Certificate Authorities (and your own internal CA) will only issue certificates for domains you can prove you own.
+If your AD domain is <code>ad.airgapco.com</code>, you can easily get a publicly trusted certificate for <code>server1.ad.airgapco.com</code> if needed, or more importantly, your internal CA will be managing a namespace you legally control. Using a fake TLD like <code>.corp</code> makes certificate management a nightmare.</li>
 <li><strong>DNS and DHCP:</strong> All standard-compliant tools work perfectly with this model.</li>
 </ul></li>
-<li><strong>Clarity and Consistency:</strong> It's logically organized. <code>server1.internal.airgapco.com</code> is clearly an internal resource, while <code>www.airgapco.com</code> is public.</li>
-<li><strong>Security:</strong> It enforces a clear boundary. Even if a machine accidentally receives a public DNS server (e.g., 8.8.8.8), it will not be able to resolve your internal domain names, which is a good safety measure.</li>
+<li><strong>Clarity and Consistency:</strong> It's logically organized.
+<code>server1.internal.airgapco.com</code> is clearly an internal resource, while <code>www.airgapco.com</code> is public.</li>
+<li><strong>Security:</strong> It enforces a clear boundary.
+Even if a machine accidentally receives a public DNS server (e.g., 8.8.8.8),
+it will not be able to resolve your internal domain names, which is a good safety measure.</li>
 </ol>
 
 <h3>Special Case: The <strong><code>.internal</code></strong> pseudo-TLD</h3>
 
-<p>There is a growing consensus and a draft RFC to formally reserve <code>.internal</code> as a Special Use Domain (like <code>.local</code>) specifically for this purpose: dedicated private networks where using a owned domain is not feasible. While not yet an official standard, it is a much safer choice than <code>.corp</code> or <code>.lan</code> because:</p>
+<p>There is a growing consensus and a draft RFC to formally reserve <code>.internal</code>
+as a Special Use Domain (like <code>.local</code>) specifically for this purpose:
+dedicated private networks where using a owned domain is not feasible.
+While not yet an official standard, it is a much safer choice than <code>.corp</code> or <code>.lan</code> because:</p>
 
 <ul>
 <li>It is highly likely to be officially reserved.</li>
@@ -487,7 +523,10 @@ otherwise avoid in enterprise-grade networks.</li>
 <li>Major OS and tooling vendors are aware of the draft and are unlikely to conflict with it.</li>
 </ul>
 
-<p><strong>Verdict on <code>.internal</code>:</strong> If you <strong>absolutely cannot</strong> use a subdomain of a domain you own (e.g., for legal or policy reasons), <code>.internal</code> is the best of the &quot;fake TLD&quot; options. It is far superior to <code>.lan</code> or <code>.local</code> for an enterprise AD environment. However, <strong>using a subdomain you own is still the gold standard.</strong></p>
+<p><strong>Verdict on <code>.internal</code>:</strong> If you <strong>absolutely cannot</strong> use a subdomain of a domain you own (e.g., for legal or policy reasons),
+<code>.internal</code> is the best of the &quot;fake TLD&quot; options.
+It is far superior to <code>.lan</code> or <code>.local</code> for an enterprise AD environment.
+However, <strong>using a subdomain you own is still the gold standard.</strong></p>
 
 <h3>Summary &amp; Final Recommendation</h3>
 
@@ -533,12 +572,13 @@ otherwise avoid in enterprise-grade networks.</li>
 </tbody>
 </table>
 
-<p>For enterprise-grade air-gapped network, use a subdomain of a domain name owned by the enterprise
-For example: <code>ad.example.com</code> or <code>internal.example.com</code></p>
+<hr>
 
-<p>This approach is future-proof, secure, and universally compatible with enterprise services.</p>
+<h2>FreeIPA AD Integration</h2>
 
-<h3>&nbsp;</h3>
+<p>See <code>AD-IPA.DNS</code> (<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.md">MD</a>|<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.html">HTML</a>)</p>
+
+<h1>&nbsp;</h1>
 
 <!-- 
 
@@ -554,6 +594,7 @@ For example: <code>ad.example.com</code> or <code>internal.example.com</code></p
 
 README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
 
+__PATH__ : 
 # Bookmark
 
 - Target

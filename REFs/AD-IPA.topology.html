@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AD-IPA.topology</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Q:</h1>
+
+<p>What is the advised topology/architecture for Windows Server
+integrated with RHEL through IdM and K8s cert-manager?</p>
+
+<h1>A:</h1>
+
+<p>Below is a reference topology and workflow for an environment where you have:</p>
+
+<ul>
+<li>A single Windows Server 2019 acting as your AD DS + AD CS root, and also providing DHCP/DNS.</li>
+<li>One or more RHEL hosts running IdM (FreeIPA/Dogtag) that must federate to AD for user/group identity and also serve as a subordinate CA.</li>
+<li>A Kubernetes cluster (on RHEL or other Linux nodes) that uses cert-manager to request TLS certificates from the IdM CA.</li>
+</ul>
+
+<p>The goal is that:</p>
+
+<p>1. Windows AD DS remains the authoritative directory for users and groups.
+2. RHEL IdM joins (or trusts) that AD domain so that Linux machines (and Kubernetes) can authenticate the same users and leverage Kerberos SSO.
+3. The IdM “Dogtag” CA is configured as an Enterprise Subordinate CA under the Windows AD CS root.
+4. Kubernetes cert-manager is pointed at the IdM CA (Dogtag) so that all in-cluster workloads (Ingress controllers, webhooks, TLS certificates for services, etc.) get signed by a CA whose chain roots back to the Windows Root CA.
+5. Clients (Windows, Linux, and any downstream appliances) only need to trust the Windows Root CA (which is already auto-distributed by AD) in order to validate any Issued certificate (because the subordinate chain flows through IdM → Root).</p>
+
+<p>Below is a logical‐layer view, followed by a brief explanation of how each component is installed and configured.</p>
+
+<hr>
+
+<h2>1. Logical topology overview</h2>
+
+<pre><code>┌────────────────────────────────────────────────────────────────────────────┐
+│                                                                            │
+│                         Windows AD Domain (“AD.LAN”)                       │
+│                                                                            │
+│   ┌─────────────────────┐            ┌──────────────────────────────────┐  │
+│   │  Windows Server A   │            │  RHEL Germanium (IdM Server)     │  │
+│   │ (Domain Controller) │            │   (Joined or Trusting AD)        │  │
+│   │  + DHCP + DNS       │◄─ LDAP  ──►│   (FreeIPA/IdM + Dogtag CA)      │  │
+│   │  + AD CS Root CA    │ + Kerberos │  Role: Enterprise Subordinate CA │  │
+│   └─────────────────────┘            └──────────────────────────────────┘  │
+│           │                                          │                     │
+│           │  1. Subordinate CSR (PKCS#10)            │                     │
+│           │  2. Signed SubCA certificate (PKCS#7)    │                     │
+│           ▼                                          │                     │
+│ ┌─────────────────────┐                              │                     │
+│ │  RHEL Kubernetes    │                              │                     │
+│ │  Control Plane +    │                              │                     │
+│ │  Worker Nodes       │                              │                     │
+│ │  – SSSD clients     │◄──────── Identity ───────────┘                     │
+│ │  – cert-manager     │◄──────── CA Issuance ─────────&gt; Dogtag CA          │
+│ └─────────────────────┘                                     │              │
+│           │                                                 │              │
+│           │                                                 ▼              │
+│   (Other Linux hosts)⟷SSSD identity (authentication/SSO)⟷────────────────┘
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+
+<p><strong>Legend:</strong></p>
+
+<ol>
+<li><p><strong>Windows Server A</strong> (fully patched WS2019):</p>
+
+<ul>
+<li>Runs <strong>AD DS</strong>, <strong>AD UAC</strong>, <strong>AD CS (Root CA)</strong>, <strong>DHCP</strong>, <strong>DNS</strong>.</li>
+<li>Its AD CS role is configured as an <strong>“Enterprise Root CA.”</strong></li>
+<li>Its Root CA certificate is auto-published into AD’s NTAuth store and automatically deployed to <strong>Trusted Root</strong> on all domain-joined Windows machines (and can be pushed to Linux via GPO if desired).</li>
+</ul></li>
+
+<li><p><strong>RHEL Germanium (IdM server)</strong>:</p>
+
+<ul>
+<li>A RHEL 8/9 VM (or bare-metal) whose IdM instance (FreeIPA + Dogtag) is set up as a <strong>domain member</strong> (or a trusted domain) of <strong>AD.LAN</strong>.</li>
+<li>That IdM host is installed as an <strong>Enterprise Subordinate CA</strong>, using a CSR which is signed by the Windows CS Root. Once imported, Dogtag becomes the “live” issuing CA for Linux/K8s.</li>
+<li>This IdM host also provides <strong>LDAP/LDAP+Kerberos</strong> to RHEL/K8s nodes, so that all Linux boxes use a single identity &amp; SSO realm that ultimately chains back to AD DS.</li>
+</ul></li>
+
+<li><p><strong>RHEL Kubernetes cluster</strong> (Control‐plane + Worker nodes):</p>
+
+<ul>
+<li>Each node is joined to IdM via SSSD (so AD users can authenticate to <code>kubectl</code> if RBAC allows).</li>
+<li><strong>cert-manager</strong> (in-cluster) uses a Kubernetes ClusterIssuer or Issuer of type <strong>“CA”</strong> that points to Dogtag’s CA key &amp; certificate (kept in a Kubernetes Secret).</li>
+<li>pod workloads that need “service-TLS” get certificates from Dogtag, whose chain goes Root CA ←◄ Subordinate (Dogtag) ←◄ leaf.</li>
+</ul></li>
+</ol>
+
+<p>By doing this, all TLS certificates in K8s are automatically trusted by any AD‐joined Windows or Linux boxes—because they already trust the Root CA built into AD CS.</p>
+
+<p>See <code>AD-IPA.DNS</code> (<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.md">MD</a>|<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.html">HTML</a>)</p>
+
+<hr>
+
+<h2>2. Step-by-step component breakdown</h2>
+
+<h3>2.1 Windows Server A (AD DS + AD CS as Enterprise Root)</h3>
+
+<ol>
+<li><p><strong>Install AD DS, DNS, DHCP, UAC</strong> as usual:</p>
+
+<ul>
+<li>Promote to a domain controller (e.g. <code>DC1.AD.LAN</code>) with DNS and DHCP roles installed.</li>
+<li>Create your user and group OUs, etc., per policy.</li>
+</ul></li>
+
+<li><p><strong>Install the AD CS role</strong> with “Enterprise Root CA”:</p>
+
+<ul>
+<li>In <strong>Server Manager → Add Roles &amp; Features → Active Directory Certificate Services → Certification Authority</strong>, select <strong>“Enterprise Root CA.”</strong></li>
+<li>Let it generate a new 4096-bit key, choose a long validity (e.g. 10 years), and publish it into AD (NTAuth).</li>
+<li>Confirm that you can browse to <code>https://dc1.ad.lan/certsrv</code> and see <strong>“Microsoft Active Directory Certificate Services – DC1-CA.”</strong></li>
+</ul></li>
+
+<li><p><strong>Export the Root CA certificate</strong> (Base-64 (.CER)) to a location you can copy to the RHEL IdM server.</p>
+
+<ul>
+<li>Open <strong>certmgr.msc</strong> → <strong>Trusted Root Certification Authorities → Certificates</strong> → find your CA → Right-click → <strong>All Tasks → Export → Base-64 X.509 (.CER)</strong> → save as <code>/root/ca/root-ca.cer</code>.</li>
+</ul></li>
+</ol>
+
+<h3>2.2 RHEL Germanium (IdM/FreeIPA + Dogtag subordinate CA)</h3>
+
+<p>On your RHEL 8/9 host (we’ll call it <code>idm.ad.lan</code>), assume you already installed the RHEL subscriptions and updated.</p>
+
+<h4>2.2.1 Join (or Trust) AD for identity</h4>
+
+<p>You have two main patterns:</p>
+
+<ul>
+<li><strong>Join IdM as a member of AD</strong> (IdM is a domain member of <code>AD.LAN</code>)
+– Pros: AD masters all identities; IdM simply replicates AD data into its LDAP/Kerberos realm.
+– Cons: Slightly more complex DNS/ACLs.</li>
+<li><strong>Create a cross-forest trust</strong> between IdM’s realm (IPA) and AD DS.
+– Pros: Each realm retains its own LDAP; Linux still authenticates to IdM, Windows to AD, but user accounts can cross.
+– Cons: Certificate enrollment must be explicitly configured.</li>
+</ul>
+
+<p>Most people pick <strong>“join IdM as an AD member”</strong> for simplicity. In that mode:</p>
+
+<ol>
+<li><p><strong>Install IdM (FreeIPA) packages</strong>:</p>
+
+<pre><code class="language-bash">dnf install ipa-server bind‐dns ipa‐server‐dogtag dogtag‐pki‐ca‐util
+</code></pre></li>
+
+<li><p><strong>Initialize IPA server</strong> (as an AD domain member):</p>
+
+<pre><code class="language-bash">ipa-server-install \
+ --domain=ad.lan \
+ --realm=AD.LAN \
+ --hostname=idm.ad.lan \
+ --ds-password=‘&lt;DirectoryAdminPassword&gt;’ \
+ --krb5-realm=AD.LAN \
+ --setup‐trust=ad \
+ --admin-password=‘&lt;IdMAdminPassword&gt;’ \
+ --id-trust-ou=“OU=IdMTrusted,dc=ad,dc=lan” \
+ --skip-reverse-lookup
+</code></pre>
+
+<ul>
+<li>The <code>--setup-trust=ad</code> flag configures an AD trust.</li>
+<li>During setup, IPA prompts for an AD user with rights to create a computer account in <code>AD.LAN</code>.</li>
+</ul></li>
+
+<li><p><strong>Verify the trust</strong>:</p>
+
+<pre><code class="language-bash">kinit Administrator@AD.LAN
+ipa trustzone-find
+</code></pre></li>
+</ol>
+
+<p>You should see the “AD Trust” listed and active.</p>
+
+<p>Now, any AD user can authenticate to this IdM server via Kerberos/SSSD (Linux machines will ultimately trust both IdM and AD principals).</p>
+
+<h4>2.2.2 Create the Dogtag subordinate CA by having AD CS sign its CSR</h4>
+
+<ol>
+<li><p><strong>Generate a Dogtag (subordinate) CA enrollment request</strong>.</p>
+
+<ul>
+<li>During the <code>ipa-server-install</code>, if you specify <code>--ca-subordinate</code> (instead of setting up a local Dogtag Root), IPA sets up a subordinate CSR at <code>/etc/pki/pki-tomcat/ca-csr/pki-subsystem-01-subca-ca.csr</code>.</li>
+
+<li><p>Alternatively, you can reconfigure after installation:</p>
+
+<pre><code class="language-bash">ipa-ca-install \
+--external
+</code></pre></li>
+</ul>
+
+<p>This will generate a CSR in <code>/var/lib/pki/pki-tomcat/ca/subsystem-ca-sub-ca.csr</code>.</p></li>
+
+<li><p><strong>Copy the CSR (<code>.csr</code> or <code>.req</code>) to your Windows AD CS host</strong> (<code>DC1.AD.LAN</code>).</p>
+
+<pre><code class="language-bash">scp /var/lib/pki/pki-tomcat/ca/subsystem-ca-sub-ca.csr administrator@dc1.ad.lan:/temp/
+</code></pre></li>
+
+<li><p><strong>Submit that CSR on the AD CS side</strong>:</p>
+
+<ul>
+<li>Open <strong>Certification Authority</strong> MMC.</li>
+<li>Right-click on your CA (<code>DC1-CA</code>) → <strong>All Tasks → Submit new request…</strong> and point to <code>subsystem-ca-sub-ca.csr</code>.</li>
+<li>You’ll see a pending request in <strong>Certificate Authority → Pending Requests</strong>.</li>
+<li>Right-click the request → <strong>Issue</strong>.</li>
+</ul></li>
+
+<li><p><strong>Export the signed Subordinate CA certificate (including the chain)</strong>:</p>
+
+<ul>
+<li>In <strong>Issued Certificates</strong>, locate the Subordinate CA certificate.</li>
+<li>Right-click → <strong>All Tasks → Export</strong> → choose <strong>“Base-64 X.509 (.CER)”</strong>. Let’s say you save it as <code>idm-subca.cer</code>.</li>
+<li>You also need the Root CA chain: from <strong>Trusted Root Certification Authorities → DC1-CA</strong>, export that Root (Base-64). Call it <code>root-ca.cer</code>.</li>
+
+<li><p>Combine them into one PEM (or P7B) so Dogtag can import both at once. For example:</p>
+
+<pre><code class="language-powershell">copy /b idm-subca.cer + root-ca.cer idm-subca-chain.cer
+</code></pre></li>
+</ul>
+
+<p>(Or create a P7B using certutil if you prefer.)</p></li>
+
+<li><p><strong>Copy <code>idm-subca-chain.cer</code> back to the IdM host</strong>:</p>
+
+<pre><code class="language-bash">scp administrator@dc1.ad.lan:/temp/idm-subca-chain.cer /root/
+</code></pre></li>
+
+<li><p><strong>Complete the Dogtag Subordinate CA installation</strong>:</p>
+
+<pre><code class="language-bash">ipa-ca-install \
+ --external-signed-ca-cert=/root/idm-subca-chain.cer \
+ --external-ca-name=&quot;IdM Dogtag Subordinate CA&quot; \
+ --ca-subject=&quot;CN=IPA-Subordinate-CA,OU=Dogtag,C=US&quot; \
+ --no-forwarding \
+ --no-ca-tsl \
+ --no-crl-publish
+</code></pre>
+
+<ul>
+<li>This command imports <code>idm-subca-chain.cer</code> into Dogtag. Now Dogtag is an <strong>Enterprise Subordinate CA</strong> that chains to AD CS Root.</li>
+
+<li><p>Verify:</p>
+
+<pre><code class="language-bash">pki -h pki.example.com cert-find &quot;CN=IPA-Subordinate-CA&quot;
+</code></pre></li>
+</ul>
+
+<p>You should see your Subordinate CA certificate with a chain ☑.</p></li>
+</ol>
+
+<h4>2.2.3 Verify the chain and publish trust</h4>
+
+<ul>
+<li><p>The IdM host’s Dogtag CA certificate should now have a chain:</p>
+
+<pre><code>■ Dogtag-Subordinate-CA (CN=IPA-Subordinate-CA)
+↳ Issued by → ■ DC1-CA (Root AD CS)
+</code></pre></li>
+
+<li><p>Because the Root (<code>DC1-CA</code>) is already in AD’s NTAuth and automatically pushed to domain clients, any Linux host that trusts the IdM CA (and knows the Root) will validate leaf certificates properly.</p></li>
+</ul>
+
+<h3>2.3 RHEL Kubernetes cluster + cert-manager</h3>
+
+<p>On your Kubernetes control plane (which might be on RHEL VMs, or an OpenShift-flavored distro, etc.):</p>
+
+<h4>2.3.1 Join each node to IdM for unified identity</h4>
+
+<ol>
+<li><p><strong>Install SSSD and the IdM client packages</strong>:</p>
+
+<pre><code class="language-bash">dnf install ipa-client sssd realmd oddjob-mkhomedir adcli
+</code></pre></li>
+
+<li><p><strong>Enroll each node into IdM</strong> (so that AD/IdM accounts can be used for SSH, <code>kubectl</code>, etc.):</p>
+
+<pre><code class="language-bash">ipa-client-install \
+ --mkhomedir \
+ --principal=administrator \
+ --password \
+ --domain=ad.lan \
+ --realm=AD.LAN \
+ --server=idm.ad.lan \
+ --no-dns-updates \
+ --force-join
+</code></pre></li>
+
+<li><p><strong>Verify SSSD works</strong>:</p>
+
+<pre><code class="language-bash">id administrator@ad.lan
+getent passwd someuser@ad.lan
+kinit someuser@ad.lan
+</code></pre></li>
+
+<li><p><strong>Configure <code>/etc/krb5.conf</code></strong> if needed to point at the IdM KDC (which in turn trusts AD).</p></li>
+</ol>
+
+<p>Now any AD user can run <code>ssh node1.ad.lan</code> + <code>kinit</code>, and be recognized.</p>
+
+<h4>2.3.2 Install cert-manager and configure a CA Issuer</h4>
+
+<ol>
+<li><p><strong>Install cert-manager</strong> (v1.x) into the cluster:</p>
+
+<pre><code class="language-bash">kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+</code></pre></li>
+
+<li><p><strong>Export the Dogtag Subordinate CA key and certificate</strong> from the IdM host into Kubernetes Secrets.</p>
+
+<ul>
+<li><p>On <code>idm.ad.lan</code>, locate the subordinate CA’s private key and cert:</p>
+
+<pre><code class="language-bash">ls /etc/pki/pki-tomcat/ca/*
+</code></pre></li>
+</ul>
+
+<p>Typically, you have:</p>
+
+<pre><code> /etc/pki/pki-tomcat/ca/public/ipa-subsystem-ca-sub-ca.crt
+ /etc/pki/pki-tomcat/ca/private/ipa-subsystem-ca-sub-ca-key.pem
+</code></pre>
+
+<ul>
+<li><p>Combine into one secret YAML. For example, on <code>idm.ad.lan</code>:</p>
+
+<pre><code class="language-bash">kubectl create namespace cert-manager-system --dry-run=client -o yaml &gt; ns.yaml
+kubectl apply -f ns.yaml
+
+kubectl create secret tls idm-subca-tls \
+--namespace=cert-manager-system \
+--cert=/etc/pki/pki-tomcat/ca/public/ipa-subsystem-ca-sub-ca.crt \
+--key=/etc/pki/pki-tomcat/ca/private/ipa-subsystem-ca-sub-ca-key.pem \
+--dry-run=client -o yaml &gt; subca-secret.yaml
+kubectl apply -f subca-secret.yaml
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>Create a <code>ClusterIssuer</code> (or <code>Issuer</code>) that references the <code>idm-subca-tls</code> secret</strong>:</p>
+
+<pre><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+ name: idm-subca-issuer
+spec:
+ ca:
+   secretName: idm-subca-tls
+   # Optional: you can embed the root chain if needed, but usually
+   # cert-manager will inject the full chain based on the CA bundle.
+</code></pre></li>
+</ol>
+
+<p>Apply:</p>
+
+<pre><code class="language-bash">   kubectl apply -f - &lt;&lt;EOF
+   apiVersion: cert-manager.io/v1
+   kind: ClusterIssuer
+   metadata:
+     name: idm-subca-issuer
+   spec:
+     ca:
+       secretName: idm-subca-tls
+   EOF
+</code></pre>
+
+<ol>
+<li><p><strong>Test issuance</strong>:</p>
+
+<pre><code class="language-yaml">apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+ name: test-tls-cert
+ namespace: default
+spec:
+ secretName: test-tls-secret
+ duration: 24h
+ renewBefore: 12h
+ privateKey:
+   algorithm: RSA
+   size: 2048
+ commonName: test.ingress.ad.lan
+ dnsNames:
+   - test.ingress.ad.lan
+ issuerRef:
+   name: idm-subca-issuer
+   kind: ClusterIssuer
+</code></pre>
+
+<pre><code class="language-bash">kubectl apply -f test-cert.yaml
+kubectl describe certificate test-tls-cert
+</code></pre></li>
+</ol>
+
+<p>You should see cert-manager successfully request a cert from Dogtag, and a Kubernetes secret <code>test-tls-secret</code> containing:</p>
+
+<pre><code>   tls.crt  ← Leaf certificate (signed by Dogtag SubCA)
+   tls.key  ← Private key for “test.ingress.ad.lan”
+   ca.crt   ← The SubCA certificate (Dogtag)
+</code></pre>
+
+<p>When you decode <code>tls.crt</code>, you’ll see:</p>
+
+<pre><code>   Issuer: CN=IPA-Subordinate-CA,OU=Dogtag,C=US
+   Validity: …
+   Subject: CN=test.ingress.ad.lan
+   … 
+   Signed by → IPA-Subordinate-CA
+     Signed by → DC1-CA (Root)
+</code></pre>
+
+<p>Now any client (Windows or Linux) that has already put <strong>DC1-CA</strong> in its Trusted Root will validate this leaf. Internally, most Linux distributions joined to IdM already trust the Dogtag SubCA (because IdM auto-distributes the SubCA cert to SSSD’s trust store).</p>
+
+<hr>
+
+<h2>3. Summarized data flows</h2>
+
+<table>
+<thead>
+<tr>
+<th><strong>Flow</strong></th>
+<th><strong>Description</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>1. User/group identity (K8s login, SSH, etc.)</strong></td>
+<td>• AD DS holds all users/groups. <br>• IdM trusts/joined to AD—so IdM LDAP/Kerberos can authenticate AD principals. <br>• Linux/K8s nodes run SSSD against IdM. <br>• <code>kubectl</code> uses OIDC or Kerberos (depending on your K8s auth setup) to let AD users log in.</td>
+</tr>
+
+<tr>
+<td><strong>2. Subordinate CA chain creation</strong></td>
+<td>• IdM issues a CSR (PKCS#10) for Dogtag subordinate. <br>• Windows AD CS (Root) signs CSR. <br>• IdM imports the signed SubCA + Root chain. <br>• Dogtag is now an Enterprise SubCA.</td>
+</tr>
+
+<tr>
+<td><strong>3. Certificate issuance in Kubernetes (cert-mgr)</strong></td>
+<td>• cert-manager’s ClusterIssuer points at the Dogtag SubCA key+cert. <br>• In-cluster <code>Certificate</code> objects cause cert-manager to call Dogtag (through the CA issuer). <br>• Dogtag issues leaf TLS certs. <br>• Clients validate by trusting Root (auto-deployed by AD).</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>4. Why this topology is “advised”</h2>
+
+<ol>
+<li><p><strong>Single source of identity (AD DS)</strong></p>
+
+<ul>
+<li>Windows AD remains your root of truth for all users, groups, and computers.</li>
+<li>RHEL IdM, by joining/trusting AD, means you do not recreate user accounts in two places or require manual LDAP synchronization.</li>
+</ul></li>
+
+<li><p><strong>Two-tier PKI with proper security boundaries</strong></p>
+
+<ul>
+<li><strong>Tier 1 (offline or well-protected):</strong> Windows AD CS Root CA host. Its private key is highly secured (preferably offline when not in use).</li>
+<li><strong>Tier 2 (online, domain-joined):</strong> RHEL IdM Dogtag as a Subordinate Enterprise CA. Its signing key is on a hardened Linux host, isolated, and can be backed up by IPA’s replication.</li>
+<li>Day-to-day TLS cert issuance is done by Dogtag, not by the Root, minimizing exposure of the Root’s private key.</li>
+</ul></li>
+
+<li><p><strong>Automatic trust distribution</strong></p>
+
+<ul>
+<li>The Root CA certificate is already in AD’s NTAuth store → automatically deployed to <strong>“Trusted Root”</strong> on all Windows domain-joined machines and (via GPO) to AD Member Linux boxes (so they trust the entire chain).</li>
+<li>IdM’s Dogtag SubCA certificate is automatically propagated via SSSD’s trust mechanism to any Linux node (so Linux clients trust Dogtag by default, since SSSD imported that SubCA as a trusted issuer).</li>
+</ul></li>
+
+<li><p><strong>Separation of roles</strong></p>
+
+<ul>
+<li>Windows Server A focuses on AD DS + AD CS Root + DHCP/DNS (Windows-native tasks).</li>
+<li>RHEL IdM focuses on Linux identity, Kerberos SSO, and online subordinate PKI (Dogtag).</li>
+<li>Kubernetes + cert-manager sit atop IdM’s CA for issuing ephemeral certificates—your cluster never touches the Root CA directly.</li>
+</ul></li>
+
+<li><p><strong>Scalability &amp; future extensions</strong></p>
+
+<ul>
+<li>If you later add more Subordinate CAs (e.g. a replica Dogtag instance for high availability or a PKI in another site), AD CS will simply sign their CSRs and they become additional SubCAs.</li>
+<li>Kubernetes clusters in other network segments can also point to IdM’s Dogtag SubCA (or a replica) for consistent trust chains.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h2>5. Other integration notes</h2>
+
+<ol>
+<li><p><strong>Kubernetes API authentication</strong></p>
+
+<ul>
+<li>If you want AD users to <code>kubectl auth</code> directly, you can enable the Kubernetes API server to accept Kerberos tickets (via OpenID Connect through Keycloak or Dex), or use the <strong>Webhook token authentication</strong> pointing at IdM’s LDAP/Kerberos. There are multiple OIDC/Dex/Keycloak integrations; that is orthogonal to cert-manager but often desired.</li>
+</ul></li>
+
+<li><p><strong>DHCP/DNS interplay</strong></p>
+
+<ul>
+<li>Windows Server A (the DC) also runs DNS. When you create a reverse lookup or forward lookup zone, be sure to register both <code>idm.ad.lan</code> and <code>k8s-control1.ad.lan</code> (and any worker node) with the DC’s DNS, so that Kerberos, SSSD, and K8s node enrollment all function without manual <code>/etc/hosts</code> entries.</li>
+</ul></li>
+
+<li><p><strong>Cross-forest trust (alternate)</strong></p>
+
+<ul>
+<li>If IdM cannot “join” the AD domain (e.g. you must keep IdM in its own realm), you can still set up an IdM ↔ AD cross-realm trust. In that case, Kerberos can flow between them, but you’ll need to manually distribute the Root CA cert into the IdM trust store, and you cannot use <code>ipa-client-install --setup-trust</code>—you must configure trusts by importing realm keys, etc. This is more complex, so “domain-member” mode is highly recommended when you have only one AD domain.</li>
+</ul></li>
+
+<li><p><strong>Audit &amp; compliance</strong></p>
+
+<ul>
+<li>Because Windows AD CS signs the subCA CSR, all events (CSR issued, CSR approved, certificate issued) are logged in the AD CS event log. Dogtag logs issuance events on the IdM side. You get a full audit trail.</li>
+</ul></li>
+
+<li><p><strong>Certificate template best practices</strong></p>
+
+<ul>
+<li>In AD CS, create a specific certificate template for subordinate Dogtag (e.g. “IPA-SubCA‐Template”), and limit enrollment ACL so only the IdM’s computer object can request it.</li>
+<li>In Dogtag, configure certificate profiles (e.g. “k8s-ingress-TLS”) that map to K8s service names, with appropriate key sizes (2048/4096).</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h2>6. Example DNS and CA naming conventions</h2>
+
+<p>Below is a small table showing how you might name each DNS record and each CA, so everything is unambiguous:</p>
+
+<table>
+<thead>
+<tr>
+<th><strong>Component</strong></th>
+<th><strong>DNS A Record</strong></th>
+<th><strong>Certificate CN (Subject)</strong></th>
+<th><strong>Role in Trust Chain</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Windows AD DC/Root CA</td>
+<td><code>dc1.ad.lan</code></td>
+<td>CN = <code>DC1-CA</code>, O = <code>AD.LAN</code>, C = <code>US</code></td>
+<td>AD CS Root CA (auto-distributed)</td>
+</tr>
+
+<tr>
+<td>RHEL IdM server</td>
+<td><code>idm.ad.lan</code></td>
+<td>CN = <code>IPA-Subordinate-CA</code>, OU = <code>Dogtag</code>, C=US</td>
+<td>Dogtag Subordinate CA (issued by DC1-CA)</td>
+</tr>
+
+<tr>
+<td>Kubernetes API server(s)</td>
+<td><code>k8s-api.ad.lan</code></td>
+<td>CN = <code>k8s-api.ad.lan</code></td>
+<td>Leaf, issued by Dogtag SubCA</td>
+</tr>
+
+<tr>
+<td>Ingress endpoint(s)</td>
+<td><code>app1.ad.lan</code>, etc.</td>
+<td>CN = <code>app1.ad.lan</code></td>
+<td>Leaf, issued by Dogtag SubCA</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><p><strong>AD CS Root CA</strong> (<code>DC1-CA</code>):</p>
+
+<ul>
+<li>Lives on <code>dc1.ad.lan</code> (Windows).</li>
+<li>Automatically in <strong>Trusted Root</strong> of any AD-joined machine.</li>
+</ul></li>
+
+<li><p><strong>Dogtag Subordinate CA</strong> (<code>IPA-Subordinate-CA</code>):</p>
+
+<ul>
+<li>Lives on <code>idm.ad.lan</code> (RHEL).</li>
+
+<li><p>Its certificate chain goes:</p>
+
+<pre><code>IPA-Subordinate-CA (Dogtag, installed in /etc/pki/... on IdM) 
+signed by → 
+DC1-CA (Root) (published in AD’s NTAuth)
+</code></pre></li>
+
+<li><p>SSSD (and any <code>ipa-client</code>) automatically trusts <code>IPA-Subordinate-CA</code> in <code>/etc/ipa/ca.crt</code> so Linux machines do not need manual distribution.</p></li>
+
+<li><p>Windows clients already trust <code>DC1-CA</code>, so they transitively trust all Dogtag‐issued leaf certs.</p></li>
+</ul></li>
+
+<li><p><strong>cert-manager</strong>:</p>
+
+<ul>
+<li>Configured so that any in-cluster <code>Certificate</code> object uses <code>issuerRef: { name: idm-subca-issuer, kind: ClusterIssuer }</code>.</li>
+<li>The <code>ClusterIssuer</code> secret holds <code>tls.key</code> = Dogtag SubCA’s private key, and <code>tls.crt</code> = Dogtag SubCA’s certificate.</li>
+<li>cert-manager issues leaf certificates for any Kubernetes Ingress, webhook server, or service.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h2>7. Summary and final recommendations</h2>
+
+<ol>
+<li><strong>Always keep your Windows AD CS Root CA as a separate, tightly-secured host.</strong>
+– Do not install any other CA role on that machine besides the Root.</li>
+<li><strong>Stand up one (or more) RHEL IdM servers to act as Enterprise Subordinate CA(s).</strong>
+– Use <code>ipa-server-install --setup-trust=ad</code> or trust methodology to join to AD.
+– Use <code>ipa-ca-install --external</code> after signing the CSR on AD CS.</li>
+
+<li><p><strong>Distribute and verify trust properly</strong>:</p>
+
+<ul>
+<li>AD automatically pushes the Root CA to Windows domain members; use GPO to push it to Linux if you want GUI apps on Linux to trust it.</li>
+<li>IdM automatically pushes the SubCA to Linux clients (via SSSD).</li>
+</ul></li>
+
+<li><p><strong>Configure Kubernetes cert-manager with the SubCA certificate + key</strong> (<code>tls.crt</code> + <code>tls.key</code>) as a <code>ClusterIssuer</code>.</p></li>
+
+<li><p><strong>From here on out, issue all end-entity certificates from Dogtag</strong>; the client chain validation will follow:
+☐ Leaf (cert-manager) ← signed by Dogtag(SubCA) ← signed by AD CS(Root).</p></li>
+</ol>
+
+<p>This achieves:</p>
+
+<ul>
+<li>A clean, auditable two-tier PKI (Root on Windows, SubCA on Linux).</li>
+<li>Unified identity (AD → IdM → Linux/K8s).</li>
+<li>Automated, cluster-wide certificate issuance for all Kubernetes services via cert-manager.</li>
+<li>A single trust anchor (AD CS Root) to install into any external device or appliance (for example, load balancers, IoT devices, network appliances) so they trust the same chain.</li>
+</ul>
+
+<p>Once configured this way, you have a fully integrated Windows ↔ RHEL PKI/IdM/Kubernetes ecosystem:</p>
+
+<ul>
+<li><strong>Windows users</strong> authenticate to K8s <code>kubectl</code> (if you set up OIDC or Kerberos-based auth).</li>
+<li><strong>Linux/RHEL servers</strong> authenticate to AD via IdM’s cross-realm trust.</li>
+<li><strong>cert-manager</strong> issues TLS certificates for all in-cluster workloads signed by Dogtag, chained to AD CS.</li>
+<li><strong>All clients</strong> only need to trust the Root CA (which AD DS already pushes), so there is no further manual trust distribution.</li>
+</ul>
+
+<p>That is the recommended, “industry-best-practice” topology when you have one Windows CA (root), one or more Linux IdM SubCA servers, and a Kubernetes cluster that must automatically obtain and rotate certificates.</p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

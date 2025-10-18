@@ -1443,9 +1443,13 @@ exit
 
     JsonPath # XPath for JSON : A language library : https://jsonpath.com/
         # https://kubernetes.io/docs/reference/kubectl/jsonpath/
+        
+        # Get flat list of all images of all containers running in the cluster across all namespaces
+        kubectl get pod -A -o jsonpath='{.items[*].spec.containers[*].image}' |tr ' ' '\n' |sort -u
+
         # COMMON PATTERN using its array filter "?()" :
-        # Get value of key-X of an array-el obj having a key-Y set to a *declared value*.
-        # SYNTAX: $.anArrayKey[?(@.keyB=="foo bar")].keyA
+        # Get value of subkey keyX of an object (element of anArrayKey) having a parent keyY that is set to a *declared value*.
+        # SYNTAX: $.anArrayKey[?(@.keyY=="foo bar")].keyX
         # EXAMPLE: Get/parse TLS certificate (and extract Subject) of a declared config.users.user:
         user=kind-kind # See config.users[] at `kubectl config view`
         kubectl config view --raw -o \
@@ -1453,7 +1457,7 @@ exit
             |base64 -d |openssl x509 -text -noout
             # OR just one field, e.g., Subject:
             |base64 -d |openssl x509 -subject -noout
-                #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+            #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
 
     jq|yq # Process JSON to YAML
         # Convert items[] els to "---" delimited YAML docs
@@ -1473,7 +1477,7 @@ exit
         ## Handle bad (sub)key names.
             # a:
             #   key.has.dots: {}
-            ... |jq -Mr '.a["key.has.dots"]'
+            ... |jq -Mr '."key.has.dots"'
 
         ## Filter out all but (sub)keys, of/to valid JSON.
             # Deletes ALL the STRING array els and key values, recursively.
