@@ -2,6 +2,8 @@
 
 ## AI-native IDEs
 
+Built to contain and host AI agents
+
 - Cursor
 - Warp
 - Claude Code 
@@ -13,6 +15,34 @@
 |Claude for VS Code|BYOK|Anthropic|
 |VS Code + Extensions|BYOK|Multiple providers directly|
 
+## AI-assited Workflow 
+
+### [Simple Workflow Commands](https://www.youtube.com/watch?v=LUFJuj1yIik "DOT")
+
+#### Tools
+
+- Claude Code
+
+
+#### Technologies 
+
+- AI Agent : A software system that uses artificial intelligence to act autonomously and pursue specific goals.
+- [MCP (Model Context Protocol)](https://modelcontextprotocol.io/docs/getting-started/intro)
+    - An open-source standard for connecting AI applications to external systems.
+    - Using MCP, AI applications can connect to __data sources__ (e.g. local files, databases), __tools__ (e.g. search engines, calculators) and __workflows__ (e.g. specialized prompts), enabling them to access key information and perform tasks.
+
+#### Concepts
+
+- __AI Context Management__  
+[Serving Prompts through MCPs](https://www.youtube.com/watch?v=XwWCFINXIoU "DOT")  
+Stop Wasting Time:      
+    - __AI without context is useless__.   
+    - __Prompts are that context__.
+    - Turn AI Prompts and __Context__ Into Production Code
+        - Treat prompts like prod code; a shared asset that evolves with your team.
+        More than merely instructions, prompts are the team's collective knowledge encoded in a way that AI can execute.
+        - Build the MCP prompt server : Have AI create it, and maintain it as a real Git project, complete with documentation, MR, and such. So, the latest version of all prompts is available for use in all projects by all team members. 
+        See `shared-prompts` dir of [`dot-ai`](https://github.com/vfarcic/dot-ai "GitHub : vfarcic/dot-ai")
 
 ## <abbr title="Large Language Model">LLM</abbr> + [Vector Databases](https://en.wikipedia.org/wiki/Vector_database "Wikipedia") 
 
