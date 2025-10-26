@@ -1,84 +1,215 @@
+# Artificial Intelligence (AI)
 
-# [Adobe Illustrator CC 2018 (Ai)](https://helpx.adobe.com/illustrator/user-guide.html "Ai User Guide")
+## AI-native IDEs
 
-## SVG @ `SVG` ([MD](SVG.html "@ browser"))   
+- Cursor
+- Warp
+- Claude Code 
 
-## Bitmap to Vector 
+|Tool|Account Model|Who You Pay|
+|----|-------------|-----------|
+|Cursor|Cursor|Cursor (subscription)|
+|Warp|Warp|Warp (freemium/subscription)|
+|Claude for VS Code|BYOK|Anthropic|
+|VS Code + Extensions|BYOK|Multiple providers directly|
 
-1. Window > Workspace > Tracing (will be inactive; greyed-out)
-1. Direct Selection Tool (_solid_ arrow icon)
-    - Click on Artboard, and the Tracing window should become active
-1. Tracing > Preview (checkbobx)
-    - Select options
-1. Uncheck Preview, and  click Trace (button)
-1. Top Menu Bar > Expand 
-1. Export 
 
-## Fatten Path Outline 
+## <abbr title="Large Language Model">LLM</abbr> + [Vector Databases](https://en.wikipedia.org/wiki/Vector_database "Wikipedia") 
 
-- Effect > Path > Offset
+### Run LLMs locally
 
-## Convert Stroke to Outline 
+[Ollama](https://ollama.com/) is a model runner; run locally. 
 
-- Object > Path > Outline Stroke
-    - This is not reversible.
+- Works offline
+- Requires GPU and such resources
 
-## Preserve Arboard, Groups, etc. on Save
+So while Cursor, Warp, and Claude are end-user applications, 
+Ollama is more like the engine that can power those applications with local, 
+open-source models instead of cloud-based proprietary ones.
 
-- Must "Export" _not_ "Save":
-    - File > Export > Export As > SVG 
-        - Select checkbox: Use Artboards (@ 1st menu).
-        - Unselect checkbox: Minify (@ 2nd menu).
+It's part of the growing "local-first" AI movement 
+that complements rather than replaces the cloud-based tools.
 
-See `SVG` ([MD](SVG.html "@ browser"))   
+### Prompt Template
 
-## Create PNG of SVG 
+Implement [function/class/endpoint] to [goal] using [library/framework].
 
-- File > Export > Export for Screens
-    - All
-    - Formats > Format: PNG
+Work in [files/paths] only.
 
-See `SVG` ([MD](SVG.html "@ browser"))   
+Respect [sytle/tests/rules].
 
-### Delete inner object encircled by outer object (shapes)
+Provide [tests/docs/migration].
 
-1. __Direct Selection Tool__ > Select both objects.
-1. Window (menu) > Pathfinder (toolbox/tab) > Pathfinder > Divide 
-1. Window (menu) > Pathfinder (toolbox/tab) > Shape Modes > Minus Front 
+(And either a or b:)
+a. If assumptions are needed, list them first.
+b. If anything in the plan is ambiguous, stop and output options with trade-offs instead of guessing.
 
-### Combine objects (shapes)
+- More context begets less cost (tokens).
+- Don't let the AI guess.
+- Specify the model.
 
-1. __Direct Selection Tool__ > Select both objects.
-1. Window (menu) > Pathfinder (toolbox/tab) > Shape Modes > Unite
+## [ArdanLabs : Guide to AI](https://www.youtube.com/watch?v=wbo7M2jF0Lc&list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ "YouTube : ArdanLabs : Exploring Vector Databases and Embeddings in AI")
 
-### Slice an object 
+### [`ardanlabs/ai-training`](https://github.com/ardanlabs/ai-training "GitHub")
 
-1. __Erase Tool__ (RT-CLICK) > __Scissors Tool__
-1. Click on the object's path at the desired slice-point(s).
-    - Use __Selection Tool__ to manipulate the object(s) thereafter. 
-        - First click anywhere away from the previously selected object to decouple what is now the two objects (sliced from one).
+- Ep.1 : [Exploring Vector Databases and Embeddings in AI](https://www.youtube.com/watch?v=wbo7M2jF0Lc&list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&index=4)
+    - [example1](ai-training/examples/example1/main.go) : 
+        - Hand craft a vector embedding scheme for a data set
+        - Use cosine-similarity function to evaluate it
+- Ep.2 : [Leveraging LLMs for Powerful Vector Embedding](https://www.youtube.com/watch?v=rV162WwQ1hw&list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&index=2)
+    - [example2](ai-training/examples/example2/main.go) : 
+        Same as Ep.1, but use an __LLM vector-embedding model__ to generate the embedding scheme.
+        - Ollama model server : Create vector embedding
+            ```Makefile
+            ollama-pull:
+                ollama pull mxbai-embed-large
+                ollama pull llama3.1
+            ```
+            - `mxbai-embed-large` is for text data
+- Ep.3 : [Training AI Models on Custom Data with Word2Vec](https://www.youtube.com/watch?v=inWa6TTVdfU&list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&index=1) : [Word2Vec](https://github.com/fogfish/word2vec) model : 
+      a technique in __Natural Language Processing__ (NLP) 
+      for obtaining vector representations of words. 
+      These vectors capture information about the meaning of the word 
+      based on the surrounding words.
+    - [example3](ai-training/examples/example3/main.go) : 
+        1. Clean the data
+        1. Train the model on the data
+        1. Evaluate/experiment 
+- Ep.4 : [Enhancing AI Similarity Searches with MongoDB](https://www.youtube.com/watch?v=HEptRbPbbic&list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&index=4)
+    - [MongoDB](https://www.mongodb.com/products/self-managed/community-edition) Atlas (Vector DB extension)
 
-### Add point(s) to a path (line or curve)
 
-1. __Pen Tool__ (RT-CLICK) > __Add Anchor Point Tool__ (select)
-1. Click on path at point desired.
 
-### Cut one object with another 
+## Fastest path to learn ML, AI/Agenic Framworks, and such
 
-- Method 1 (Simple)
-    1. __Direct Selection Tool__ > Select both objects.
-    1. __Shape Builder Tool__ > ALT-CLICK on region(s) to DELETE. 
-- Method 2 (More control)
-    1. __Direct Selection Tool__ > Select target object.
-        - Window (menu) > Pathfinder (toolbox/tab) > Shape Modes:
-            - Unite (Leftmost), or other effect
-    1. __Direct Selection Tool__ > Select both objects
-        - Window (menu) > Pathfinder (toolbox/tab) > Pathfinders:
-            - Trim (Second from left), or other effect
+The "fastest path" requires a focused, project-driven approach that prioritizes practical skills over deep theoretical understanding at the beginning. The key is to **build and deploy working systems as quickly as possible.**
+
+Here is a structured, ___four-phase fast-track plan___.
+
+### Guiding Philosophy: "Deploy First, Theory Later"
+*   **Goal-Oriented:** You will learn by building specific, tangible projects.
+*   **Stack-Focused:** You'll learn a specific, modern toolchain from day one.
+*   **Iterative:** You will start simple and progressively add complexity.
+
+---
+
+### Phase 1: Foundational Grounding (2-4 Weeks)
+**Goal:** Understand the landscape and get your hands dirty with basic code.
+
+1.  **Core Concepts (The "What"):**
+    *   Understand the difference between AI, Machine Learning (ML), and Deep Learning.
+    *   Learn key terminology: Supervised vs. Unsupervised Learning, Training vs. Inference, Models, Parameters, etc.
+    *   **Resources:** Watch short, conceptual videos on YouTube (channels like [3Blue1Brown](https://www.youtube.com/watch?v=aircAruvnKk) for intuition).
+
+2.  **Essential Tooling (The "How"):**
+    *   **Python:** If you don't know it, focus *only* on the basics: variables, loops, functions, and importing libraries. Use a crash course.
+    *   **Libraries:** Install and learn the basic usage of:
+        *   `pandas` (for data manipulation)
+        *   `numpy` (for numerical operations)
+        *   `matplotlib`/`seaborn` (for plotting)
+    *   **Environment:** Use **[Google Colab](https://colab.research.google.com/)** to start. It's free, has GPUs, and comes with most libraries pre-installed. This avoids setup hell.
+
+3.  **First Project:**
+    *   **Build a classic ML model.** Follow a tutorial to build a simple image classifier (on MNIST dataset) or a house price predictor. Use a high-level library like `scikit-learn`. The goal is to see a full cycle: load data, train a model, evaluate it.
+
+---
+
+### Phase 2: Core Machine Learning & Deep Learning (4-6 Weeks)
+**Goal:** Build a solid practical understanding of how neural networks work and how to train them.
+
+1.  **Deep Learning Fundamentals:**
+    *   **Framework:** Choose **PyTorch**. It's more pythonic and is the dominant framework in research and most new AI companies. ([TensorFlow](https://www.youtube.com/watch?v=i8NETqtGHms) is also valid, but PyTorch is recommended for a faster start).
+    *   **Core Concepts:** Learn about Tensors, Datasets & DataLoaders, building a simple Neural Network (Linear layers, ReLU), the training loop (loss functions, optimizers), and how to train on a GPU.
+
+2.  **Key Project:**
+    *   **Build an image classifier from scratch.** Use a dataset like CIFAR-10. Don't use a pre-trained model yet. Manually build a Convolutional Neural Network (CNN) in PyTorch. Struggle with the training loop, debugging, and overfitting. This struggle is where the real learning happens.
+
+3.  **Specialize:**
+    *   Pick one domain to apply your skills:
+        *   **Computer Vision (CV):** CNNs, Object Detection (YOLO), Image Segmentation.
+        *   **Natural Language Processing (NLP):** Transformers, Text Classification, Named Entity Recognition.
+
+---
+
+### Phase 3: The "Agentic" & Modern AI Stack (4-6 Weeks)
+**Goal:** Move from static models to interactive, reasoning AI systems using large language models.
+
+This is the most critical and high-value phase for the current market.
+
+1.  **Master Prompt Engineering & LLM APIs:**
+    *   **Skill:** Learn to effectively call and instruct LLMs via APIs.
+    *   **Tool:** Start with the **OpenAI API** (for GPT-4o) or **Anthropic's Claude API**. Learn about system prompts, few-shot learning, and controlling output (temperature, max tokens).
+    *   **Project:** Build a simple chatbot or a text summarizer.
+
+2.  **Introduction to RAG (Retrieval-Augmented Generation):**
+    *   **Concept:** This is the foundation of most modern AI applications. It allows an LLM to use your own private data.
+    *   **Toolchain:** Learn a basic stack:
+        *   **Vector Database:** **ChromaDB** (easiest to start with) or **Pinecone** (managed service).
+        *   **Embedding Models:** Learn to use OpenAI's `text-embedding-ada-002` or a similar open-source model.
+    *   **Project:** Build a **Document Q&A System**. Ingest a PDF (or many), chunk the text, create embeddings, store them in ChromaDB, and query it using an LLM. This is a *massive* portfolio piece.
+
+3.  **Introduction to AI Frameworks & Agents:**
+    *   **Framework:** Learn **LangChain** or **LlamaIndex**. These are the standard frameworks for building LLM applications.
+        *   **LangChain:** More flexible, great for building complex agentic workflows where an LLM can use tools (e.g., a calculator, web search, your API).
+        *   **LlamaIndex:** Specialized and often simpler for RAG applications.
+    *   **Project:** Use **LangChain** to build a simple agent. For example, a "Research Agent" that can use the Google Search API to find recent news and then write a summary.
+
+---
+
+### Phase 4: Integration & Production (Ongoing)
+**Goal:** Turn your scripts into deployable applications.
+
+1.  **Build a Full-Stack AI Application:**
+    *   Combine your skills. Build a web app with a frontend that uses your RAG system or agent on the backend.
+    *   **Simple Stack:** A **Streamlit** app is the fastest way to create a UI for your Python backend. It's the go-to for data scientists and ML engineers to demo their work.
+
+2.  **Deployment & MLOps Basics:**
+    *   **Containers:** Learn the absolute basics of **Docker**. Create a Dockerfile for your Streamlit app.
+    *   **Cloud Deployment:** Deploy your containerized app to a cloud service. The easiest path is **Google Cloud Run** or **AWS ECS**.
+    *   **Concept:** Understand what an API endpoint is and how your frontend would call your model.
+
+### Your "Fast-Track" Learning Stack Summary
+
+| Phase | Focus Area | Key Tools & Technologies |
+| :--- | :--- | :--- |
+| **1. Foundation** | Python, Data, Basic ML | Python, Pandas, NumPy, Scikit-learn, **Google Colab** |
+| **2. Core ML/DL** | Neural Networks, Training | **PyTorch**, CNNs, Transformers |
+| **3. Modern AI** | LLMs, RAG, Agents | **OpenAI/Claude API**, **ChromaDB**, **LangChain**, **LlamaIndex** |
+| **4. Production** | Deployment, Applications | **Streamlit**, **Docker**, **Google Cloud Run / AWS** |
+
+### Fastest Possible Path to a Job
+
+If you need to get job-ready in 3-6 months, your portfolio should consist of these 3 projects:
+
+1.  **A "from-scratch" DL Project:** A custom image or text classifier built in PyTorch. (Shows fundamentals).
+2.  **A RAG System:** A sophisticated Document Q&A system using LangChain/LlamaIndex and a vector DB. (Shows modern LLM skills).
+3.  **A Deployed Agentic App:** A Streamlit web app, deployed on the cloud, that demonstrates an AI agent using tools (e.g., search, calculator, your own data). (Shows full-stack, production potential).
+
+**Final Advice:** Don't get stuck in "tutorial purgatory." Spend 20% of your time on tutorials and 80% on building your own projects, even if they are messy and break. That is the fastest path to true, marketable expertise.
+
+
+
 
 ### &nbsp;
 <!-- 
-# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
 
-([MD](___.html "@ browser"))   
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
 -->
+
