@@ -47,6 +47,34 @@ sudo dnf install python37 -y
 sudo apt-get install python37 -y
 </code></pre>
 
+<h3>RHEL 8+</h3>
+
+<p>WARNING : Some RHEL tools, e.g., <code>sealert</code>, require the OS-default version of Python.</p>
+
+<pre><code class="language-bash"># @ Python 3.12.x
+dnf provides python312 
+sudo dnf -y install python312
+sudo dnf -y install python3.12-pip 
+
+# Register Python 3.9 with priority 1
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+
+# Register Python 3.12 with priority 2 (higher priority)
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 2
+
+# List versions and order (non-interactive)
+sudo alternatives --disply python3
+# List/Select default version (interactive)
+sudo alternatives --config python3
+
+# Verify 
+python --version # Python 3.12.9
+
+# Python SDK (minimal)
+sudo dnf -y install python3-devel gcc make git curl wget
+
+</code></pre>
+
 <h4>Install <code>wheel</code> and <code>setuptools</code></h4>
 
 <p><a href="https://realpython.com/python-wheels/#what-is-a-python-wheel">Wheel files</a> (<code>*.whl</code>) make for faster, smaller installs.</p>

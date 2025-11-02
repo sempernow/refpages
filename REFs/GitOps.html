@@ -41,6 +41,13 @@ and <dfn title="A development practice of pipelining and automated release and d
 
 <h2>Why</h2>
 
+<p>Configuration Management.</p>
+
+<p><strong>The number of configurations</strong> in a system with many options <strong>grows exponentially</strong>. For example, a system with <code>N</code> binary configuration options has <code>2^{N}</code> possible configurations. This exponential growth percipitates the <strong>configuration explosion</strong> problem, where a system's behavior under all possible configurations is <strong>untestable</strong>. </p>
+
+<p>DevOps and GitOps use a combination of principles and practices,
+such as Configuration as Code (<strong>CaC</strong>), to mitigate the risk posed by the vast configuration space.</p>
+
 <h3>Q:</h3>
 
 <p>How many possible configurations are there for <strong>3 hosts</strong>,
@@ -54,14 +61,17 @@ So, let's see what we may see &hellip;</p>
 <h3>A:</h3>
 
 <ol>
-<li><p><strong>Parameters per service</strong>: Each service has 6 parameters, and each parameter has 2 settings.
+<li><p><strong>Parameters per service</strong>: Each service has 6 parameters,
+and each parameter has 2 settings.
 So, the number of configurations for one service is:<br>
 <code>2^6 = 64</code></p></li>
 
-<li><p><strong>Services per host</strong>: Each host has 6 services, so the number of configurations for one host is:<br>
-<code>64^6</code> = <code>(2^6)^6</code> = <code>2^36</code> = 68,719,476,736</p></li>
+<li><p><strong>Services per host</strong>: Each host has 6 services,
+so the number of configurations for one host is:<br>
+<code>64^6</code> = <code>(2^6)^6</code> = <code>2^36</code> = <code>68,719,476,736</code></p></li>
 
-<li><p><strong>Total hosts</strong>: There are 3 hosts, so the total number of configurations is:<br>
+<li><p><strong>Total hosts</strong>: There are 3 hosts,
+so the total number of configurations is:<br>
 <code>(68,719,476,736)^3</code> = <code>(2^36)^3</code> = <code>2^108</code></p></li>
 
 <li><p><strong>Final calculation</strong>: <code>(2^36)^3</code> = <code>2^108</code></p></li>
@@ -71,8 +81,9 @@ So, the number of configurations for one service is:<br>
 <code>324,518,553,658,426,726,783,156,020,576,256</code><br>
 (<code>~ 3.2 x 10^32</code>)</p>
 
-<p>That's many more than a trillion trillion possible configurations.<br>
-More than the estimated number of stars in the Universe.
+<p>That's many more than a trillion trillion possible configurations.</p>
+
+<p>More than the estimated number of stars in the Universe.
 Not the galaxy. The entire Universe.</p>
 
 <p>And only one of those is the one you want.
@@ -80,14 +91,15 @@ All the others are some kind of misconfiguration.</p>
 
 <p>Do you like those odds?</p>
 
-<p>DevOps/GitOps/IaC is an upfront cost that pays dividends each time it is applied.
+<p>DevOps/GitOps with its IaC/CaC is an upfront cost
+that pays dividends each time it is applied.
 And the more your infa builds out, the larger those per-build dividends grow.</p>
 
-<p>Conversely, absent DevOps/GitOps/IaC,
+<p>Conversely, absent these practices,
 every stage of the build out is levied a tax dwarfing that of the prior stage.
-This non-linear explosion of misconfigurations is merciless.
+The resulting explosion of misconfigurations is merciless.
 It grinds down productivity along with morale,
-and does so ever more with each iteration.</p>
+and does so ever more as the project progresses.</p>
 
 <h3>Principles</h3>
 
