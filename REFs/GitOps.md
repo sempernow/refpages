@@ -19,6 +19,13 @@ and <dfn title="A development practice of pipelining and automated release and d
 
 ## Why
 
+Configuration Management.
+
+__The number of configurations__ in a system with many options __grows exponentially__. For example, a system with `N` binary configuration options has `2^{N}` possible configurations. This exponential growth percipitates the __configuration explosion__ problem, where a system's behavior under all possible configurations is __untestable__. 
+
+DevOps and GitOps use a combination of principles and practices, 
+such as Configuration as Code (__CaC__), to mitigate the risk posed by the vast configuration space.
+
 ### Q: 
 
 How many possible configurations are there for __3 hosts__, 
@@ -31,15 +38,18 @@ So, let's see what we may see &hellip;
 
 ### A: 
 
-1. **Parameters per service**: Each service has 6 parameters, and each parameter has 2 settings. 
-So, the number of configurations for one service is:  
-`2^6 = 64`
+1. **Parameters per service**: Each service has 6 parameters, 
+    and each parameter has 2 settings. 
+    So, the number of configurations for one service is:  
+    `2^6 = 64`
 
-2. **Services per host**: Each host has 6 services, so the number of configurations for one host is:  
-`64^6` = `(2^6)^6` = `2^36` = 68,719,476,736
+2. **Services per host**: Each host has 6 services, 
+    so the number of configurations for one host is:  
+    `64^6` = `(2^6)^6` = `2^36` = `68,719,476,736`
 
-3. **Total hosts**: There are 3 hosts, so the total number of configurations is:  
-`(68,719,476,736)^3` = `(2^36)^3` = `2^108`
+3. **Total hosts**: There are 3 hosts, 
+    so the total number of configurations is:  
+    `(68,719,476,736)^3` = `(2^36)^3` = `2^108`
 
 4. **Final calculation**: `(2^36)^3` = `2^108`
 
@@ -48,6 +58,7 @@ So, the number of possible configurations is:
 (`~ 3.2 x 10^32`) 
 
 That's many more than a trillion trillion possible configurations.  
+
 More than the estimated number of stars in the Universe.
 Not the galaxy. The entire Universe.
 
@@ -56,14 +67,15 @@ All the others are some kind of misconfiguration.
 
 Do you like those odds?
 
-DevOps/GitOps/IaC is an upfront cost that pays dividends each time it is applied.
+DevOps/GitOps with its IaC/CaC is an upfront cost 
+that pays dividends each time it is applied.
 And the more your infa builds out, the larger those per-build dividends grow.
 
-Conversely, absent DevOps/GitOps/IaC, 
+Conversely, absent these practices,
 every stage of the build out is levied a tax dwarfing that of the prior stage. 
-This non-linear explosion of misconfigurations is merciless. 
+The resulting explosion of misconfigurations is merciless. 
 It grinds down productivity along with morale,
-and does so ever more with each iteration.
+and does so ever more as the project progresses.
 
 ### Principles
 

@@ -1,10 +1,41 @@
 # Artificial Intelligence (AI)
 
+
+## Terminal-based Agents
+
+- [Claude Code](https://claude.com/product/claude-code) | [`dot-ai`](https://github.com/vfarcic/dot-ai "GitHub")
+    - Phases
+        - Planning : Opus Plan Mode (best)
+        - Execution : Sonnet (cheap)
+
+
+[Everything else sucks.](https://www.youtube.com/watch?v=MXOP4WELkCc)
+
+- [Cursor Agent CLI](https://cursor.com/blog/cli)
+
+Untested:
+
+- goose
+- Warp 
+- gwen-code
+- Gemini-cli
+
+Table Stakes:
+
+1. MCP Servers and their status
+2. Safe Prompts; security guardrails
+
 ## AI-native IDEs
+
+An AI-native IDE is an Integrated Development Environment built from the ground up with an AI assistant as its core, central component. 
+The AI is not a plugin; it's the fundamental interface.
 
 Built to contain and host AI agents
 
-- Cursor
+- Cursor Agent
+    - IDE is fork of VS Code
+    - Interacts with IDE-integrated terminal
+
 - Warp
 - Claude Code 
 
@@ -19,6 +50,13 @@ Built to contain and host AI agents
 
 ### [Simple Workflow Commands](https://www.youtube.com/watch?v=LUFJuj1yIik "DOT")
 
+References
+
+- [`dot-ai`](https://github.com/vfarcic/dot-ai "GitHub")
+    - [Quick Start](https://github.com/vfarcic/dot-ai/blob/main/docs/quick-start.md)
+
+1. Product Requirements Document (PRD)
+
 #### Tools
 
 - Claude Code
@@ -30,6 +68,7 @@ Built to contain and host AI agents
 - [MCP (Model Context Protocol)](https://modelcontextprotocol.io/docs/getting-started/intro)
     - An open-source standard for connecting AI applications to external systems.
     - Using MCP, AI applications can connect to __data sources__ (e.g. local files, databases), __tools__ (e.g. search engines, calculators) and __workflows__ (e.g. specialized prompts), enabling them to access key information and perform tasks.
+- Prompts : [`dot-ai/shared-prompts`](https://github.com/vfarcic/dot-ai/tree/main/shared-prompts "GitHub")
 
 #### Concepts
 

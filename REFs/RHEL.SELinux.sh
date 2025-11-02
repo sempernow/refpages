@@ -148,6 +148,22 @@ exit 0
     # Change SELinux type of /target content to that of /source
         semanage fcontext --add --equal /target /source # See `man semanage-fcontext`
 
+        # Configure a non-standard ($alt) HOME for local user that SELinux treats as it would those of /home
+            seVerifyHome(){
+                ## Verify SELinux fcontext EQUIVALENCE
+                semanage fcontext --list |grep "$1" |grep "$1 = /home"
+            }
+            export -f seVerifyHome
+            mkdir -p $alt
+            seVerifyHome $alt || {
+                ## Force SELinux to accept SELinux declarations REGARDLESS of current state of SELinux objects at target(s)
+                semanage fcontext --delete "$alt(/.*)?" 2>/dev/null # Delete all rules; is okay if no rules exist.
+                restorecon -Rv $alt # Apply the above purge (now).
+                ## Declare SELinux fcontext EQUIVALENCE : "$alt = /home"
+                semanage fcontext --add --equal /home $alt
+                restorecon -Rv $alt # Apply the above rule (now).
+            }
+
     # Identify SELinux booleans relevant for NFS, CIFS, and Apache:
         semanage boolean -l |grep 'nfs\|cifs' |grep httpd
     # Enable the identified booleans: 

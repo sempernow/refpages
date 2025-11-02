@@ -48,7 +48,7 @@ exit 0
 
         # timedatectl : https://www.man7.org/linux/man-pages/man1/timedatectl.1.html
             # List all USA Time Zones
-            timedatectl list-timezones | grep America
+            timedatectl list-timezones |grep America
             # Set Time Zone
             timedatectl set-timezone 'America/New_York'
             # Set the Time Zone Manually on a Linux System
@@ -97,10 +97,10 @@ exit 0
 
             cpuinfo(){
                 echo -e "arch\t\t: $(echo $HOSTTYPE |cut -d'"' -f2)"
-                cat /proc/cpuinfo \
-                    |grep -e name -e MHz -e cores -e siblings \
-                    |sed 's/siblings/threads   /' \
-                    |sort -u
+                cat /proc/cpuinfo |
+                    grep -e name -e MHz -e cores -e siblings |
+                    sed 's/siblings/threads   /' |
+                    sort -u
             }
             alias cpu=cpuinfo
 
@@ -118,10 +118,10 @@ exit 0
 
         # ps : Process info of declared pattern (command, PID, ...), else all of current user
         psp (){
-            ps -axo user,pid,rss,pmem,pcpu,command \
-                |grep -v grep \
-                |grep -v 'ps -' \
-                |grep -e PID -e "${@:-$USER}"
+            ps -axo user,pid,rss,pmem,pcpu,command |
+                grep -v grep |
+                grep -v 'ps -' |
+                grep -e PID -e "${@:-$USER}"
         }
 
     # Memory info
@@ -150,12 +150,15 @@ exit 0
                 [[ "$1" =~ ^-?[0-9]+$ ]] && n=$1 || {
                     n=12;[[ $1 ]] && unset e
                 }
-                ps -o pid,comm,rss,pmem,pcpu --sort=-rss \
-                    |awk '{ printf "%-8s %-22s %s[MiB]   %5s %5s\n", $1, $2, $3, $4,$5}' |head -1
-                [[ $e ]] || ps -C $1 -o pid,comm,rss,pmem,pcpu --sort=-rss --no-headers \
-                    |awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |head -$n
-                [[ $e ]] && ps $e -o pid,comm,rss,pmem,pcpu --sort=-rss --no-headers \
-                    |awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |head -$n
+                ps -o pid,comm,rss,pmem,pcpu --sort=-rss |
+                    awk '{ printf "%-8s %-22s %s[MiB]   %5s %5s\n", $1, $2, $3, $4,$5}' |
+                        head -1
+                [[ $e ]] || ps -C $1 -o pid,comm,rss,pmem,pcpu --sort=-rss --no-headers |
+                    awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |
+                        head -$n
+                [[ $e ]] && ps $e -o pid,comm,rss,pmem,pcpu --sort=-rss --no-headers |
+                    awk '{ printf "%-8s %-20s %6.0f       %5s %5s\n", $1, $2, $3/1024, $4, $5}' |
+                        head -$n
             }
 
         rss(){ # Show actual (phyical) memory usage (RSS, HWM, etc.) of a process by its command ($1)
@@ -164,13 +167,14 @@ exit 0
             }
             [[ $1 ]] || { echo '  USAGE: rss COMMAND';return 1; }
             pid=$(pid_of_cmd $1)
-            [[ $pid ]] && cat /proc/$pid/status |grep Vm \
-                |awk '{ printf "%-8s %5.0f %4s\n", $1, $2/1024,"MiB" }' |grep -v ' 0 '
+            [[ $pid ]] && cat /proc/$pid/status |grep Vm |
+                awk '{ printf "%-8s %5.0f %4s\n", $1, $2/1024,"MiB" }' |
+                    grep -v ' 0 '
         }
         meminfo(){
-            cat /proc/meminfo \
-                |awk '{ printf "%-16s %10.2f %4s\n", $1, $2/1024/1024,"GiB" }' \
-                |grep -v 0.00
+            cat /proc/meminfo |
+                awk '{ printf "%-16s %10.2f %4s\n", $1, $2/1024/1024,"GiB" }' |
+                    grep -v 0.00
         }
 
 # PERFORMANCE
