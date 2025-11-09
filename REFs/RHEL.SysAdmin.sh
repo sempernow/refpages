@@ -193,24 +193,30 @@ systemctl restart sssd  # Restart sssd (to apply changes)
 
 # PKG MANAGERs : yum @ RHEL8- : dnf @ RHEL 8+
 
-    dnf  # RHEL 8+
-        dnf [options] COMMAND
-        provides $pkg   # Versioninng reported here is often misleading; not the app version
-        upgrade  $pkg 
-        install  $pkg --disablerepo=* --enablerepo=$localrepo
-        install  $pkg --nobest --allowerasing 
-        download $pkg --archlist x86_64,noarch --alldeps --resolve
-        remove   $pkg 
-        info     $pkg               # Application details; version and such
-        repoquery -l $pkg           # List package content (CLI utilities, config files, ...)
-        list installed $pkg         # Verify package is installed
-        list --showduplicates $pkg  # List ALL versions
-        list available $pkg         # List NEWER versionS (vs. that already installed)
-        repolist
-        repodiff --repo-old old1 --repo-new new1
-        config-manager --disable $repo 
-        makecache  # Create cache of all enabled repo data
+    dnf [options] COMMAND # RHEL 8+
+    dnf makecache  # Update/cache data of all enabled repos
+    dnf provides $pkg   # Versioninng reported here is often misleading; not the app version
+    dnf upgrade  [$pkg] 
+    dnf upgrade-minimal # Only updates that fix something
+    dnf search $str # Packages having string : Wildcards ok 
+    dnf install  $pkg --disablerepo=* --enablerepo=$localrepo # Install using only the local repo
+    dnf install  $pkg --nobest --allowerasing 
+    dnf reinstall # Overwrite existing installation with new.
+    dnf download $pkg --archlist x86_64,noarch --alldeps --resolve
+    dnf remove   $pkg               # Remove (delete) the installation.
+    dnf info     $pkg               # Application details; version and such
+    dnf repoquery -l $pkg           # List package content (CLI utilities, config files, ...)
+    dnf list installed $pkg         # Verify package is installed
+    dnf list --showduplicates $pkg  # List ALL versions (regardless of what's installed)
+    dnf list available $pkg         # List NEWER versions (of that installed currently)
+    dnf repolist
+    dnf repodiff --repo-old old1 --repo-new new1
+    dnf config-manager --disable $repo 
 
+    # RHEL brands OSS
+        go-toolset  # Golang having curated package versions tailored for current RHEL version.
+        idm         # FreeIPA
+        
     # Modules are part of Application Stream (AppStream) of RHEL8+;
     # collections of software packages grouped together and managed as a unit. They contain a set of RPM packages and metadata that define their default versions and available streams (app versions)
         # List Available Modules
@@ -227,7 +233,7 @@ systemctl restart sssd  # Restart sssd (to apply changes)
 
         # Change version without using package manager
         alternatives # Maintain symbolic links determining default commands
-        # ... LINK NAME PATH PRIORITY
+        # ... LINK NAME PATH PRIORITY 
         alternatives --install /usr/bin/python python /usr/bin/python3.6 1
         alternatives --config python # List configured versions
         alternatives --list          # List all  
@@ -239,7 +245,7 @@ systemctl restart sssd  # Restart sssd (to apply changes)
         rpm -q COMMAND # RPM package + version
 
         # List meta of ALL PACKAGES installed
-            for p in $(rpm -qa); do dnf info $p; done 
+        for p in $(rpm -qa); do dnf info $p; done 
 
     # CVEs / PATCHes 
         # Test if a specific Linux kernel (RHEL version) is vulnerable to a declared CVE
