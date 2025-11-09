@@ -611,15 +611,16 @@ exit
 
 ###########################################################
 ## BUNDLE : git bundle : Migrate repo : Capture as ONE FILE
-    # 1. At source : Create bundle file from source host.
+    # 1. At source repo : Create bundle file from source host.
     git bundle create $repo.bundle --all # All branches (refs) and tags
-    # 1.b. Verify 
-    git bundle verify $repo.bundle || echo ERR : $? # Full check: format, prerequisites, coverage
-    git bundle list-heads $repo.bundle # Smoke test : List bundle content else fail 
+    # 1.b. Verify bundle (if at source repo) : Full check: format, prerequisites, coverage
+    git bundle verify $repo.bundle 
+    # 1.c List bundle content (from anywhere) : Smoke test the bundle
+    git bundle list-heads $repo.bundle 
     # 2. At destination : Clone (Extract from) bundle and push to destination host.
     git clone $repo.bundle $repo
     cd $repo
-    git remote add origin https://new-remote.example.com/$repo.git
+    git remote add origin https://$new_host/$repo.git
     # If "Host githostx" params declared at ~/.ssh/config, then ...
     git remote add origin githostx:$repo.git #... using SSH mode.
     git push -u origin --all
