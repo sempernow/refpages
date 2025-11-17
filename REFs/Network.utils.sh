@@ -237,10 +237,11 @@ exit
     # cURL is a tool to transfer data between client (itself) and server
         curl [options] URL         # Okay to omit protocol
 
+            SSL_CERT_FILE=FILE     # Alternative to host OS' CA trust store; FILE is CA certificate.
             -k, --insecure         # Skip TLS certificate verification
             --ca-native            # Use OS-native CA trust store to verify TLS cert of "peer" (in TLS context)
-            --cacert PATH          # Path to CA cert or FILE containing bundle of CA certs
-            --capath PATH          # Path to DIR of CA cert(s) 
+            --cacert FILE          # Path to CA cert or FILE containing bundle of CA certs
+            --capath DIR           # Path to DIR of CA cert(s) 
             -H, --header HEADER    # set HTTP request header(s); one per `-H '...'` switch
             -X, --request METHOD   # set request method; GET|POST|PUT|DELETE; default is GET
             -I, --head             # Show headers ONLY
@@ -269,13 +270,14 @@ exit
             -v --trace FILE --trace-time # Write trace/time to FILE
             -w, --write-out @FILE  # FORMAT output per txt FILE
 
-        # TLS : CURL_CA_BUNDLE | --cacert
+        # TLS : 
             # Linux
-                # Requires CA certs in PEM format
+                # Requires CA cert(s) in PEM format
                 --cacert=/path/to/the-signing-root-ca.crt
                 --cacert=/path/to/bundle/file/ca.bundle
                 --capath=/dir/containing/the-signing-root-ca.crt
-                export CURL_CA_BUNDLE=/path/to/ca.bundle
+                export SSL_CERT_FILE=/path/to/ca.bundle  # Used by many apps
+                export CURL_CA_BUNDLE=/path/to/ca.bundle # Takes precedence
                 # Install internet's CA bundle
                     # Debian/Ubuntu
                     sudo apt update && sudo apt install -y ca-certificates

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Proxmox.Netdata</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.netdata.cloud/integrations/data-collection/containers-and-vms/proxmox-ve/">NETDATA for Proxmox VE</a></h1>
+
+<p>Here's a comprehensive guide on how to install netdata on a Proxmox host.
+I'll cover multiple methods so you can choose the one that best fits your needs.</p>
+
+<h2>Method 1: Install via Proxmox Shell (Recommended)</h2>
+
+<h3>Step 1: Access Proxmox Shell</h3>
+
+<p>SSH into your Proxmox host or use the built-in shell via the web interface.</p>
+
+<h3>Step 2: Install netdata using the automated script</h3>
+
+<pre><code class="language-bash"># Download and run the automatic installation script
+wget -O /tmp/netdata-kickstart.sh https://get.netdata.cloud/kickstart.sh
+sh /tmp/netdata-kickstart.sh
+</code></pre>
+
+<p>This script will:
+- Detect your OS (Proxmox is Debian-based)
+- Install all dependencies
+- Set up netdata as a service
+- Configure automatic updates</p>
+
+<h3>Step 3: Verify installation</h3>
+
+<pre><code class="language-bash"># Check if netdata is running
+systemctl status netdata
+
+# Check listening port (default: 19999)
+netstat -tlnp | grep 19999
+</code></pre>
+
+<h3>Step 4: Access the dashboard</h3>
+
+<p>Open your browser and navigate to:</p>
+
+<pre><code>http://your-proxmox-ip:19999
+</code></pre>
+
+<hr>
+
+<h2>Method 2: Manual Installation via APT</h2>
+
+<h3>Step 1: Add netdata repository</h3>
+
+<pre><code class="language-bash"># Add the repository key
+curl https://packages.netdata.cloud/repos/repoconfig-archive-archive-keyring-2023.gpg &gt; /usr/share/keyrings/netdata-archive-keyring.gpg
+
+# Add the repository
+echo &quot;deb [signed-by=/usr/share/keyrings/netdata-archive-keyring.gpg] https://packages.netdata.cloud/repos/archive/debian stable bullseye&quot; &gt; /etc/apt/sources.list.d/netdata.list
+
+# Update package list
+apt update
+</code></pre>
+
+<h3>Step 2: Install netdata</h3>
+
+<pre><code class="language-bash"># Install netdata
+apt install netdata
+
+# Enable and start the service
+systemctl enable netdata
+systemctl start netdata
+</code></pre>
+
+<hr>
+
+<h2>Method 3: Using Docker (Alternative approach)</h2>
+
+<p>If you prefer containerized deployment:</p>
+
+<pre><code class="language-bash"># Create a directory for netdata configuration
+mkdir -p /opt/netdata/{config,lib,log,cache}
+
+# Run netdata in a container
+docker run -d --name=netdata \
+  --pid=host \
+  --network=host \
+  --restart=unless-stopped \
+  -v /proc:/host/proc:ro \
+  -v /sys:/host/sys:ro \
+  -v /opt/netdata/config:/etc/netdata:rw \
+  -v /opt/netdata/lib:/var/lib/netdata:rw \
+  -v /opt/netdata/log:/var/log/netdata:rw \
+  -v /opt/netdata/cache:/var/cache/netdata:rw \
+  -e PUID=0 \
+  -e PGID=0 \
+  --cap-add SYS_PTRACE \
+  --security-opt apparmor=unconfined \
+  netdata/netdata:latest
+</code></pre>
+
+<hr>
+
+<h2>Configuration for Proxmox-specific Monitoring</h2>
+
+<h3>Enable Proxmox-specific collectors</h3>
+
+<p>Netdata should auto-detect many Proxmox components, but you can enhance monitoring:</p>
+
+<h4>1. Monitor LXC containers and VMs</h4>
+
+<p>Netdata automatically detects containers, but for better VM monitoring, ensure the netdata agent is installed inside VMs as well.</p>
+
+<h4>2. Configure ZFS monitoring (important for Proxmox)</h4>
+
+<pre><code class="language-bash"># Check if ZFS monitoring is enabled
+cat /etc/netdata/netdata.conf | grep zfs
+
+# If you need to enable it manually, edit the config:
+nano /etc/netdata/netdata.conf
+</code></pre>
+
+<p>Add or ensure these lines exist:</p>
+
+<pre><code>[plugin:zfs]
+enabled = yes
+update every = 5
+</code></pre>
+
+<h4>3. Monitor hardware sensors</h4>
+
+<pre><code class="language-bash"># Install sensors for hardware monitoring
+apt install lm-sensors
+
+# Detect sensors
+sensors-detect
+</code></pre>
+
+<h3>Firewall Configuration</h3>
+
+<p>If you have a firewall enabled, open port 19999:</p>
+
+<pre><code class="language-bash"># Using iptables (if enabled)
+iptables -A INPUT -p tcp --dport 19999 -j ACCEPT
+
+# Using ufw (if enabled)
+ufw allow 19999/tcp
+</code></pre>
+
+<hr>
+
+<h2>Advanced Configuration</h2>
+
+<h3>Change default port (optional)</h3>
+
+<p>If you want to use a different port:</p>
+
+<pre><code class="language-bash"># Edit netdata configuration
+nano /etc/netdata/netdata.conf
+
+# Change the port
+[web]
+    bind to = 0.0.0.0:29999
+</code></pre>
+
+<p>Then restart netdata:</p>
+
+<pre><code class="language-bash">systemctl restart netdata
+</code></pre>
+
+<h3>Enable authentication (recommended for production)</h3>
+
+<pre><code class="language-bash"># Enable basic authentication
+nano /etc/netdata/netdata.conf
+
+[web]
+    allow connections from = *
+    allow dashboard from = *
+    allow badges from = *
+    allow streaming from = *
+    allow management from = localhost
+    web files owner = root
+    web files group = netdata
+</code></pre>
+
+<h3>Set up reverse proxy with Proxmox web interface (optional)</h3>
+
+<p>You can integrate netdata into the Proxmox web interface:</p>
+
+<pre><code class="language-bash"># Create a snippet for nginx
+nano /etc/nginx/snippets/proxy-netdata.conf
+</code></pre>
+
+<p>Add:</p>
+
+<pre><code>location /netdata/ {
+    proxy_pass http://127.0.0.1:19999/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_http_version 1.1;
+    proxy_pass_request_headers on;
+    proxy_set_header Connection &quot;keep-alive&quot;;
+    proxy_store off;
+}
+</code></pre>
+
+<p>Then include it in your Proxmox nginx configuration.</p>
+
+<hr>
+
+<h2>Verification and Testing</h2>
+
+<p>After installation:</p>
+
+<ol>
+<li><strong>Access the dashboard</strong>: <code>http://your-proxmox-ip:19999</code></li>
+<li><strong>Check system metrics</strong>: Look for CPU, memory, disk I/O, and network stats</li>
+<li><strong>Verify Proxmox-specific metrics</strong>:
+
+<ul>
+<li>ZFS pool statistics</li>
+<li>LXC container resource usage</li>
+<li>VM performance metrics</li>
+<li>Hardware sensor data (if available)</li>
+</ul></li>
+</ol>
+
+<h3>Useful commands for management:</h3>
+
+<pre><code class="language-bash"># Start/stop/restart netdata
+systemctl start netdata
+systemctl stop netdata
+systemctl restart netdata
+
+# Check logs
+journalctl -u netdata -f
+
+# Enable auto-start on boot
+systemctl enable netdata
+</code></pre>
+
+<hr>
+
+<h2>Security Considerations</h2>
+
+<ol>
+<li><strong>Change default port</strong> if exposing to the internet</li>
+<li><strong>Set up authentication</strong> for remote access</li>
+<li><strong>Use firewall rules</strong> to restrict access</li>
+<li><strong>Consider VPN</strong> for remote monitoring</li>
+<li><strong>Regular updates</strong>: Netdata auto-updates by default, but verify with <code>netdata-updater</code></li>
+</ol>
+
+<p>The automated script (Method 1) is generally the easiest and most reliable approach for Proxmox hosts. Netdata will automatically detect Proxmox's ZFS storage, LXC containers, and provide comprehensive system monitoring out-of-the-box.</p>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

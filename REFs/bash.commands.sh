@@ -2533,6 +2533,12 @@ exit
         curl -fsSLO https://foo.com/path/to/a.sh
         # Pull script to /path/b.sh
         curl -fsSL https://foo.com/path/to/a.sh -o /path/b.sh
+        # TLS CA : Relies on OS trust store, else any of (PEM format):
+            --cacert /path/to/the/ca.crt
+            --capath /path/to/ca/certs/dir
+            export SSL_CERT_FILE=/path/to/the/ca.crt  # Many apps use this
+            export CURL_CA_BUNDLE=/path/to/the/ca.crt # Takes precedent over SSL_CERT_FILE
+            -k # Else skip CA validation
 
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 

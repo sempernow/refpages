@@ -40,6 +40,37 @@
 
 <p><a href="https://en.wikipedia.org/wiki/HTTPS">HTTPS is an extention of HTTP</a>. An HTTPS connection starts with a TLS client/server handshake whereof the certificate is sent/validated and the TLS parameters (cipher suite and such) are set (negotiated if allowed). Otherwise, the TLS-handshake fails and the connection is terminated.</p>
 
+<h4><strong>What it verifies</strong></h4>
+
+<ol>
+<li><strong>Certificate Chain Validation</strong><br>
+Is the server's certificate trusted and valid?<br>
+Client checks:
+
+<ul>
+<li>CA signature</li>
+<li>Expiration</li>
+<li>Revocation</li>
+<li>Domain match</li>
+</ul></li>
+<li><strong>Proof of Private Key Possession</strong><br>
+Does the server control the private key?<br>
+The client/server key exchange fails if not.<br>
+(<em>This is the part most people miss.</em>)<br></li>
+</ol>
+
+<h4><strong>How it works</strong></h4>
+
+<pre><code>  Client                 Server
+    |----ClientHello -----&gt;|
+    |&lt;--- ServerHello -----|
+    |&lt;--- Certificate -----|  (public cert, anyone can send)
+    |&lt;--- ServerKeyExchange|  (signed with *private key*)
+    |ClientKeyExchange----&gt;|  (encrypted with *public key*)
+    |&lt;--- Finished --------|  (proves session key works)
+    |---- Finished -------&gt;|
+</code></pre>
+
 <blockquote>
 <p><strong>On TLS-handshake failure</strong>, the server is likely to send a &quot;handshake failure&quot; alert. Such may occur if the certificate's CA cannot be validated by the client, or <strong><em>if client and server have no mutually supported TLS-ciphers suite</em></strong>. The TLS handshake failure is not an HTTP-level response; it's part of the TLS protocol. The HTTP layer comes into play only after a secure TLS connection has been established. If the TLS handshake fails, the HTTP layer doesn't have an opportunity to send an HTTP response code because the connection hasn't been established.</p>
 </blockquote>
