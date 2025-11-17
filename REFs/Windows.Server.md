@@ -38,7 +38,13 @@ Requirements:
 - RAM: 512 MB 
 - Disk: 32 GB
 
-### [Windows Admin Center](https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview) (WAC)
+### [Windows Admin Center](https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview) (WAC) | [Chocolatey Package](https://community.chocolatey.org/packages?q=windows%20admin%20center)
+
+UPDATE: This is __another useless Microsoft product__. It manages to log in to the domain controller, though having no ability to save credentials. And then it lists roles and such, but has none of the interfaces to any of the roles. 
+
+__It merely lists the roles! That's all it does!__
+
+PRIOR ...
 
 A locally-deployed, __browser-based management tool__ set built to manage Windows Clients, Servers, and Clusters without needing to connect to the cloud. Windows Admin Center offers full control over all aspects of Windows-based server infrastructure and is __particularly useful for managing on-prem servers__.
 
@@ -1136,6 +1142,19 @@ auth     required  pam_faillock.so authfail audit deny=3 unlock_time=600
 
 ## AD Certificate Services (AD CS)
 
+UPDATE: 
+
+Configure this as and Enterprise Subordinate CA rather than Enterprise Root CA.
+
+- Generate the Enterprise Root CA (Lime LAN Root CA) using OpenSSL tools and keep offline.
+- This subordinate (intermediary), and/or others such as `cert-manager` and Dogtag, 
+  will issue the leaf CA certificates to K8s Ingress, K8s Control Plane perhaps, and any others.
+
+See `iac/adcs/README` ([MD](iac/adcs/README.md)|[HTML](iac/adcs/README.html))
+
+
+ORIGINAL: 
+
 See snapshots of the GUI
 
 1. Open **Server Manager**.
@@ -1178,7 +1197,7 @@ $cert       = Get-ADObject -LDAPFilter "(cn=$caName)" -SearchBase "CN=Certificat
 
 ```
 
-### Obtain a TLS certificate  via CSR 
+### Obtain a TLS cert via CSR 
 
 #### @ https://dc1.lime.lan/certsrv/
 
@@ -1207,11 +1226,12 @@ unless that role is configured otherwise,
 which is a non-trivial task that nearly no organization performs.
 
 ```bash
+bits=4096
 root=lime.lan
 cn=kube.$root
 TLS_ST=MD
 TLS_L=AAC
-TLS_O=DisselTree
+TLS_O=SemperNet
 TLS_OU=ops
 ## Create the configuration file (CNF) : See man config
 ## See: man openssl-req : CONFIGURATION FILE FORMAT section
@@ -1219,7 +1239,7 @@ TLS_OU=ops
 cat <<-EOH |tee $cn.cnf
 [ req ]
 prompt              = no        # Disable interactive prompts.
-default_bits        = 2048      # Key size for RSA keys. Ignored for Ed25519.
+default_bits        = $bits     # Key size for RSA keys. Ignored for Ed25519.
 default_md          = sha256    # Hashing algorithm.
 distinguished_name  = req_distinguished_name 
 req_extensions      = v3_req    # Extensions to include in the request.
@@ -1228,7 +1248,7 @@ CN              = $cn                   # Common Name
 C               = ${TLS_C:-US}          # Country
 ST              = ${TLS_ST:-NY}         # State or Province
 L               = ${TLS_L:-Gotham}      # Locality name
-O               = ${TLS_O:-Foobar Inc}  # Organization name
+O               = ${TLS_O:-Penguin Inc} # Organization name
 OU              = ${TLS_OU:-GitOps}     # Organizational Unit name
 emailAddress    = admin@$root 
 [ v3_req ]

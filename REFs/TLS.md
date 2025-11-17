@@ -17,6 +17,32 @@ Nominally, the client application has access to a **trust store** containing a l
 
 [HTTPS is an extention of HTTP](https://en.wikipedia.org/wiki/HTTPS). An HTTPS connection starts with a TLS client/server handshake whereof the certificate is sent/validated and the TLS parameters (cipher suite and such) are set (negotiated if allowed). Otherwise, the TLS-handshake fails and the connection is terminated. 
 
+#### __What it verifies__
+
+1. __Certificate Chain Validation__  
+    Is the server's certificate trusted and valid?  
+    Client checks: 
+    - CA signature
+    - Expiration
+    - Revocation
+    - Domain match
+2. __Proof of Private Key Possession__  
+    Does the server control the private key?  
+    The client/server key exchange fails if not.  
+    (_This is the part most people miss._)  
+
+#### __How it works__
+
+      Client                 Server
+        |----ClientHello ----->|
+        |<--- ServerHello -----|
+        |<--- Certificate -----|  (public cert, anyone can send)
+        |<--- ServerKeyExchange|  (signed with *private key*)
+        |ClientKeyExchange---->|  (encrypted with *public key*)
+        |<--- Finished --------|  (proves session key works)
+        |---- Finished ------->|
+
+
 >**On TLS-handshake failure**, the server is likely to send a "handshake failure" alert. Such may occur if the certificate's CA cannot be validated by the client, or ***if client and server have no mutually supported TLS-ciphers suite***. The TLS handshake failure is not an HTTP-level response; it's part of the TLS protocol. The HTTP layer comes into play only after a secure TLS connection has been established. If the TLS handshake fails, the HTTP layer doesn't have an opportunity to send an HTTP response code because the connection hasn't been established.
 
 ## OpenSSL 

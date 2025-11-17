@@ -2,7 +2,7 @@
 
 ## Typography per SVG [@ `text.svg`](text.svg "text.svg")
 
-## Adobe Illustrator (Ai) @ `Ai` ([MD](Ai.html "@ browser"))   
+## Adobe Illustrator (Ai) @ `Adobe.Ai` ([MD](Adobe.Ai.html "@ browser"))   
 
 ## [InkScape](https://inkscape.org/learn/tutorials/ "inkscape.org") (PortableApps)
 
