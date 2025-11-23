@@ -20,7 +20,10 @@ kubectl api-resources # List all K8s API objects in cluster's store; API is exte
 kubectl api-resources --verbs=create --namespaced=false #…only those create(able) & having cluster-wide scope.
 
 # LISTs : FLATTEN "items: []" of "- apiVersion: …" elements to "---" delimited YAML documents
-kubectl get $kind -o json |jq -Mr [.items[]] |yq eval .[] -P - |sed '1!s/^apiVersion/---\napiVersion/'
+kubectl get $kind -o json |
+    jq -Mr [.items[]] |
+    yq eval .[] -P - |
+    sed '1!s/^apiVersion/---\napiVersion/'
 
 # DEBUG : Get cluster-level info 
 # - Verify core control-plane (etcd and API server) health
@@ -110,13 +113,14 @@ kubectl exec -it $pod -- cat /etc/resolv.conf
         CTRL p;CTRL q   # if shell @ PID 1
 
 # Get per-pod environment of every pod in current namespace
-for pod in $(kubectl get po --output=jsonpath={.items..metadata.name})
-do 
-    echo "=== $pod" && kubectl exec -it $pod -- env
+for pod in $(kubectl get po --output=jsonpath={.items..metadata.name}); do 
+    echo "=== $pod" &&
+        kubectl exec -i $pod -- env 2>/dev/null ||
+            echo ERR : $? : No shell
 done
 # Or
-echo $(kubectl get po --output=jsonpath={.items..metadata.name}) \
-    |xargs -n1 /bin/bash -c 'echo === $1 && kubectl exec -it $1 -- env' _
+printf "%s\n" $(kubectl get po --output=jsonpath={.items..metadata.name}) |
+    xargs -n1 /bin/bash -c 'echo === $1 && kubectl exec -i $1 -- env 2>/dev/null ||echo ERR : $? : No shell' _
 
 # GENERATE/CAPTURE MANIFEST (YAML)
 # - Using kubernetes.io/docs : cut/paste from examples
@@ -222,14 +226,18 @@ kubectl get pods -o wide # Monitor the startup process including node
 kubectl get cm gitlab-runner -o yaml |yq .data'.["config.template.toml"]'
 # Get all pod names of this namespace
 kubectl get po -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
-# Get all images running in the cluster, across all namespaces. (Either method outputs a flat list.)
+# Get all images of all (init)containers of all pods across all namespaces. (Either method prints a flat list.)
 kubectl get po -A -o jsonpath='{range .items[*]}{range .spec.initContainers[*]}{.image}{"\n"}{end}{range .spec.containers[*]}{.image}{"\n"}{end}{end}' |sort -u
-kubectl get po -A -o yaml |yq '.items[] | (.spec.initContainers[].image,.spec.containers[].image)' |sort -u
+# Or
+kubectl get po -A -o yaml |
+    yq '.items[] | (.spec.initContainers[].image,.spec.containers[].image)' |
+    sort -u
 # Get all Pods having (selector) label 'type' set to 'canary'
 kubectl get po -l type=canary
-# Get 'name' and 'podID' of those Pods as valid JSON
-kubectl get po -l type=canary -o json \
-    |jq -Mr '.items[] | {name: .metadata.name,podIP: .status.podIP}' |jq . --slurp
+# Get 'name' and 'podID' of those Pods as *valid* JSON
+kubectl get po -l type=canary -o json |
+    jq -Mr '.items[] | {name: .metadata.name,podIP: .status.podIP}' |
+    jq -Mr . --slurp
 # Get node names only, one per line.
 kubectl get no -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
 # Capture a manifest

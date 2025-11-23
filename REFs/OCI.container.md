@@ -1,6 +1,33 @@
 # OCI containers
 
-From the perspective of the **System Administrator (SAs)**
+## Tools
+
+### Full-scope handlers
+
+- docker
+- podman
+- nerdctl
+
+### Image tags
+
+Various tools/methods to `GET` 
+a flat __list of all image tags__ 
+available from a particular (OCI/CNCF) registry.
+
+```bash
+host=registry.k8s.io
+path=sig-storage/smbplugin
+img=$host/$path # Sans tag!
+
+# crane
+crane ls $img 
+
+# CNCF API
+curl -s "https://$host/v2/$path/tags/list" | jq -r '.tags[]'
+
+```
+
+## Containers From Perspective of **System Administrator (SAs)**
 
 ---
 
@@ -145,8 +172,6 @@ hostname        # should be "runc-demo"
 ps              # only shows minimal PID tree
 ls /            # comes from BusyBox
 ```
-
-Type `exit` to leave.
 
 ---
 

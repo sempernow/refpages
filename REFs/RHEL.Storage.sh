@@ -725,7 +725,6 @@ exit
         # E.g., Dual Boot openSUSE/Windows setup
             #  Created 3 partitions under an Extended Partition 
             #  on boot into openSUSE @ VMWare:
-            '
                 1st Partition, for root: 
                         Size:       15GB
                         FS:         ext4 
@@ -740,7 +739,6 @@ exit
                         Size:       2GB
                         FS:         Swap
                         Mount pt:   swap  
-            '
         # E.g., CentOS-7 Install ...
             # "Device Selection" > "Other Storage Options" > "I will configure ..." 
             # intall menu/task flow is NOT sequential; uses star logic ...

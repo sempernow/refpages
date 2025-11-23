@@ -1,8 +1,30 @@
-# CVEs : SBOM Generation and CVE Detection
+# CVEs : SBOM Generation / CVE Detection
 
 ## Container Images
 
+### Trivy 
+
 See __`CVEs.Trivy`__ ([MD](file:///D:/1%20Data/IT/Container/security/Trivy/CVEs.Trivy.md)|[HTML](file:///D:/1%20Data/IT/Container/security/Trivy/CVEs.Trivy.html)) 
+
+### [__`syft`__](https://github.com/anchore/syft "GitHub.com/Anchore/") (SBOM) / [__`grype`__](https://github.com/anchore/grype "GitHub.com/Anchore/") (CVEs)
+
+
+```bash
+syft $img -o json |grype --fail-on high
+```
+
+```bash
+sbom="${img////}"
+name_tag="${sbom//:/_}"
+sbom="$name_tag.sbom.json"
+
+# Capture CycloneDX SBOM
+syft $img --output cyclonedx-json="$sbom"
+
+# Scan the SBOM 
+grype $sbom --output cyclonedx-json --file $name_tag.cdx.json
+```
+- `--output`, `-o` : `json`, `cyclonedx-json`, `spdx-json`
 
 ## Filesystem Binaries
 
