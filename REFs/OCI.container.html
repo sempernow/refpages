@@ -22,7 +22,35 @@
     <main>
         <h1>OCI containers</h1>
 
-<p>From the perspective of the <strong>System Administrator (SAs)</strong></p>
+<h2>Tools</h2>
+
+<h3>Full-scope handlers</h3>
+
+<ul>
+<li>docker</li>
+<li>podman</li>
+<li>nerdctl</li>
+</ul>
+
+<h3>Image tags</h3>
+
+<p>Various tools/methods to <code>GET</code>
+a flat <strong>list of all image tags</strong>
+available from a particular (OCI/CNCF) registry.</p>
+
+<pre><code class="language-bash">host=registry.k8s.io
+path=sig-storage/smbplugin
+img=$host/$path # Sans tag!
+
+# crane
+crane ls $img 
+
+# CNCF API
+curl -s &quot;https://$host/v2/$path/tags/list&quot; | jq -r '.tags[]'
+
+</code></pre>
+
+<h2>Containers From Perspective of <strong>System Administrator (SAs)</strong></h2>
 
 <hr>
 
@@ -205,8 +233,6 @@ docker export $(docker create busybox) |tar -C rootfs -xvf -
 ps              # only shows minimal PID tree
 ls /            # comes from BusyBox
 </code></pre>
-
-<p>Type <code>exit</code> to leave.</p>
 
 <hr>
 

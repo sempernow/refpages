@@ -2295,28 +2295,37 @@ exit
             #    EOM
 
 # FILE COMMANDS
-    cat; chmod; cp; diff; file; find; gunzip; gzcat; gzip; head; lpq; lpr; lprm; ls; more; mv; rm; tail; touch
+    cat; chmod; cp; diff; file; find; gunzip; gzcat; gzip; head; lpq; lpr; lprm; ls; mkdir; more; mv; rm; tail; touch
     # https://github.com/Idnan/bash-guide#11-file-operations
     
     .     # $PWD
     ..    # parent dir
     .fname   # hidden file
 
-    # copy all junk files to $PWD 
-    cp /home/bozo/current_work/junk/* .
+    
+    cp /a/b/* . # Copy all files (only) at root of /a/b/ to $PWD 
+    rm a/b/*    # Delete all files and folder of /a/b/, but not /a/b itself.
 
-    ln # LINKs : `man ln` refers to LINK as DIRECTORY, and the existing source path as TARGET.
+    ln # LINKs : `man ln` refers to (created) LINK as DIRECTORY, and existing path (source) as TARGET.
         # Do NOT USE relative paths, else may err: "Too many levels of symbolic links"
         # Hard link points to TARGET; SAME INODE; NOT link between volumes (device/partition/fs)
         ln TARGET LINK     # create HARD link
         # Soft link points to TARGET (FILE|DIR); creates NEW INODE; Okay to link between volumes.
         ln -s TARGET LINK  # create SOFT link  
         ln -fs TARGET LINK # create SOFT link, forcibly (delete pre-existing)
+            # .
+            # └── a
+            #     └── x
+            ln -s a b
+            # .
+            # ├── a
+            # │   └── x
+            # └── b -> a
         # LINK TEST; is FILE is a symlink
         [[  $(stat -c %h FILE) -gt 1 ]] && echo "FILE is a Symbolic Link"
         # LINK TEST; file exists AND is a symbolic link; FLAKY BEHAVIOR  
         [[ -L "$@" ]] && echo "SYMLINKed" # -h; same
-        # EXACT hardlink TEST; two files are SAME iNODE; 'ls -i' shows inode number
+        # EXACT hardlink TEST; two *existing* files are SAME iNODE; 'ls -i' shows inode number
         [[ "$(ls -i FILE1 |awk '{print $1}')" == "$(ls -i FILE2 |awk '{print $1}')" ]] 
 
     # test mod/update before/after 

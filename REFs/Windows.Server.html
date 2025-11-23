@@ -68,7 +68,13 @@ This is the complete installation and includes a full GUI for customers who pref
 <li>Disk: 32 GB</li>
 </ul>
 
-<h3><a href="https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview">Windows Admin Center</a> (WAC)</h3>
+<h3><a href="https://learn.microsoft.com/en-us/windows-server/manage/windows-admin-center/overview">Windows Admin Center</a> (WAC) | <a href="https://community.chocolatey.org/packages?q=windows%20admin%20center">Chocolatey Package</a></h3>
+
+<p>UPDATE: This is <strong>another useless Microsoft product</strong>. It manages to log in to the domain controller, though having no ability to save credentials. And then it lists roles and such, but has none of the interfaces to any of the roles.</p>
+
+<p><strong>It merely lists the roles! That's all it does!</strong></p>
+
+<p>PRIOR ...</p>
 
 <p>A locally-deployed, <strong>browser-based management tool</strong> set built to manage Windows Clients, Servers, and Clusters without needing to connect to the cloud. Windows Admin Center offers full control over all aspects of Windows-based server infrastructure and is <strong>particularly useful for managing on-prem servers</strong>.</p>
 
@@ -1526,6 +1532,20 @@ auth     required  pam_faillock.so authfail audit deny=3 unlock_time=600
 
 <h2>AD Certificate Services (AD CS)</h2>
 
+<p>UPDATE:</p>
+
+<p>Configure this as and Enterprise Subordinate CA rather than Enterprise Root CA.</p>
+
+<ul>
+<li>Generate the Enterprise Root CA (Lime LAN Root CA) using OpenSSL tools and keep offline.</li>
+<li>This subordinate (intermediary), and/or others such as <code>cert-manager</code> and Dogtag,
+will issue the leaf CA certificates to K8s Ingress, K8s Control Plane perhaps, and any others.</li>
+</ul>
+
+<p>See <code>iac/adcs/README</code> (<a href="iac/adcs/README.md">MD</a>|<a href="iac/adcs/README.html">HTML</a>)</p>
+
+<p>ORIGINAL:</p>
+
 <p>See snapshots of the GUI</p>
 
 <ol>
@@ -1614,7 +1634,7 @@ $cert       = Get-ADObject -LDAPFilter &quot;(cn=$caName)&quot; -SearchBase &quo
 
 </code></pre>
 
-<h3>Obtain a TLS certificate  via CSR</h3>
+<h3>Obtain a TLS cert via CSR</h3>
 
 <h4>@ <a href="https://dc1.lime.lan/certsrv/">https://dc1.lime.lan/certsrv/</a></h4>
 
@@ -1665,11 +1685,12 @@ AD CS offers <strong>only RSA-based certificates</strong>
 unless that role is configured otherwise,
 which is a non-trivial task that nearly no organization performs.</p>
 
-<pre><code class="language-bash">root=lime.lan
+<pre><code class="language-bash">bits=4096
+root=lime.lan
 cn=kube.$root
 TLS_ST=MD
 TLS_L=AAC
-TLS_O=DisselTree
+TLS_O=SemperNet
 TLS_OU=ops
 ## Create the configuration file (CNF) : See man config
 ## See: man openssl-req : CONFIGURATION FILE FORMAT section
@@ -1677,7 +1698,7 @@ TLS_OU=ops
 cat &lt;&lt;-EOH |tee $cn.cnf
 [ req ]
 prompt              = no        # Disable interactive prompts.
-default_bits        = 2048      # Key size for RSA keys. Ignored for Ed25519.
+default_bits        = $bits     # Key size for RSA keys. Ignored for Ed25519.
 default_md          = sha256    # Hashing algorithm.
 distinguished_name  = req_distinguished_name 
 req_extensions      = v3_req    # Extensions to include in the request.
@@ -1686,7 +1707,7 @@ CN              = $cn                   # Common Name
 C               = ${TLS_C:-US}          # Country
 ST              = ${TLS_ST:-NY}         # State or Province
 L               = ${TLS_L:-Gotham}      # Locality name
-O               = ${TLS_O:-Foobar Inc}  # Organization name
+O               = ${TLS_O:-Penguin Inc} # Organization name
 OU              = ${TLS_OU:-GitOps}     # Organizational Unit name
 emailAddress    = admin@$root 
 [ v3_req ]

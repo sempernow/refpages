@@ -20,11 +20,33 @@
 </head>
 <body>
     <main>
-        <h1>CVEs : SBOM Generation and CVE Detection</h1>
+        <h1>CVEs : SBOM Generation / CVE Detection</h1>
 
 <h2>Container Images</h2>
 
+<h3>Trivy</h3>
+
 <p>See <strong><code>CVEs.Trivy</code></strong> (<a href="file:///D:/1%20Data/IT/Container/security/Trivy/CVEs.Trivy.md">MD</a>|<a href="file:///D:/1%20Data/IT/Container/security/Trivy/CVEs.Trivy.html">HTML</a>)</p>
+
+<h3><a href="https://github.com/anchore/syft" title="GitHub.com/Anchore/"><strong><code>syft</code></strong></a> (SBOM) / <a href="https://github.com/anchore/grype" title="GitHub.com/Anchore/"><strong><code>grype</code></strong></a> (CVEs)</h3>
+
+<pre><code class="language-bash">syft $img -o json |grype --fail-on high
+</code></pre>
+
+<pre><code class="language-bash">sbom=&quot;${img////}&quot;
+name_tag=&quot;${sbom//:/_}&quot;
+sbom=&quot;$name_tag.sbom.json&quot;
+
+# Capture CycloneDX SBOM
+syft $img --output cyclonedx-json=&quot;$sbom&quot;
+
+# Scan the SBOM 
+grype $sbom --output cyclonedx-json --file $name_tag.cdx.json
+</code></pre>
+
+<ul>
+<li><code>--output</code>, <code>-o</code> : <code>json</code>, <code>cyclonedx-json</code>, <code>spdx-json</code></li>
+</ul>
 
 <h2>Filesystem Binaries</h2>
 
