@@ -101,9 +101,6 @@ ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDS
 ## https://serverfault.com/questions/997614/setting-ssl-prefer-server-ciphers-directive-in-nginx-config
 ssl_prefer_server_ciphers off;
 
-## Add HSTS (TLS only) response header 
-add_header Strict-Transport-Security "max-age=63072000" always;
-
 ## OCSP Stapling
 # ssl_stapling on;
 
@@ -183,7 +180,7 @@ upstream pwa {
 #     return      444;
 # }
 
-## @ Redirect : http:// -> https://
+## @ Redirect http:// -> https://
 server {
     listen      PORT_RPX;
     listen [::]:PORT_RPX;

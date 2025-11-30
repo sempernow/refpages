@@ -10,7 +10,10 @@
 
 ## Install
 
-Use [__Rufus__]() or [__Ventoy__]() utility to create a bootable USB
+Use a utility to create a bootable USB device.
+
+ - [__Rufus__](https://rufus.ie/en/) : Write ISO to USB
+ - [__Ventoy__](https://www.ventoy.net/en/index.html) : Write *multiple* ISO to USB; multi-boot menu.
 
 ### Machine Prep
 
@@ -27,18 +30,26 @@ Confirm-SecureBootUEFI
 
 ### Disable Requirement for MS Online Account Sign-in
 
+Install a __local-only account__ on installation, 
+[bypassing *requirement* of online Microsoft account]
+(https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account);
+otherwise, whenever you want to use your cocmputer, you must first authenticate as a Microsoft customer.
 
-We want to install a __local-only account__, 
-[bypassing requirement of online Microsoft account]
-(https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account)
+__Rufus__ ~~has option that handle this when burning to a USB drive.~~ No longer works. 
+Microsoft corporation is locking their peasants in evermore frantically as the exodus accelerates.
 
-__Rufus__ has options that handle this when burning to a USB drive.
-
-Otherwise, or additional methods &hellip;
+Other methods &hellip;
 
 #### Build 24H2
 
 - __Method 1__
+    - Follow the install menus *until* __User page__ 
+    - Add user name
+        - Click Next (button)
+    - Do *not* enter password at __Password page__.
+        - Click Next (button)
+
+- __Method 2__
     - Follow install menus until "Select Country" page
     - Shift + F10, which launches a __CMD window__. 
         - __`OOBE\BYPASSNRO`__ (at the command prompt),
@@ -50,13 +61,6 @@ Otherwise, or additional methods &hellip;
     - At screen: "__Let's connect you to a network__",
     click "__I don't have Internet__" to continue.
         - "__Continue with limited setup__"
-
-- __Method 2__
-    - Follow install menus until User page 
-    - Add user name
-        - Click Next (button)
-    - Do not enter password at Password page.
-        - Click Next (button)
 
 ##### Method if __After__ Installation
 
