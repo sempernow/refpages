@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>nginx.headers-include</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>NGINX : Common Response Headers</h1>
+
+<blockquote>
+<p>How to implement a common set of response headers
+that are inherited by selected location blocks.</p>
+</blockquote>
+
+<p>An NGINX quirk is that if a <code>location</code> defines <em>any</em>
+<a href="https://nginx.org/en/docs/http/ngx_http_headers_module.html#example" title="nginx.org/docs"><code>add_header</code></a>,
+then all parent headers are completely overridden (rather than extended).
+So, this <strong>include&nbsp;method</strong> is the <em>only</em> <strong>guaranteed&nbsp;solution</strong> for common headers.</p>
+
+<p>(Note <code>proxy_set_header</code> declarations have same override behavior.)</p>
+
+<p>This example adds a common set of security-related headers
+to all <code>location</code> blocks of a <code>server</code> block:</p>
+
+<p>@ <code>/etc/nginx/conf.d/security-headers.conf</code></p>
+
+<pre><code class="language-ini"># /etc/nginx/conf.d/security-headers.conf
+add_header X-Content-Type-Options &quot;nosniff&quot; always;
+add_header X-Frame-Options &quot;DENY&quot; always;
+add_header X-XSS-Protection &quot;1; mode=block&quot; always;
+add_header Referrer-Policy &quot;strict-origin-when-cross-origin&quot; always;
+# HSTS (HTTP Strict Transport Security, i.e., TLS only) response header 
+add_header Strict-Transport-Security &quot;max-age=63072000; includeSubDomains&quot; always;
+</code></pre>
+
+<p>@ <code>/etc/nginx/conf.d/example.com.conf</code></p>
+
+<pre><code class="language-ini"># /etc/nginx/conf.d/example.com.conf
+#...
+server {
+    listen 443 ssl;
+    server_name example.com;
+
+    #...
+    
+    location /api {
+        include /etc/nginx/conf.d/security-headers.conf; #&lt;&lt;-- Reference
+        add_header          Cache-Control &quot;no-store, no-cache, max-age=0&quot;;
+        proxy_set_header    X-Real-IP $remote_addr;
+        proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://backend;
+    }
+    
+    location /static {
+        include /etc/nginx/conf.d/security-headers.conf; #&lt;&lt;-- Reference
+        add_header          Cache-Control: &quot;public, max-age=86400&quot;
+        root /var/www/static;
+    }
+    
+    location / {
+        include /etc/nginx/conf.d/security-headers.conf; #&lt;&lt;-- Reference
+        root /var/www/html;
+    }
+}
+</code></pre>
+
+<hr>
+
+<h2>NGINX Inheritance Rules</h2>
+
+<p>The key interaction to be aware of is NGINX's header <strong>inheritance rule</strong>
+<em>for directives that can be used in</em> <strong>multiple contexts</strong>
+(like <code>add_header</code> and <code>proxy_set_header</code>).</p>
+
+<h3>Override Rule</h3>
+
+<p>If an <code>add_header</code> or <code>proxy_set_header</code> directive is defined within a <code>server</code> block,
+it <em>overrides and discards</em> any <code>add_header</code> or <code>proxy_set_header</code> directives
+from a parent <code>server</code> or <code>http</code> block.</p>
+
+<h3>Example of NGINX inheritance:</h3>
+
+<p><strong>If you have this configuration</strong>:</p>
+
+<pre><code class="language-ini">http {
+    # This header is for the client response (http block)
+    add_header X-Http-Header &quot;http-value&quot;; 
+
+    server {
+        # This header is for the client response (server block)
+        add_header X-Server-Header &quot;server-value&quot;;
+
+        # This sets a header for the upstream request (server block)
+        proxy_set_header X-Proxy-Server-Header &quot;proxy-server-value&quot;; 
+
+        location /proxy/ {
+            # This header is for the client response (location block)
+            add_header X-Location-Header &quot;location-value&quot;; 
+
+            # This sets a header for the upstream request (location block)
+            proxy_set_header X-Proxy-Location-Header &quot;proxy-location-value&quot;; 
+            proxy_pass http://backend_server;
+        }
+    }
+}
+</code></pre>
+
+<ul>
+<li><code>add_header</code> adds headers to the response that NGINX sends back to the client.</li>
+<li><code>proxy_set_header</code> sets or redefines headers in the request that NGINX sends to the upstream (backend) server.</li>
+</ul>
+
+<p><strong>Then, when a request matches</strong> :</p>
+
+<ul>
+<li><strong>Client Response</strong> Headers: Only <code>X-Location-Header</code> will be present.
+<code>X-Http-Header</code> and <code>X-Server-Header</code> are <em>ignored</em> because an <code>add_header</code> exists in the <code>server</code> block.</li>
+<li><strong>Upstream Request</strong> Headers: Only <code>X-Proxy-Location-Header</code> will be sent to the backend.
+<code>X-Proxy-Server-Header</code> is <em>ignored</em> because a <code>proxy_set_header</code> exists in the <code>location</code> block.</li>
+</ul>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

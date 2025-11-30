@@ -37,7 +37,12 @@ else DNS latency is some 10x greater.</li>
 
 <h2>Install</h2>
 
-<p>Use [<strong>Rufus</strong>]() or [<strong>Ventoy</strong>]() utility to create a bootable USB</p>
+<p>Use a utility to create a bootable USB device.</p>
+
+<ul>
+<li><a href="https://rufus.ie/en/"><strong>Rufus</strong></a> : Write ISO to USB</li>
+<li><a href="https://www.ventoy.net/en/index.html"><strong>Ventoy</strong></a> : Write <em>multiple</em> ISO to USB; multi-boot menu.</li>
+</ul>
 
 <h3>Machine Prep</h3>
 
@@ -53,17 +58,35 @@ Confirm-SecureBootUEFI
 
 <h3>Disable Requirement for MS Online Account Sign-in</h3>
 
-<p>We want to install a <strong>local-only account</strong>,
-<a href="https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account">bypassing requirement of online Microsoft account</a></p>
+<p>Install a <strong>local-only account</strong> on installation,
+<a href="https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account">bypassing <em>requirement</em> of online Microsoft account</a>;
+otherwise, whenever you want to use your cocmputer, you must first authenticate as a Microsoft customer.</p>
 
-<p><strong>Rufus</strong> has options that handle this when burning to a USB drive.</p>
+<p><strong>Rufus</strong> <del>has option that handle this when burning to a USB drive.</del> No longer works.
+Microsoft corporation is locking their peasants in evermore frantically as the exodus accelerates.</p>
 
-<p>Otherwise, or additional methods &hellip;</p>
+<p>Other methods &hellip;</p>
 
 <h4>Build 24H2</h4>
 
 <ul>
 <li><p><strong>Method 1</strong></p>
+
+<ul>
+<li>Follow the install menus <em>until</em> <strong>User page</strong></li>
+<li>Add user name
+
+<ul>
+<li>Click Next (button)</li>
+</ul></li>
+<li>Do <em>not</em> enter password at <strong>Password page</strong>.
+
+<ul>
+<li>Click Next (button)</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Method 2</strong></p>
 
 <ul>
 <li>Follow install menus until &quot;Select Country&quot; page</li>
@@ -85,22 +108,6 @@ click &quot;<strong>I don't have Internet</strong>&quot; to continue.
 
 <ul>
 <li>&quot;<strong>Continue with limited setup</strong>&quot;</li>
-</ul></li>
-</ul></li>
-
-<li><p><strong>Method 2</strong></p>
-
-<ul>
-<li>Follow install menus until User page</li>
-<li>Add user name
-
-<ul>
-<li>Click Next (button)</li>
-</ul></li>
-<li>Do not enter password at Password page.
-
-<ul>
-<li>Click Next (button)</li>
 </ul></li>
 </ul></li>
 </ul>
