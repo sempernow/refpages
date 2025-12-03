@@ -1,22 +1,82 @@
 # K8s mTLS : How to rotate control-plane certificates 
 
->By default, a vanilla cluster automatically updates its (mTLS) control-plane certificates. 
-In case it fails to do so (not unheard of), this is the recovery procedure.
+>~~By default, a vanilla cluster automatically updates its (mTLS) control-plane certificates. ~~ Certificates are not updated automatically.
+
+
+~~In case it fails to do so (not unheard of), this is the recovery procedure.~~
+
+## New : `v1.29+`
+
+
+Simple, nuclear option
+
+```bash
+# 1. Cordon and drain all but one control plane node
+kubectl cordon control-plane-2
+kubectl cordon control-plane-3
+kubectl drain control-plane-2 control-plane-3 --delete-emptydir-data --ignore-daemonsets
+
+# 2. Remove extra control plane nodes
+kubectl delete node control-plane-2 control-plane-3
+
+# 3. On remaining control plane node, renew certificates
+sudo kubeadm certs renew all
+sudo kubeadm certs check-expiration
+sudo systemctl restart kubelet
+
+# 4. Join others
+# On the surviving good node — generate a fresh certificate key (valid 2h by default)
+sudo kubeadm init phase upload-certs --upload-certs
+# This prints a certificate-key at the end, e.g.:
+# --certificate-key 7e2b3c4d5e6f...
+
+# Create a join token
+sudo kubeadm token create --print-join-command
+# This prints something like:
+# kubeadm join 10.0.0.10:6443 --token abcdef.1234567890abcdef \
+#     --discovery-token-ca-cert-hash sha256:...
+
+# To add a new control plane node, combine them:
+sudo kubeadm join 10.0.0.10:6443 --token abcdef.1234567890abcdef \
+    --discovery-token-ca-cert-hash sha256:... \
+    --control-plane --certificate-key 7e2b3c4d5e6f...
+```
+
+Complicated and conflicting advice regarding other control nodes
+```bash
+# 1st control node
+sudo kubeadm certs renew all
+sudo systemctl restart kubelet
+
+# Copy pki ????
+
+# All control plane nodes:
+echo "Updating local kubeconfig files..."
+sudo kubeadm init phase kubeconfig all
+
+echo "Restarting control plane components..."
+sudo systemctl restart kube-apiserver kube-controller-manager kube-scheduler kubelet
+
+echo "Done on $HOSTNAME"
+```
+
+## Prior : `v1.28-`
+
 
 1. Backup existing configuration
     - Process is cluster/distro dependent.
-1. __Renew certificates__
+1. __Renew certificates__ on ***one*** control node
     ```bash
-    kubeadm certs renew all
+    kubeadm certs renew all --config $clusterconfig
     ```
-    - If control plane is multi-node, then distribute new certs.
+    - If control plane is multi-node, ~~then distribute new certs.~~
 1. __Update the manifest of all Static Pods__ with the new TLS certificates. 
-   This __requires the `ClusterConfiguration` manifest__ (`$kubeadm_config`).
+   This __requires the `ClusterConfiguration` manifest__ (`$clusterconfig`).
     ```bash
-    kubeadm init phase kubeconfig all --config $kubeadm_config
+    kubeadm init phase kubeconfig all --config $clusterconfig
     ```
     - The `ClusterConfiguration` manifest may exist   
-      at `/var/lib/kubelet/config.yaml`.   
+      at `/etc/kuberntes/kubeadm-config.yaml`.   
       If not, capture it from its ConfigMap key: 
         ```bash
         kubectl get cm -n kube-system kubeadm-config -o jsonpath='{.data.ClusterConfiguration}'
@@ -31,7 +91,41 @@ In case it fails to do so (not unheard of), this is the recovery procedure.
             sleep 100 &&
                 mv $tmp/*.yaml $k8s/
     ```
+1. Recreate the kubeconfig
+    ```bash
+    sudo kubeadm init phase kubeconfig all
+    sudo kubeadm init phase kubeconfig super-admin
+    sudo systemctl restart kubelet
+    ```
+1. Check all X.509
+    ```bash
+    # Check all kubeconfigs use current certificates
+    for conf in admin kubelet controller-manager scheduler; do
+    echo "=== $conf.conf ==="
+    kubectl --kubeconfig=/etc/kubernetes/${conf}.config config view --raw \
+        -o jsonpath='{.users[0].user.client-certificate-data}' | \
+        base64 -d | openssl x509 -noout -subject -dates | head -2
+    echo
+    done
+    ```
+    - Want: `rotateCertificates: true`
 
+
+Set to auto rotate
+
+```yaml
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+rotateCertificates: true
+serverTLSBootstrap: true  # This enables automatic serving cert rotation
+
+```
+
+Check if the cluster is configured to automatically rotate its mTLS certificates:
+
+```bash
+sudo grep rotate /var/lib/kubelet/config.yaml
+```
 
 ## Example using Kind cluster
 
