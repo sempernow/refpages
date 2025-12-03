@@ -83,6 +83,11 @@ exit
         
         sudo -E su  # preserve environment (switching to root user)
 
+        # Enable globbing
+        sudo shopt -s globstar 
+        # Else use subshell
+        sudo bash -c 'cp /path/*.yaml /tmp/'
+
         # invoke LOGIN-SHELL : clears all Env.Vars
         su - foo        # login-shell, user 'foo'
         su -l foo       # login-shell, user 'foo'
@@ -670,7 +675,7 @@ exit
         cp SOURCE TARGET 
 
         # copy : preserve attr (mtime, etc); recurse (subdirs too); updated (newer) only 
-        cp -pru SOURCE TARGET  # copy CONTENTs of SOURCE to TARGET root 
+        cp -pru SOURCE/. TARGET/  # copy CONTENTs of SOURCE to TARGET root (update mode)
 
         # copy all files & subfolders @ $PWD to current-user's "$HOME/Downloads/DATA" dir  
         cp -r *  ~/Downloads/DATA
