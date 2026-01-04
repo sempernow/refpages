@@ -1,0 +1,31 @@
+apiVersion: v1
+data:
+  #index.canary.html: |
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Canary</title>
+    <style>
+        body {
+            width: 90%;
+            margin: 1em;
+            font-family: sans-serif;
+            background-color: #ffe;
+        }
+        h1 {font-size: 3em;}
+        p {font-style: italic;}
+    </style>
+    </head>
+    <body>
+    <h1>Welcome to Canary version.</h1>
+    <p>Alive and well!</p>
+    </body>
+    </html>
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2023-07-09T11:08:19Z"
+  name: canary
+  namespace: default
+  resourceVersion: "76401"
+  uid: f6812898-84ca-4645-ae7e-ebcc4e8160e9

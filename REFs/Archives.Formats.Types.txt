@@ -1,0 +1,52 @@
+List of Archive Formats ...
+http://en.wikipedia.org/wiki/List_of_archive_formats
+
+
+7   7z             - GNU (Igor Pavlov); LZMA(2)
+Z   zip            - PKware, PKzip
+B   bz2/bzip2/tbz/tbz2  - GNU; compress 1 file; timestamp NOT preserved.
+R   rar            - (Eugene) Roshal ARchive; Win.rar, GmbH
+A   arj            - Archived by Robert Jung; overtaken by zip/rar.
+.z  z              - Compress; a Unix shell program; LZC/LZW
+L   lha/lzh        - Japan
+C   cab            - MS Windows
+I   iso/img        - ISO 9660, UDF; uncompressed; for read-only media
+1   001            - HJ-Split; archive split/recombine tool
+RP  rpm            - RPM Package Manager (Redhat orig.) (read-only)
+D   deb            - Debian package
+cp  cpio           - Unix arch format; used @ Apple/POSIX installer (pax)
+T   tar/taz/tbz/tgz     - Unix arch format; uncompressed (tape) archive.
+G   gz/gzip/tgz/tar.gz  - GNU; compress 1 file; @ tgz, HTTP/HTML; DEFLATE algo
+W   swm/wim        - MS Windows disk image
+lz  lzma           - LZMA compression algorithm
+d   dmg            - Apple Mac OS X
+H   hfs            - Apple
+Xa  xar            - MAC OS X 10.5; OpenDarwin; eXtensible ARchive format
+V   vhd            - MS Windows
+F   fat            - DOS file system format/record
+N   ntfs           - MS Windows NT file system format/record
+X   txz/xz         - LZMA2 algorithm; 1 file; timestamp NOT preserved.
+Sq  sqsh           - Linux SquashFS; LZMA(2)/LZ4; compressed, read-only file system.
+
+7z.dll @ 7-zip v.9.20
+---------------------- 
+25 ordered icons [0-24] @ 16 & 32 px
+7 Z B R A .z L C I 1 RP D cp T G W lz d H Xa V F N X Sq
+
+Others
+------
+ace
+arc/ark/sue       - BBS-era; proprietary and FreeArc [LZMA] versions
+chm               - Microsoft Compiled HTML; compressed binary. 
+jar               - Java ARchive
+msi               - MS Windows installer
+split             - created by splitter per 1 of several formats/methods
+cramFS            - inspiration for SquashFS.
+daa               - PowerISO
+
+HJ-Split [.001, .002, ...]
+http://www.hjsplit.org/
+.001 is first of split set. Extract using 7-zip. 
+
+SquashFS [.sqsh]
+http://en.wikipedia.org/wiki/SquashFS

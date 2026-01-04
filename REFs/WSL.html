@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>WSL</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://learn.microsoft.com/en-us/windows/wsl/">WSL</a> : Windows Subsystem for Linux</h1>
+
+<h2><a href="https://learn.microsoft.com/en-us/windows/wsl/install">Install</a></h2>
+
+<pre><code class="language-powershell">PS&gt; wsl --install
+</code></pre>
+
+<ul>
+<li>This BREAKS Docker Desktop, but that app is not needed at WSL2.
+Rather install Docker (server/client),
+or whatever other container handler you prefer,
+directly onto the WSL2 distro.</li>
+</ul>
+
+<p>Install a distro either from Microsoft Store,
+or direcly from PS or CMD command line using <code>wsl</code> utility:</p>
+
+<pre><code class="language-powershell"># List all distros available for installation
+wsl --list --online 
+# Install a distro
+wsl --install openSUSE-Leap-15.5
+# List installed distros
+wsl --list --verbose
+# Set a default distro
+wsl --set-default Ubuntu-22.04
+# Launch default distro
+wsl
+</code></pre>
+
+<h3>Configure a WSL2 distro</h3>
+
+<ol>
+<li><p>Edit <code>/etc/wsl.conf</code> to configure mount points as <code>/&lt;DRIVE&gt;</code> instead of <code>/mnt/&lt;DRIVE&gt;</code> .</p>
+
+<pre><code class="language-plaintext">[boot]
+systemd=true
+
+[automount]
+root = /
+options = &quot;metadata,umask=22,fmask=11&quot;
+</code></pre>
+
+<ul>
+<li>To take effect, must close WSL terminal, then run <code>wsl --shutdown</code> from CMD or PS. Then okay.</li>
+<li>Verify using <code>df -hT</code> that mount points at new WSL terminal are, e.g., <code>/c</code> instead of <code>/mnt/c</code>
+
+<ul>
+<li>If that doesn't work, use the <code>/etc/fstab</code> method</li>
+</ul></li>
+</ul></li>
+
+<li><p>Edit <code>/etc/passwd</code> to change user's home dir to our common <code>$HOME</code>, e.g., <code>/c/HOME</code></p>
+
+<ul>
+<li>Requires effects of prior step, which require WSL restart, with &quot;<code>wsl --shutdown</code>&quot; being the first step.</li>
+<li>Also mod <code>root</code> user's home dir entry at <code>/etc/passwd</code>, setting it to that common <code>$HOME</code>,
+so &quot;<code>sudo su</code>&quot; invokes the same bash config scripts.</li>
+</ul></li>
+</ol>
+
+<h2>Configuration | <a href="https://learn.microsoft.com/en-us/windows/wsl/wsl-config">Advanced Settings</a></h2>
+
+<p>UPDATE: No longer necessary. Configure only <code>/etc/wsl.conf</code> . See below.</p>
+
+<ul>
+<li><code>/etc/wsl.conf</code> (per distro)</li>
+<li><code>~/.wslconfig</code> (global; WSL 2 only)</li>
+
+<li><p><code>/etc/fstab</code></p>
+
+<pre><code class="language-conf">#DEVICE|FS          MOUNT           TYPE    OPTIONS                                         DUMP    PASS
+#//RT-AC66U/etc     /media/share    drvfs   binary,noacl                                    0       0
+#/c/HOME            /home/x1        drvfs   binary,noacl                                    0       0
+#D:                 /d              drvfs   binary,noacl                                    0       0
+D:                  /d              drvfs   defaults,uid=1000,gid=1000,fmask=11,umask=22    0       0
+</code></pre>
+
+<ul>
+<li><code>D:</code> is an encrypted volume mounted after user login.
+Regardless of <code>uid</code> and <code>gid</code> values there
+(<code>1000</code> is <code>$USER</code> of the WSL2 distro),
+<code>fmask=11</code> and <code>umask=22</code> must also be set,
+else <code>OWNER:GROUP</code> of all files thereunder are <code>root:root</code>
+and unchangeable even by &quot;<code>sudo chown ...</code>&quot;.
+and user may not even have read access on some files.</li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>WSL mounts some <code>drvfs</code> as <code>type 9p</code>, which indicates a Windows server using 9P protocol.
+This is seen at output of <code>mount</code> command.</p>
+</blockquote>
+
+<h2>WSL 2</h2>
+
+<h3>Distros</h3>
+
+<p>Installed</p>
+
+<pre><code class="language-powershell">wsl -l -v
+</code></pre>
+
+<p>Available online</p>
+
+<pre><code class="language-powershell">wsl --list --online
+</code></pre>
+
+<p><a href="https://learn.microsoft.com/en-us/windows/wsl/use-custom-distro">Import ANY (custom) Linux Distro per Tarball</a></p>
+
+<h3>WSL2 Host IP is NOT <code>localhost</code></h3>
+
+<p>See:</p>
+
+<pre><code class="language-bash">$ cat /etc/resolv.conf
+</code></pre>
+
+<ul>
+<li>E.g., <code>nameserver 172.29.144.1</code></li>
+</ul>
+
+<p>LAN IP v. WSL2 Host IP</p>
+
+<pre><code class="language-bash">$ ip -4 addr show dev eth0
+5: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+    inet 172.29.148.53/20 brd 172.29.159.255 scope global eth0
+       valid_lft forever preferred_lft forever
+
+$ ip route
+default via 172.29.144.1 dev eth0
+172.29.144.0/20 dev eth0 proto kernel scope link src 172.29.148.53
+</code></pre>
+
+<h3><a href="https://stackoverflow.com/questions/61860208/running-graphical-linux-desktop-applications-from-wsl-2-error-e233-cannot-op" title="StackOverflow.com 2021">Fix GUI programs @ WSL 2</a></h3>
+
+<p>On errors of display or clipboard/copy,
+e.g., <code>... couldn't connect to display:0</code>,
+set the <code>DISPLAY</code> environment variable to :
+<code>WSL_HOST_IP:0.0</code></p>
+
+<pre><code class="language-bash">export DISPLAY=$(grep nameserver /etc/resolv.conf |awk '{print $2}'):0.0
+</code></pre>
+
+<ul>
+<li><code>DISPLAY=172.29.144.1:0.0</code></li>
+</ul>
+
+<h2><a href="https://learn.microsoft.com/en-us/windows/wsl/basic-commands?source=recommendations">Commands</a></h2>
+
+<ul>
+<li><p><a href="https://askubuntu.com/questions/1177729/wsl-am-i-running-version-1-or-version-2" title="Sep 2019 @ askubuntu.com">Verify/Test  the WSL version (per distro)</a></p>
+
+<pre><code class="language-shell">&gt; wsl.exe --list --verbose
+  NAME                   STATE           VERSION
+  * Ubuntu-18.04         Running         2
+  openSUSE-Leap-15.2     Running         2
+  kali-linux             Stopped         1
+  docker-desktop-data    Running         2
+  Alpine                 Stopped         1
+  Debian                 Stopped         1
+  docker-desktop         Running         2
+  Fedora                 Stopped         2
+</code></pre>
+
+<ul>
+<li>Or <code>wsl -l -v</code></li>
+</ul></li>
+
+<li><p>Set WSL 2 as the default WSL version</p>
+
+<pre><code class="language-shell">&gt; wsl.exe --set-default-version 2
+</code></pre></li>
+
+<li><p>Switch a distro from WSL 1 to WSL 2 (or back from 2 to 1)</p>
+
+<pre><code class="language-shell">&gt; wsl.exe --set-version %DISTRO_NAME% 2
+</code></pre>
+
+<ul>
+<li><p>List installed distros</p>
+
+<pre><code class="language-shell">&gt; wsl.exe --list 
+</code></pre></li>
+</ul></li>
+
+<li><p>Select Distro</p>
+
+<pre><code class="language-shell">&gt; wsl -d %DISTRO_NAME%
+</code></pre></li>
+</ul>
+
+<h3><del><a href="https://www.digitalocean.com/community/posts/trying-the-new-wsl-2-its-fast-windows-subsystem-for-linux" title="2020 Notes @ DigitalOcean.com">WSL 2 Issues</a>:</del> (OBSOLETE)</h3>
+
+<ol>
+<li><del>Filesystem (FS); very <strong><em>slow FS transfers</em></strong> between Win and Linux.</del>
+
+<ul>
+<li>Transfer/synch everything to the (linux) FS equivalent (per distro?).</li>
+</ul></li>
+<li><del>Networking; no <code>localhost</code>; IP Addresses only.</del>
+
+<ul>
+<li><code>localhost:3000</code> would be, e.g., <code>192.168.28.2:3000</code></li>
+</ul></li>
+</ol>
+
+<h2>Reset/Uninstall a distro</h2>
+
+<pre><code class="language-bat">wsl.exe --unregister DISTRO_NAME
+</code></pre>
+
+<h2><code>/etc/fstab</code> Mod(s)</h2>
+
+<p>This may not be necessary, depending on Windows 10/11 update status.</p>
+
+<p>Want mount points <code>/&lt;DRIVE&gt;</code> instead of <code>/mnt/&lt;DRIVE&gt;</code></p>
+
+<p>Persistently mount the desired <code>HOME</code>
+to <code>/home/$USER</code> per <code>/etc/fstab</code> entry.</p>
+
+<pre><code class="language-bash">sudo vim /etc/fstab
+</code></pre>
+
+<pre><code class="language-text">/c/HOME /home/x1 drvfs binary,noacl 0 0
+</code></pre>
+
+<p>Prior method:</p>
+
+<pre><code class="language-bash">vim /etc/passwd             # 2. Edit ...
+# ... change home dir of user (NOT root) to, e.g., /c/HOME
+# ... save (ZZ)
+vim /root/.bashrc           # 3. Edit/Add ...
+    [[ -d '/mnt/c/HOME' ]] &amp;&amp; export HOME='/mnt/c/HOME'
+    [[ -d '/c/HOME' ]] &amp;&amp; export HOME='/c/HOME'
+    [[ &quot;$HOME&quot; != '/root' ]] &amp;&amp; source $HOME/.bashrc
+# ... save (ZZ)
+</code></pre>
+
+<p>@ ONCE @ our global <code>$HOME</code></p>
+
+<pre><code class="language-bash">vim ~/.bash_profile     # 4. Edit/Add ...
+# Bash on Windows improperly sets `umask` to 0000; should be 0022.
+# https://www.turek.dev/post/fix-wsl-file-permissions/ 
+# Only @ WSL @ ConEMU; @ WSLtty, `umask` is 0022
+[[ &quot;$(umask)&quot; == &quot;0000&quot; ]] &amp;&amp; umask 0022
+# ... save (ZZ)
+</code></pre>
+
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/windows/wsl/wsl-config">Advanced Settings</a></li>
+</ul>
+
+<h2>Pkgs</h2>
+
+<pre><code class="language-bash"># Ubuntu/Debian
+sudo apt update
+sudo apt-get install vim screenfetch
+</code></pre>
+
+<h3><strong>Fix</strong> GPG Key <strong>fail</strong> @ <code>sudo apt update</code></h3>
+
+<pre><code class="language-bash">sudo apt update  # ... fails with ERR msg: 
+# &quot;signatures couldn't be verified because the public key is not available: NO_PUBKEY 5523BAEEB01FA116&quot;
+
+# Note &amp; set the pubkey (5523BAEEB01FA116) ...
+_PUBKEY='5523BAEEB01FA116'
+
+# Fetch and install it ...
+curl -sL &quot;http://keyserver.ubuntu.com/pks/lookup?op=get&amp;search=0x${_PUBKEY}&quot; \
+    | sudo apt-key add
+    
+sudo apt udpate  # ... should work now
+</code></pre>
+
+<ul>
+<li><p>If @ VScode issue ...</p>
+
+<pre><code class="language-bash">curl 'https://packages.microsoft.com/keys/microsoft.asc' | gpg --dearmor &gt; 'microsoft.gpg'
+sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
+# or ???
+sudo sh -c 'echo &quot;deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main&quot; \
+    &gt; /etc/apt/sources.list.d/vscode.list'
+</code></pre></li>
+</ul>
+
+<p><a href="http://naveenubuntu.blogspot.com/2011/08/fixing-gpg-keys-in-ubuntu.html">Fixing GPG Keys in Ubuntu</a> (2011)</p>
+
+<pre><code class="language-bash">sudo apt-key adv --keyserver ha.pool.sks-keyservers.net \
+    --recv-keys ${_PUBKEY}
+</code></pre>
+
+<pre><code>$ screenfetch
+         _,met$$$$$gg.           f06y@XPC
+      ,g$$$$$$$$$$$$$$$P.        OS: Debian
+    ,g$$P&quot;&quot;       &quot;&quot;&quot;Y$$.&quot;.      Kernel: x86_64 Linux 4.4.0-17134-Microsoft
+   ,$$P'              `$$$.      Uptime: 4m
+  ',$$P       ,ggs.     `$$b:    Packages: 333
+  `d$$'     ,$P&quot;'   .    $$$     Shell: bash l -i
+   $$P      d$'     ,    $$P     WM: Not Found
+   $$:      $$.   -    ,d$$'     CPU: Intel Core i5-7400T CPU @ 2.4GHz
+   $$\;      Y$b._   _,d$P'      RAM: 8433MiB / 15319MiB
+   ...
+</code></pre>
+
+<h2><a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config">Usage</a></h2>
+
+<ul>
+<li><p>Equivalents ...</p>
+
+<pre><code class="language-bat">wsl.exe
+bash.exe  
+&lt;distro&gt;.exe
+</code></pre>
+
+<pre><code class="language-bat">wsl.exe 
+wsl [command]
+:: OR 
+bash.exe
+bash -c [command]
+:: OR
+debian.exe /?  :: show available commands (per distro-name) 
+debian.exe     :: launches distro @ CURRENT SHELL ...  
+$  
+</code></pre></li>
+
+<li><p>Change default user (per distro)</p>
+
+<pre><code class="language-bat">:: set to root
+&gt; debian.exe config --default-user root
+:: restore ... 
+&gt; debian.exe config --default-user $USERNAME
+</code></pre></li>
+
+<li><p><a href="https://docs.microsoft.com/en-us/windows/wsl/interop">Interoperability</a></p>
+
+<ul>
+<li><p>Run <strong>Linux command</strong> (binary) from Windows command line</p>
+
+<pre><code class="language-bat">&gt; wsl COMMAND    
+</code></pre></li>
+
+<li><p>Run <strong>bash script</strong> from Windows command line</p>
+
+<pre><code class="language-bat">&gt; wsl bash -c '~/.bin/foo.sh arg1 arg2 ...'
+</code></pre></li>
+
+<li><p>Run Windows tools (<code>.exe</code>) from WSL</p>
+
+<pre><code class="language-bash">$ notepad.exe
+$ ipconfig.exe | grep IPv4 | cut -d: -f2
+</code></pre>
+
+<ul>
+<li>Does <strong><em>not</em></strong> work at root user <strong><em>unless root is set to the default user</em></strong>.</li>
+<li>Same permission rights.</li>
+</ul></li>
+
+<li><p>Mix the two; <code>cmd</code> and <code>bash</code></p>
+
+<pre><code class="language-shell">&gt; dir | wsl grep foo  
+</code></pre></li>
+
+<li><p>Copy/Paste per <code>CTRL+C/V</code>, or mouse commands</p></li>
+
+<li><p><a href="https://blogs.msdn.microsoft.com/commandline/2017/12/22/share-environment-vars-between-wsl-and-windows/">Share Environment Variables</a> per <code>WSLENV</code></p>
+
+<pre><code class="language-bash">WSLENV=GOPATH/l:USERPROFILE/w:SOMEVAR/wp
+
+/p  # translate paths btwn WSL and Win32
+/l  # if var is colon-delimited list of paths
+/u  # only include when invoking WSL from Win32
+/w  # only include when invoking Win32 from WSL.
+</code></pre>
+
+<ul>
+<li><code>PATH</code> environment variable is <strong><em>automatically shared</em></strong> between Windows and WSL, so <em>needn't bother with</em> <code>WSLENV</code>.</li>
+</ul></li>
+
+<li><p>Mount (removable) <code>NTFS</code> volume</p>
+
+<pre><code class="language-bash"># Mount removable media: (e.g. G:)
+sudo mkdir /mnt/g
+sudo mount -t drvfs G: /g
+
+# Unmount
+sudo umount /g
+</code></pre></li>
+
+<li><p>Mount (<code>SMB</code>) network share (sans <code>smbfs</code>)</p>
+
+<pre><code class="language-bash"># Mount network share 
+sudo mount -t drvfs //RT-AC66U/etc /media/share
+</code></pre>
+
+<ul>
+<li>Mount point (<code>/media/share</code>) must exist.</li>
+<li>WSL uses <a href="https://blogs.msdn.microsoft.com/wsl/2016/06/15/wsl-file-system-support/" title="microsoft.com 2016">DriveFs</a> for such interoperability.</li>
+</ul></li>
+</ul></li>
+
+<li><p>Admin</p>
+
+<pre><code class="language-bash">$ sudo su  # MUST use; 'su' FAILs 
+
+# $HOME dir CHANGE; default is /home/$USERNAME
+$ sudo vim /etc/passwd  # E.g., from `/home/uZer` to `/mnt/s/HOME`
+# ... edit @ username, then reboot
+
+# Reset Password
+$ passwd username
+$ exit
+</code></pre></li>
+</ul>
+
+<h2><a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config">Distro Management</a></h2>
+
+<h3><code>wslconfig.exe</code></h3>
+
+<p>Manage any installed Linux distro(s)</p>
+
+<pre><code>wslconfig /list [/all]  
+wslconfig /unregister &lt;DistributionNames&gt; 
+wslconfig /setdefault Ubuntu       
+</code></pre>
+
+<ul>
+<li>To <strong>reinstall</strong> a distro, after <code>/unregister</code>, browse to &quot;Microsoft Store&quot;, which erroneously reports &quot;The product is installed&quot;. Click on &quot;Launch&quot;, which reinstalls it. Apparently, their &quot;installed&quot; merely means downloaded.</li>
+</ul>
+
+<h3>WSL Config | <a href="https://learn.microsoft.com/en-us/windows/wsl/wsl-config">Advanced Settings</a></h3>
+
+<h4><code>/etc/wsl.conf</code></h4>
+
+<blockquote>
+<p>Configure certain functionality per <a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config#configuration-options">options</a>, per distro. E.g., map default <code>/mnt</code> to <code>/</code>, and allow <code>chmod</code>/<code>chown</code>. Default behavior, sans <code>wsl.conf</code>, <strong>automounts</strong> all fixed drives  (<code>NTFS</code>, etal), and prepends <code>/mnt</code>. E.g., <code>/mnt/c</code> .</p>
+</blockquote>
+
+<p>Create the file per distro:</p>
+
+<pre><code class="language-yaml">[automount]
+root = /
+#options = &quot;metadata&quot;
+options = &quot;metadata,umask=22,fmask=11&quot;
+#options = &quot;metadata,uid=1000,gid=1000,umask=022,fmask=111&quot;
+</code></pre>
+
+<ul>
+<li>Such root setting strips <code>/mnt</code> prefix</li>
+</ul>
+
+<p>By default, WSL processes <code>/etc/fstab</code> (<code>mountFsTab</code> option; defaults to <code>true</code>).</p>
+
+<h3>WSL Filesystem Config | <a href="https://learn.microsoft.com/en-us/windows/wsl/wsl-config">Advanced Settings</a></h3>
+
+<h4>Per <code>/etc/fstab</code></h4>
+
+<p>Use this only for settings that are particular to the specified drive. For common settings across all drives, use <code>wsl.conf</code> or <code>.wslconf</code> .</p>
+
+<p>E.g., add SMB drive mount</p>
+
+<pre><code class="language-bash">sudo vim /etc/fstab
+</code></pre>
+
+<pre><code class="language-text">...
+
+//RT-AC66U/etc /media/share drvfs binary,noacl 0 0
+</code></pre>
+
+<ul>
+<li>Mount point <strong><em>must exist</em></strong> already.
+
+<ul>
+<li><code>mkdir -p /media/share</code></li>
+</ul></li>
+<li>WSL 1 used Type <code>smbfs</code> here, yet type <code>drvfs</code> at <code>mount ...</code>.</li>
+</ul>
+
+<h4>Per <a href="https://linux.die.net/man/8/mount"><code>mount(8)</code></a></h4>
+
+<p>Mount a drive manually, sans any such declaration at either <code>/tec/wsl.conf</code> or <code>/etc/fstab</code>:</p>
+
+<pre><code class="language-bash"># Unmount/Mount
+sudo umount /mnt/c
+sudo mount -t drvfs C: /mnt/c -o 'metadata'
+</code></pre>
+
+<p>Mount (router's) thumb drive.</p>
+
+<pre><code class="language-bash"># Mount Windows SMB drive. 
+sudo mkdir /media/share
+sudo mount -t drvfs //RT-AC66U/etc /media/share
+
+# Verify
+ls /media/share
+</code></pre>
+
+<ul>
+<li><a href="https://blogs.msdn.microsoft.com/commandline/2018/01/12/chmod-chown-wsl-improvements/">Chmod/Chown WSL Improvements</a></li>
+</ul>
+
+<p>Show all mounts</p>
+
+<pre><code class="language-bash">☩ mount
+rootfs on / type lxfs (rw,noatime)
+none on /dev type tmpfs (rw,noatime,mode=755)
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,noatime)
+proc on /proc type proc (rw,nosuid,nodev,noexec,noatime)
+devpts on /dev/pts type devpts (rw,nosuid,noexec,noatime,gid=5,mode=620)
+none on /run type tmpfs (rw,nosuid,noexec,noatime,mode=755)
+...
+C:\ on /c type drvfs (rw,noatime,uid=1000,gid=1000,umask=22,fmask=11,metadata,case=off)
+D:\ on /d type drvfs (rw,noatime,uid=1000,gid=1000,umask=22,fmask=11,metadata,case=off)
+...
+\\SMB\etc\ on /smb type drvfs (rw,relatime,case=off)
+</code></pre>
+
+<h3>Integration</h3>
+
+<ul>
+<li><p><a href="https://github.com/mintty/wsltty">Mintty :: WSL</a> &mdash; @ <code>WSLtty</code> (<a href="p>
+
+<pre><code class="language-bash"># @ current WSL terminal ...
+mintty.exe
+</code></pre></li>
+
+<li><p><a href="https://conemu.github.io/en/BashOnWindows.html" title="@ GitHub.io">ConEmu :: WSL</a> &mdash; Tabbed terminal window; integrates all Win-compatible shells, and into Win Explorer</p>
+
+<ul>
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::WSL}</code></p>
+
+<pre><code class="language-bat">set &quot;PATH=%ConEmuBaseDirShort%\wsl;%PATH%&quot; 
+    &amp; %ConEmuBaseDirShort%\conemu-cyg-64.exe --wsl 
+    -cur_console:pm:&quot;&quot;   
+</code></pre>
+
+<ul>
+<li><code>-cur_console:pm:/mnt</code> to prepend <code>/mnt</code> to path</li>
+</ul></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::Ubuntu}</code></p>
+
+<pre><code class="language-shell">cmd.exe /c wslconfig /setdefault Ubuntu-18.04 
+&amp; set &quot;PATH=%ConEmuBaseDirShort%\wsl;%PATH%&quot; 
+&amp; %ConEmuBaseDirShort%\conemu-cyg-64.exe --wsl 
+</code></pre>
+
+<ul>
+<li>Task parameters: '/icon &quot;C:\ICONS\Apps\Linux.Ubuntu.ico&quot;'</li>
+</ul></li>
+
+<li><p>@ <code>cmd.exe</code></p>
+
+<pre><code class="language-shell">wslconfig.exe /setdefault DISTRO_FULLNAME
+start ConEmu64.exe -icon C:\ICONS\Apps\Linux.DISTRO.ico -run C:\Windows\System32\wsl.exe
+</code></pre>
+
+<ul>
+<li>Sets default distro, then lauches it at a standalone ConEmu terminal.</li>
+<li>See <a href="file:///C:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd"><code>LinuxHere.cmd</code> @ <code>cmd_library</code></a>.</li>
+</ul></li>
+
+<li><p>@ Explorer (folder) Context Menu (<code>HKCR\Directory\Background\shell\...</code>)</p>
+
+<pre><code class="language-bat">; WSL
+[HKEY_CLASSES_ROOT\Directory\Background\shell\WSL]
+@=&quot;WSL&quot;
+&quot;Icon&quot;=&quot;C:\\ICONS\\Apps\\Linux.tux.ico,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\WSL\command]
+@=&quot;C:\\windows\\system32\\cmd.exe /c \&quot;C:\\Program Files\\_unregistered\\cmd_library\\LinuxHere.cmd\&quot;&quot;
+
+; Ubuntu
+[HKEY_CLASSES_ROOT\Directory\Background\shell\LinuxUbuntu]
+@=&quot;Linux Ubuntu&quot;
+&quot;Icon&quot;=&quot;C:\\ICONS\\Apps\\Linux.Ubuntu.ico,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\LinuxUbuntu\command]
+@=&quot;C:\\windows\\system32\\cmd.exe /c \&quot;C:\\Program Files\\_unregistered\\cmd_library\\LinuxHere.cmd\&quot; ubuntu&quot;
+
+; ConEmu
+[HKEY_CLASSES_ROOT\Directory\Background\shell\ConEmu]
+@=&quot;ConEmu&quot;
+&quot;Icon&quot;=&quot;C:\\Program Files\\ConEmu\\ConEmu64.exe,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\ConEmu\command]
+@=&quot;C:\\Program Files\\ConEmu\\ConEmu64.exe -Dir \&quot;%V\&quot;&quot;
+</code></pre>
+
+<ul>
+<li>Launch app @ current directory.</li>
+<li>See <a href="file:///C:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd"><code>LinuxHere.cmd</code> @ <code>cmd_library</code></a>.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://nickjanetakis.com/blog/using-wsl-and-mobaxterm-to-create-a-linux-dev-environment-on-windows" title="NickJanetakis.com 2018">Setup a WSL Development Environment</a></h2>
+
+<ul>
+<li><p><a href="https://www.vagrantup.com/docs/other/wsl.html">Vagrant @ WSL</a> <strong>fails</strong>.</p></li>
+
+<li><p><a href="https://conemu.github.io/">ConEmu</a> install (<a href="file:///D:/1%20Data/IT/Apps/Shell/Win/ConEmu/ConEmu.md" title="ConEmu.md">MD</a> | <a href="file:///D:/1%20Data/IT/Apps/Shell/Win/ConEmu/ConEmu.html" title="@ browser">HTML</a>)<br>
+A tabbed terminal window; <code>cmd</code>, <code>git-bash</code>, <code>wsl</code>, <code>PowerShell</code>, ...</p></li>
+
+<li><p>UPDATE on <a href="https://code.visualstudio.com/download">VS Code</a> / X-Server<br>
+WSL now (Win10 <code>R4</code>) integrates VS Code (<code>code</code>) of host natively ...</p>
+
+<pre><code class="language-bash">$ which code
+/c/Users/X1/AppData/Local/Programs/Microsoft VS Code/bin/code
+</code></pre>
+
+<ul>
+<li><p><strong>No other install is required.</strong><br>
+The  command, <code>code</code>, launches VS Code (GUI), at host, without running X-server.</p>
+
+<ul>
+<li><p><a href="https://en.wikipedia.org/wiki/X_Window_System">X Server</a> (<code>X11</code>)  apps (<a href="file:///D:/1%20Data/IT/Apps/X-Server/X-Server.apps.md" title="X-Server.md">MD</a> | <a href="file:///D:/1%20Data/IT/Apps/X-Server/X-Server.apps.html" title="@ browser">HTML</a>)<br>
+Allows GUI apps installed at a session host (WSL distro) to launch as a client GUI app (at Windows).</p></li>
+
+<li><p><a href="https://code.visualstudio.com/download">VS Code</a><br>
+Run VS code from inside WSL. (While a Windows X-Server is running.)</p>
+
+<ul>
+<li>Download and install latest 64-bit (<code>.deb</code>) into WSL, per distro.<br>
+Then use method @ <code>Ubuntu.Install</code>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+
+<li><p>Node.js (<a href="https://github.com/creationix/nvm" title="github.com/creationix/nvm">per Node Version Manager; <code>nvm</code></a>)</p>
+
+<pre><code class="language-bash"># Install Node.js per NVM @ WSL (if not already)
+[[ ! &quot;$( type -t nvm )&quot; &amp;&amp; &quot;$WSLENV&quot; ]] &amp;&amp; {
+    sudo apt-get update
+    echo &quot;===  Install NVM&quot; 
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+    # install.sh clones nvm repos to ~/.nvm; adds source line to bash  profile 
+    # https://github.com/creationix/nvm  
+    source ~/.bashrc
+    echo &quot;===  Install Node.js (LTS) per NVM&quot; 
+    nvm install --lts 
+}
+</code></pre></li>
+
+<li><p>Docker @ WSL (<a href="li>
+
+<li><p><a href="https://medium.com/@ddebastiani/install-kubernetes-on-windows-wsl-c36f6b2571d2" title="Install Kubernetes on Windows + WSL,  Medium.com, Jan-2018">Kubernetes (<code>kubectl</code>) @ WSL</a><br>
+Prerequisite: <code>minikube.exe</code> (+<code>kubectl.exe</code>) installed @ Windows</p>
+
+<blockquote>
+<p>Kubernetes development can be <em>somewhat</em> integrated into WSL thru its own <code>kubectl</code> tool and respective config.<br>
+Much like the <a href="https://nickjanetakis.com/blog/setting-up-docker-for-windows-and-wsl-to-work-flawlessly" title="Setting Up Docker for Windows and WSL to Work Flawlessly, NickJanetakis.com, May-2018">Docker-@-WSL</a> integration, where the WSL-installed client is configured for<br>
+the Windows-installed server, instead of its own server.</p>
+</blockquote></li>
+
+<li><p>@ WSL, install <code>kubectl</code></p>
+
+<pre><code class="language-bash"># download kubectl to PWD
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+# make executable
+chmod +x kubectl
+# move it to appropos folder
+sudo mv kubectl /usr/local/bin/
+</code></pre></li>
+
+<li><p>@ <a href="file:///C%3A/HOME/.kube/config">~/.kube/config</a></p>
+
+<p>Create a modified copy; convert paths and line-endings from Win to Unix.<br>
+This config file is spawned by <code>kubectl</code> per the current Minikube parameters.<br>
+Can be created anew; @ PowerShell ...</p>
+
+<pre><code class="language-powershell"># Get the config file; save to TEMP
+kubectl.exe config view &gt; $env:TEMP/kubectl-config
+</code></pre>
+
+<pre><code class="language-bash"># Change working dir TEMP (WSL path thereof)
+cd /r/TEMP 
+# if HOME is not cross-platform, ...
+mkdir ~/.kube
+# Copy config to its folder 
+cp kubectl-config ~/.kube/config
+# Convert to UNIX line-endings 
+dos2unix ~/.kube/config
+# Convert to UNIX paths 
+sed -i 's|\\|/|g' ~/.kube/config
+# if /mnt/...
+sed -i 's|\([ &quot;]\)\([A-Za-z]\):|\1/mnt/\L\2|' ~/.kube/config
+# if /...
+sed -i 's|\([ &quot;]\)\([A-Za-z]\):|\1/\L\2|' ~/.kube/config
+</code></pre>
+
+<ul>
+<li>For cross-platform setups, where <code>$HOME</code>, i.e., <code>~/</code>, is the same for WSL and Git-bash environments,<br>
+write a script to alternate between Win/Unix vesions of this <em>one</em> config file, per environment.</li>
+</ul></li>
+
+<li><p>@ WSL, check/set <code>kubectl</code> <strong>context</strong></p>
+
+<pre><code class="language-bash"># Check kubectl &quot;context&quot;
+kubectl config get-contexts
+# If need be, switch kubectl to Minikube context
+kubectl config use-context minikube
+# Validate
+kubectl config view 
+
+# Test; get Minikube system (VM) pods
+kubectl get pods -n kube-system
+NAME                     READY   STATUS   ...
+coredns-c4cffd6dc-rjg2h  1/1     Running  ...
+default-http-backend...  1/1     Running  ...
+etcd-minikube            1/1     Running  ...
+...
+</code></pre></li>
+</ul>
+
+<h2>WSL References</h2>
+
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/windows/wsl/wsl-config">Commands</a><br></li>
+<li><a href="https://docs.microsoft.com/en-us/windows/wsl/user-support">User Accounts &amp; Permissions</a><br></li>
+</ul>
+
+<h2>@ Debian</h2>
+
+<pre><code class="language-bash">$ cat /etc/debian_version       # 9.3; version number 
+$ cat /etc/os-release           # OS Info  
+
+$ sudo su
+# GNU Dev Tools
+$ apt-get update                   # pkgs version-info update      
+$ apt-get install build-essential  # gcc, make, ...
+$ apt-get install dh-autoreconf    # autoreconf 
+# @ Kali
+$ apt-get dist-upgrade            
+$ apt-get install metasploit-framework  # turn off anti-virus
+# Apps
+$ apt-get install libssl-dev -y      # openssl crypto lib
+$ apt-get install openssh-client -y  # ssh client
+$ apt-get install openssh-server -y  # ssh server
+$ apt-get install man-db -y   # man pages
+$ apt-get install vim -y      # vim editor 
+$ apt-get install strace -y   # debugger
+$ apt-get install rsync -y    # rsync
+
+# NOT needed; ntfs volumes mounted, per WSL default, @ /mnt/... 
+$ apt-get install ntfs-3g -y  # Debian|Ubuntu
+$ yum install ntfs-3g     -y  # RHEL 
+
+$ ls -la '/mnt/c/Users/X1'      # fixed-drives automount by default
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

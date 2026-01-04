@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Docker.Compose.YAML</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.docker.com/compose/compose-file" title="docs.docker.com">Docker Compose File <code>v3.8</code></a></h1>
+
+<h2><a href="https://docs.docker.com/compose/compose-file/#networks">Networks</a></h2>
+
+<h2>Volumes @ <code>docker stack deploy</code> ( <code>docker-stack.yml</code>)</h2>
+
+<blockquote>
+<p>Tasks (containers) backing a service can be deployed on any node in a swarm; may be different node each time service is updated.</p>
+</blockquote>
+
+<p>So <strong><em>no named volumes</em></strong>. Instead uses _<strong>anonymous volume</strong> per task. These <strong><em>do not persist</em></strong>; are as ephemeral as container.</p>
+
+<p>To persist, use a named volume and a volume driver that is multi-host aware, so that the data is accessible from any node. Or, set constraints on the service so that its tasks are deployed on a node that has the volume present.</p>
+
+<p><a href="https://github.com/docker/labs/blob/master/beginner/chapters/votingapp.md"><code>example-voting-app</code></a></p>
+
+<pre><code class="language-yaml">version: &quot;3.8&quot;
+services:
+    db:
+    image: postgres:9.4
+    volumes:
+        - db-data:/var/lib/postgresql/data
+    networks:
+        - backend
+    deploy:
+        placement:
+            constraints: [node.role == manager]
+</code></pre>
+
+<p><a href="https://docs.docker.com/compose/compose-file/#healthcheck"><code>healthccheck</code></a></p>
+
+<pre><code class="language-yaml">healthcheck:
+    test: [&quot;CMD&quot;, &quot;curl&quot;, &quot;-f&quot;, &quot;http://localhost&quot;]
+    interval: 1m30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+</code></pre>
+
+<p><a href="https://docs.docker.com/compose/compose-file/#ports"><code>ports</code></a></p>
+
+<pre><code class="language-yaml"># SHORT syntax is HOST:CTNR (USE STRINGs)
+ports:
+    - &quot;3000&quot;
+    - &quot;3000-3005&quot;
+    - &quot;8000:8000&quot;
+    - &quot;9090-9091:8080-8081&quot;
+    - &quot;49100:22&quot;
+    - &quot;127.0.0.1:8001:8001&quot;
+    - &quot;127.0.0.1:5000-5010:5000-5010&quot;
+    - &quot;6060:6060/udp&quot;
+    - &quot;12400-12500:1240&quot;
+
+# LONG syntax (equiv to &quot;8080:80/tcp&quot;)
+ports:
+    - target: 80       # @ CTNR
+      published: 8080  # @ HOST
+      protocol: tcp  
+      mode: host 
+      #... ingress @ swarm mode; to be load balanced.
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

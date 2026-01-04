@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"kind":"Deployment","apiVersion":"apps/v1","metadata":{"name":"ngx2","creationTimestamp":null,"labels":{"app":"ngx2"}},"spec":{"replicas":5,"selector":{"matchLabels":{"app":"ngx2"}},"template":{"metadata":{"creationTimestamp":null,"labels":{"app":"ngx2"}},"spec":{"containers":[{"name":"nginx","image":"nginx:1.18","resources":{}}]}},"strategy":{}},"status":{}}
+  labels:
+    app: ngx2
+    service: nginx
+  name: ngx2
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: ngx2
+      type: webshop
+  strategy: 
+    rollingUpdate: 
+      maxSurge: 3
+      maxUnavailable: 2 
+  template:
+    metadata:
+      labels:
+        app: ngx2
+        type: webshop
+    spec:
+      containers:
+      - image: nginx:latest
+        name: nginx
+        resources: {}

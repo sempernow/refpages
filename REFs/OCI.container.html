@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>OCI.container</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>OCI containers</h1>
+
+<h2>Tools</h2>
+
+<h3>Full-scope handlers</h3>
+
+<ul>
+<li>docker</li>
+<li>podman</li>
+<li>nerdctl</li>
+</ul>
+
+<h3>Image tags</h3>
+
+<p>Various tools/methods to <code>GET</code>
+a flat <strong>list of all image tags</strong>
+available from a particular (OCI/CNCF) registry.</p>
+
+<pre><code class="language-bash">host=registry.k8s.io
+path=sig-storage/smbplugin
+img=$host/$path # Sans tag!
+
+# crane
+crane ls $img 
+
+# CNCF API
+curl -s &quot;https://$host/v2/$path/tags/list&quot; | jq -r '.tags[]'
+
+</code></pre>
+
+<h2>Containers From Perspective of <strong>System Administrator (SAs)</strong></h2>
+
+<hr>
+
+<h3>🧱 1. <strong>Foundational Concept</strong></h3>
+
+<blockquote>
+<p>&quot;OCI containers are a formalized, standardized way to run isolated processes on a Linux system, with predictable configuration and lifecycle semantics.&quot;</p>
+</blockquote>
+
+<hr>
+
+<h3>🔐 2. <strong>Parallels with Familiar Concepts</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th>Traditional Concept</th>
+<th>OCI Container Equivalent</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>chroot</code> jail</td>
+<td>Filesystem isolation (<code>rootfs</code>)</td>
+</tr>
+
+<tr>
+<td><code>cgroups</code></td>
+<td>Resource constraints</td>
+</tr>
+
+<tr>
+<td><code>namespaces</code></td>
+<td>Network, PID, IPC, and UTS isolation</td>
+</tr>
+
+<tr>
+<td>RPM/DEB packages</td>
+<td>Image layers with filesystem diffs</td>
+</tr>
+
+<tr>
+<td>systemd service</td>
+<td>Container runtime process lifecycle</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>📦 3. <strong>OCI = Open Standard</strong></h3>
+
+<ul>
+<li><p><strong>OCI (Open Container Initiative)</strong> defines:</p>
+
+<ul>
+<li><strong>Image Format</strong> – How container images are packaged and stored.</li>
+<li><strong>Runtime Specification</strong> – How containers are executed from images (e.g., via <code>runc</code>).</li>
+<li><strong>Distribution Specification</strong> – How images are shared over registries (e.g., <code>docker pull</code>/<code>podman pull</code>).</li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>&quot;Think of OCI as the 'POSIX' for containers. It's what makes runtimes like Docker, Podman, and containerd <strong>interoperate</strong> cleanly.&quot;</p>
+</blockquote>
+
+<hr>
+
+<h3>🚀 4. <strong>Why It Matters to SAs</strong></h3>
+
+<ul>
+<li><strong>Standardized Deployment:</strong> Build once, run anywhere across Docker, Kubernetes, CRI-O, etc.</li>
+<li><strong>Immutable Infrastructure:</strong> Container images are versioned, reproducible, and verifiable.</li>
+<li><strong>Lifecycle Integration:</strong> You can plug containers into <code>systemd</code>, CI/CD pipelines, or even CRON jobs.</li>
+<li><strong>Security Boundaries:</strong> SELinux/AppArmor, seccomp, and user namespaces offer defense-in-depth.</li>
+</ul>
+
+<hr>
+
+<h3>🛠 5. <strong>Common Tools Using OCI</strong></h3>
+
+<ul>
+<li><strong>Docker/Podman:</strong> Build/run containers.</li>
+<li><strong>containerd/cri-o:</strong> Runtime daemons used by Kubernetes.</li>
+<li><strong>Kubernetes:</strong> Schedules and manages OCI-compliant containers.</li>
+</ul>
+
+<hr>
+
+<h3>🧪 6. <strong>Example Explanation</strong></h3>
+
+<blockquote>
+<p>&quot;An OCI container is just a process on the host that’s running in a constrained environment: a chrooted rootfs, with limited CPU/memory, no access to host PID or network unless configured. What makes it powerful is that the environment is described in a portable, declarative JSON file, and the image that backs it is versioned and shareable.&quot;</p>
+</blockquote>
+
+<hr>
+
+<h2>🧪 Hands-on: Running a Container with <code>runc</code></h2>
+
+<blockquote>
+<p><strong>Goal:</strong> Run <code>/bin/sh</code> from a busybox image inside a minimal OCI container using <code>runc</code>.</p>
+</blockquote>
+
+<hr>
+
+<h3>🔧 1. <strong>Pre-reqs</strong></h3>
+
+<pre><code class="language-bash">sudo dnf install -y runc  # or apt install runc
+</code></pre>
+
+<p>Make a working directory:</p>
+
+<pre><code class="language-bash">mkdir ~/runc-test &amp;&amp; cd ~/runc-test
+</code></pre>
+
+<hr>
+
+<h3>📦 2. <strong>Create a Root Filesystem</strong></h3>
+
+<p>Extract it from the image (in cache else pulls it first):</p>
+
+<pre><code class="language-bash">mkdir -p rootfs
+docker export $(docker create busybox) |tar -C rootfs -xvf -
+
+</code></pre>
+
+<h3>🧾 3. <strong>Generate Default OCI Config</strong></h3>
+
+<pre><code class="language-bash">runc spec
+</code></pre>
+
+<ul>
+<li><code>config.json</code></li>
+</ul>
+
+<p>This creates a file called <code>config.json</code>. It’s the <strong>OCI Runtime Spec</strong>, describing how to run the container.</p>
+
+<hr>
+
+<h3>✏️ 4. <strong>Edit the <code>config.json</code></strong></h3>
+
+<p>Open in your favorite editor:</p>
+
+<pre><code class="language-bash">vi config.json
+</code></pre>
+
+<p>Change the following fields:</p>
+
+<ul>
+<li><p><strong><code>process.args</code></strong>:</p>
+
+<pre><code class="language-json">&quot;args&quot;: [&quot;sh&quot;]
+</code></pre></li>
+
+<li><p>Optional (to drop privileges):</p>
+
+<pre><code class="language-json">&quot;root&quot;: {
+&quot;path&quot;: &quot;rootfs&quot;,
+&quot;readonly&quot;: false
+}
+</code></pre></li>
+
+<li><p>Optional (to set hostname):</p>
+
+<pre><code class="language-json">&quot;hostname&quot;: &quot;runc-demo&quot;
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3>🚀 5. <strong>Run the Container</strong></h3>
+
+<pre><code class="language-bash">sudo runc run demo
+</code></pre>
+
+<p>You’ll be dropped into a shell (<code>sh</code>) inside the container. You can confirm isolation:</p>
+
+<pre><code class="language-sh">hostname        # should be &quot;runc-demo&quot;
+ps              # only shows minimal PID tree
+ls /            # comes from BusyBox
+</code></pre>
+
+<hr>
+
+<h2>🧠 Summary</h2>
+
+<ul>
+<li><code>rootfs/</code> contains the filesystem.</li>
+<li><code>config.json</code> is the OCI Runtime Spec.</li>
+<li><code>runc run &lt;container-id&gt;</code> creates an isolated process from that spec.</li>
+<li>Nothing about registries, Docker, or Kubernetes is required—this is <strong>bare-metal containerization</strong>.</li>
+</ul>
+
+<hr>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

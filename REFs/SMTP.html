@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SMTP</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol" title="Wikipedia">SMTP</a> | Email Service Providers (ESPs)</h1>
+
+<h2><a href="https://mailtrap.io/blog/imap-pop3-smtp/">Protocols</a></h2>
+
+<p>SMTP, IMAP and POP3</p>
+
+<h2><a href="https://mailtrap.io/blog/smtp-commands-and-responses/" title="mailtrap.io">SMTP Command</a> | <a href="https://en.wikipedia.org/wiki/List_of_SMTP_server_return_codes">SMTP Response Codes</a></h2>
+
+<h2>SMTP Relay</h2>
+
+<p>The process of transferring emails from one mail server to another. In practice, this term denotes the SMTP server that enables the relaying. Most email service providers (ESP) set up SMTP relay servers. This way, users can send their emails using the infrastructure of a sender with an outstanding reputation.</p>
+
+<p>SMTP involves the back-and-forth communication (handshake) between the client and the server. Since these handshakes are many, the method is called chatty.</p>
+
+<p>The further delivery of email to recipient’s mail user agent is per IMAP or POP3 protocol.</p>
+
+<h2>Email API</h2>
+
+<p>A Web API (HTTP API) offered by ESPs for email handling. Quicker than SMTP; less handshaking. Another benefit is additional functionality; automate transactions, track metrics, and such.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

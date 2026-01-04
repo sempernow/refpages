@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Podman.rootless</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Rootless Podman</h1>
+
+<blockquote>
+<p>Provision a Podman environment for unprivileged, non-local (AD) users on RHEL.</p>
+</blockquote>
+
+<h2>Overview</h2>
+
+<p>There are many corners to this envelope:</p>
+
+<ul>
+<li>Lacking privilege, a per-user (rootless) configuration is required:
+
+<ul>
+<li>Podman does not configure remote (AD) users.</li>
+<li>Podman creates per-user namespaces using subids only if
+user is local, regular (non-system), and created after Podman is installed.</li>
+<li>An active fully-provisioned login shell is required to initialized a rootless Podman session.
+
+<ul>
+<li><code>HOME</code> is set.</li>
+<li><code>XDG_RUNTIME_DIR</code> is set.</li>
+<li>DBus Session Bus starts.
+
+<ul>
+<li>Provides user-level IPC.</li>
+</ul></li>
+</ul></li>
+<li>Linux system users, &quot;<code>adduser --system ...</code>&quot;,
+are not provisioned an active login shell, regardless.</li>
+<li>Containers running under a rootless process do not survive the user session unless
+Linger is enabled for that user: <code>sudo loginctl enable-linger &lt;username&gt;</code>.
+
+<ul>
+<li>Also required for Podman's systemd integration schemes.</li>
+</ul></li>
+<li>The per-user subid ranges (<code>subuid</code>, <code>subgid</code>) must be unique per host.</li>
+</ul></li>
+
+<li><p>Workarounds for AD users (<strong><code>$USER</code></strong>) is to provision a
+logically-mapped <strong>local user</strong> (<strong><code>podman-$USER</code></strong>)
+to serve as their Podman service account:</p>
+
+<ol>
+<li><strong>No login shell</strong> (<code>adduser --shell /sbin/nologin ...</code>)
+
+<ul>
+<li><p>To provide a full functional rootless Podman environment,
+these environment settings must be <strong>explicitly declared</strong>:</p>
+
+<pre><code class="language-bash">cd /tmp
+sudo -u podman-$USER -- env \
+    HOME=/home/podman-$USER \
+    XDG_RUNTIME_DIR=/run/user/$(id -u podman-$USER) \
+    DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u podman-$USER)/bus \
+    podman ...
+</code></pre>
+
+<ul>
+<li><a href="per-user/podman.sh"><code>podman.sh</code></a></li>
+<li>Tight security by locking down allowed commands using a group-scoped sudoers drop-in file.
+
+<ul>
+<li><a href="per-user/provision-podman-sudoers.sh"><code>provision-podman-sudoers.sh</code></a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><strong>Login shell</strong> (<code>adduser --shell /bin/bash ...</code>)
+
+<ul>
+<li><p>Using SSH shell to trigger an active login session,
+which provides a <strong>fully functional</strong> rootless Podman environment.</p>
+
+<pre><code class="language-bash">ssh -i $key podman-$USER@localhost [podman ...]
+</code></pre>
+
+<ul>
+<li>Secure by locked password, so AuthN/AuthZ is <em>exclusively</em> by SSH key/tunnel.</li>
+</ul></li>
+</ul></li>
+</ol></li>
+
+<li><p>Privileged ports, e.g., 80 (HTTP) and 443 (HTTPS), are not allowed.</p></li>
+</ul>
+
+<h2>Local-user Service Account (per AD user)</h2>
+
+<h3>1. <strong>No login shell</strong></h3>
+
+<p>To allow for self-provisioning, the AD user must be member of <code>podman-sudoers</code> group,
+which may be either AD or local.</p>
+
+<h4>Admin</h4>
+
+<pre><code class="language-bash">sudo install.sh
+</code></pre>
+
+<ul>
+<li><a href="per-user/podman-provision-sudoers.sh"><code>podman-provision-sudoers.sh</code></a></li>
+<li><a href="per-user/podman-provision-nologin.sh"><code>podman-provision-nologin.sh</code></a></li>
+<li><a href="per-user/podman-unprovision-user.sh"><code>podman-unprovision-user.sh</code></a></li>
+<li><a href="per-user/podman.sh"><code>podman.sh</code></a></li>
+</ul>
+
+<h4>User(s)</h4>
+
+<p>Users must be member of the group declared in the apropos group-scoped sudoers file that allows such access.</p>
+
+<ol>
+<li><p>Self provision a fully-functional rootless Podman environment</p>
+
+<pre><code class="language-bash">u0@a0 # unprivileged user
+☩ sudo podman-provision-nologin.sh
+</code></pre></li>
+
+<li><p>Use it to run Podman commands</p>
+
+<pre><code class="language-bash">u0@a0 # unprivileged user
+☩ podman run --rm --volume $work:/mnt/home alpine sh -c '
+    echo $(whoami)@$(hostname -f)
+    umask 002
+    rm -f /mnt/home/test-write-access-*
+    ls -hl /mnt/home
+    touch /mnt/home/test-write-access-$(date -u '+%Y-%m-%dT%H.%M.%SZ')
+    ls -hl /mnt/home
+'
+root@65f76044ffcb
+total 0
+total 0
+-rw-rw-r--    1 root     root     0 ... test-write-access-2025-05-11T19.08.32Z
+
+☩ ls /work/podman/home/u0
+total 0
+-rw-rw-r--. 1 podman-u0 podman-u0 0 ... test-write-access-2025-05-11T19.08.32Z
+
+☩ ls -n /work/podman/home/u0
+total 0
+-rw-rw-r--. 1 50004 50004 0         ... test-write-access-2025-05-11T19.08.32Z
+</code></pre>
+
+<ul>
+<li>Podman rootless : The <code>root</code> user of container is <em>not</em> <code>root</code> at host,
+but rather maps to host user (<code>podman-u0</code>) who ran the command.</li>
+</ul></li>
+</ol>
+
+<h3>2. <strong>Login shell</strong></h3>
+
+<p>TODO</p>
+
+<h2>❌ Common Service Account</h2>
+
+<blockquote>
+<p>A common service account for multiple developers running rootless Podman is technically possible,
+but <strong>collisions and subtle failures are highly likely</strong>,
+and <strong>increase rapidly with team size</strong> and intensity of usage.</p>
+</blockquote>
+
+<hr>
+
+<h3>⚠️ <strong>Key Problems with a Shared Podman Account</strong></h3>
+
+<p>Rootless Podman heavily relies on <strong>per-user namespaces</strong>, <strong>cgroups</strong>, and <strong>runtime directories</strong> that are not designed for concurrent use by multiple interactive users under a shared UID.</p>
+
+<p>Here’s a breakdown of what can and will go wrong:</p>
+
+<hr>
+
+<h4>1. <strong>Shared XDG_RUNTIME_DIR</strong></h4>
+
+<p>By default, rootless Podman uses:</p>
+
+<pre><code>$XDG_RUNTIME_DIR = /run/user/$(id -u)
+</code></pre>
+
+<p>In a shared account, everyone has the <strong>same UID</strong>, so they share <code>/run/user/1001</code>, for example.</p>
+
+<ul>
+<li>Podman creates UNIX domain sockets here (e.g., <code>/run/user/1001/podman/podman.sock</code>)</li>
+<li><code>systemd</code> user services are also tied to this directory</li>
+</ul>
+
+<p><strong>Collision symptoms:</strong></p>
+
+<ul>
+<li>One user kills or restarts the Podman socket, interrupting others</li>
+<li>Containers show up across sessions (even when they shouldn’t)</li>
+<li>Podman client fails to connect because the socket is in use or misowned</li>
+</ul>
+
+<hr>
+
+<h4>2. <strong>Volume, Image, and Container Name Clashes</strong></h4>
+
+<p>All container objects are stored in a single namespace (under that user’s <code>$HOME/.local/share/containers</code> or <code>/var/tmp/containers/...</code>).</p>
+
+<p><strong>Collision symptoms:</strong></p>
+
+<ul>
+<li>Containers and volumes have non-unique names</li>
+<li>Conflicting ports (e.g., two users both try to run something on <code>localhost:8080</code>)</li>
+<li>One user’s <code>podman rm</code> or <code>podman volume rm</code> breaks another’s environment</li>
+</ul>
+
+<hr>
+
+<h4>3. <strong>File Ownership and Permissions</strong></h4>
+
+<p>Files written by Podman in shared directories (volumes, mounts, container data) are owned by <strong>the service account</strong>, not the real invoking user.</p>
+
+<p>This means:</p>
+
+<ul>
+<li>Users can accidentally delete or modify each other’s data</li>
+<li>There is <strong>no meaningful ownership enforcement</strong> unless you wrap every command in sandboxing (like <code>sudo -u</code>, namespaces, ACLs)</li>
+</ul>
+
+<hr>
+
+<h4>4. <strong>Trouble with <code>loginctl</code> / lingering</strong></h4>
+
+<p>Even if <code>loginctl enable-linger podmaners</code> is active, only <strong>one instance</strong> of the user service is assumed to be running.</p>
+
+<p>If multiple users:</p>
+
+<ul>
+<li>Try to run <code>podman system service</code> in the background (e.g., for CLI clients)</li>
+<li>Use <code>podman generate systemd</code> and launch containers on login</li>
+</ul>
+
+<p>You'll encounter unpredictable behavior or crashes.</p>
+
+<hr>
+
+<h4>5. <strong>Security and Auditing</strong></h4>
+
+<ul>
+<li>Logs show actions as <code>podmaners</code>, not the real user</li>
+<li>There’s no accountability unless you manually inject tracing (e.g., <code>sudo -u podmaners --preserve-env=REAL_USER=alice</code>)</li>
+<li>A compromised Podman container or build process could access another developer’s mounts or data</li>
+</ul>
+
+<hr>
+
+<h3>🛑 Bottom Line: <strong>Shared Account Not Viable at Scale</strong></h3>
+
+<blockquote>
+<p>For <strong>one-off automation or tightly scripted CI/CD tasks</strong>, a shared rootless Podman account might work.</p>
+
+<p>But for <strong>interactive, multi-user development</strong>, it's <strong>fragile, unsafe, and increasingly error-prone</strong>.</p>
+</blockquote>
+
+<hr>
+
+<h3>✅ Recommended Alternative for ~12 Developer Team</h3>
+
+<p>Provision <strong>a dedicated Podman service account per developer</strong>, either:</p>
+
+<ul>
+<li><del><strong>Mapped from AD</strong> (e.g., <code>jdoe@domain</code> → <code>podman-jdoe</code>)</del>
+
+<ul>
+<li>Not viable; Podman does not recognize AD users,
+so namespaces (subid assignments) would have to be managed.</li>
+</ul></li>
+<li>Or <strong>locally created accounts</strong> named after users (<code>podman-alice</code>, <code>podman-bob</code>, etc.)</li>
+</ul>
+
+<p>And provision:</p>
+
+<ul>
+<li><code>/etc/subuid</code> and <code>/etc/subgid</code> entries</li>
+<li><code>loginctl enable-linger</code></li>
+<li>Proper SELinux <code>restorecon</code> on home dir</li>
+<li>Optionally restrict shell access and use <code>sudo -u</code> or <code>ssh</code> as interface</li>
+</ul>
+
+<hr>
+
+<h2><code>su</code> vs <code>sudo -u</code></h2>
+
+<h3><strong>Shell Requirements: <code>su</code> vs <code>sudo -u</code></strong></h3>
+
+<table>
+<thead>
+<tr>
+<th><strong>Command</strong></th>
+<th><strong>Requires Login Shell?</strong></th>
+<th><strong>Works with <code>nologin</code>?</strong></th>
+<th><strong>Best For</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>su - $name</code></td>
+<td>✅ <strong>Yes</strong> (<code>/bin/bash</code>)</td>
+<td>❌ No (<code>nologin</code> fails)</td>
+<td>Interactive sessions</td>
+</tr>
+
+<tr>
+<td><code>sudo -u $name</code></td>
+<td>❌ <strong>No</strong></td>
+<td>✅ Yes (ignores shell)</td>
+<td><strong>Service accounts</strong></td>
+</tr>
+</tbody>
+</table>
+
+<p>Where <code>$name</code> is that of the Podman (service) account common to all users.</p>
+
+<hr>
+
+<h3><strong>Key Differences</strong></h3>
+
+<h4><strong>1. <code>su</code> (Switch User)</strong></h4>
+
+<ul>
+<li><strong>Requires a valid login shell</strong> (e.g., <code>/bin/bash</code>, <code>/bin/sh</code>)</li>
+
+<li><p><strong>Fails if shell is <code>/sbin/nologin</code> or <code>/bin/false</code></strong>:</p>
+
+<pre><code class="language-bash">su - podmaners  # Error: &quot;This account is currently not available.&quot;
+</code></pre></li>
+
+<li><p><strong>Bypass (temporarily, not recommended)</strong>:</p>
+
+<pre><code class="language-bash">sudo su -s /bin/bash podmaners  # Force shell
+</code></pre></li>
+</ul>
+
+<h4><strong>2. <code>sudo -u</code> (Run as User)</strong></h4>
+
+<ul>
+<li><strong>Ignores the user's shell</strong> – works even with <code>/sbin/nologin</code></li>
+
+<li><p><strong>Ideal for service accounts</strong>:</p>
+
+<pre><code class="language-bash">sudo -u podmaners podman info  # Works!
+</code></pre></li>
+
+<li><p><strong>Logs commands</strong> in <code>/var/log/secure</code> (better auditing).</p></li>
+</ul>
+
+<hr>
+
+<h3><strong>Why This Matters for Podman Service Accounts</strong></h3>
+
+<ul>
+<li><strong>Security</strong>: Service accounts should <strong>never</strong> have a shell (<code>/sbin/nologin</code>).</li>
+
+<li><p><strong>Podman needs <code>sudo -u</code></strong>:</p>
+
+<pre><code class="language-bash"># Correct way to run Podman as a service account
+sudo -u podmaners podman run --rm alpine echo &quot;Hello&quot;
+</code></pre></li>
+
+<li><p><strong><code>su</code> breaks security</strong>: Giving a shell to <code>podmaners</code> defeats the purpose of a service account.</p></li>
+</ul>
+
+<hr>
+
+<h3><strong>Best Practices</strong></h3>
+
+<ol>
+<li><p><strong>Always use <code>sudo -u</code> for service accounts</strong>:</p>
+
+<pre><code class="language-bash">sudo -u podmaners podman [command]
+</code></pre></li>
+
+<li><p><strong>Never change <code>nologin</code> to <code>bash</code></strong>:</p>
+
+<pre><code class="language-bash"># ❌ Dangerous (don't do this!)
+sudo usermod -s /bin/bash podmaners
+</code></pre></li>
+
+<li><p><strong>If you need debugging</strong>:</p>
+
+<pre><code class="language-bash"># Temporary shell (avoid unless necessary)
+sudo -u podmaners bash -c 'whoami &amp;&amp; podman info'
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h3><strong>Example: Secure Podman Setup</strong></h3>
+
+<pre><code class="language-bash"># Create service account (no shell, no home dir)
+sudo useradd -r -s /sbin/nologin -d /var/empty podmaners
+
+# Verify
+sudo -u podmaners podman info  # ✅ Works
+su - podmaners                 # ❌ Fails (as intended)
+</code></pre>
+
+<hr>
+
+<h3><strong>Final Answer</strong></h3>
+
+<p>✅ <strong>Use <code>sudo -u podmaners</code></strong> – it bypasses shell checks and is secure.
+❌ <strong>Avoid <code>su</code> for service accounts</strong> – it requires a shell and weakens security.</p>
+
+<p>Need to debug a <code>nologin</code> account? Use:</p>
+
+<pre><code class="language-bash">sudo -u podmaners bash -c '[commands]'  # Temporary exception
+</code></pre>
+
+<h3>Further Comparison</h3>
+
+<h3>🔹 <strong>Scheme A: <code>sudo -u podmaners podman</code></strong></h3>
+
+<p>Users invoke Podman indirectly:</p>
+
+<ul>
+<li>The service account has <strong>no shell</strong> (<code>/sbin/nologin</code>)</li>
+
+<li><p>User is granted <code>sudo</code> rights to run commands <strong>as <code>podmaners</code></strong>, with a tightly scoped <code>sudoers</code> rule:</p>
+
+<pre><code class="language-bash">joe ALL=(podmaners) NOPASSWD: /usr/bin/podman *
+</code></pre></li>
+
+<li><p>No interactive session is allowed for <code>podmaners</code></p></li>
+</ul>
+
+<hr>
+
+<h3>🔹 <strong>Scheme B: <code>ssh podmaners@localhost</code></strong></h3>
+
+<p>Users invoke Podman interactively:</p>
+
+<ul>
+<li>The <code>podmaners</code> account has a shell (e.g., <code>/bin/bash</code>)</li>
+<li>The password is <strong>locked</strong></li>
+<li>Only public key access is allowed (users’ SSH keys placed in <code>~podmaners/.ssh/authorized_keys</code>)</li>
+<li>Users <code>ssh</code> into the account and run Podman normally</li>
+</ul>
+
+<hr>
+
+<h3>🔒 <strong>Security Comparison</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Scheme A: <code>sudo -u</code></th>
+<th>Scheme B: <code>ssh localhost</code></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Access Surface</strong></td>
+<td>Limited to <code>podman</code> command via <code>sudoers</code></td>
+<td>Full interactive shell if not further restricted</td>
+</tr>
+
+<tr>
+<td><strong>User Auditing</strong></td>
+<td>Logs <code>sudo</code> invocations (audit trail)</td>
+<td>Harder to attribute actions to specific users without per-key <code>command=</code> restriction</td>
+</tr>
+
+<tr>
+<td><strong>Privilege Escalation Risk</strong></td>
+<td>Low, if <code>sudoers</code> is tight</td>
+<td>Higher — any bug or misconfigured shell environment might be exploitable</td>
+</tr>
+
+<tr>
+<td><strong>Isolation Between Users</strong></td>
+<td>Weak — shared user means shared state (UID, XDG_RUNTIME_DIR, containers)</td>
+<td>Same weakness unless separate users are used</td>
+</tr>
+
+<tr>
+<td><strong>User Convenience</strong></td>
+<td>Scriptable but less flexible</td>
+<td>Fully interactive; user can run shell + Podman tooling</td>
+</tr>
+
+<tr>
+<td><strong>SELinux Compatibility</strong></td>
+<td>Controlled by calling user (via <code>sudo</code>)</td>
+<td>Depends on SSH session context; easier to misconfigure SELinux domains</td>
+</tr>
+
+<tr>
+<td><strong>Revocation</strong></td>
+<td>Simple — remove sudoers line</td>
+<td>Must remove user’s SSH key manually</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>🔐 Verdict: <strong>Scheme A is more secure by default</strong></h3>
+
+<blockquote>
+<p><strong>Why:</strong></p>
+</blockquote>
+
+<ul>
+<li>It <strong>limits users to exactly one binary</strong> (Podman) under a shared account.</li>
+<li>No interactive shell or login session is allowed.</li>
+<li>Actions are <strong>logged in <code>sudo</code> logs</strong> with the invoking user’s identity.</li>
+<li>It respects privilege separation better and is <strong>easier to audit and revoke</strong>.</li>
+</ul>
+
+<hr>
+
+<h3>🛠️ If You Must Use Scheme B (SSH):</h3>
+
+<ul>
+<li><p>Use per-user SSH keys with <code>command=</code> in <code>authorized_keys</code>, e.g.:</p>
+
+<pre><code class="language-bash">command=&quot;/usr/bin/podman $SSH_ORIGINAL_COMMAND&quot;,no-agent-forwarding,no-pty ssh-rsa AAAAB3... user@domain
+</code></pre></li>
+
+<li><p>Lock down the shell with:</p>
+
+<pre><code class="language-bash">chsh -s /sbin/nologin podmaners
+</code></pre></li>
+</ul>
+
+<p>and use <code>ForceCommand</code> in <code>sshd_config</code>:</p>
+
+<pre><code>```bash
+Match User podmaners
+  ForceCommand /usr/bin/podman
+  PermitTTY no
+  AllowTcpForwarding no
+```
+</code></pre>
+
+<ul>
+<li>Monitor logs to track usage.</li>
+</ul>
+
+<hr>
+
+<!--
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ConEmu</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://conemu.github.io/" title="github.io">ConEmu</a> | <a href="https://github.com/Maximus5/ConEmu" title="GitHub Repo">Maximus5/ConEmu</a></h1>
+
+<p>Tabbed terminal window; integrates all Win-compatible shells, and into Win Explorer</p>
+
+<h2>FIX @ 2020-10-09</h2>
+
+<p>Launch of <code>wsl</code> (@ ConEmu) was <a href="https://stackoverflow.com/questions/58794164/conemu-doesnt-work-with-wsl-since-windows-update" title="Jun 2020 @ StackOverflow.com">FAILing after Win Update and/or WSL 2</a> attempt (<code>wsl --set-version Ubuntu-18.04 2</code>). This is the fix:</p>
+
+<pre><code class="language-shell">wsl.exe -d Ubuntu-18.04 -cur_console:am:&quot;&quot;
+</code></pre>
+
+<ul>
+<li><p>To add icon, enter &quot;<code>/icon PATH</code>&quot; at &quot;Task parameters&quot; text box, e.g.,</p>
+
+<pre><code class="language-plaintext">/icon &quot;C:\ICONS\Apps\Linux.Ubuntu.ico&quot;
+</code></pre></li>
+</ul>
+
+<p>Sans distro specificity &hellip;</p>
+
+<pre><code class="language-shell">wsl.exe -cur_console:am:&quot;&quot;:
+</code></pre>
+
+<h2>Refererences</h2>
+
+<ul>
+<li><p><a href="https://conemu.github.io/en/ConEmuArgs.html" title="GitHub.io/ConEmu Args"><code>ConEmu.exe</code> command line switches</a></p></li>
+
+<li><p><a href="https://conemu.github.io/en/BashOnWindows.html" title="GitHub.io/ConEmu/BashOnWindows"><code>{{Bash::WSL}}</code></a></p></li>
+
+<li><p><a href="https://conemu.github.io/en/NewConsole.html" title="GitHub.io/ConEmu">Switches</a> :: <code>-cur_console</code> | <code>-new_console</code> (<a href="https://conemu.github.io/en/NewConsole.html#the-difference">difference</a>)</p>
+
+<ul>
+<li><code>-cur_console:m:/foo</code> &mdash; (mount); prepend <code>/foo</code> to path.<br></li>
+<li><code>-cur_console:m:&quot;&quot;</code> &mdash; (mount); strip all prefixes from path.</li>
+</ul></li>
+
+<li><p><a href="https://conemu.github.io/en/SplitScreen.html#From-your-shell-prompt" title="GitHub.io/ConEmu/SplitScreen">Split Screen @ Active Pane</a></p>
+
+<ul>
+<li><code>CTRL</code>+<code>SHIFT</code>+<code>O</code>  (vertically)<br>
+<code>CTRL</code>+<code>SHIFT</code>+<code>E</code>  (horizontally)<br></li>
+</ul></li>
+</ul>
+
+<h2>Settings</h2>
+
+<ul>
+<li><p><a href="file:///c:/Program%20Files/ConEmu/ConEmu/CmdInit.cmd">@ <code>CmdInit.cmd</code></a>  &gt; Set command prompt</p></li>
+
+<li><p><a href="file:///c:/HOME/.config/ConEmu/ConEmu.xml">@ <code>ConEmu.xml</code></a>  &lt; Settings Export</p></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Shells::cmd (Admin)}</code></p>
+
+<pre><code class="language-shell">cmd.exe /k &quot;%ConEmuBaseDir%\CmdInit.cmd&quot; -new_console:a
+</code></pre></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::WSL}</code></p>
+
+<pre><code class="language-shell">set &quot;PATH=%ConEmuBaseDirShort%\wsl;%PATH%&quot; 
+    &amp; %ConEmuBaseDirShort%\conemu-cyg-64.exe --wsl 
+    -cur_console:pm:&quot;&quot;
+</code></pre>
+
+<ul>
+<li>Task parameters: <code>/icon &quot;C:\ICONS\Apps\Linux.tux.ico&quot;</code></li>
+</ul></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::Ubuntu}</code></p>
+
+<pre><code class="language-shell">cmd.exe /c wslconfig /setdefault Ubuntu-18.04 
+    &amp; set &quot;PATH=%ConEmuBaseDirShort%\wsl;%PATH%&quot; 
+    &amp; %ConEmuBaseDirShort%\conemu-cyg-64.exe --wsl 
+    -cur_console:am:&quot;&quot;:C:&quot;%ConEmuDrive%\ICONS\Apps\Linux.Ubuntu-18.04.ico&quot;
+</code></pre></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::Git bash (Admin)}</code></p>
+
+<pre><code class="language-shell">set &quot;PATH=%ConEmuDir%\..\Git\usr\bin;%PATH%&quot; 
+    &amp; &quot;%ConEmuDir%\..\Git\git-cmd.exe&quot; --no-cd 
+        --command=/usr/bin/bash.exe -l -i 
+    -cur_console:a:p:m:&quot;&quot; 
+    -cur_console:t:&quot;MINGW64 (Admin)&quot;
+</code></pre></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::Git bash (Admin)}</code> <a href="https://github.com/rprichard/winpty" title="rprichard/winpty @ GitHub">@ <code>winpty</code></a> | <a href="https://stackoverflow.com/questions/48199794/winpty-and-git-bash" title="@ StackOverflow.com">about</a></p>
+
+<pre><code class="language-shell">set &quot;PATH=%ConEmuDir%\..\Git\usr\bin;%PATH%&quot; 
+    &amp; &quot;%ConEmuDir%\..\Git\git-cmd.exe&quot; 
+        --no-cd 
+        --command=/usr/bin/winpty.exe 
+            /usr/bin/bash.exe -l -i 
+    -cur_console:a:p:t:&quot;MINGW64 (Admin)&quot;
+</code></pre></li>
+
+<li><p>@ ConEmu &gt; Settings &gt; <code>{Bash::CygWin (Admin)}</code></p>
+
+<pre><code class="language-shell">set &quot;PATH=%ConEmuDir%\..\Git\usr\bin;%PATH%&quot; 
+    &amp; &quot;%ConEmuDir%\..\Git\git-cmd.exe&quot; 
+        --no-cd 
+        --command=%ConEmuBaseDirShort%\conemu-msys2-64.exe 
+            /usr/bin/bash.exe -l -i 
+    -cur_console:ap
+</code></pre></li>
+</ul>
+
+<h2>@ <code>script.cmd</code></h2>
+
+<ul>
+<li><p>WSL @ ConEmu</p>
+
+<pre><code class="language-shell">wslconfig.exe /setdefault &quot;%_DISTRO_FULLNAME%&quot;
+start ConEmu64.exe -Single ^
+    -run C:\Windows\System32\wsl.exe ^
+    -cur_console:am:&quot;&quot; ^
+    -cur_console:C:&quot;%ConEmuDrive%\ICONS\Apps\Linux.%_DISTRO_.ico&quot;
+</code></pre>
+
+<ul>
+<li>See <a href="file:///C:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd"><code>LinuxHere.cmd</code> @ <code>cmd_library</code></a>.<br>
+
+<ul>
+<li>Used to integrate <code>wsl.exe</code> app-launch into Windows Explorer (context menu).<br></li>
+</ul></li>
+<li>Sets default distro, then lauches it at a ConEmu terminal.
+
+<ul>
+<li>Single instance; new tab at existing ConEmu window, else new window; <code>-Single</code><br></li>
+<li>Prefix path, e.g., on drag-n-drop (POSIX-converted); <code>-cur_console:am:&quot;PX&quot;</code><br></li>
+<li>Set tab icon; <code>-cur_console:C:&quot;ICON_PATH&quot;</code></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>@ Explorer (folder) Context Menu</h2>
+
+<h3><code>HKCR\Directory\Background\shell\...</code></h3>
+
+<pre><code class="language-powershell">; WSL
+[HKEY_CLASSES_ROOT\Directory\Background\shell\WSL]
+@=&quot;WSL&quot;
+&quot;Icon&quot;=&quot;C:\\ICONS\\Apps\\Linux.tux.ico,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\WSL\command]
+@=&quot;C:\\windows\\system32\\cmd.exe /c \&quot;C:\\Program Files\\_unregistered\\cmd_library\\LinuxHere.cmd\&quot;&quot;
+
+; Ubuntu
+[HKEY_CLASSES_ROOT\Directory\Background\shell\LinuxUbuntu]
+@=&quot;Linux Ubuntu&quot;
+&quot;Icon&quot;=&quot;C:\\ICONS\\Apps\\Linux.Ubuntu.ico,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\LinuxUbuntu\command]
+@=&quot;C:\\windows\\system32\\cmd.exe /c \&quot;C:\\Program Files\\_unregistered\\cmd_library\\LinuxHere.cmd\&quot; ubuntu&quot;
+
+; ConEmu
+[HKEY_CLASSES_ROOT\Directory\Background\shell\ConEmu]
+@=&quot;ConEmu&quot;
+&quot;Icon&quot;=&quot;C:\\Program Files\\ConEmu\\ConEmu64.exe,0&quot;
+
+[HKEY_CLASSES_ROOT\Directory\Background\shell\ConEmu\command]
+@=&quot;C:\\Program Files\\ConEmu\\ConEmu64.exe -Dir \&quot;%V\&quot;&quot;
+</code></pre>
+
+<ul>
+<li>Launch app @ current directory.</li>
+<li>See <a href="file:///C:/Program%20Files/_unregistered/cmd_library/LinuxHere.cmd"><code>LinuxHere.cmd</code> @ <code>cmd_library</code></a>.</li>
+</ul>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

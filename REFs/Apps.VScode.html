@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Apps.VScode</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://code.visualstudio.com/" title="code.visualstudio.com">VS Code</a></h1>
+
+<h2>About</h2>
+
+<p><strong>Visual Studio Code</strong> is <strong>built on</strong> the <strong>Electron</strong> framework, which allows developers to create desktop applications using web APIs, standards, and technologies like JavaScript, HTML, and CSS.</p>
+
+<p>Electron essentially <strong>combines</strong> the <strong>Chromium rendering engine</strong> and the <strong>Node.js runtime</strong>, enabling the development of cross-platform applications.</p>
+
+<p>Web APIs utilized by VS Code:</p>
+
+<ol>
+<li><p><strong>DOM APIs</strong>: Even though it's a desktop application, VS Code <strong>uses HTML and CSS</strong> for rendering its interface, which means it relies on the <strong>Document Object Model</strong> (DOM) APIs for dynamic content updates and UI manipulations.</p></li>
+
+<li><p><strong>Web Storage API</strong>: VS Code uses storage mechanisms like <code>localStorage</code> or <code>sessionStorage</code> for persisting state and settings between sessions, similar to web applications.</p></li>
+
+<li><p><strong>Fetch API</strong>/<strong>WebSockets</strong>: These are used for network communication. For instance, extensions in VS Code can use these APIs to communicate with external services, fetch data, or interact with web-based services.</p></li>
+
+<li><p><strong>Web Workers</strong>: These are used to run (javascript) scripts in <strong>background threads</strong>, allowing VS Code to perform heavy tasks <strong>without blocking the UI</strong>, enhancing performance and responsiveness.</p></li>
+</ol>
+
+<h2>Install</h2>
+
+<p>Windows methods ordered by preference:</p>
+
+<ol>
+<li>CLI: Chocolatey: <code>choco install vscode</code></li>
+<li>GUI: <a href="https://code.visualstudio.com/">Download</a> (<code>.msi</code>)</li>
+</ol>
+
+<h3>Add &quot;Open with ...&quot; to <strong>Explorer Context</strong> Menu</h3>
+
+<pre><code class="language-plaintext">Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\*\shell\Open with VS Code]
+@=&quot;Edit with VS Code&quot;
+&quot;Icon&quot;=&quot;C:\\Program Files\\Microsoft VS Code\\Code.exe,0&quot;
+
+[HKEY_CLASSES_ROOT\*\shell\Open with VS Code\command]
+@=&quot;\&quot;C:\\Program Files\\Microsoft VS Code\\Code.exe\&quot; \&quot;%1\&quot;&quot;
+</code></pre>
+
+<h3>Disable Telemetry</h3>
+
+<pre><code>@ Menu: File &gt; Preferences &gt; Settings &gt; Search &gt; telemetry
+
+@ settings.JSON: &quot;telemetry.enableTelemetry&quot;: &quot;false&quot;,
+If by GUI, adds: &quot;telemetry.telemetryLevel&quot;: &quot;off&quot;,  (instead)
+</code></pre>
+
+<h3><strong>Depricated</strong> or Obsolete</h3>
+
+<p>VS Code has improved over the years.
+The following installation and configuration methods
+are no longer used or advised.</p>
+
+<h4>Install per User setup by downloading from MS site</h4>
+
+<p>VSCodeUserSetup-x64-v.vv.v.exe @ <a href="https://code.visualstudio.com/">https://code.visualstudio.com/</a></p>
+
+<ul>
+<li>No Administrator privileges required</li>
+<li>Icons per filetype @ Window File Explorer</li>
+</ul>
+
+<p>Chocolatey installs as System setup,
+but okay to use choco upgrade if
+a proper <code>JUNCTION POINT</code> exists.</p>
+
+<h4><code>JUNCTION POINT</code></h4>
+
+<p>&quot;<code>%ProgramFiles%\VS-Code</code>&quot;</p>
+
+<p><del>is required by File Explorer REG entries, and by <code>openedit.bat</code></del></p>
+
+<pre><code class="language-shell">:: @ System setup
+symlink.bat j &quot;%ProgramFiles%\VS-Code&quot; &quot;%ProgramFiles%\Microsoft VS Code&quot; 
+:: @ User setup
+symlink.bat j &quot;%ProgramFiles%\VS-Code&quot; &quot;%USERPROFILE%\AppData\Local\Programs\Microsoft VS Code&quot; 
+symlink.bat j &quot;%ProgramFiles%\Microsoft VS Code&quot; &quot;%USERPROFILE%\AppData\Local\Programs\Microsoft VS Code&quot;  
+</code></pre>
+
+<h4>v1.46.0, FAIL @ downloading Extensions, unless via VPN adapter.</h4>
+
+<p>&quot;Unable to open extension ...&quot;</p>
+
+<p>FIX:</p>
+
+<p>Enable IPv6 @ Gateway Router<br>
+IPv6 &gt; Enable &gt; Native</p>
+
+<p>NOT FIX:</p>
+
+<p>Set interface metric of TAP to higher number than desired interface.
+At PowerShell:</p>
+
+<ol>
+<li><code>Get-NetIPInterface</code></li>
+<li><code>Set-NetIPInterface -InterfaceIndex 19 -InterfaceMetric 100</code></li>
+</ol>
+
+<p>NOT FIX:</p>
+
+<p>Reset IPv6</p>
+
+<pre><code class="language-shell">ipconfig /flushdns
+nbtstat –r
+netsh int ip reset
+netsh winsock reset
+netsh winsock reset catalog
+netsh int ipv6 reset reset.log
+</code></pre>
+
+<h2><a href="https://code.visualstudio.com/docs/getstarted/userinterface">User interface</a></h2>
+
+<h2>Shortcut Keys</h2>
+
+<pre><code class="language-plaintext">CTRL + SHIFT + TAB    Files [Cycle]
+CTRL + P              Files Menu
+CTRL + F4             Close File
+
+CTRL + `              Terminal [Toggle]
+CTRL + ,              User Settings
+CTRL + SHIFT + P      Command Pallete
+F11                   Full Screen [Toggle]
+</code></pre>
+
+<h2>Format Code [w/ Beautify extension installed]</h2>
+
+<pre><code class="language-plaintext">SHIFT + ALT + F       Windows 
+SHIFT + OPTION + F    Mac
+CTRL + SHIFT + I      Ubuntu
+</code></pre>
+
+<h2>User Settings (<code>settings.json</code>)</h2>
+
+<p><code>%UserProfile%\AppData\Roaming\Code\User</code></p>
+
+<h2>Terminal (<code>CTRL+</code>)</h2>
+
+<p>Uses Git-for-Windows, but invokes <code>.bashrc</code> NOT <code>.bash_profile</code> (<code>@USERPROFILE</code>)</p>
+
+<h2>Extensions</h2>
+
+<p>To Rollback/Specify Version : Extensions side bar<br>
+&gt; settings (icon) &gt; &quot;Install Another Version&quot;</p>
+
+<h3>Vim</h3>
+
+<p>by <strong>vscodevim</strong></p>
+
+<p>File &gt; Preferences &gt; Keyboard Extensions &gt; &quot;Vim emulation ...&quot;</p>
+
+<p>ISSUE @ publisher:&quot;vscodevim&quot;  <a href="https://github.com/Microsoft/vscode/issues/40260">https://github.com/Microsoft/vscode/issues/40260</a></p>
+
+<blockquote>
+<p>Everytime we push an update, we always seem to see cases where the extension fails to load. The recommendation I've been giving folks is to delete <code>~/.vscode/extensions/vscodevim</code> and reinstall.</p>
+</blockquote>
+
+<p>So, on fail, delete:</p>
+
+<ul>
+<li>@ Windows : <code>del %USERNAME%/.vscode/extensions/vscodevim.vim-*</code></li>
+<li>@ Linux : <code>rm ~/.vscode/extensions/vscodevim</code></li>
+</ul>
+
+<p>and then reinstall.</p>
+
+<h3>Remote Development</h3>
+
+<p>by <strong>Microsoft</strong></p>
+
+<ul>
+<li><strong>Remote - SSH</strong> - Work with source code in any location by opening folders on a remote machine/VM using SSH. Supports x86_64, ARMv7l (AArch32), and ARMv8l (AArch64) glibc-based Linux, Windows 10/Server (1803+), and macOS 10.14+ (Mojave) SSH hosts.</li>
+<li><strong>Remote - Tunnels</strong> - Work with source code in any location by opening folders on a remote machine/VM using a VS Code Tunnel (rather than SSH).</li>
+<li><strong>Dev Containers</strong> - Work with a separate toolchain or container based application by opening any folder mounted into or inside a container.</li>
+<li><strong>WSL</strong> - Get a Linux-powered development experience from the comfort of Windows by opening any folder in the Windows Subsystem for Linux.</li>
+</ul>
+
+<h4>Remote - WSL</h4>
+
+<p>DEPRICATED <del>DO NOT INSTALL this extension</del></p>
+
+<ul>
+<li>It breaks paths by prepending drive path to absolute path,
+so <code>code &lt;FilePath&gt;</code> fails to open the existing file.</li>
+<li>It breaks the integration between WSL and Win;
+forcing WSL to use its own installed version;
+downloads and installs something on first run.</li>
+<li>It forces new app launch for each call.
+
+<ul>
+<li>No method to disable the <strong>recurring, nagging pop up</strong> to install it.</li>
+</ul></li>
+</ul>
+
+<p>Use <strong>WSL</strong> or broader <strong>Remote Development</strong> extension instead.</p>
+
+<h3><a href="[fails](https://github.com/golang/vscode-go/blob/master/docs/tools.md).">Go extension</a></h3>
+
+<p>Install from Git Bash [MINGW64]</p>
+
+<p>Requires <code>.git</code> folders of all Golang source intact,
+else <code>go get -u -v PKG</code> fails.</p>
+
+<p>Install Golang unstall using Chocolatey,
+which installs to <code>C:\tools\go</code></p>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

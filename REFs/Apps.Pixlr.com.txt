@@ -1,0 +1,58 @@
+Pixlr.com
+---------
+
+	* Arrow-keys MOVE LAYER, even while in a text-box; select any other tool before labeling/naming/saving/....
+	* deselect all images before saving generates smaller PXD file.
+	
+	* DO NOT ZOOM when applying/guaging effects; stick with "100%" view. 
+		Alpha/shadow and 3D/bevel effects don't render/store as WYSIWYG unless view @ 100%. 
+
+	* Resizing PNG or PXD [e.g., 512 to 256] okay, but use IrfanView to sharpen;
+		IrfanView > File > Batch Conversion > Advanced> Sharpen > 20
+
+	* Drop Shadow [DS]; fails to render properly on reload of PXD file. Deselect DS, then reapply; record DS numbers; opacity, distance, size and degrees [o,d,s,deg]. DS while @ 100% view.
+
+	Alpha Gradient
+	--------------
+
+		* Duplicate target layer; use only as a reference/view.
+		* Apply mask to target [original] layer; this hides the target laywer from view.
+		* Apply Gradient [tool] to target layer; black/white left/right-wise; click-drag.
+		* Apply mask [drop-down menu].
+	
+	
+IrfanView
+---------
+
+	Alpha
+	-----
+
+	* Preserve PNG alpha on resize/ajust ...
+		* Set background to white:
+		IrfanView > Options > Property Settings > Viewing > Window options > Main window color > Choose
+		
+		* Set PNG save-mode; open any file and select save [CTRL-S].
+			- Save as type: > PNG 
+			- PNG/PNM/ICO save options > check ...
+				* Save Transparent Color
+				* Save Transparency as Alpha channel
+				* Use main window color for transparency
+			
+	Sharpen
+	-------
+	* IrfanView > File > Batch Conversion > Advanced> Sharpen > 20
+	
+IcoFX
+-----
+
+	* Import/Open 256 png; create/save ico w/ 256, 128, 48, 32, 24, 16 px images, as follows ...
+		
+		- New Image (open w/ click & drag) 
+			Size 	> "256 x 256"
+			Colors 	> "TrueColor + Alpha Channel"
+			
+		- "Windows Icon From Image" [Win-button]; deselect all but "XP Colors" [32 bpp]
+		
+		- If created an alt small, e.g., 32px png, rt-click left-pane @ imported-png window, and select "Import Image..."; IcoFX can create smaller still, 24 & 16, from that one using same drop-down menu, but select "New Image".
+	  
+	  

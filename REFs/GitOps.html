@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitOps</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>DevOps/<a href="https://opengitops.dev/" title="OpenGitOps.dev">GitOps</a> <code>v1.0.0</code> | <a href="https://landscape.cncf.io/" title="Landscape.CNCF.io">CNCF Landscape</a></h1>
+
+<h2>Overview</h2>
+
+<p>DevOps is about automation across the lifecycle of an application.
+GitOps extends that with disciplined methods
+&mdash;<strong>Git</strong> as the single <strong>Source of Truth</strong> (SoT)
+&mdash;across all layers of all components,
+from infra to services, with the goal of repeatable,
+verifiable deployment states.</p>
+
+<p>GitOps is <strong>an operational framework</strong> that takes DevOps best practices
+used for application development such as version control, collaboration, compliance and such,
+and applies them to <strong>infrastructure automation</strong>.
+GitOps consists of Infrastructure as Code (<strong>IaC</strong>), configuration management (<strong>CM</strong>) by Git,
+<dfn title="Provide everything below microservices; build an Internal Developer Platform (IDP) to assist your developers in their daily operations.">Platform Engineering</dfn>,
+and <dfn title="A development practice of pipelining an automated merge, build and test of incremental code changes that are recorded and otherwise controlled by immutable versioning">Continuous Integration</dfn>
+and <dfn title="A development practice of pipelining and automated release and deployment such that the process has visibility and feedback by all team members"><a href="Continuous-Delivery-process-diagram.png">Continuous Delivery</a></dfn> (<strong>CI/CD</strong>).</p>
+
+<h2>Why</h2>
+
+<p>Configuration Management.</p>
+
+<p><strong>The number of configurations</strong> in a system with many options <strong>grows exponentially</strong>. For example, a system with <code>N</code> binary configuration options has <code>2^{N}</code> possible configurations. This exponential growth percipitates the <strong>configuration explosion</strong> problem, where a system's behavior under all possible configurations is <strong>untestable</strong>. </p>
+
+<p>DevOps and GitOps use a combination of principles and practices,
+such as Configuration as Code (<strong>CaC</strong>), to mitigate the risk posed by the vast configuration space.</p>
+
+<h3>Q:</h3>
+
+<p>How many possible configurations are there for <strong>3 hosts</strong>,
+each having <strong>6 services</strong>, each having <strong>6 parameters</strong>,
+<strong>each having only two possible settings</strong>?</p>
+
+<p>This scenario is an artificially simple infrastructure
+to steelman the argument <em>against</em> DevOps/GitOps/IaC.
+So, let's see what we may see &hellip;</p>
+
+<h3>A:</h3>
+
+<ol>
+<li><p><strong>Parameters per service</strong>: Each service has 6 parameters,
+and each parameter has 2 settings.
+So, the number of configurations for one service is:<br>
+<code>2^6 = 64</code></p></li>
+
+<li><p><strong>Services per host</strong>: Each host has 6 services,
+so the number of configurations for one host is:<br>
+<code>64^6</code> = <code>(2^6)^6</code> = <code>2^36</code> = <code>68,719,476,736</code></p></li>
+
+<li><p><strong>Total hosts</strong>: There are 3 hosts,
+so the total number of configurations is:<br>
+<code>(68,719,476,736)^3</code> = <code>(2^36)^3</code> = <code>2^108</code></p></li>
+
+<li><p><strong>Final calculation</strong>: <code>(2^36)^3</code> = <code>2^108</code></p></li>
+</ol>
+
+<p>So, the number of possible configurations is:<br>
+<code>324,518,553,658,426,726,783,156,020,576,256</code><br>
+(<code>~ 3.2 x 10^32</code>)</p>
+
+<p>That's many more than a trillion trillion possible configurations.</p>
+
+<p>More than the estimated number of stars in the Universe.
+Not the galaxy. The entire Universe.</p>
+
+<p>And only one of those is the one you want.
+All the others are some kind of misconfiguration.</p>
+
+<p>Do you like those odds?</p>
+
+<p>DevOps/GitOps with its IaC/CaC is an upfront cost
+that pays dividends each time it is applied.
+And the more your infa builds out, the larger those per-build dividends grow.</p>
+
+<p>Conversely, absent these practices,
+every stage of the build out is levied a tax dwarfing that of the prior stage.
+The resulting explosion of misconfigurations is merciless.
+It grinds down productivity along with morale,
+and does so ever more as the project progresses.</p>
+
+<h3>Principles</h3>
+
+<ol>
+<li><strong>Declarative</strong><br>
+A system managed by GitOps must have its desired state expressed declaratively.</li>
+<li><strong>Versioned and Immutable</strong><br>
+Desired state is stored in a way that enforces immutability, versioning and retains a complete version history.</li>
+<li><strong>Pulled Automatically</strong><br>
+Software agents automatically pull the desired state declarations from the source.</li>
+<li><strong>Continuously Reconciled</strong><br>
+Software agents continuously observe actual system state and attempt to apply the desired state.</li>
+</ol>
+
+<h3>Results</h3>
+
+<ul>
+<li>A standard workflow for application development.</li>
+<li>Increased security for setting application requirements upfront.</li>
+<li>Improved reliability with visibility and version control through Git.</li>
+<li>Consistency across clusters and their environments.</li>
+</ul>
+
+<h2>Methods</h2>
+
+<ul>
+<li><strong>Declarative Configuration</strong>:<br>
+Use declarative configurations (YAML files)
+for all resources and store them in a Git repository.
+This approach ensures that the desired state of your cluster is version-controlled and auditable.
+
+<ul>
+<li><strong>Branching Strategies</strong>:<br>
+<a href="https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development">Trunk-based</a>
+rather than <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow">Gitflow</a>
+to manage different environments (development, staging, production) or to handle feature development and releases.</li>
+</ul></li>
+<li><strong>Pull Request Workflow</strong>:<br>
+Use pull (merge) requests (PR/MR) to manage changes to the Kubernetes configuration.
+This allows for code review, approval processes,
+and automated testing before changes are merged and applied.</li>
+<li><strong>Automated Deployment</strong>:<br>
+Implement CI/CD pipelines that automatically apply changes from Git to your Kubernetes cluster.
+This could involve testing changes in a staging environment before promoting them to production.</li>
+<li><strong>Disaster Recovery</strong>:<br>
+Regularly back up your Git repository and Kubernetes cluster state.
+Ensure you have a process in place for restoring from backups in case of a disaster.</li>
+</ul>
+
+<h2>Tools | <a href="https://landscape.cncf.io/">CNCF Landscape</a></h2>
+
+<ul>
+<li>Videos
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=tgwxMfIsLJY" title="YouTube">DevOps Toolkit</a></li>
+<li><a href="https://www.youtube.com/@eBPFCilium/videos" title="YouTube : eBPFCilium"><strong>eBPF</strong> Cilium</a></li>
+</ul></li>
+<li>Cloud Wrappers
+
+<ul>
+<li><a href="https://www.localstack.cloud/">LocalStack</a> : Mocks cloud-vendor services locally. <em>Develop and test your AWS applications locally to reduce development time and increase product velocity. Reduce unnecessary AWS spend and remove the complexity and risk of maintaining AWS dev accounts.</em></li>
+<li><a href="https://www.cloudcraft.co/">CloudCraft</a> :
+3D graphic and resource/cost model of a cloud infra</li>
+</ul></li>
+<li><strong>Service Catalog</strong> : UI of IDP : built/maintained
+by GitOps/DevOps vendor/admin, not by end users.
+
+<ul>
+<li>Port : SasS only</li>
+<li><a href="https://backstage.io/">Backstage.io</a> : Build Developers' Portals (IDP)</li>
+<li><a href="https://www.crossplane.io/" title="crossplane.io">Crossplane.io</a> @ <a href="https://github.com/crossplane">GitHub</a><br>
+
+<ul>
+<li>Programmable Control Plane, Controllers, APIs</li>
+<li>Embed IaC tooling such as Terraform, Helm, Ansible,
+which converts IaC to Cloud-vendors' API requests.</li>
+</ul></li>
+</ul></li>
+<li><strong>IaC</strong> : <strong>Service Management</strong> : Provision/Configure:<br>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/home/" title="Kubernetes.io"><strong>Kubernetes</strong></a> :
+Cluster API, Crossplane, &hellip;<br>
+K8s is a <strong>universal Control Plane</strong></li>
+<li><a href="https://www.pulumi.com/product/infrastructure-as-code/">Pulumi</a> :
+IaC in any language, but pay per play platform interfacing to cloud vendors.
+
+<ul>
+<li><a href="https://sst.dev/">sst</a> Pulumi wrapper :
+<em>Deploy everything your app needs with a single config.</em></li>
+</ul></li>
+<li><a href="https://registry.terraform.io"><strong>Terraform</strong></a>:<br>
+Declarative provisioning of cloud infrastructure
+and policies (per-vendor modules),
+and managing Kubernetes resources.</li>
+<li><a href="https://docs.ansible.com/ansible/latest/index.html"><strong>Ansible</strong></a>:<br>
+Provision and configure infrastructure, OS/packages,
+and application software in any environment.
+A comprehensive, versatile automation tool
+allowing for both declarative and imperative methods.</li>
+<li><a href="https://saltproject.io/" title="Saltproject.io"><strong>SaltStack</strong></a> | <a href="https://chatgpt.com/share/674cfd9f-6c54-8009-a84c-d824e1587fa0">ChatGPT</a> Infrastructure automation and CM.</li>
+</ul></li>
+<li><strong>IaC</strong> : <strong>Workloads</strong>
+
+<ul>
+<li>Application Management (K8s Manifests)
+
+<ul>
+<li><a href="https://kubernetes.io/docs/concepts/extend-kubernetes/operator/"><strong>K8s Operator</strong></a> Pattern<br>
+The goal of an Operator is to put operational knowledge into software. Operators implement and automate common Day-1 (installation, configuration, etc.) and Day-2 (re-configuration, update, backup, failover, restore, etc.) activities in a piece of software running in K8s, by integrating natively with K8s concepts and APIs. We call this a K8s-native application. Instead of treating an app as a collection of primitives (Pods, Deployments, Services , ConfigMaps, &hellip;) it's treated as a single object that only exposes the knobs that make sense for the application, extending the core K8s API with <dfn title="Custom Resource Definitions">CRD</dfn>s as needed to do so.
+
+<ul>
+<li><a href="https://operatorframework.io/">Operator Framework</a>
+
+<ul>
+<li><a href="https://olm.operatorframework.io/">Operator Lifecycle Manager (OLM)</a></li>
+</ul></li>
+<li><a href="https://docs.ansi.services/mast/user_guide/operator/">Mast</a> : Ansible runner to build simple and lightweight K8s Operators</li>
+<li><a href="https://github.com/nolar/kopf">Kopd</a>   (K8s Operator Pythonic Framework) : Framework and library for building K8s-operators</li>
+<li><a href="https://kube.rs/">kube.rs</a>  : Rust client for K8</li>
+<li><a href="https://book.kubebuilder.io/">kubebuilder</a> : Project for learning and building K8s API extensions</li>
+</ul></li>
+<li><a href="https://helm.sh/docs/helm/helm/" title="helm.sh/docs/"><strong>Helm</strong></a>:<br>
+K8s package manager; version controlled and deployable using GitOps tools like Argo CD or Flux.</li>
+<li><a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/" title="Kubernetes.io/docs/"><strong>Kustomize</strong></a>:<br>
+Generate, customize, and/or otherwise manage Kubernetes objects using files (YAML) stored in a Git repo.
+It's integrated into <code>kubectl</code> and can be used with other GitOps tools to manage deployments.
+Use to modify Helm chart per environment.</li>
+<li><a href="timoni.sh"><strong>Timoni.sh</strong></a> (Uses CUE)<br>
+Distribution and Lifecycle Management for Cloud-Native Applictions</li>
+<li><a href="https://www.kcl-lang.io/docs/user_docs/getting-started/intro" title="kcl-lang.io">KCL</a> @ <a href="https://github.com/kcl-lang/kcl/">GitHub</a>
+An open-source constraint-based record &amp; functional language mainly used in configuration and policy scenarios.
+Writtin in Rust, Golang, Python.</li>
+<li><a href="https://cuelang.org/" title="cuelang.org">CUE</a></li>
+<li><a href="https://pkl-lang.org/" title="pkl-lang.org">Pkl</a><br>
+Configuration that is Programmable, Scalable, and Safe</li>
+</ul></li>
+<li>CI : Glorified Chron Job
+
+<ul>
+<li><a href="https://docs.dagger.io/quickstart/daggerize">Dagger</a> functions:
+Pipeline agnostic functions that run in CI/CD pipeline of any vendor.</li>
+<li>Tekton</li>
+<li><strong>Argo Workflows</strong></li>
+<li>Jenkins</li>
+<li>GitHub Actions</li>
+<li>GitLab CI</li>
+</ul></li>
+<li>CD : Application Lifecycle
+
+<ul>
+<li><a href="https://github.com/fluxcd/flux2"><strong>Flux</strong> CD</a><br>
+
+<ul>
+<li>A tool to automatically sync K8s clusters/applications
+with their configuration sources (Git) across their lifecycles.</li>
+<li>Supports automated deployments, where changes to the Git repo trigger updates in the Kubernetes cluster.</li>
+<li>Handles secret management and multi-tenancy.</li>
+<li><strong>Flagger</strong> integration: Flux can be used together with Flagger for progressive delivery; advanced deployment strategies.</li>
+</ul></li>
+<li><strong>Flagger</strong>:
+
+<ul>
+<li>Automates the release process by gradually shifting traffic to the new version while measuring metrics and running conformance tests.
+If anomalies are detected, Flagger can automatically rollback.</li>
+<li>Designed for <strong>progressive delivery</strong> techniques like canary releases, A/B testing, and blue/green deployments.</li>
+<li>Service-Mesh Integration: Used with service meshes like Istio, Linkerd, and others,
+leveraging their features for traffic shifting and monitoring.</li>
+</ul></li>
+<li><a href="https://github.com/argoproj/argo-cd"><strong>Argo CD</strong></a>:<br>
+
+<ul>
+<li>A declarative, GitOps continuous delivery tool for K8s.
+Visualize (Web UI) and manage the lifecycle of K8s applications;
+supports automated or manual syncing of changes.
+
+<ul>
+<li>For CD, also need <strong>Argo Workflows</strong> &amp; <strong>Argo Events</strong> (preferred over Tekton Events)</li>
+</ul></li>
+<li>Application Definitions, Configurations, and Environments: All these are declaratively managed and versioned in Git.</li>
+<li>Automated Deployment: Argo CD automatically applies changes made in the Git repository to the designated Kubernetes clusters.</li>
+<li>Visualizations and UI: Argo CD provides a rich UI and CLI for viewing the state and history of applications, aiding in troubleshooting and management.</li>
+<li>Rollbacks and Manual Syncs: Supports rollbacks and manual interventions for syncing with Git repositories.</li>
+</ul></li>
+<li><strong>Argo Rollouts</strong>: Advanced deployment strategies like canary and blue/green. Similar to Flagger</li>
+</ul></li>
+</ul></li>
+<li><strong>Multi-tenancy</strong>
+
+<ul>
+<li><a href="https://github.com/loft-sh/vcluster" title="GitHub"><strong>vCluster</strong></a> Virtual clusters for better isolation than Namespace offers. OSS and Enterprise editions.</li>
+</ul></li>
+<li><strong>Logging</strong> : Cluster-level logging, AKA <strong>Log Aggregation</strong> AKA <strong>Unified Loggging</strong>, so that logs survive their (ephemeral) generator, be that of any host or container process.
+
+<ul>
+<li><strong>Elastic stack</strong> : to collect, store, query, and visualize log data.
+
+<ul>
+<li>Composed of:
+
+<ol>
+<li><strong>Backend</strong> : <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html" title="Elastic.co">Elasticsearch</a> : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a <strong>distributed document-oriented database model</strong> where it stores data in indices. These <strong>indices are persisted</strong> to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the <a href="https://en.wikipedia.org/wiki/Apache_Lucene" title="Wikipedia">Lucene</a> library for indexing and searching.</li>
+<li><strong>Frontend</strong> : <a href="https://www.elastic.co/guide/en/kibana/current/introduction.html" title="Elastic.co">Kibana</a> frontend :  Web UI optimized for query/view &mdash;<em>Explore, Visualize, Discover</em> &mdash;logs from Elasticsearch.</li>
+<li><strong>Agent</strong> : Collector/Forwarder of container logs : This is the data-processing pipeline that ingests logs from applications, and then transform (normalize) and forwards them to provide for Unified Logging. This is <strong>the stack's workhorse</strong>, yet oddly external to the stack namesake and core (Elasticsearch/Kibana). Solutions are provided by various projects, many entirely separate from Elasticsearch (the company):
+
+<ul>
+<li><a href="https://www.elastic.co/logstash" title="Elastic.co">Logstash</a> : Elastic's native solution</li>
+<li><a href="https://www.fluentd.org/architecture" title="Fluentd.org">Fluentd</a> : Data collector (not limited to logs, metrics and tracing).
+
+<ul>
+<li><a href="https://fluentbit.io/">Fluent Bit</a> :
+<em>Lightweight forwarder for Fluentd</em> for environments having limited resources</li>
+<li><a href="https://github.com/fluent/fluent-operator" title="GitHub">Fluent Operator</a>, formerly &quot;FluentBit Operator&quot; :
+<em>Manage Fluent Bit and Fluentd the Kubernetes way</em>.</li>
+</ul></li>
+</ul></li>
+</ol></li>
+<li>Stacks
+
+<ul>
+<li><a href="https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html" title="Elastic.co">ECK Operator</a>  (Elastic Cloud on K8s) Contains only Elasticsearch and Kibana. Does not include any Collector/Forwarder (Fluentd, Logstash, &hellip;)
+
+<ul>
+<li>Deploy in <a href="https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba" title="ChatGPT.com">air-gap environment</a>  :</li>
+</ul></li>
+<li><strong>EFK Stack</strong> | <a href="https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes" title="DigitalOcean.com">HowTo</a> | <a href="https://artifacthub.io/packages/helm/elastic/elasticsearch">Helm</a></li>
+<li>ELK stack : Logstash instead of Fluentd for log processing and aggregation. Logstash is more resource-intensive but offers more complex processing capabilities.</li>
+<li><a href="https://opensearch.org/docs/latest/about/" title="OpenSearch.org">OpenSearch</a> : FOSS fork of Elastic stack (Elasticsearch/Kibana)
+
+<ul>
+<li><a href="https://opensearch.org/docs/latest/data-prepper/">Data Prepper</a> : Data collector designed specifically for OpenSearch; focus is on observability data, particularly logs, metrics, and traces.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="https://grafana.com/oss/loki/">Grafana Loki</a> | <a href="https://github.com/grafana/loki/" title="GitHub"><code>grafana/loki</code></a> (<a href="https://grafana.com/docs/loki/latest/setup/install/">Install</a>) : &quot;<em>Prometheus, but for logs</em>&quot;. A lightweight alternative to Elastic stack.
+
+<ul>
+<li><strong>Does not provide full-text indexing</strong> of logs; indexes only the logs' metadata (<strong>labels</strong>).</li>
+<li>No viable installation method is available (2024-08), contrary to project claims.</li>
+</ul></li>
+</ul></li>
+<li><strong>Observability</strong> : Distributed <strong>Metrics</strong> and <strong>Tracing</strong>
+
+<ul>
+<li><a href="https://prometheus.io/" title="Prometheus.io">Prometheus</a> : TSDB and monitoring system optimized for telemetry (metrics and tracing).
+The defacto standard, but does not scale, and has horrible alerts (Alertmanager). So popular that projects provide workarounds to manage scaling. Provision using <a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1">Prometheus Operator</a> :
+
+<ul>
+<li><a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator" title="GitHub">prometheus-operator/prometheus-operator</a> :<br>
+The bare operator (<a href="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/main/bundle.yaml" title="GitHub"><code>bundle.yaml</code></a>)</li>
+<li><strong><code>kube-prometheus</code></strong> : <em>A collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide &hellip; <strong>end-to-end Kubernetes cluster monitoring</strong> with Prometheus using the <a href="https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1">Prometheus Operator</a>.</em>
+
+<ul>
+<li>The Prometheus Operator</li>
+<li>Grafana</li>
+<li>Highly available Prometheus</li>
+<li>Highly available Alertmanager</li>
+<li>Prometheus <code>node-exporter</code></li>
+<li>Prometheus <code>blackbox-exporter</code></li>
+<li>Prometheus Adapter for Kubernetes Metrics APIs</li>
+<li><code>kube-state-metrics</code>; replacment for <code>metrics-server</code></li>
+<li><strong>Install using</strong> one of <em>two very similar projects</em>:
+
+<ul>
+<li><strong><code>kube-prometheus</code></strong><br>
+Manifest method : <a href="https://github.com/prometheus-operator/kube-prometheus" title="GitHub"><code>prometheus-operator/kube-prometheus</code></a></li>
+<li><strong><code>kube-prometheus-stack</code></strong><br>
+Helm method : <a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack#kube-prometheus-stack" title="GitHub"><code>prometheus-community/kube-prometheus-stack</code></a>
+ChatGPT 5(See <a href="https://github.com/sempernow/k8s-vanilla-ha-rhel9" title="GitHub : sempernow/k8s-vanilla-ha-rhel9">k8s-vanilla-ha-rhel9</a>)</li>
+</ul></li>
+</ul></li>
+<li><a href="https://thanos.io/" title="Thanos.io"><strong>Thanos</strong></a> @ <a href="https://github.com/thanos-io/thanos" title="GitHub">GitHub</a> : Prometheus HA + long-term storage (<a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html" title="Min.io">MinIO</a>) : CNCF project; can &quot;seamlessly upgrade&quot; on top of an existing Prometheus deployment.</li>
+</ul></li>
+<li><a href="https://grafana.com/"><strong>Grafana</strong></a> : Web UI : Dashboards
+
+<ul>
+<li><a href="https://github.com/grafana/tempo"><strong>Grafana Tempo</strong></a> : Tracing backend; scales and <strong>integrates with OpenTelemetry</strong>, Zipkin, and <strong>Jaeger</strong>; fixes Jaeger shortcomings.</li>
+</ul></li>
+<li><a href="https://www.jaegertracing.io/docs/1.18/opentelemetry/" title="JaegerTracing.io"><strong>Jaeger</strong></a> : <strong>Tracing</strong> collector that integrates with OpenTelemetry
+
+<ul>
+<li><a href="https://www.jaegertracing.io/docs/1.60/operator/" title="JaegerTracing.io">Jaeger Operator</a> @ <a href="https://github.com/jaegertracing/jaeger-operator" title="GitHub">GitHub</a>
+
+<ul>
+<li>Requires <a href="https://cert-manager.io/docs/"><code>cert-manager</code></a></li>
+</ul></li>
+</ul></li>
+<li><a href="https://opentelemetry.io/docs/collector/"><strong>OpenTelemetry</strong></a> (OTEL)<br>
+Vendor-agnostic tracing library for generating traces.<br>
+Its app library covers almost all languages.
+
+<ul>
+<li><a href="https://opentelemetry.io/docs/kubernetes/operator/" title="OpenTelemetry.io">OpenTelemetry Operator</a> @ <a href="https://github.com/open-telemetry/opentelemetry-operator" title="GitHub">GitHub</a> :
+K8s Operator to manage collectors (<a href="https://github.com/open-telemetry/opentelemetry-collector" title="GitHub">OpenTelemetry Collector</a>) and auto-instrumentation of workloads using OTEL libraries.</li>
+</ul></li>
+<li><a href="https://victoriametrics.com/products/open-source/">VictoriaMetrics</a> :
+TSDB &amp; Monitoring Solution (as a Service);
+compatible with Prometheus.</li>
+
+<li><p><a href="https://www.inspektor-gadget.io/">Inspektor-Gadget.io</a> :
+eBPF-based CLIs (gadgets)</p>
+
+<pre><code class="language-bash">kubectl gadget deploy
+# Monitor all network traffic of a namespace
+kubectl gadget advise network-policy monitor -n $ns -o network.$ns.log.json
+# Processes in containers of Pods
+kubectl get snapshot process -n $ns
+# Inspect top (processes) of a namespace
+kubectl gadget top file -n $ns
+# Trace requests into services of a namespace
+kubectl gadget trace tcp -n $ns
+</code></pre>
+
+<ul>
+<li>Expanding BPF usage from single nodes to across the entire cluster layers</li>
+<li>Maps low-level Linux resources to high-level Kubernetes concepts integration</li>
+<li>Use stand-alone or integrate into your own tooling, e.g., Prometheus metrics.
+
+<ul>
+<li>Several tools utilized it already, e.g., Kubescape</li>
+</ul></li>
+</ul></li>
+
+<li><p>Robusta : Alerting</p></li>
+
+<li><p>Komodor : Troubleshooting</p></li>
+
+<li><p>Pixie : All in one</p></li>
+
+<li><p>Groundcover : All in one</p></li>
+</ul></li>
+<li><strong>Streaming</strong>/<strong>Messaging</strong> : Run on <strong>dedicated nodes</strong>
+
+<ul>
+<li><a href="https://github.com/rabbitmq/rabbitmq-server">RabbitMQ</a> :
+A widely used open-source message broker that supports multiple messaging protocols, including AMQP, <a href="https://mqtt.org/">MQTT</a>, and STOMP. It's known for its simplicity, ease of setup, and support for various messaging patterns like work queues, publish-subscribe, and routing. RabbitMQ is a good choice for IoT and other simpler, high-throughput messaging scenarios.</li>
+<li><a href="https://strimzi.io/" title="Strimzi.io">Strimzi</a> : Kafka on K8s : <a href="https://github.com/strimzi/strimzi-kafka-operator" title="GitHub"><code>strimzi-kafka-operator</code></a> : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS over TCP. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications.
+
+<ul>
+<li>Kafka operators to deploy and configure an Apache Kafka cluster on K8s.</li>
+<li>Kafka Bridge provides a RESTful interface for your HTTP clients.</li>
+</ul></li>
+<li><a href="https://nats.io/">NATS</a> : A lightweight, high-performance messaging system designed for microservices, IoT, and cloud-native systems. It supports various messaging models including pub-sub, request-reply, and queueing. NATS is known for its simplicity and performance.</li>
+<li><a href="https://docs.redpanda.com/current/home/">Redpanda</a> : A newer, <strong>Kafka-compatible streaming platform</strong> designed to offer better performance and easier operation. It is API-compatible with Kafka, which means existing Kafka clients and ecosystem tools work with Redpanda without modification. Redpanda is designed to be simpler to deploy and manage, with a focus on reducing operational overhead.
+
+<ul>
+<li>&gt;Enabling SELinux can result in latency issues. If you wish to avoid such latency issues, do not use this mechanism.</li>
+</ul></li>
+</ul></li>
+<li><strong>Networking</strong>
+
+<ul>
+<li>External Load Balancer
+
+<ul>
+<li><code>kube-vip</code> (<a href="https://github.com/kube-vip/kube-vip" title="GitHub.com">GitHub</a> | <a href="https://kube-vip.io/" title="kube-vip.io">Docs</a>):
+K8s Virtual IP and Load Balancer (LB) for both control plane and services
+for On-prem, Edge, Bare-Metal, &hellip;
+
+<ul>
+<li><a href="https://kube-vip.io/docs/about/architecture/">Architecture</a></li>
+</ul></li>
+</ul></li>
+<li>CNI
+
+<ul>
+<li><a href="https://docs.tigera.io/calico/latest/getting-started/kubernetes/self-managed-onprem/onpremises">Calico</a></li>
+<li><a href="https://cilium.io/">Cilium</a> : eBPF</li>
+</ul></li>
+<li>Ingress
+
+<ul>
+<li><a href="https://istio.io/">Istio</a></li>
+<li><a href="https://traefik.io/traefik/">Traefik</a> : Automatically wires routes per Service discovery</li>
+<li><a href="https://kubernetes.github.io/ingress-nginx/deploy/baremetal/">Ingress-Nginx</a></li>
+<li><a href="https://cilium.io/">Cilium</a> : eBPF</li>
+<li>Consul</li>
+</ul></li>
+<li><a href="https://gateway-api.sigs.k8s.io/implementations/#gateways">K8s Gateway API</a>
+
+<ul>
+<li><a href="https://doc.traefik.io/traefik/routing/providers/kubernetes-gateway/">Traefik</a></li>
+</ul></li>
+<li>Service Mesh
+
+<ul>
+<li><a href="https://istio.io/">Istio</a>
+
+<ul>
+<li><a href="https://www.envoyproxy.io/">Envoy</a> Service Proxy (Sidecar)</li>
+</ul></li>
+<li>Traefik : Automatically wires routes per Service discovery</li>
+<li><a href="https://linkerd.io/">Linkerd</a> : Service Mesh (East-West) : mTLS + Load Balancing between services<br>
+
+<ul>
+<li>Sidecar Proxy (written in Rust).</li>
+</ul></li>
+<li>Kuma</li>
+<li>Consul</li>
+</ul></li>
+<li>Service Discovery
+
+<ul>
+<li>etcd : K8s cluster</li>
+<li>Consul : Multi-cluster</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>IA</strong>/<strong>Security</strong></p>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/concepts/security/controlling-access/" title="Kubernetes.io"><strong>AuthN</strong>/<strong>AuthZ</strong></a>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/" title="Kubernetes.io"><strong>AuthN</strong></a> (Authentication)
+
+<ul>
+<li><strong>K8s</strong>
+
+<ul>
+<li><strong>Two types of subject</strong> : K8s provides for binding either type to roles for cluster access:
+
+<ol>
+<li><strong><code>ServiceAccount</code></strong> : K8s <strong>object</strong> declaring a non-human entity (subject). E.g., a Pod.</li>
+<li>A <strong>user</strong> and/or <strong>group</strong> : K8s <strong>concept</strong> of human entity (subject).<br>
+Though K8s has neither user nor group objects,
+it searches for these subjects in certificates and tokens,
+and provides for binding them to roles.</li>
+</ol></li>
+<li><strong>Two scenarios</strong>:
+
+<ol>
+<li>Clients authenticating against the K8s API server
+
+<ul>
+<li>The <strong>two most common methods</strong>:
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#normal-user" title="Kubernetes.io">X.509 certificate issued by K8s CA</a></li>
+<li>Token (JWTs) generated by an OIDC provider, e.g., <strong>Dex</strong> or <a href="file:///D:/1%20Data/IT/Container/Kubernetes/K8s-AD-integration-Keycloak.html" title="K8s-AD-integration-Keycloak"><strong>Keycloak</strong></a>, which may proxy an upstream Identity Provider (<strong>IdP</strong>) such as AD. K8s <a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">recognizes the subject</a>, e.g., by token claims of user/group, or  <code>ServiceAccount</code> having K8s <code>cluster.user</code>.</li>
+</ul></li>
+<li>Regardless of method, <strong>identities that match</strong> a (<code>Cluster</code>)<code>RoleBinding</code> <strong>are authorized for access</strong> according to the associated (<code>Cluster</code>)<code>Role</code>.</li>
+</ul></li>
+<li>Users authenticating at web UI against an application running on the cluster.
+
+<ul>
+<li>Token (JWTs) generated by an OIDC provider, which may be same as other scenario, to enable Single Sign On (SSO), since OIDC is just an extention of <a href="https://oauth.net/2/">OAuth2</a>.</li>
+</ul></li>
+</ol></li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authentication/#authentication-strategies" title="Kubernetes.io">Authentication Plugins</a>
+
+<ul>
+<li>Static Token file
+
+<ul>
+<li>Bearer token</li>
+<li>Service Account token</li>
+</ul></li>
+<li>X.509 certificates (TLS)</li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">Open ID Connect (OIDC) token</a></li>
+<li>Authentication proxy</li>
+<li>Webhook</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/" title="Kubernetes.io"><strong>AuthZ</strong></a> (Authorization) | Modules/<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#authorization-modules" title="Kubernetes.io">Modes</a><br>
+Regardless of authentication method,
+K8s can implement Role-based Access Control (<a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/" title="Kubernetes.io">RBAC</a>) model
+against subjects (<a href="https://kubernetes.io/docs/reference/access-authn-authz/authorization/#request-attributes-used-in-authorization" title="Kubernetes.io">known by request attribute(s)</a>)
+using a pair of K8s objects for each of the two scopes of K8s API resources (<code>api-resources</code>):
+
+<ul>
+<li><strong>K8s</strong>
+
+<ol>
+<li>Namespaced (<code>Deployment</code>, <code>Pod</code>, <code>Service</code>, &hellip;)
+
+<ul>
+<li><code>Role</code> : Rules declaring the allowed actions (<code>verbs</code>) upon <code>resources</code> scoped to APIs (<code>apiGroup</code>).</li>
+<li><code>RoleBinding</code> : Binding a subject (authenticated user or ServiceAccount) to a role.</li>
+</ul></li>
+<li>Cluster-wide (<code>PersistentVolume</code>, <code>StorageClass</code>, &hellip;)
+
+<ul>
+<li><code>ClusterRole</code></li>
+<li><code>ClusterRoleBinding</code></li>
+</ul></li>
+</ol></li>
+</ul></li>
+</ul></li>
+<li><strong>Distributed-Workload Identities</strong> : AuthN providing IDs having AuthZ primitives.
+
+<ul>
+<li><a href="https://spiffe.io/">SPIFFE/SPIRE</a> : Successor to RBAC for <strong>defining</strong> (SPIFFE) and <strong>implementing</strong> (SPIRE) a <strong>workload identity platform</strong> and access controls rooted in <strong>Zero Trust</strong> (versus Perimeter Security) principles to mitigate attack risk. SPIFFE/SPIRE provides a <strong>uniform identity layer across distributed systems</strong>. The core idea is to issue   <strong>SVIDs</strong> (SPIFFE Verifiable Identity Documents), of either <strong>X.509</strong> or <strong>JWT</strong>, to workloads based on strong attestation (e.g., node identity, container metadata). <strong>Tools</strong> like OPA, Istio, Linkerd, or Envoy with RBAC <strong>consume SPIFFE IDs</strong> for authorization policies (<strong>AuthZ</strong>). So the same artifact (SVID) is used for both AuthN (proof of identity) and as <em>a handle for</em> AuthZ rules.
+
+<ul>
+<li><strong>Secure Production Identity Framework for Everyone</strong> (SPIFFE) : An OSS framework specificition to provide <strong>attested, cryptographic identities</strong> to distributed workloads; capable of bootstrapping and issuing identity to services; defines short-lived cryptographic identity documents (<strong>SVID</strong>) via a simple API. Workloads use these SVIDs when authenticating to other workloads, for example by establishing a TLS connection or by signing and verifying a JWT token.</li>
+<li><strong>SPIFFE Runtime Environment</strong> (<a href="https://spiffe.io/docs/latest/spire-about/spire-concepts/">SPIRE</a>) : a production-ready implementation of the SPIFFE APIs (pluggable multi-factor attestation and SPIFFE federation) that performs <strong>node and workload attestation</strong> in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.
+
+<ul>
+<li><code>spiffe://cluster/ns/foo/sa/bar</code>
+
+<ul>
+<li>A cryptographically verifiable identity</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><strong>Threat Detection</strong> / <strong>Remediation</strong> : <strong>CVE</strong>s (Common Vulnerabilities and Exposures)
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">K8s Adminssion Controllers</a></li>
+<li><a href="https://aquasecurity.github.io/trivy/v0.56/" title="aquasecurity.github.io">Trivy</a> : Scan OCI-container images, OS folders, Kubernetes clusters, Git repos, virtual machines, and more. And can create SBOM and CVE-vulnerabilities audits of them.
+
+<ul>
+<li><a href="https://aquasecurity.github.io/trivy-operator/latest/" title="aquasecurity.github.io"><code>trivy-operator</code></a> by Helm chart : Recurringly scan all container images : Generates <code>VulnerabilityReport</code>s per Pod, DaemonSet, &hellip; across all/declared Namespaces.</li>
+</ul></li>
+<li><a href="https://kubescape.io/">Kubescape</a> (10K) : Runtime Detection</li>
+<li><a href="https://falco.org">Falco</a> by <a href="https://sysdig.com/opensource/">Sysdig</a> (7K) : Threat detection/reporting : Runtime security across hosts, containers, Kubernetes, and cloud environments. It leverages custom rules on Linux kernel events and other data sources through plugins, enriching event data with contextual metadata to deliver real-time alerts. Falco enables the detection of abnormal behavior, potential security threats, and compliance violations.</li>
+<li><a href="https://pypi.org/project/cve-bin-tool/#finding-known-vulnerabilities-using-the-binary-scanner" title="PyPI.org"><code>cve-bin-tool</code></a> :<br>
+Python tool for finding known vulnerabilities in software, using data from the  <dfn title="National Vulnerability Database">NVD</dfn>'s list of  <dfn title="Common Vulnerabilities and Exposures">CVE</dfn>s as well as known vulnerability data from Redhat, Open Source Vulnerability Database (OSV), Gitlab Advisory Database (GAD), and Curl</li>
+</ul></li>
+<li><strong>Policy Enforcement</strong>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/">K8s Adminssion Controllers</a></li>
+<li><a href="https://kyverno.io">Kyverno</a> Policy as Code (6K) :
+For example, <a href="https://kyverno.io/policies/other/add-certificates-volume/add-certificates-volume/" title="kyverno.io/policies">add a custom CA (CM volume/mount) to (labeled) Pods per Kyverno Policy</a>.
+
+<ul>
+<li><a href="https://kyverno.io/docs/kyverno-cli/">Kyverno CLI</a> can be used to apply and test policies <strong>off-cluster</strong> e.g., as part of an IaC and CI/CD pipelines.</li>
+<li><a href="https://kyverno.io/docs/kyverno-policy-reporter/">Kyverno Policy Reporter</a> : a sub-project of Kyverno that provides in-cluster management of policy reports with a web-based graphical user interface.</li>
+<li><a href="https://kyverno.io/docs/kyverno-json/">Kyverno JSON</a> : a sub-project of Kyverno that allows applying Kyverno policies to <strong>off-cluster</strong> workload. It works on any JSON payload.</li>
+<li><a href="https://kyverno.io/docs/kyverno-chainsaw/">Kyverno Chainsaw</a> sub-project of Kyverno provides declarative end-to-end testing for Kubernetes controllers.</li>
+</ul></li>
+<li><a href="https://open-policy-agent.github.io/gatekeeper/website/docs/">OPA/Gatekeeper</a>  (3.7K): Automated policy enforcement</li>
+<li><a href="https://kubearmor.io">Kubearmor</a>  (1.6K): Runtime Security Enforcement : Policy-based controls : a runtime Kubernetes security engine that uses eBPF and Linux Security Modules (LSM) for fortifying workloads based on Cloud Containers, IoT/Edge, and 5G networks.</li>
+</ul></li>
+
+<li><p><strong>Secrets</strong></p>
+
+<ul>
+<li><a href="https://github.com/hashicorp/vault"><strong>Hashicorp Vault</strong></a> : <a href="https://openbao.org/"><strong>OpenBao</strong></a> (OSS fork)
+
+<ul>
+<li><a href="https://chatgpt.com/share/67019858-ac38-8009-90f3-e824f420bf79" title="ChatGPT">Implementations</a>:
+
+<ul>
+<li><a href="https://github.com/hashicorp/vault-helm" title="GitHub"><code>vault-helm</code></a></li>
+<li><a href="https://github.com/hashicorp/vault-secrets-operator" title="GitHub"><code>vault-secrets-operator</code></a></li>
+<li>Vault Agent Sidecar Injection : Most secure (rest/transit) :
+Transparent encrypt/decrypt of K8s <code>Secret</code> objects (<code>data</code>)</li>
+<li>Vault CSI Driver :  Fetch secrets on container init and mount as files in the container.</li>
+<li>External Secrets Operator : Integrates with external secret stores (Vault, AWS Secrets Manager, Google Cloud Secret Manager); syncs secrets from Vault into K8s <code>Secret</code> objects.</li>
+<li>Direct API Calls to Vault : Configured per app.</li>
+</ul></li>
+</ul></li>
+<li><a href="https://external-secrets.io/latest/">External Secrets Operator</a> :
+Pull/Push secrets; sync K8s <code>Secret</code> objects (decrypted) with external store (encrypted).</li>
+<li><a href="https://github.com/tellerops/teller">Teller</a> : Like External Secretes Operator; local CLI secrets manager for developers.</li>
+<li><a href="https://github.com/bitnami-labs/sealed-secrets">Bitnami <code>SealedSecret</code>s</a> :
+
+<ul>
+<li>Asymmetric crypto allows developers to encrypt secrets as &quot;<code>SealedSecret</code>&quot; K8s object (CRD) <strong>to store outside the cluster</strong> in (public) Git repo or other untrusted environment.</li>
+<li>Automatically decrypts it and creates a regular Kubernetes Secret object, accessible to your applications.</li>
+<li>Once in the cluster, it is <strong>stored unencrypted in K8s</strong> <code>Secret</code> object.</li>
+<li>Components
+
+<ul>
+<li>A cluster-side <code>controller</code> / operator</li>
+<li>A client-side utility: <code>kubeseal</code> : Utility encrypts secrets that only the controller can decrypt.</li>
+</ul></li>
+<li>Transit Engine : works entirely within Vault and does not require a sidecar or agent within your Pods. It is used by the K8s control plane (e.g., API server) to perform encryption operations, ensuring data is encrypted when stored (e.g., in etcd) and decrypted when needed.</li>
+</ul></li>
+<li><a href="https://github.com/getsops/sops">SOPS</a> (Secrets OPerationS) :
+Secrets management; editor that interfaces with Vault etal.</li>
+
+<li><p><a href="https://github.com/FiloSottile/age" title="GitHub : FiloSottile/age"><code>age</code></a> (Actually Good Encryption) : A simple CLI providing AEAD encrypt/decrypt.
+Rejoice over a replacement for the obnoxiously complicated PGP (Pretty Good Privacy) project.</p>
+
+<pre><code class="language-bash"># Install : bad binary
+sudo curl -sSLo /usr/local/bin/age https://dl.filippo.io/age/latest?for=linux/amd64
+# Install : okay
+go install filippo.io/age/cmd/...@latest
+sudo ln -s /home/u1/go/bin/age /usr/local/bin
+            
+# Generate public-private key pair
+key=age.key
+pub=&quot;$(age-keygen -o $key 2&gt;&amp;1 |cut -d':' -f2 )&quot;
+# Encrypt a source (archive)
+tar cvz ~/$src |age -r $pub &gt; $src.tgz.age
+# Decrypt a source
+age -d -i $key $src.tgz.age &gt; $src.tgz
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>Signing</strong></p>
+
+<ul>
+<li>Sigstore Cosign</li>
+<li>Notary</li>
+</ul></li>
+
+<li><p><strong>TLS</strong> : <a href="https://chatgpt.com/share/6897a869-d390-8009-b873-da33b20e8e0b" title="ChatGPT 5">Automated TLS Management (Enterprise Grade)</a></p>
+
+<ul>
+<li><strong>cert-manager</strong> (<a href="https://cert-manager.io/" title="cert-manager.io">cert-manager.io</a>|<a href="https://github.com/cert-manager">GitHub</a>): <em>&hellip;obtain certificates from &hellip; public &hellip; as well as private Issuers &hellip;, and ensure the certificates are valid and up-to-date, and &hellip; renew certificates at a configured time before expiry.</em>
+
+<ul>
+<li>Private Issuers (Backends):
+
+<ul>
+<li>Smallstep <a href="https://smallstep.com/docs/step-ca/" title="smallstep.com"><strong><code>step-ca</code></strong></a><br>
+An online CA for secure, automated X.509 and SSH certificate management. It's the server counterpart to <code>step</code> CLI. Run step-ca (internal ACME) + <code>step-issuer</code> or use <code>cert-manager</code>’s ACME issuer pointed at <code>step-ca</code>. Provides air-gapped ACME + tight Kubernetes integration.
+
+<ul>
+<li>Generate TLS certificates for private infrastructure using the ACME protocol.</li>
+<li>Automate TLS certificate renewal.</li>
+<li>Add Automated Certificate Management Environment (ACME) support to a legacy subordinate CA.</li>
+<li>Issue short-lived SSH certificates via OAuth OIDC single sign on.</li>
+<li>Issue customized X.509 and SSH certificates.</li>
+</ul></li>
+<li><strong>Hashicorp Vault PKI</strong> | <a href="https://openbao.org/docs/secrets/pki/"><strong>OpenBao PKI</strong></a></li>
+<li><strong>Venafi TLS Protect for Kubernetes</strong> (the commercial successor to <strong>Jetstack</strong> Secure): central policy/visibility across clusters and CAs (public or private). If you want enterprise governance and inventory at scale, this is the “batteries-included” option.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Storage</strong></p>
+
+<ul>
+<li><a href="file:///D:/1%20Data/IT/Container/Kubernetes/Storage/MinIO/MinIO.html" title="MinIO.html"><strong>MinIO</strong></a> : a Kubernetes-native high performance object store with an <strong>S3-compatible API</strong>;
+supports deploying MinIO Tenants onto private and public cloud infrastructures AKA Hybrid Cloud.
+
+<ul>
+<li><strong>MinIO Operator</strong> : <a href="https://github.com/minio/operator/" title="GitHub"><code>minio/operator</code></a> | <a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html#minio-operator-installation" title="min.io/docs">Docs</a></li>
+</ul></li>
+<li><a href="https://rook.github.io/docs/rook/latest-release/Getting-Started/intro/"><strong>Rook</strong></a> : Open source cloud-native storage orchestrator, providing the platform,
+framework, and support for <strong>Ceph</strong> storage to natively integrate with cloud-native environments. Provides <strong>S3</strong>/Swift API.
+
+<ul>
+<li><a href="https://ceph.com/en/"><strong>Ceph</strong></a> : Distributed storage system that provides <strong>file</strong>, <strong>block</strong> and <strong>object</strong> storage and is deployed in large scale production clusters on commodity hardware.</li>
+</ul></li>
+<li>JuiceFS : Distributed POSIX file system built on top of Redis and S3 (MinIO).</li>
+<li>Gluster</li>
+<li>Longhorn</li>
+<li>KubeFS</li>
+<li><strong>Database</strong>
+
+<ul>
+<li>Managed
+
+<ul>
+<li>Aiven</li>
+</ul></li>
+<li>KubeBlocks : K8s Operator : Supports many databases</li>
+<li><a href="https://github.com/tikv/tikv">TiKV</a> : distributed, and transactional key-value database. FOSS. CNCF Graduated project.</li>
+<li><a href="https://github.com/apache/cassandra">Cassandra</a> : NoSQL distributed database. Apache/CNCF project.</li>
+<li><a href="https://github.com/apache/nifi">NiFi</a> @ <a href="https://chatgpt.com/share/0935e21e-30dd-445b-97b3-1d8ed46782ce">GPTchat</a> : A system to ingest, process and distribute data (from anywhere); automated and managed flow of information between systems; suited for complex data integration, ETL processes, real-time data flows, and scenarios requiring detailed data lineage and tracking. Apache/CNCF project.</li>
+<li><a href="https://cloudnative-pg.io/">CloudNativePG</a> (CNPG) : K8s Operator covering full lifecycle of a highly available PostgreSQL database cluster with a <strong>primary/standby architecture</strong>, using native <strong>streaming replication</strong>. A CNCF project.</li>
+<li>Atlas Operator : Schema</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Misc</strong></p>
+
+<ul>
+<li>Charm : Library and Tools</li>
+<li>Velero : Backup K8s cluster and <code>PersistentVolume</code>s</li>
+</ul></li>
+</ul>
+
+<h2>Environments</h2>
+
+<p><strong>Upon what infrastructure</strong> does the app AKA workload AKA service run?</p>
+
+<ul>
+<li><strong>Cloud</strong> : 3rd-party vendor, typically virtual; SDNs, VMs, &hellip;</li>
+<li><strong>On-prem</strong> : Self managed; physical and/or virtual</li>
+<li><strong>Bare-metal</strong> : OS and app on physical machine, sans hypervisor/virtualization,
+<em>regardless</em> of whether on-prem or in cloud.</li>
+<li><strong>Edge</strong> : More than just a reference to gateway router(s); an environment and topology.
+Distributed architectures and practices for <strong>processing data closer to where it is generated or consumed</strong>.
+
+<ul>
+<li><strong>Computing</strong>:
+
+<ul>
+<li>Proximal to Data : Located close to the source of data, such as IoT devices, sensors, or users. This proximity allows for faster data processing and reduced latency.</li>
+<li>Distributed Architecture : Deploying smaller, localized data centers or computing resources that work together with centralized cloud services. This creates a distributed architecture where certain tasks are handled at the edge, while others are processed in the cloud or a central data center.</li>
+<li>Real-Time Processing : For applications that require real-time processing and quick decision-making, such as autonomous vehicles, industrial automation, and smart cities.</li>
+<li>Reduced Bandwidth Usage : Only the relevant or processed data needs sent to central data center/cloud, reducing amount of data egress.</li>
+</ul></li>
+<li><strong>Environment</strong>:
+
+<ul>
+<li>Edge Devices : Sensors, IoT devices, smart appliances, &hellip;
+
+<ul>
+<li>To generate or consume data.</li>
+</ul></li>
+<li>Edge Servers or Mini Data Centers : small-scale computing resources in retail stores, factories, telecom towers, vehicles, &hellip; deployed close to edge devices
+
+<ul>
+<li>To process and analyze data locally.</li>
+</ul></li>
+<li>Edge Gateways : Routers and other devices.
+
+<ul>
+<li>To aggregating data from various edge devices and sometimes perform initial processing before forwarding data to central servers or the cloud.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Configuration</h2>
+
+<ul>
+<li><strong>Repository Structure</strong>:<br>
+Organize your Git repository in a way that reflects your deployment environments and application structure.
+This could involve separate directories for each environment and application.</li>
+<li><strong>Secrets Management</strong>:<br>
+Use tools like <a href="https://github.com/bitnami-labs/sealed-secrets">Bitnami Sealed Secrets</a>,
+<a href="https://github.com/getsops/sops">SOPS</a>,
+or <a href="https://github.com/hashicorp/vault">Vault</a> for encrypting secrets that are stored in Git.
+This ensures that sensitive information is securely managed.</li>
+<li><strong>Monitoring and Alerting</strong>:<br>
+Integrate monitoring and alerting tools to track the health of your deployments and the Kubernetes cluster.
+<a href="https://prometheus.io/docs/introduction/overview/">Prometheus</a> and <a href="https://grafana.com/">Grafana</a>
+are commonly used tools that can be managed via GitOps.</li>
+<li><strong>Policy Enforcement</strong>:<br>
+Use policy-as-code tools like Open Policy Agent (OPA) or <a href="https://github.com/kyverno/kyverno">Kyverno</a>
+to enforce policies on your Kubernetes clusters.
+Store policies in Git to apply them consistently across your environments.</li>
+<li><strong>Security Scanning</strong>:<br>
+Implement security scanning of your Docker images and Kubernetes configurations as part of your CI/CD pipelines.
+Tools like <a href="https://trivy.dev/" title="trivy.dev">Trivy</a>, Clair, and KubeLinter can be integrated into your workflows.</li>
+</ul>
+
+<h2>Schemes for Unique Identifier</h2>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID</a> (Universally Unique Identifier):<br>
+A widely used 128-bit number that guarantees uniqueness across different systems, often used in databases and distributed systems; considered the standard for generating unique identifiers. [1, 2, 3]<br></li>
+<li>NanoID:<br>
+A compact, URL-friendly unique string generator with a similar collision probability to UUID, designed for JavaScript environments [1, 4, 5]<br></li>
+<li>ULID (Universally Unique Lexicographically Sortable Identifier): A unique identifier that is also sortable, combining timestamp and randomness for efficient database indexing [1, 6]<br></li>
+<li>CUID (Collision-resistant Unique Identifier): A unique identifier that incorporates a timestamp, counter, and random characters, designed for collision resistance in distributed systems [1, 5]<br></li>
+<li>Snowflake ID: A unique identifier scheme often used in distributed databases, incorporating timestamps and sequence numbers to generate unique IDs [6, 7]<br></li>
+</ul>
+
+<h3>Key points to consider when choosing a unique identifier scheme:</h3>
+
+<ul>
+<li><strong>Collision probability</strong>: How likely is it for two different identifiers to be the same.</li>
+<li>Length and <strong>readability</strong>: How long is the identifier and <strong>how easy is it to read</strong> and interpret.</li>
+<li><strong>Sorting capabilities</strong>: Whether the identifier can be <strong>easily sorted in a database</strong></li>
+<li>Generation method: How the identifier is generated, <strong>whether it uses randomness or timestamps</strong></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

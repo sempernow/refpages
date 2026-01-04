@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>VirtualBox</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.virtualbox.org/" title="VirtualBox.org">VirtualBox 7</a> | <a href="https://www.virtualbox.org/wiki/User_HOWTOS">HOWTOs</a> | <a href="https://www.virtualbox.org/manual/">User Manual</a></h1>
+
+<h2><a href="https://www.virtualbox.org/wiki/Downloads" title="VirtualBox.org :: Downloads">Install</a></h2>
+
+<h3>@ Windows</h3>
+
+<pre><code class="language-powershell">chocolatey install virtualbox
+</code></pre>
+
+<p>Else use their <a href="https://www.virtualbox.org/wiki/Downloads" title="VirtualBox.org : Downloads">installer</a></p>
+
+<h3>@ Ubuntu</h3>
+
+<pre><code class="language-bash">sudo apt-get -y install virtualbox
+</code></pre>
+
+<h3>@ <a href="https://www.virtualbox.org/wiki/Linux_Downloads">@ RHEL/CentOS</a></h3>
+
+<pre><code class="language-bash"># Download/Import its public key
+sudo rpm --import https://www.virtualbox.org/download/oracle_vbox.asc
+# Download/Install VirtualBox 5.5.20 (.rpm) 
+sudo yum install -y \
+    https://download.virtualbox.org/virtualbox/5.2.20/VirtualBox-5.2-5.2.20_125813_el7-1.x86_64.rpm  
+</code></pre>
+
+<ul>
+<li><p>Fails if Linux @ VM on Hyper-V  (<a href="p>
+
+<pre><code class="language-bash">There were problems setting up VirtualBox.  
+To re-start the set-up process, run
+  /sbin/vboxconfig  
+# ... did, as root, to same/repeated effect.
+</code></pre></li>
+</ul>
+
+<h2><a href="https://www.virtualbox.org/manual/ch06.html#networkingmodes">Networking Modes</a></h2>
+
+<p>Manually set @ VirtualBox menu &gt; Settings : <code>NAT</code> or <code>Host-only Adapter</code></p>
+
+<h3>Network Mode : Host-only Adapter</h3>
+
+<p>Use for host-to-guest (WSL to VMs) and guest-to-guest (VM to VM) connectivity.</p>
+
+<blockquote>
+<p><em>&hellip; VirtualBox creates a (virtual) loopback interface on the host  &hellip; used to create a network containing the host and a set of virtual machines, without the need for the host's physical network interface.</em></p>
+</blockquote>
+
+<pre><code class="language-bash"># Get VM's IP CIDR per VirtualBox DHCP (File &gt; Tools &gt; Network Manager)
+# Get VM IP of VM from VM : `ip -4 route` (src ...)
+host='192.168.56.101'
+
+ssh -i ~/.ssh/vm02 $user@$host
+</code></pre>
+
+<h3>Network Mode : NAT</h3>
+
+<p>Use for standalone VMs requiring nothing more than web connectivity.
+Not as useful for inter-vm comms.</p>
+
+<blockquote>
+<p><em>VirtualBox VMs are on separate network, but can use local-port forwarding through WWSL nameserver.</em></p>
+</blockquote>
+
+<pre><code class="language-bash"># @ VM Creation
+user=x1 
+# @ /etc/resolv.conf
+wsl_nameserver='172.31.16.1'
+host_port=2222
+
+ssh -p $host_port ${user}@$wsl_nameserver
+</code></pre>
+
+<ul>
+<li>Port Forwarding Rules
+
+<ul>
+<li>Host (Windows) Port : 2222</li>
+<li>Guest (VM) Port : 22</li>
+</ul></li>
+</ul>
+
+<h2>PKI Setup</h2>
+
+<pre><code class="language-bash">keyname=vm02
+
+ssh-keygen -f ~/.ssh/$keyname
+ssh-copy-id -i ~/.ssh/$keyname $user@$host
+
+# Session:
+ssh -i ~/.ssh/vm02 $user@$host
+</code></pre>
+
+<p>@ <code>~/.ssh/config</code></p>
+
+<pre><code class="language-text">Host vm02
+    HostName 192.168.56.101
+    User x1
+    IdentityFile ~/.ssh/vm02
+
+Host github github.com
+    HostName github.com
+    User git
+    RequestTTY no
+    IdentityFile ~/.ssh/github_sempernow
+</code></pre>
+
+<p>So, simply</p>
+
+<pre><code class="language-bash"># Session:
+ssh vm02
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

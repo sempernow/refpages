@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JS.ReactiveX.js</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="http://reactivex.io/rxjs/" title="ReactiveX.io">RxJS</a> | <a href="https://en.wikipedia.org/wiki/Reactive_extensions" title="Reactive Extensions @ Wikipedia">ReactiveX</a> | @ <a href="https://github.com/ReactiveX/rxjs" title="GitHub">GitHub</a></h1>
+
+<blockquote>
+<p>RxJS is a (<strong>Microsoft</strong>) library for composing asynchronous and event-based programs by using observable sequences. It provides one core type, the Observable, satellite types (Observer, Schedulers, Subjects) and operators (map, filter, reduce, every, etc) to allow handling asynchronous events as collections.</p>
+
+<p>Think of RxJS as Lodash for events.</p>
+
+<p>ReactiveX combines the Observer pattern with the Iterator pattern and functional programming with collections to fill the need for an ideal way of managing sequences of events.</p>
+</blockquote>
+
+<p>Concepts in RxJS which solve <strong><em>async event management</em></strong> are:</p>
+
+<p><strong>Observable</strong>: represents the idea of an invokable collection of future values or events.</p>
+
+<ul>
+<li><p><strong>Observer</strong>: a collection of callbacks (<strong>listeners</strong>); handlers of values delivered by the Observable; Has methods: <code>next</code>, <code>error</code> and <code>complete</code>; each may invoke its callback (<em>subscription function</em>).</p></li>
+
+<li><p><strong>Schedulers</strong>: centralized <strong>dispatchers</strong> to control concurrency; <code>setTimeout</code>,  <code>requestAnimationFrame</code>, etc.</p></li>
+
+<li><p><strong>Subject</strong>: the equivalent to an <code>EventEmitter</code>, and the only way of multicasting a value or event to multiple Observers.</p></li>
+</ul>
+
+<p><strong>Subscription</strong>: represents the execution of an Observable; an <strong>ID</strong> for cancelling the execution.</p>
+
+<p><strong>Operators</strong>: pure functions (FP) for processing collections; <code>map</code>, <code>filter</code>, <code>concat</code>, <code>reduce</code>, etc.</p>
+
+<h2>Observables and Observers</h2>
+
+<pre><code>OBSERVABLE source -&gt; OBSERVER -&gt; CALLBACK -&gt; OBSERVABLE
+</code></pre>
+
+<ul>
+<li><p><code>Rx.Observable</code> class has many functions to create observables from different kind of data/streams; events, event patterns, arrays, promises, single/multiple value, any kind of data structure/primitive data types</p>
+
+<pre><code class="language-js">var clkOable = Rx.Observable.fromEvent(document, 'click')
+clkOable.subscribe(aSubscrpnFn)
+
+var arrOable = Rx.Observable.from(array)
+arrOable.subscribe(aSubscrpnFn) 
+
+var ajxOable = Rx.Observable.fromPromise(fetch(aURL))
+ajxOable.subscribe(respFn, errFn)
+
+// An Observer has 3 methods
+someOable.subscribe({
+next: x =&gt; gotFn(x),
+error: err =&gt; errFn(err),
+complete: () =&gt; console.log('done'),
+})
+
+// Unsubscribe 
+someOable.unsubscribe()
+</code></pre></li>
+</ul>
+
+<h2>Operators (Consumer &amp; Emitter)</h2>
+
+<pre><code>source OBSERVABLE -&gt; OPERATOR FUNCTION -&gt; destination OBSERVABLE 
+</code></pre>
+
+<pre><code class="language-js">var arrOable = Rx.Observable.from([1, 2, 3, 4, 5])
+
+arrOable
+    .map(n =&gt; n * 2)
+    .reduce((sum, n) =&gt; sum + n, 0) 
+    .subscribe(function(n){
+        console.log(n)
+    }, function(err) {
+        console.error(err)
+    }, function() {
+        console.log('done')
+    })
+
+</code></pre>
+
+<h4>@ <code>https://unpkg.com/rxjs@6.5.2/bundles/rxjs.umd.min.js</code></h4>
+
+<p>The above methods fail, e.g., <code>arrOable.map(..)</code> fails.</p>
+
+<p><strong><em>Completely different methods/syntax required!</em></strong></p>
+
+<pre><code class="language-js">arrOable = rxjs.from([1, 2, 3, 4, 5])
+
+ arrOable
+    .pipe(rxjs.operators.map(n =&gt; 2 * n))
+    .pipe(rxjs.operators.reduce((sum,n) =&gt; sum + n,0))
+    .subscribe(v =&gt; console.log(v)) 
+</code></pre>
+
+<h2><a href="RxJS.js"><code>RxJS.js</code></a></h2>
+
+<h2><code>obs = Rx.Observable.create(fn)</code></h2>
+
+<p>Method to create a custom observable; returns an object having <code>subscribe</code> method on it.</p>
+
+<h2><code>obs.subscribe(obj)</code></h2>
+
+<p>The <code>subscribe</code> method takes the <strong>observer</strong> object (<code>obj</code>) as a param. It has methods: <code>next</code>, <code>error</code> and <code>complete</code>, which may be called (by <code>fn</code>) when an observable emits</p>
+
+<pre><code class="language-js">{
+    next: (v) =&gt; console.log('Got ' + v),
+    error: (err) =&gt; console.error('ERR: ' + err),
+    complete: () =&gt; console.log('done'),
+}
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

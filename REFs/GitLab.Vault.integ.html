@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.Vault.integ</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>GitLab-Vault Ingetration</h1>
+
+<p>GitLab integrates with <strong><del>HashiCorp</del> IBM Vault</strong> to securely fetch secrets during CI/CD pipelines using <strong>JWT authentication</strong>,
+which is secure and designed for that environment. This approach provides:</p>
+
+<ul>
+<li><strong>No service accounts or OIDC providers are required</strong> for GitLab-Vault integration using JWT authentication.</li>
+<li>GitLab generates JWTs for CI/CD jobs, and Vault validates these JWTs using GitLab's public key.</li>
+<li>This approach is <strong>simple, secure, and self-contained</strong>, leveraging GitLab's built-in capabilities and Vault's JWT auth method.</li>
+</ul>
+
+<h2>Features:</h2>
+
+<ul>
+<li><strong>Short-Lived Tokens</strong>:
+
+<ul>
+<li>The JWT and Vault token are short-lived, reducing the risk of misuse if compromised.</li>
+</ul></li>
+<li><strong>Fine-Grained Access Control</strong>:
+
+<ul>
+<li>Vault policies allow you to restrict access to specific secrets based on GitLab metadata (e.g., project path, branch/tag).</li>
+</ul></li>
+<li><strong>No Long-Term Credentials</strong>:
+
+<ul>
+<li>Unlike storing a private key in a CI/CD variable, JWT authentication does not require long-term credentials.</li>
+</ul></li>
+<li><strong>Dynamic Secrets</strong>:
+
+<ul>
+<li>Vault can generate dynamic secrets (e.g., database credentials) that are automatically revoked after use.</li>
+</ul></li>
+<li><strong>Audit Logging</strong>:
+
+<ul>
+<li>Vault provides detailed audit logs of all secret access, making it easier to monitor and detect unauthorized access.</li>
+</ul></li>
+<li><strong>Centralized Secret Management</strong>:
+
+<ul>
+<li>Secrets are stored in Vault, not in GitLab, reducing the risk of accidental exposure.</li>
+</ul></li>
+</ul>
+
+<h3>How GitLab Authenticates Against Vault</h3>
+
+<p>GitLab uses the <strong>JWT (JSON Web Token)</strong> authentication method to authenticate with Vault.
+This method is secure and specifically designed for CI/CD environments. Here's how it works:</p>
+
+<hr>
+
+<h4>1. <strong>JWT Authentication Flow</strong></h4>
+
+<ul>
+<li><p><strong>Step 1: GitLab Generates a JWT</strong>:</p>
+
+<ul>
+<li>When a CI/CD job runs, GitLab automatically generates a short-lived JWT for the job.</li>
+<li>The JWT contains claims about the job, such as:
+
+<ul>
+<li><code>namespace_path</code>: The GitLab group or project namespace.</li>
+<li><code>project_path</code>: The project path.</li>
+<li><code>pipeline_id</code>: The pipeline ID.</li>
+<li><code>job_id</code>: The job ID.</li>
+<li><code>ref</code>: The Git ref (branch or tag).</li>
+<li>Other metadata.</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Step 2: GitLab Passes the JWT to Vault</strong>:</p>
+
+<ul>
+<li>The CI job uses the JWT to authenticate with Vault by sending it to Vault's <code>/auth/jwt/login</code> endpoint.</li>
+</ul></li>
+
+<li><p><strong>Step 3: Vault Validates the JWT</strong>:</p>
+
+<ul>
+<li>Vault validates the JWT using GitLab's public key (configured in Vault).</li>
+<li>Vault checks the JWT's claims to ensure it matches the expected values (e.g., project path, ref).</li>
+</ul></li>
+
+<li><p><strong>Step 4: Vault Issues a Token</strong>:</p>
+
+<ul>
+<li>If the JWT is valid, Vault issues a short-lived token to the CI job.</li>
+<li>This token has permissions defined by Vault policies.</li>
+</ul></li>
+
+<li><p><strong>Step 5: CI Job Fetches Secrets</strong>:</p>
+
+<ul>
+<li>The CI job uses the Vault token to fetch secrets from Vault.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h4>2. <strong>Vault Configuration for GitLab JWT Authentication</strong></h4>
+
+<p>To enable JWT authentication in Vault:
+   - <strong>Step 1: Enable the JWT Auth Method</strong>:
+     <code>sh
+     vault auth enable jwt
+</code>
+   - <strong>Step 2: Configure GitLab as a JWT Provider</strong>:
+     <code>sh
+     vault write auth/jwt/config \
+       jwks_url=&quot;https://&lt;gitlab-domain&gt;/-/jwks&quot; \
+       bound_issuer=&quot;&lt;gitlab-domain&gt;&quot;
+</code>
+     - Replace <code>&lt;gitlab-domain&gt;</code> with your GitLab instance's domain (e.g., <code>gitlab.com</code>).</p>
+
+<ul>
+<li><p><strong>Step 3: Create a Role for GitLab CI Jobs</strong>:
+ Define a role that maps GitLab projects or namespaces to Vault policies:</p>
+
+<pre><code class="language-sh"> vault write auth/jwt/role/gitlab-ci \
+   role_type=&quot;jwt&quot; \
+   bound_claims='{&quot;project_path&quot;: &quot;my-group/my-project&quot;, &quot;ref&quot;: &quot;main&quot;}' \
+   user_claim=&quot;project_path&quot; \
+   policies=&quot;gitlab-ci-policy&quot; \
+   ttl=&quot;1h&quot;
+</code></pre>
+
+<ul>
+<li><code>bound_claims</code>: Restricts access based on GitLab metadata (e.g., project path, branch/tag).</li>
+<li><code>policies</code>: Specifies the Vault policies to attach to the token.</li>
+</ul></li>
+
+<li><p><strong>Step 4: Define Vault Policies</strong>:
+ Create a policy that grants access to specific secrets:</p>
+
+<pre><code class="language-sh"> vault policy write gitlab-ci-policy - &lt;&lt;EOF
+ path &quot;secret/data/my-app/*&quot; {
+   capabilities = [&quot;read&quot;]
+ }
+ EOF
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3>Example GitLab CI Job Using Vault</h3>
+
+<p>Here’s how you can fetch secrets from Vault in a GitLab CI job:</p>
+
+<pre><code class="language-yaml">stages:
+  - fetch_secrets
+
+fetch_secrets:
+  stage: fetch_secrets
+  script:
+    - apk add vault jq  # Install Vault CLI and jq
+    - export VAULT_TOKEN=$(vault write -field=token auth/jwt/login role=gitlab-ci jwt=$CI_JOB_JWT)
+    - export DATABASE_PASSWORD=$(vault kv get -field=password secret/data/my-app/database)
+    - echo &quot;Database password: $DATABASE_PASSWORD&quot;
+</code></pre>
+
+<p>When using <strong>JWT authentication</strong> for GitLab CI/CD pipelines with HashiCorp Vault,
+<strong>no service accounts or OIDC providers are required</strong>.
+The authentication process relies entirely on GitLab's built-in JWT capabilities and Vault's JWT auth method.
+Here's why this approach is unique and why it doesn't require additional components like service accounts or OIDC providers:</p>
+
+<h3>Why No Service Accounts or OIDC Providers Are Needed</h3>
+
+<ul>
+<li><strong>GitLab as the JWT Issuer</strong>:
+
+<ul>
+<li>GitLab acts as the <strong>JWT issuer</strong> and generates JWTs for CI/CD jobs automatically.</li>
+<li>These JWTs are signed using GitLab's private key, and Vault validates them using GitLab's public key (available via the <code>jwks_url</code>).</li>
+</ul></li>
+<li><strong>No External Identity Provider</strong>:
+
+<ul>
+<li>Unlike OIDC (OpenID Connect), which relies on an external identity provider (e.g., Google, AWS IAM), GitLab's JWT authentication is self-contained.</li>
+<li>GitLab itself provides the necessary identity information (e.g., project path, branch, job ID) in the JWT.</li>
+</ul></li>
+<li><strong>No Long-Term Credentials</strong>:
+
+<ul>
+<li>Service accounts typically require long-term credentials (e.g., API keys, tokens), which can be a security risk if not managed properly.</li>
+<li>With GitLab's JWT authentication, the JWT is short-lived and automatically generated for each CI/CD job, eliminating the need for long-term credentials.</li>
+</ul></li>
+<li><strong>Direct Integration</strong>:
+
+<ul>
+<li>The integration between GitLab and Vault is direct and does not require an intermediary like an OIDC provider.</li>
+<li>GitLab's JWT is passed directly to Vault for authentication.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3>How It Works Without Service Accounts or OIDC</h3>
+
+<ul>
+<li><strong>GitLab Generates a JWT</strong>:
+
+<ul>
+<li>For every CI/CD job, GitLab generates a JWT containing metadata about the job (e.g., <code>project_path</code>, <code>ref</code>, <code>job_id</code>).</li>
+</ul></li>
+<li><strong>Vault Validates the JWT</strong>:
+
+<ul>
+<li>Vault uses GitLab's public key (fetched from the <code>jwks_url</code>) to validate the JWT's signature.</li>
+<li>Vault also checks the JWT's claims (e.g., <code>project_path</code>, <code>ref</code>) to ensure the job is authorized to access the requested secrets.</li>
+</ul></li>
+<li><strong>Vault Issues a Token</strong>:
+
+<ul>
+<li>If the JWT is valid, Vault issues a short-lived token with permissions defined by Vault policies.</li>
+</ul></li>
+<li><strong>CI Job Fetches Secrets</strong>:
+
+<ul>
+<li>The CI job uses the Vault token to fetch secrets.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3>Comparison with OIDC and Service Accounts</h3>
+
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>GitLab JWT Authentication</th>
+<th>OIDC Authentication</th>
+<th>Service Accounts</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Identity Provider</strong></td>
+<td>GitLab (built-in)</td>
+<td>External OIDC provider (e.g., Google)</td>
+<td>N/A</td>
+</tr>
+
+<tr>
+<td><strong>Credentials</strong></td>
+<td>Short-lived JWT</td>
+<td>OIDC token</td>
+<td>Long-term API keys/tokens</td>
+</tr>
+
+<tr>
+<td><strong>Integration Complexity</strong></td>
+<td>Simple (direct GitLab-Vault integration)</td>
+<td>Requires OIDC provider configuration</td>
+<td>Requires managing service accounts</td>
+</tr>
+
+<tr>
+<td><strong>Security</strong></td>
+<td>High (short-lived tokens, no long-term credentials)</td>
+<td>High (short-lived tokens)</td>
+<td>Medium (requires careful management of long-term credentials)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>Example: GitLab CI Job with Vault (No OIDC or Service Accounts)</h3>
+
+<p>Here’s how you can fetch secrets from Vault in a GitLab CI job using JWT authentication:</p>
+
+<pre><code class="language-yaml">stages:
+  - fetch_secrets
+
+fetch_secrets:
+  stage: fetch_secrets
+  script:
+    - apk add vault jq  # Install Vault CLI and jq
+    - export VAULT_TOKEN=$(vault write -field=token auth/jwt/login role=gitlab-ci jwt=$CI_JOB_JWT)
+    - export DATABASE_PASSWORD=$(vault kv get -field=password secret/data/my-app/database)
+    - echo &quot;Database password: $DATABASE_PASSWORD&quot;
+</code></pre>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

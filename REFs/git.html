@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>git</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://git-scm.com/" title="git-scm.com"><code>git</code></a> | <a href="git.sh"><code>git.sh</code></a> | <a href="https://git-scm.com/docs" title="git-scm.com/docs">Reference</a></h1>
+
+<h2>Branching Strategies</h2>
+
+<p><strong>Listed from easiest to hardest to maintain</strong></p>
+
+<h3>1. Trunk Based Development</h3>
+
+<p>For superheros and those who don't care about reliability of production deployment.</p>
+
+<ul>
+<li>Single branch (<strong>mainline</strong>)</li>
+<li>Requires mature/senior team;<br>
+experienced team members</li>
+<li>Requires <strong>toggles</strong>/flags;<br>
+app admins can enable/disable each feature</li>
+<li>Continuous <strong>deployment</strong>; <a href="https://www.youtube.com/watch?v=0ivcSjpUzl4">vs. faking it</a>
+
+<ul>
+<li>Continuous Testing: A lie; testing is not a separate process.</li>
+<li>Continuous Integration : A lie; merging devs' features into mainline <strong>multiple times per day</strong>,
+so trusting the <strong>automated</strong> build/package/test.</li>
+<li>Continuous Deliver: A lie; Everything between post-CI (pushed to mainline)
+and promotion to production (release/deployment) is fully automated (so fully trusted).</li>
+<li>Continuous Deployment: Every successful build is pushed to production (automatically);
+no business decision to promote to prod;<br>
+hence trunk-based branching strategy is effectively a requirement to achieve this.</li>
+</ul></li>
+</ul>
+
+<h3>2. Feature Branching AKA GitHub Flow</h3>
+
+<p>For small self-sufficient teams and small applications.</p>
+
+<ul>
+<li>One branch <strong>per feature</strong>;<br>
+on MR per feature into mainline</li>
+<li>Short delivery cycles; hours</li>
+<li>Continuous Delivery;<br>
+feature toggles are useful but not essential</li>
+<li>Merge/Pull Requests;<br>
+as soon as the feature developer is ready for feedback.</li>
+</ul>
+
+<h3>3. Forking Strategy</h3>
+
+<p>For open-source (OSS) projects.</p>
+
+<ul>
+<li>Fork repositories; versus branching;<br>
+otherwise is much like the Feature Branching strategy</li>
+<li>Mostly for OSS project; MR created when ready</li>
+</ul>
+
+<h3>4. Release Branching</h3>
+
+<p>For projects requiring support of multiple releases.</p>
+
+<ul>
+<li>One branch <strong>per release</strong></li>
+<li>Low frequency deployments; Waterfall (vs. Agile)</li>
+<li>No continuous integration</li>
+<li>Support for previous releases</li>
+</ul>
+
+<h3>5. Git Flow</h3>
+
+<ul>
+<li>Branches, branches, branches, and more branches;<br>
+feature branches merge into dev;<br>
+dev branch merges into release branches;<br>
+release branches merge to both mainline and back into dev.</li>
+<li>Release Manager(s);<br>
+job security</li>
+</ul>
+
+<h3>6. Environment Branching</h3>
+
+<ul>
+<li>Environment branches;<br>
+dev, staging, integ, prod, releases, features, hotfixes ;<br>
+all merges to all;
+
+<ul>
+<li>Makes no sense because releases are what get deployed to environments.</li>
+</ul></li>
+</ul>
+
+<h2>EOL (End Of Line)</h2>
+
+<p>There are two types:</p>
+
+<ul>
+<li><strong>LF</strong> (Line Feed), which uses one: <code>\n</code>
+
+<ul>
+<li>This is used by all apps on all systems across the planet,
+with the exception of all those built by Microsoft Corporation, of course.</li>
+</ul></li>
+<li><strong>CRLF</strong> (Carriage Return <em>and then</em> Line Feed), which uses two characters/codes as implied : <code>\r\n</code>
+
+<ul>
+<li>Used exclusively by Microsoft Corporation.
+On purpose.</li>
+</ul></li>
+</ul>
+
+<p><strong>Force LF (<code>\n</code>) always, everywhere.</strong></p>
+
+<p>Always.</p>
+
+<p>Everyhwere.</p>
+
+<p>This works always and everywhere, even on all modern Windows applications.
+Contrarily, any file having any line ending(s) of type CRLF (<code>\r\n</code>)
+will cause failure(s) at almost all Linux file-processing utilities and pipelines.</p>
+
+<p>How to force EOL of type LF:</p>
+
+<p>@ <strong><code>~/.gitattributes</code></strong></p>
+
+<pre><code class="language-ini">* text=auto eol=lf
+# Declare otherwise-questionable binary type(s) to ensure they are ignored (unmodified) by above:
+*.gif  binary 
+*.webp binary 
+*.tiff binary 
+*.png  binary 
+*.jpg  binary 
+*.jpeg binary 
+*.pdf  binary 
+</code></pre>
+
+<p>Absent that setting,
+Git (silently) <strong>modifies all files per environment</strong>
+(Linux/Mac or Windows).<br>
+So, any file subsequently extracted may or may not be restored,<br>
+depending upon where/how that file was obtained.</p>
+
+<h2>Git connectivity script</h2>
+
+<p>If SSH key is protected by passphrase</p>
+
+<pre><code class="language-bash">account=sempernow
+key=~/.ssh/github_$account
+# Enable SSH agent (cache passphrase)
+eval &quot;$(ssh-agent -s)&quot;
+ssh-add &quot;$key&quot;
+</code></pre>
+
+<p>Then/Else</p>
+
+<pre><code class="language-bash">## Create SSH tunnel sans terminal allocation 
+ssh -T git@$host
+git config --list # List all
+# (Re)Set identity globally
+git config --global user.name &quot;$(id -un)&quot;
+git config --global user.email $(id -un)@$(hostname -f)
+project=${PWD##*/} # If at project root
+# Add origin (once)
+git remote add origin $account/$project.git 
+# (Re)Set access mode : HTTPS|SSH(prefer)
+git remote set-url origin git@$host:$account/$project.git       # SSH
+git remote set-url origin https://$host/$account/${PWD##*/}.git # HTTPS
+
+</code></pre>
+
+<h2>Workflow</h2>
+
+<pre><code class="language-bash"># Login per ssh : See github script @ ~/.bin
+. github ssh
+
+# Version (Tag) a commit
+git tag -a v0.1.2 $commit
+
+# Push the current commit 
+git push origin master
+# Push the version (info)
+git push origin v0.1.2
+
+# Delete a version
+git tag -d v0.1.1                  # Delete local
+git push origin --delete v0.1.1    # Delete remote
+
+# Branch : Checkout else Create
+gch [NAME] # defaults to new; NAME=MM:SS
+
+# Branch : Delete 
+git branch -d NAME             # Local
+git push origin --delete NAME  # Remote
+
+# Repo : Rebase
+_max_squash=$(( $( git rev-list --count HEAD ) - 1 ))
+git rebase -i HEAD~$_max_squash
+</code></pre>
+
+<ul>
+<li>The <code>git rebase ...</code> command automatically opens the meta file with editor declared @ <code>.gitconfig</code></li>
+</ul>
+
+<p>@ <code>vim</code> | <a href="p>
+
+<pre><code class="language-plaintext"># To squash commits 2-7 
+:2,7s/pick/s/g
+# Then delete/add/edit commit message
+# Then exit edit mode, then save and exit vim
+ESC
+ZZ
+</code></pre>
+
+<p>Then push to remote; origin (remote) is &quot;ahead&quot; after squashing commits, so force is required.</p>
+
+<pre><code class="language-bash">git push --force-with-lease 
+</code></pre>
+
+<h2>Self</h2>
+
+<h3><code>git</code> (<a href="h3>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

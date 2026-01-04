@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>DNS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Domain_Name_System" title="Wikipedia.org">Domain Name System</a> (DNS) | <a href="https://datatracker.ietf.org/doc/html/rfc1034">RFC 1034</a>, <a href="https://datatracker.ietf.org/doc/html/rfc1035">RFC 1035</a> | <a href="https://chatgpt.com/c/6702c7fe-caa4-8009-ad29-acc4c8b6ba5f">ChatGPT</a></h1>
+
+<h2>Overview</h2>
+
+<p>DNS is a hierarchical and distributed <strong>name service</strong> AKA <strong>directory service</strong> that provides a naming system for computers, services and such on Internet Protocol (IP) networks. It associates various information with domain names (identification strings) assigned to each of the associated entities. Most prominently, it <strong>translates</strong> readily memorized <strong>domain names</strong> to numerical <strong>IP addresses</strong>.</p>
+
+<blockquote>
+<p>Note that DNS is merely one sort of <em>directory service</em>. Other notable directory services include Microsoft <a href="https://en.wikipedia.org/wiki/Active_Directory"><strong>Active Directory</strong></a> (AD), which is a database and set of services, including that connect users with network resources. One of its &quot;roles&quot; is Active Directory Domain Services (AD DS), which is the <dnf title="Identity Provider">IdP</dfn> thereunder.</p>
+</blockquote>
+
+<h2>Domain Name System Security Extensions (<a href="https://en.wikipedia.org/wiki/Domain_Name_System_Security_Extensions" title="Wikipedia.org"><strong>DNSSEC</strong></a>)</h2>
+
+<p>DNSSEC adds a layer of security to DNS by enabling DNS responses to be <strong>digitally signed</strong>.
+This ensures that the DNS responses you get have not been tampered with and are coming from an authentic source.
+It helps prevent attacks like <strong>DNS spoofing</strong> or <strong>cache poisoning</strong>, where an attacker provides false DNS records.</p>
+
+<p>Resolvers such as BIND, Unbound and CoreDNS can act as a DNSSEC <strong>validator</strong>,
+verifying that DNS records are authentic and signed.
+DNSSEC requires some additional configuration.
+For example, enabling the <code>dnssec</code> plugin of CoreDNS, and ensuring DNSSEC is supported by zones or upstream servers.</p>
+
+<ul>
+<li>DNS-over-TLS (<strong>DoT</strong>):<br>
+Encrypts DNS queries, making sure that third parties (like ISPs or attackers) cannot see what domains you are querying. This is useful for ensuring privacy and security, as traditional DNS queries are sent in plaintext. Requires configuring certificates and configuring resolver to listen on a TLS port (<code>853</code>).</li>
+<li>DNS-over-HTTPS (<strong>DoH</strong>):<br>
+Works similarly to DoT, but it encrypts DNS queries over HTTPS,
+using the same protocol as web traffic.
+This not only hides DNS queries from third parties but also makes it harder for network administrators to block or filter DNS requests,
+as DoH traffic looks like regular web traffic.</li>
+</ul>
+
+<h2>DNS Servers</h2>
+
+<p>Installing a <strong>local DNS resolver</strong> in a VPN or within each subnet can improve performance, privacy, resilience, and internal DNS control, especially in complex networks with multiple VMs, subnets, or VPNs. Whether to install it in each VM or subnet depends on the specific needs for redundancy, security, and performance. For larger or more segmented networks, having local DNS resolvers in each subnet (or even on each critical VM) can be quite beneficial.</p>
+
+<h3>When to Install in Each VM vs. Only in Subnets:</h3>
+
+<ul>
+<li><strong>Per VM</strong>: Installing a local resolver in each VM is beneficial if your VMs are highly isolated, and you want each to resolve DNS queries independently. This can improve resiliency and reduce dependency on network-wide DNS failures.</li>
+<li><strong>Per Subnet</strong>: A local resolver in each subnet (but not necessarily in each VM) can centralize DNS resolution within that subnet, reducing the overhead of running separate instances while still improving latency and control within that segment.</li>
+</ul>
+
+<h3>Potential Downsides:</h3>
+
+<ul>
+<li><strong>Overhead</strong>: Running a local resolver in every VM or subnet adds additional maintenance and resource overhead. In smaller environments, a single central resolver may be sufficient.</li>
+<li><strong>Consistency</strong>: If not properly configured, multiple DNS resolvers within the same network could lead to inconsistent resolution results, especially when caching policies or custom configurations differ between resolvers.</li>
+</ul>
+
+<h3>Benefits of Local Resolver</h3>
+
+<ol>
+<li><strong>Improved Performance (Reduced Latency)</strong>
+
+<ul>
+<li><strong>Local caching</strong>: A local resolver caches DNS queries, meaning frequently requested domain lookups (like those for external services or internal network devices) will be resolved more quickly after the initial query.</li>
+<li><strong>Reduced dependency on external resolvers</strong>: Instead of querying an external DNS server for every request, local queries can be handled by the local Unbound instance, reducing round-trip times and improving overall response speed.</li>
+</ul></li>
+<li><strong>Network Segmentation and Isolation</strong>
+
+<ul>
+<li><strong>Internal name resolution</strong>: If you have internal services within the VPN or subnet, a local DNS resolver can provide faster and more secure resolution for internal resources without relying on external DNS servers.</li>
+<li><strong>Local name overrides</strong>: You can configure local hostnames or domains that only exist within your private network, which can be useful for custom internal services or segmented network environments. This also prevents reliance on external systems for internal names.</li>
+</ul></li>
+<li><strong>Resilience and Redundancy</strong>
+
+<ul>
+<li><strong>DNS fallback</strong>: If your external DNS server becomes unavailable (e.g., your VPN or primary connection to an upstream DNS fails), a local resolver can help by serving cached results for already queried domains, providing continued access to known services.</li>
+<li><strong>Multiple VMs, subnets</strong>: Installing Unbound in each VM or subnet can provide <strong>fault tolerance</strong>. If one local resolver fails, others can still handle DNS queries for their respective parts of the network.</li>
+</ul></li>
+<li><strong>Security and Privacy</strong>
+    - <strong>DNS over TLS (DoT) or DNS over HTTPS (DoH)</strong>: Unbound supports these secure DNS protocols, ensuring that DNS queries are encrypted, which improves privacy and protects against DNS spoofing and man-in-the-middle attacks.
+    - <strong>Local DNS filtering</strong>: You can apply custom DNS filtering policies to block certain domains or provide access only to specific internal services, improving security within your network.</li>
+<li><strong>Control over DNS Forwarding and Split-horizon DNS</strong>
+
+<ul>
+<li><strong>Custom DNS forwarding</strong>: With Unbound, you can configure forwarding rules, allowing you to direct specific DNS requests to different upstream resolvers (e.g., internal queries go to an internal DNS server, while external queries go to an upstream public DNS service).</li>
+<li><strong>Split-horizon DNS</strong>: You can serve different DNS responses based on the source of the request, which can be valuable if you have different services available to internal and external clients.</li>
+</ul></li>
+</ol>
+
+<h3>Popular solutions for private (<a href="https://datatracker.ietf.org/doc/html/rfc1918" title="IETF.org">RFC-1918</a>) networks (subnets):</h3>
+
+<ol>
+<li><a href="https://en.wikipedia.org/wiki/BIND" title="Wikipedia.org"><strong>BIND 9</strong></a> (Berkeley Internet Name Domain)
+
+<ul>
+<li>Overview: BIND 9 is one of the most widely used DNS servers. It's highly configurable and supports a vast array of DNS features, making it suitable for everything from small networks to large, complex infrastructures.</li>
+
+<li><p>Features: BIND supports advanced DNS features like DNSSEC for added security, dynamic updates, and zone transfers. It's often used in large enterprises due to its flexibility and extensive documentation.</p>
+
+<pre><code class="language-bash">☩ sudo dnf provides bind
+...
+bind-32:9.16.23-18.el9_4.6.x86_64 : The Berkeley Internet Name Domain (BIND) DNS (Domain Name System) server
+Repo        : rhel-9-for-x86_64-appstream-rpms
+Matched from:
+Provide    : bind = 32:9.16.23-18.el9_4.6
+</code></pre></li>
+</ul></li>
+<li><strong>Microsoft DNS</strong>
+
+<ul>
+<li>Overview: Integrated with Windows Server, Microsoft DNS is commonly used in environments heavily reliant on Windows infrastructure. It integrates seamlessly with Active Directory, allowing for dynamic DNS updates as network objects change.</li>
+<li>Features: Easy integration with Windows environments, support for dynamic updates, and tight integration with Active Directory. It's a go-to choice for organizations already invested in Microsoft infrastructure.</li>
+</ul></li>
+<li><a href="https://www.nlnetlabs.nl/projects/unbound/about/" title="NLNETlabs.nl"><strong>Unbound</strong></a>
+
+<ul>
+<li>Overview: Unbound is a lightweight, secure, and easy-to-configure DNS server designed for high performance. It's often used as a caching DNS resolver and can serve as an authoritative server for private zones.</li>
+
+<li><p>Features: Focuses on performance and security, with features like DNSSEC validation built-in. It's ideal for environments where a secure, validating resolver is required.</p>
+
+<pre><code class="language-bash">☩ sudo dnf provides unbound
+...
+unbound-1.16.2-3.el9_3.5.x86_64 : Validating, recursive, and caching DNS(SEC) resolver
+Repo        : rhel-9-for-x86_64-appstream-rpms
+Matched from:
+Provide    : unbound = 1.16.2-3.el9_3.5
+</code></pre></li>
+</ul></li>
+<li><strong>PowerDNS</strong>
+
+<ul>
+<li>Overview: PowerDNS offers a suite of DNS software, including an authoritative server and a recursive resolver. It's known for its flexibility, with support for various back-ends including relational databases, making DNS data management and integration with other systems straightforward.</li>
+<li>Features: Supports dynamic DNS updates, DNSSEC, and has a strong API for integration with external systems, making it a strong choice for dynamic and automated environments.</li>
+</ul></li>
+<li><a href="https://coredns.io/" title="CoreDNS.io"><strong>CoreDNS</strong></a>
+
+<ul>
+<li>Overview: CoreDNS is a modern, extensible DNS server that can serve as both an authoritative and a recursive DNS server. It's particularly popular in cloud-native environments and is included as a <strong>default DNS server in K8s clusters</strong>.</li>
+<li>Features: Highly modular and extensible through plugins, CoreDNS can be tailored to specific needs and integrates well with modern, containerized environments.
+Plugins for : DNSSEC (<code>dnssec</code>), DoH (<code>doh</code>) and DoT (<code>tls</code>).</li>
+</ul></li>
+</ol>
+
+<p>Choosing a DNS Server</p>
+
+<p>When selecting a DNS server for an environment, consider factors like existing infrastructure, performance and scalability needs, security features, and ease of management. For example, environments heavily invested in Windows might prefer Microsoft DNS for its integration with Active Directory, while cloud-native or highly automated environments might lean towards CoreDNS or PowerDNS for their flexibility and API support.</p>
+
+<p>In VMware or other virtualized environments, the choice might also be influenced by the ease of automation and integration with virtual machine management, where solutions like PowerDNS or CoreDNS could offer advantages due to their APIs and flexibility in handling dynamic DNS updates.</p>
+
+<h2>DNS Records</h2>
+
+<h3><a href="https://en.wikipedia.org/wiki/Zone_file" title="Wikipedia.org">Zone file</a></h3>
+
+<p>The zone file of a DNS zone contains mappings between domain names and IP addresses and other resources, organized in the form of text representations of <a href="https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records"><strong>resource records</strong></a> (RR). A zone file may be either a DNS master file, authoritatively describing a zone, or it may be used to list the contents of a DNS cache.</p>
+
+<p>The zone file is the central configuration that holds all the resource records (RRs) for the domain (or subdomain) that the zone covers. The zone file contains various types of resource records, such as SOA, A, AAAA, CNAME, MX, and others.</p>
+
+<pre><code class="language-ini">$TTL 86400
+@   IN  SOA   ns1.example.com. admin.example.com. (
+        2023100601 ; Serial
+        7200       ; Refresh
+        3600       ; Retry
+        1209600    ; Expire
+        86400      ; Negative TTL
+    )
+@   IN  NS    ns1.example.com.
+@   IN  NS    ns2.example.com.
+
+@   IN  A     192.0.2.1
+www IN  A     192.0.2.2
+</code></pre>
+
+<ul>
+<li><code>NS</code> (Nameserver) : Declares an authoritative nameserver of the domain
+(<code>@</code> is placeholder for root AKA apex domain of zone).
+
+<ul>
+<li>Multiple NS records provide redundancy and (DNS-based) load balancing.</li>
+</ul></li>
+<li><code>SOA</code> (Start of Authority) : Defines the primary nameserver and basic zone configuration.</li>
+<li><code>A</code>/<code>AAAA</code> (Address) : Maps a domain or subdomain to an IP (<code>v4</code>/<code>v6</code>) address.</li>
+<li><code>CNAME</code> (Canonical Name) : Defines an <strong>alias</strong> for a domain name and points it to <code>A</code> record having the Canonical Name (root domain).</li>
+<li><code>MX</code> : Defines mail servers for the domain.</li>
+</ul>
+
+<h4>Origin Domain</h4>
+
+<p>The <strong>Origin Domain</strong> of the zone is typically declared using the <code>@</code> symbol or through the <code>$ORIGIN</code> directive. If the <code>@</code> symbol is used in the zone file, it acts as a placeholder for the origin domain, which is either explicitly declared in the file using the <code>$ORIGIN</code> directive or inherited from the zone definition provided in the DNS server configuration.</p>
+
+<p>The origin domain is not always explicitly stated inside the zone file because the origin domain is often declared in the configuration of the DNS server itself.</p>
+
+<p>Example : The <code>BIND</code> resolver (DNS server) has zone definition in <code>named.conf</code> :</p>
+
+<pre><code class="language-ini">zone &quot;example.com&quot; {
+    type master;
+    file &quot;/etc/named/zones/db.example.com&quot;;
+};
+</code></pre>
+
+<h4><a href="https://www.cloudflare.com/learning/dns/dns-records/dns-ns-record/" title="cloudflare.com"><code>NS</code> Record</a></h4>
+
+<p>The NS records are what the global DNS system uses to delegate authority to the nameservers for a domain,
+thereby defining the <strong>authoritative nameservers</strong>.</p>
+
+<p>They are the &quot;entry points&quot; for queries directed at the domain.
+When these DNS queries need to be resolved (e.g., finding the IP address for <code>www.example.com</code>),
+the NS records tell the DNS resolver which nameservers are responsible
+for answering queries about the root domain (<code>example.com</code>) and its subdomains.</p>
+
+<h4><a href="https://en.wikipedia.org/wiki/SOA_record" title="Wikipedia.org"><code>SOA</code> Record</a></h4>
+
+<p>Start Of Authority (SOA) record contains administrative information about the zone, especially regarding zone transfers. The SOA record format is specified in <a href="https://datatracker.ietf.org/doc/html/rfc1035">RFC 1035</a>. The SOA record helps manage updates to the zone but <strong>does not directly handle the query resolution</strong> for external clients.</p>
+
+<p><a href="https://en.wikipedia.org/wiki/SOA_record#Structure" title="Wikipedia.org">Structure</a> (by examples):</p>
+
+<pre><code class="language-ini">;NAME          TTL    CLASS  TYPE  MNAME             RNAME       
+example.com.   86400  IN     SOA   ns1.example.com.  hostmaster.example.com. (
+    2023100601  ; SERIAL  : Serial number 
+    3600        ; ESH : Refresh interval
+    900         ; RETRY   : Retry interval
+    1209600     ; EXPIRE  : Expire time
+    86400       ; MINIMUM : Minimum TTL (Negative-response caching TTL)
+)
+</code></pre>
+
+<p>In BIND syntax:</p>
+
+<pre><code class="language-ini">$TTL 86400
+@   IN  SOA     ns.icann.org. noc.dns.icann.org. (
+    2020080302  ; SERIAL  : Serial number 
+    7200        ; ESH : Refresh interval
+    3600        ; RETRY   : Retry interval
+    1209600     ; EXPIRE  : Expire time
+    3600        ; MINIMUM : Minimum TTL (Negative-response caching TTL)
+)
+</code></pre>
+
+<ul>
+<li><code>$TTL 86400</code> TTL : <code>$TTL</code> (Time To Live) sets <strong>the default for all records</strong> in the zone.
+Set here to 24 hours (<code>86400/3600</code>). This means that DNS resolvers will cache resource records in this zone for 24 hours <em>unless otherwise specified</em> for specific records.</li>
+<li><code>@</code> is a shorthand for the origin domain (the domain for which this zone file is authoritative).
+In this example, the SOA record applies to the root domain of the zone, such as <code>example.com</code>, but without explicitly mentioning the domain name. The <strong>actual domain</strong> is <strong>inherited from</strong> the <strong>zone definition</strong>.</li>
+<li><code>MNAME</code>: <code>ns.icann.org</code> is the master AKA primary name server.</li>
+<li><code>RNAME</code>: <code>noc.dns.icann.org</code> is the email of the responsible party (DNS administrator)
+<strong>in DNS zone file syntax</strong>; the <code>@</code> symbol of email address is replaced by a dot (<code>.</code>).
+So, &quot;<code>noc.dns.icann.org.</code>&quot; translates to <code>noc@dns.icann.org</code></li>
+<li><code>SERIAL</code>: <code>2020080302</code> is the serial number of the zone file.
+Typical format is <code>YYYYMMDDnn</code>, so <code>2020080302</code> means the <strong>second revision</strong> (<code>02</code>) of the zone file on <strong>August 3, 2020</strong> (<code>20200803</code>). This number <strong>increments with every update</strong> to the zone. Secondary DNS servers use this number to determine if the zone has changed and if they need to fetch a new copy of the zone file.</li>
+<li><code>ESH</code>: <code>7200</code> is the <strong>time a secondary DNS server will wait</strong> (seconds)
+before querying primary server for updated zone file.
+Set here to 2 hours (<code>7200/3600</code>).
+
+<ul>
+<li>Recommended/default is <code>86400</code> seconds (24 hours).</li>
+</ul></li>
+<li><code>RETRY</code>: <code>3600</code> is <strong>time before trying again after failing to contact primary server</strong> (seconds).
+Set here to 1 hour.
+
+<ul>
+<li>Recommended/default is <code>7200</code> (2 hours).</li>
+</ul></li>
+<li><code>EXPIRE</code>: <code>1209600</code> is <strong>time after which a secondary server will stop serving the zone</strong> (seconds)
+if it cannot contact the primary server for an update.
+Set here to 14 days (<code>1209600/(24*3600)</code>). After this period of uninterrupted failures, the secondary server <strong>discards</strong> its copy of the <strong>zone file</strong>. Hence &quot;expire&quot;.
+
+<ul>
+<li>Recommended/default is <code>3600000</code> (41.7 days; 1000 hours).</li>
+</ul></li>
+<li><code>MINIMUM</code>: <code>3600</code>  <strong>time that DNS resolvers will cache negative responses</strong> (seconds).
+E.g., when a domain or subdomain doesn't exist. Set here to 1 hour.
+See <a href="https://datatracker.ietf.org/doc/html/rfc2308" title="IETF.org">RFC 2308</a>.
+
+<ul>
+<li>Recommended/default is <code>172800</code> (2 days).</li>
+</ul></li>
+</ul>
+
+<h4><code>A</code> Record</h4>
+
+<p>The &quot;<code>A</code>&quot; stands for &quot;address&quot;, as in &quot;IP address&quot;.</p>
+
+<p>Primary use is <strong>to resolve a domain name to an IPv4 address</strong>.
+Resolving to an IPv6 address requires an &quot;<code>AAAA</code>&quot; record. Another use for DNS A records is for operating a Domain Name System-based Blackhole List (DNSBL). DNSBLs can help mail servers identify and block email messages from known spammer domains.</p>
+
+<p>Most websites have only one A record. The IPv4 address to which it resolves is often that of a highly-available (HA) load balancer. Some higher profile websites have several A records, with same domain name pointing to different IPv4 addresses, allowing DNS-based load balancing as well, AKA Round-robin DNS.</p>
+
+<p>Example <code>A</code> record:</p>
+
+<table>
+<thead>
+<tr>
+<th><code>example.com</code></th>
+<th>record type:</th>
+<th>value:</th>
+<th>TTL</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>@</code></td>
+<td><code>A</code></td>
+<td><code>192.0.2.1</code></td>
+<td><code>3600</code></td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li>&quot;<code>@</code>&quot; : Represents the domain <strong>root</strong> AKA <strong>apex</strong>, not just that of the current DNS record.
+Its value here indicates this record is for the root domain, <code>example.com</code>.</li>
+<li>&quot;<code>3600</code>&quot; : The <strong>TTL</strong> (time to live), listed in <strong>seconds</strong>. So, the setting there is to one hour. The TTL is the <strong>time required for a record update to take effect</strong>.  Common TTL for DNS records is between <code>300</code> (5 minutes) and <code>86400</code> (24 hours), with defaults varying by DNS providers. The shorter the time, the more responsive to changes, but the higher the load on DNS servers.</li>
+</ul>
+
+<blockquote>
+<p>Confusingly, the &quot;A record&quot; is that of the truely canonical name, whereas a CNAME record AKA &quot;canonical-name record&quot; is just an alias. All such aliases, e.g., those of all subdomains and domain aliases alike, should point to the one true canonical name. That is, to the &quot;A record&quot;.</p>
+</blockquote>
+
+<h4><code>CNAME</code> Record</h4>
+
+<p>A &quot;canonical name&quot; (CNAME) record is that of an alias domain (<code>blog.example.com</code>) that points to a root domain (<code>example.com</code>). That truely canonical root record, which resolves to an IPv4 address, is the &quot;A record&quot;.</p>
+
+<p>CNAME records <strong>must point to a domain, never to an IP address</strong>.</p>
+
+<p>Subdomains and alias domain names are typically configured with CNAME records pointing to a root domain (that has a DNS A record). <strong>Configured this way</strong>, if, as, and whenever the domain's host changes its IPv4 address, <strong>only one DNS record requires an update</strong>. That of the &quot;A record&quot; for the root domain. This single DNS-record update triggers a cascade of DNS server updates per TTL of each and every affected CNAME record.</p>
+
+<p>Example of a CNAME record:</p>
+
+<table>
+<thead>
+<tr>
+<th><code>blog.example.com</code></th>
+<th>record type:</th>
+<th>value:</th>
+<th>TTL</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>@</code></td>
+<td><code>CNAME</code></td>
+<td>is an alias of <code>example.com</code></td>
+<td><code>32400</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>This CNAME record for <code>blog.example.com</code> points to <code>example.com</code> with a TTL of 9 hours.
+From our example A record, we know this resolves to IPv4 address <code>192.0.2.1</code>.</p>
+
+<hr>
+
+<hr>
+
+<h2>TLD of Private (RFC1918) Network</h2>
+
+<p>This is a critical design decision for any air-gapped or private network,
+with long-lasting implications for security, manageability, and compatibility.</p>
+
+<p>Here are the implications of each TLD &hellip;</p>
+
+<h3>The Golden Rule: Never Use a Public TLD You Don't Own</h3>
+
+<p>First, a critical principle: <strong>You should never use a TLD for your internal network that you could legally register in the public DNS.</strong> This includes <code>.corp</code>, <code>.lan</code>, <code>.local</code> (in a specific context, see below), <code>.office</code>, <code>.network</code>, or any other gTLD (generic TLD) or ccTLD (country code TLD).</p>
+
+<p><strong>Why?</strong> Because it creates a <strong>name collision</strong> risk. If you use <code>internal.corp</code> and someone registers that domain publicly, or if a software vendor hardcodes a reference to it, your internal DNS resolution can break or, worse, be hijacked if a device ever gets exposed to the internet (even temporarily via a VPN misconfiguration or a laptop leaving the site). This is a serious security and stability anti-pattern.</p>
+
+<h3>TL;DR</h3>
+
+<p>If an enterprise owns the publicly registered domain <strong><code>www.abiz.com</code></strong>,
+then the domain or parent of subdomains of any of its private (RFC1918) networks should use:</p>
+
+<ol>
+<li><p>Best choice: <strong><code>a.abiz.com</code></strong></p></li>
+
+<li><p>Second-best choice: <strong><code>a.internal</code></strong></p></li>
+</ol>
+
+<p>Where &quot;<code>a.</code>&quot; is any subdomain other than any used publicly by <code>abiz.com</code>.</p>
+
+<h4>Example</h4>
+
+<p>An enterpise <strong><code>abiz.com</code></strong> has a project <strong><code>prj</code></strong> that has two enterprise-grade air-gapped networks:</p>
+
+<ul>
+<li><strong><code>one.prj.abiz.com</code></strong></li>
+<li><strong><code>two.prj.abiz.com</code></strong></li>
+</ul>
+
+<h3>Analysis of TLDs</h3>
+
+<h4>1. <code>.local</code></h4>
+
+<ul>
+<li><strong>Reserved by IETF (<a href="https://www.rfc-editor.org/rfc/rfc6762">RFC 6762</a>)</strong> for <em>mDNS / Bonjour / Zeroconf</em>, so it will <strong>never</strong> be delegated in the public DNS root. However, many OSes (especially macOS, iOS, and Linux with <a href="https://en.wikipedia.org/wiki/Avahi_%28software%29">Avahi</a>/Avahi-compat libs) <em>hard-code</em> <code>.local</code> for <strong>link-local multicast DNS</strong>.</li>
+<li><strong>Pros:</strong>
+
+<ul>
+<li><strong>No Collision Risk:</strong> It's safe from public registration.</li>
+<li><strong>Widely Recognized:</strong> Many consumer-grade devices (printers, IoT, Apple Bonjour services) use it by default.</li>
+</ul></li>
+<li><strong>Cons:</strong>
+
+<ul>
+<li><strong>AD Incompatibility:</strong> This is the <strong>primary and absolute deal-breaker for an enterprise with a Windows Domain Controller</strong>. Active Directory Domain Services (AD DS) is built upon DNS. An AD domain <em>must</em> be a DNS domain. Using a <code>.local</code> domain for AD requires &quot;single-label&quot; DNS names or other workarounds that break standard DNS compliance and can cause significant issues with Microsoft and third-party applications, SQL Server, and PKI/certificate services.
+
+<ul>
+<li><strong>Microsoft's Guidance</strong>: Microsoft strongly discourages using .<code>local</code> or other non-standard TLDs for AD domains. Instead, they recommend using a subdomain of a registered, globally resolvable domain (e.g., corp.example.com) or a private TLD like <code>.corp</code> or <code>.lan</code> (though these are not officially reserved). This ensures DNS compliance and avoids conflicts.</li>
+</ul></li>
+<li><strong>mDNS Interference:</strong> Since <code>.local</code> is used for mDNS, you can get unexpected resolution behavior on networks where both a unicast DNS server (like your internal BIND/Windows DNS) and mDNS are active.
+
+<ul>
+<li>May cause name resolution conflicts and odd behavior: Windows may try AD DNS resolution, while macOS/Linux may intercept with mDNS.</li>
+</ul></li>
+<li><a href="https://cabforum.org/working-groups/server/baseline-requirements/certificate-contents/">Non-compliant with <strong>CA/Browser Forum</strong> Baseline Requirements</a>, so public CAs won't issue certs for them.
+Though internal CAs can, tooling may reject.</li>
+</ul></li>
+<li><strong>Verdict:</strong> <strong>Avoid <code>.local</code></strong> for enterprise AD or air-gap root domains
+unless you want headaches with mDNS conflicts.</li>
+</ul>
+
+<h4>2. <code>.lan</code></h4>
+
+<ul>
+<li><strong>Technical Status:</strong> This is <strong>not</strong> a reserved Special Use Domain. It is a common convention, but it has no official status. It is <strong>not safe</strong> from future delegation.</li>
+<li><strong>Pros:</strong>
+
+<ul>
+<li><strong>Human Readable:</strong> Clearly stands for &quot;Local Area Network.&quot;</li>
+<li><strong>Common Convention:</strong> Widely used in SOHO (Small Office/Home Office) routers and home labs. You are unlikely to run into immediate problems.</li>
+</ul></li>
+<li><strong>Cons:</strong>
+
+<ul>
+<li><strong>Name Collision Risk:</strong> While not currently a public TLD, there is no guarantee it won't become one. This violates the golden rule and is not future-proof for an enterprise.</li>
+<li><strong>Not Standardized:</strong> No RFC governs its use, so its behavior is purely by convention.</li>
+</ul></li>
+<li><strong>Verdict:</strong> <strong>Okay for air-gap enterprise lab</strong> environments;
+otherwise avoid in enterprise-grade networks.</li>
+</ul>
+
+<h4>3. <code>.corp</code></h4>
+
+<ul>
+<li><strong>Technical Status:</strong> This is a <strong>particularly dangerous choice</strong>. For many years, <code>.corp</code> was the <em>de facto</em> example of an internal TLD used in Microsoft documentation and training. However, it was <strong>delegated as a real gTLD</strong> and is <strong><em>now owned by a registry in the public DNS</em></strong>.</li>
+<li><strong>Pros:</strong>
+
+<ul>
+<li><em>None that outweigh the severe risks.</em></li>
+</ul></li>
+<li><strong>Cons:</strong>
+
+<ul>
+<li><strong>Extreme Name Collision Risk:</strong> This is the textbook example of what <strong>not</strong> to do. Any leak of DNS queries for your <code>.corp</code> domain to the public internet will attempt to resolve against the real public <code>.corp</code> TLD, leading to resolution failures or security risks.</li>
+<li><strong>Explicitly Advised Against:</strong> ICANN and other security bodies have issued warnings specifically about <code>.corp</code>, <code>.home</code>, and <code>.mail</code> due to their history of use on private networks.</li>
+</ul></li>
+<li><strong>Verdict:</strong> <strong>Absolutely do not use.</strong> If you have an existing domain using <code>.corp</code>, planning a migration away from it should be a high priority.</li>
+</ul>
+
+<h4>4. <code>.home.arpa</code></h4>
+
+<ul>
+<li>This is a Special-Use Domain Name designated for use in <strong>residential home networks</strong>. The <code>.arpa</code> TLD is reserved for <strong>Internet infrastructure</strong> purposes, and <code>.home.arpa</code> is a special subdomain to prevent DNS conflicts.</li>
+</ul>
+
+<h3>The Advised Best Practice for Enterprise Air-Gapped Networks</h3>
+
+<p>The correct, enterprise-grade approach is to use a <strong>subdomain of a publicly registered domain name that you own.</strong></p>
+
+<h4>Recommended Syntax:</h4>
+
+<p><code>internal.abiz.com</code> or <code>private.abiz.com</code> or <code>corp.abiz.com</code></p>
+
+<p><strong>Examples:</strong>
+*   If your public website is <code>example.com</code>, use <code>ad.example.com</code> or <code>internal.example.com</code> for your Active Directory domain.
+*   If you want a clear separation, you could register a domain specifically for this purpose (e.g., <code>example-internal.com</code>), but using a subdomain is more common.</p>
+
+<h4>Why This is the Best Practice:</h4>
+
+<ol>
+<li><strong>No Name Collisions:</strong> You own the domain. You have absolute control over its namespace. There is no risk of conflict with public DNS.</li>
+<li><strong>Maximum Compatibility:</strong>
+
+<ul>
+<li><strong>Active Directory:</strong> Works flawlessly. You can create a domain like <code>ad.airgapco.com</code> without any issues.</li>
+<li><strong>TLS/CA Services (PKI):</strong> This is critical.
+Public Certificate Authorities (and your own internal CA) will only issue certificates for domains you can prove you own.
+If your AD domain is <code>ad.airgapco.com</code>, you can easily get a publicly trusted certificate for <code>server1.ad.airgapco.com</code> if needed, or more importantly, your internal CA will be managing a namespace you legally control. Using a fake TLD like <code>.corp</code> makes certificate management a nightmare.</li>
+<li><strong>DNS and DHCP:</strong> All standard-compliant tools work perfectly with this model.</li>
+</ul></li>
+<li><strong>Clarity and Consistency:</strong> It's logically organized.
+<code>server1.internal.airgapco.com</code> is clearly an internal resource, while <code>www.airgapco.com</code> is public.</li>
+<li><strong>Security:</strong> It enforces a clear boundary.
+Even if a machine accidentally receives a public DNS server (e.g., 8.8.8.8),
+it will not be able to resolve your internal domain names, which is a good safety measure.</li>
+</ol>
+
+<h3>Special Case: The <strong><code>.internal</code></strong> pseudo-TLD</h3>
+
+<p>There is a growing consensus and a draft RFC to formally reserve <code>.internal</code>
+as a Special Use Domain (like <code>.local</code>) specifically for this purpose:
+dedicated private networks where using a owned domain is not feasible.
+While not yet an official standard, it is a much safer choice than <code>.corp</code> or <code>.lan</code> because:</p>
+
+<ul>
+<li>It is highly likely to be officially reserved.</li>
+<li>It has no existing use (unlike <code>.local</code>'s mDNS conflict).</li>
+<li>Major OS and tooling vendors are aware of the draft and are unlikely to conflict with it.</li>
+</ul>
+
+<p><strong>Verdict on <code>.internal</code>:</strong> If you <strong>absolutely cannot</strong> use a subdomain of a domain you own (e.g., for legal or policy reasons),
+<code>.internal</code> is the best of the &quot;fake TLD&quot; options.
+It is far superior to <code>.lan</code> or <code>.local</code> for an enterprise AD environment.
+However, <strong>using a subdomain you own is still the gold standard.</strong></p>
+
+<h3>Summary &amp; Final Recommendation</h3>
+
+<table>
+<thead>
+<tr>
+<th align="left">TLD</th>
+<th align="left">Recommended?</th>
+<th align="left">Key Reason</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><strong><code>.corp</code></strong></td>
+<td align="left"><strong>❌ Never</strong></td>
+<td align="left">High collision risk; now a real public TLD.</td>
+</tr>
+
+<tr>
+<td align="left"><strong><code>.local</code></strong></td>
+<td align="left"><strong>❌ For Enterprise AD</strong></td>
+<td align="left">Conflicts with mDNS and breaks AD DS requirements.</td>
+</tr>
+
+<tr>
+<td align="left"><strong><code>.lan</code></strong></td>
+<td align="left"><strong>⚠️ For Lab Only</strong></td>
+<td align="left">Convention, not a standard; future collision risk.</td>
+</tr>
+
+<tr>
+<td align="left"><strong><code>.internal</code></strong></td>
+<td align="left"><strong>✅ Good Fallback</strong></td>
+<td align="left">Best &quot;fake TLD&quot;; likely to be standardized; no mDNS conflict.</td>
+</tr>
+
+<tr>
+<td align="left"><strong><code>sub1.abiz.org</code></strong></td>
+<td align="left"><strong>✅✅ BEST PRACTICE</strong></td>
+<td align="left">No collisions, full PKI/TLS support, maximum compatibility.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>FreeIPA AD Integration</h2>
+
+<p>See <code>AD-IPA.DNS</code> (<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.md">MD</a>|<a href="/1%20Data/IT/OS/Windows/Windows%20Server%202019/AD-IPA-integration/AD-IPA.DNS.html">HTML</a>)</p>
+
+<h1>&nbsp;</h1>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+__PATH__ : 
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

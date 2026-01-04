@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Typography</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://en.wikipedia.org/wiki/Typography" title="@ Wikipedia">Typography</a> | <a href="#typographical-terms" title="below">Lingo</a> | <a href="https://fonts.google.com/" title="@ fonts.google.com">Google Fonts</a> | <a href="https://fontlibrary.org/" title="@ FontLibrary.org">Font Library</a></h1>
+
+<h2><a href="https://en.wikipedia.org/wiki/Unicode_block" title="@ Wikipedia">UTF-8 Unicode Blocks</a> | <a href="https://www.utf8-chartable.de/unicode-utf8-table.pl" title="@ utf8-CharTable.de">Code Point Tables</a> | <a href="https://www.fileformat.info/info/unicode/block/index.htm" title="@ FileFormat.info [+SVG]">Browser Test</a> | <a href="https://www.fileformat.info/info/unicode/char/a.htm" title="@ FileFormat.info [+SVG]">A&ndash;Z Index</a> | <a href="https://www.quackit.com/character_sets/unicode/" title="List of Unicode Characters">Quackit.com</a></h2>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Basic_Latin_%28Unicode_block%29" title="Wikipedia">Basic Latin U(<code>0000–007F</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Latin-1_Supplement_%28Unicode_block%29" title="Wikipedia">Latin-1 Supplement U(<code>0080–00FF</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Latin_Extended-A" title="Wikipedia">Latin Extended-A U(<code>0100–017F</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Greek_and_Coptic" title="Wikipedia">Greek and Coptic U(<code>U+0370-03FF</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Currency_Symbols_%28Unicode_block%29" title="Wikipedia">Currency Symbols U(<code>20A0–20CF</code>)</a></li>
+<li><a href="https://www.utf8-chartable.de/unicode-utf8-table.pl" title="utf8-chartable.de">Letterlike Symbols U(2100-214F)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Miscellaneous_Technical" title="Wikipedia">Miscellaneous Technical U(<code>2300–23FF</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Geometric_Shapes" title="Wikipedia">Geometric Shapes U(<code>23A0–25FF</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Dingbat#Dingbats_Unicode_block" title="Wikipedia">Dingbats U(<code>2700–27BF</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols" title="Wikipedia">Mathematical Alphanumeric Symbols U(<code>U+1D400-1D7FF</code>)</a> | <a href="https://www.quackit.com/character_sets/unicode/versions/unicode_9.0.0/mathematical_alphanumeric_symbols_unicode_character_codes.cfm">@ quackit.com</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Transport_and_Map_Symbols" title="Wikipedia [Includes many emojis]">Transport and Map Symbols U(<code>1F680–1F6FF</code>)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Emoticons_%28Unicode_block%29" title="Wikipedia">Emoticons U(<code>1F600–1F64F</code>)</a> &hellip; are <strong>not</strong> emojis, but adopted many (2008/2010) into this code block.</li>
+<li><a href="https://en.wikipedia.org/wiki/Emoji" title="Wikipedia">Emoji</a> | <a href="https://www.quackit.com/character_sets/emoji/" title="quackit.com">Unicode Emoji Characters</a> | <a href="https://emojipedia.org/unicode-10.0/" title="@ Emojipedia.com">Unicode Version 10.0</a> | <a href="https://unicode.org/emoji/charts/full-emoji-list.html" title="@ Unicode.org">Full Emoji List</a>
+
+<ul>
+<li>Emojis are <em>pictographs</em>, whereas emoticons are <em>typographs</em>. Emoji <a href="https://en.wikipedia.org/wiki/Emoji#Unicode_blocks" title="Emoji/Unicode @ Wikipedia">span several Unicode Code Blocks</a>; their renderings vary widely per platform; originated in Japan (1997) for use with SMS; popularized across West when several mobile operators began including them (2010).</li>
+</ul></li>
+</ul>
+
+<h3><a href="https://en.wikipedia.org/wiki/Unicode" title="wikipedia.org">Unicode</a> is a <strong>character-set</strong></h3>
+
+<ul>
+<li>Unicode Charset :: <code>char</code>&nbsp;&lt;&mdash;&gt;&nbsp;<code>int</code><br>
+A <em>glyph</em> maps to a <em>Code Point</em>.</li>
+</ul>
+
+<h3><a href="https://en.wikipedia.org/wiki/UTF-8" title="wikipedia.org">UTF-8</a> is an <strong>encoding</strong></h3>
+
+<ul>
+<li>UTF-8 Encoding ::  <code>int</code>&nbsp;&lt;&mdash;&gt;&nbsp;<code>bin</code><br>
+A <em>Code Point</em> maps to <em>byte(s)</em>.<br>
+
+<ul>
+<li>One Unicode glyph is <strong>1 to 4 bytes</strong> in <code>UTF-8</code>; this encoding allows for more than <strong>a million glyphs</strong>.</li>
+</ul></li>
+<li>UTF-8 is <em>the</em> universally accepted encoding for all Unicode Charsets.<br>
+
+<ul>
+<li><a href="https://nedbatchelder.com/text/unipain.html" title="'Pragmatic Unicode' 2012">It is backward compatible with ASCII</a></li>
+<li><a href="https://w3schools.com/charsets/ref_html_utf8.asp" title="HTML Unicode/UTF-8 Reference @ w3schools.com">HTML5 UTF-8 Character Codes</a><br></li>
+</ul></li>
+</ul>
+
+<h3>Unicode <strong>Code Point</strong> <a name="code-point">&nbsp;</a></h3>
+
+<ul>
+<li><p>A namespaced <strong><em>integer</em></strong> defining a single Unicode <strong><em>character</em></strong>, a.k.a. <strong><em>glyph</em></strong>, a.k.a. <strong><em>rune</em></strong>, a.k.a., <strong><em>symbol</em></strong>. The integer is most often referenced by its hexidecimal representation preceeded by &quot;<code>U+</code>&quot;. For example, the popular &quot;🚀&quot; glyph is defined under <strong>Unicode</strong> as:</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Character:</td>
+<td>🚀</td>
+</tr>
+
+<tr>
+<td>Code Point:&nbsp;</td>
+<td><code>U+1F680</code></td>
+</tr>
+
+<tr>
+<td>Name:</td>
+<td><code>ROCKET</code></td>
+</tr>
+
+<tr>
+<td>Block:</td>
+<td><code>Transport and Map Symbols</code></td>
+</tr>
+</tbody>
+</table></li>
+
+<li><p>Convert between Unicode and <strong>Bytes</strong> (Encode/Decode)</p>
+
+<ul>
+<li>@ <a href="https://docs.python.org/3/howto/unicode.html" title="docs.python.org/3/howto/">Python</a>:<br>
+<code>.encode()</code>&nbsp;&mdash;&nbsp;Unicode <strong><em>to bytes</em></strong><br>
+<code>.decode()</code>&nbsp;&mdash;&nbsp;bytes <strong><em>to Unicode</em></strong><br></li>
+<li>@ <a href="https://golang.org/pkg/unicode/utf8/#example_EncodeRune" title="golang.org/pkg/unicode/utf8">Golang</a>:<br>
+<code>utf8.EncodeRune(p []byte, r rune) int</code><br>
+&nbsp;&mdash;&nbsp;Unicode <strong><em>to bytes</em></strong><br>
+<code>utf8.DecodeRune(p []byte) (r rune, size int)</code><br>
+&nbsp;&mdash;&nbsp;bytes <strong><em>to Unicode</em></strong></li>
+</ul></li>
+
+<li><p>Convert between Unicode and <strong>HTML Entity</strong>/<strong>Symbol</strong> using the <strong>hex</strong> representation of the Unicode Code Point: &quot;<code>U+</code>&quot;&nbsp;&lt;&mdash;&gt;&nbsp;&quot;<code>&amp;#</code>&quot;, &quot;<code>0</code>|<code>00</code>&quot;&nbsp;&lt;&mdash;&gt;&nbsp;&quot;<code>x</code>&quot;, and append &quot;<code>;</code>&quot; . E.g.,</p>
+
+<ul>
+<li><code>U+00A7</code> &lt;&mdash;&gt; <code>&amp;#xA7;</code><br></li>
+</ul></li>
+</ul>
+
+<h3>Disambiguation</h3>
+
+<p>A Code Point is a <strong><em>unique identifier</em></strong>, and one that is <strong><em>unambiguous</em></strong>, always and everywhere, unlike all other relevant typographical terms.</p>
+
+<blockquote>
+<p>In the <strong>context</strong> of Unicode/UTF-8 (<code>character-set</code>/<code>encoding</code>), all references to the visually rendered (character, glyph, rune, symbol) are <strong>synonymous</strong>. However, in the context of <em>typefaces</em>, such references may differ. The whole purpose of a typeface is to render its set of characters distinctly from those of others, with further variations amongst its own <code>font-family</code> (light, bold, condensed, &hellip;). So, in such contexts, a glyph, character, rune, symbol or whatever, <em>references a particular design and/or rendering</em> of such. That is, <strong><em>for any one Code Point</em></strong>, e.g., &quot;A&quot;, &quot;<code>LATIN CAPITAL LETTER A</code> (<code>U+0041</code>)&quot;, <strong><em>there are many glyphs</em></strong>, one from each font, each rendering distinctly by design (normal, italics, extended, &hellip;). In such a context, the distinct renderings are often referred to as <em>glyphs</em>, while the (unique) Code Point is often referred to as <em>the  character</em> or <em>the symbol</em>. This ambiguous lingo is pervasive across the whole of typography. See <a href="#typographical-terms" title="below">Typographical&nbsp;Terms</a>.</p>
+</blockquote>
+
+<h3><a href="https://en.wikipedia.org/wiki/List_of_XML_and_HTML_character_entity_references#Character_entity_references_in_HTML" title="@ Wikipedia">HTML Entities</a></h3>
+
+<p>Every <a href="#code-point" title="above">Unicode Code Point</a> converts to its HTML entity for browser rendering. An <em>HTML entity</em>, a.k.a., <em>HTML Symbol</em>, has several <strong>representations</strong>, all of which are equivalent; <strong><em>hexidecimal</em></strong> (<code>&amp;#x*;</code>), <strong><em>decimal</em></strong> (<code>&amp;#*;</code>), and &mdash; for some &mdash; <strong><em>named</em></strong> (<code>&amp;NAME;</code>). Note that an HTML Entity <em>Name</em> is <strong>typically not</strong> its Unicode Code Point <em>Name</em>. For example, the <em>ellipsis</em> symbol (&hellip;) is Unicode Code Point <code>U+2026</code> and Unicode Name &quot;<code>HORIZONTAL ELLIPSIS</code>&quot;. That maps to HTML Entity <code>&amp;#x2026;</code> (hex), <code>&amp;#8230;</code> (dec), <code>&amp;hellip;</code> (named).</p>
+
+<pre><code>symbol   code     hex       dec       Unicode name
+
+A        U+0041   &amp;#x41;    &amp;#65;     LATIN CAPITAL LETTER A
+§        U+00A7   &amp;#xA7;    &amp;#167;    SECTION SIGN
+©        U+00A9   &amp;#xa9;    &amp;#169;    COPYRIGHT SIGN
+֍        U+058D   &amp;#x58D;   &amp;#1421;   RIGHT-FACING ARMENIAN ETERNITY SIGN
+ᛟ        U+16DF   &amp;#x16DF;  &amp;#5855;   RUNIC LETTER OTHALAN ETHEL O 
+☧        U+2627   &amp;#x2627;  &amp;#9767;   CHI RHO
+☩       U+2629   &amp;#x2629;  &amp;#9769;   CROSS OF JERUSALEM
+⋮        U+22EE   &amp;#x22EE;  &amp;#8942;   VERTICAL ELLIPSIS
+︙       U+FE19   &amp;#xfe19;  &amp;#65049;  PRESENTATION FORM FOR VERTICAL HORIZONTAL ELLIPSIS
+☰       U+2630   &amp;#x2630;  &amp;#9776;   TRIGRAM FOR HEAVEN
+✕       U+2715   &amp;#x2715;  &amp;#10005;  MULTIPLICATION X
+</code></pre>
+
+<ul>
+<li><p>HEX/DEC render identically (per browser) regardless of representation:</p>
+
+<p>HEX:<span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x41;|&#xa7;|&#xa9;|&#x58d;|&#x16df;|&#x2627;|&#x2629;|&#x22EE;|&#xFE19;|&#x2630;|&#x2715; &hellip; &#x10348;|&#xF92B;|&#x103BF;|&#x130F2;|&#x2ce9;</span></p>
+
+<p>DEC:<span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x41;|&#167;|&#169;|&#1421;|&#5855;|&#9767;|&#9769;|&#8942;|&#65049;|&#9776;|&#10005; &hellip; &#x10348;|&#63787;|&#66495;|&#78066;|&#11497;</span></p></li>
+
+<li><p><strong><em>Non-breaking space</em></strong>: <code>&amp;nbsp;</code> (foo&nbsp;bar)</p></li>
+
+<li><p><strong><em>Non-breaking hyphen</em></strong>: <code>&amp;#x2011;</code> (foo&#x2011;bar)</p></li>
+
+<li><p>Add emphasis/color to prior glyph : <code>\ufe0f</code></p></li>
+
+<li><p><a href="https://graphemica.com/characters/tags/animal" title="animal @ graphemica.com">Animals</a></p></li>
+</ul>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x1f410;|&#x1F40f;|&#x1F413;|&#x1f418;|&#x1f419;|&#x1F41d;|&#x1F41e;|&#x1F427;|&#x1F428;|&#x1F42f;|&#x1F991;|&#x1F422;|&#x1f42A;|&#x1F42b;|&#x1F42c;|&#x1f437;|&#x1f409;|&#x1F432;|&#x1f433;|&#x1F438;|&#x1F989;|&#x1F987;|&#x1F43a;|&#x1F98A;|&#x1F43b;|&#x1F43c;|&#x1F98D;|&#x1F996;
+</span></p>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>Various : Declared as glyph</li>
+</ul>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">
+…|⋮|︙|•|●|–|—|™|®|©|±|°|¹|²|³|¼|½|¾|÷|×|₽|€|¥|£|¢|¤|♻|⚐|⚑|✪|❤
+☢|☣|☠|¦|¶|§|†|‡|ß|µ|Ø|ƒ|Δ|☡|☈|☧|☩|✚|☨|☦|☓|♰|♱|✖||☘||웃|🡸|🡺|➔
+</span></p>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">
+ℹ️|⚠️|✅|⌛|🚀|🚧|🛠️|🔧|🔍|🧪|👈|⚡|❌|💡|🔒
+📊|📈|🧩|📦|🥇|✨️|🔚
+</span></p>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>Various : Declared code point</li>
+</ul>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x2731;|&#x229b;|&#x2725;|&#x2732;|&#x274A;|&#x1F7BE;|&#x1F7BF;|&#x2055;|&#x03FA;|&#x03FE;|&#x0950;|&#x26C9;|&#x1F130;|&#x1F145;</span></p>
+
+<!-- WORLD MAP 
+<div style="font-size:5em;">&#x1F5FA;</div>
+-->
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x2714;|&#x2716;|&#x2718;|&#x271a;|&#x275d;|&#x275e;|&#x2760;|&#x1f676;|&#x1f677;|&#x1f678;|&#x2756;|&#x2764;|&#x2776;|&#x2777;|&#x277f;</span></p>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">
+&hellip;|&#x2761;|&#x00B6;|&#x204b;|&#x2e3f;|&#x203b;|&#x2058;|&#x205B;|&#x205C;|&#x2116;|&#x20bf;|&#x2022;|&#x2120;|&#x2122;</span></p>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&bull;|&#x25cf;|&#x26aa;|&#x2b24;|&#xc6c3;|&#x2117;|&#x2312;|&#x2660;|&#x2663;|&#x2665;|&#x2666;</span></p>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">
+&#x1F6D2;|&#x1f383;|&#x1f480;|&#x1f3c1;|&#x1f600;|&#x1f922;|&#x1f44c;|&#x1f961;|&#x1f3e0;|&#x1f680;|&#x1F916;|&#x1F921;</span></p>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x1F321;|&#x26c8;|&#x1f32a;|&#x2603;|&#x2744;|&#x1f30c;|&#x26a1;|&#x1f947;|&#x1f6b9;|&#x1f6ba;|&#x1f6ae;</span></p>
+
+<p><span style="font-size:1.5em;line-height:1.2em;margin-left:2em;">&#x1f4bb;|&#x1f4f1; ƿ૯ωძɿ૯ƿɿ૯</span></p>
+
+<h2>Typographic Terms <a name="typographical-terms">&nbsp;</a></h2>
+
+<ul>
+<li>Typesetting &mdash; The composition of text by means of arranging physical types, or the digital equivalent, e.g., <a href="https://en.wikipedia.org/wiki/TeX" title="@ Wikipedia">TeX</a> typesetting system.</li>
+<li><a href="https://en.wikipedia.org/wiki/LaTeX" title="@ Wikipedia">LaTex</a> &mdash; Document preparation system (1983) including its own markup tagging conventions; widely used in acadamia.</li>
+<li>Language &mdash; Character set; alphabetic writing system:<br>
+
+<ul>
+<li>LGC &mdash; Latin/Greek/Cyrillic</li>
+<li>CJK &mdash; Chinese/Japanese/Korean<br></li>
+</ul></li>
+<li>Typeface <a name="typeface">&nbsp;</a> &mdash; One font family (see <a href="#typeface-classifications" title="below">Typeface Classifications</a>); may comprise many fonts of varying style &amp; weight; -thin, -medium, -bold, -bold-italic, -black, -condensed, -expanded-light, &hellip;</li>
+<li>Font &mdash; One complete set of unique glyphs. One or more constitute a font family (typeface); earliest digital fonts were designed as bitmaps for rendering at a specified pixel size, but today virtually all are of vectors (see <a href="#vector-font" title="below">Outline Font</a>).
+
+<ul>
+<li>Extended (meaning per context):
+
+<ol>
+<li>Larger character set(s); more glyphs; typically declared per Unicode table(s), e.g., &quot;Latin-1 Sup&quot;, &quot;Latin Extended-A&quot;, &quot;Currency Symbols&quot;, &hellip;<br></li>
+<li>A synonym for an <em>expanded</em> font; wider glyphs (horizontally stretched) especially relative to its font family (typeface).<br></li>
+</ol></li>
+<li>Subsetting  &mdash; Rebuilding/converting a font per some subset of its character set; typically per character type or Unicode table(s); to reduce TX/RX file size.</li>
+</ul></li>
+<li>Glyph &mdash; One character/rune/symbol (visual) rendering; an elemental symbol; designed and rendered per either vector or bitmap (per font); a font is a set of glyphs; every Unicode character (glyph/rune/symbol) has a unique Name and Code Point (namespaced integer).
+
+<ul>
+<li>X-height &mdash; Distance between the baseline and the mean line of a glyph.</li>
+<li>Kerning &mdash; Mortising; adjusting spacing between characters of a proportional font, e.g., &quot;Wa&quot;, &quot;AV&quot;; designed, per-font effect(s).</li>
+<li>Ligature &mdash; Joining adjacent chars into 1 glyph, e.g., &quot;fl&quot;. Note the ampersand, &quot;&amp;&quot;, is a ligature of Latin &quot;et&quot;; designed, per-font effect(s).</li>
+<li><a href="https://en.wikipedia.org/wiki/Diacritic" title="@ Wikipedia">Diacritic</a> (Diacritic Mark, Diacritical Point, or Diacritical Sign) &mdash; Accent symbol(s) added to the basic glyph to compose certain letters of a character set. Many glyphs of the Cyrillic character set include such symbols.</li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/Computer_font#Bitmap_fonts" title="@ Wikipedia">Bitmap/Pixel/Raster Font</a> &mdash; Defines each of its glyphs by a matrix of pixel declarations (describing every pixel thereof); designed and rendered to its specified pixel dimensions, exclusively; faster and simpler to render than vector fonts, but does not scale; degrades if rendered to any font size (<code>px</code>) other than that of its design. Older technology than Outline Font.</li>
+<li><a href="https://en.wikipedia.org/wiki/Computer_font#Outline_fonts" title="@ Wikipedia">Outline Font</a> (Vector Font) <a name="vector-font"></a> &mdash; Computer font implemented using vector graphics; an image (glyph) consisting of lines and curves (<a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve" title="@ Wikipedia">Bézier splines</a>) defining only its <em>boundary</em> (outline).
+
+<ul>
+<li>(Adobe) PostScript  &mdash; Computer language for creating vector graphics, created by Adobe. The universal standard for Outline Fonts:
+
+<ul>
+<li>PostScript Type 1</li>
+<li>PostScript Type 3</li>
+<li>TrueType (TTF; <code>.ttf</code>)
+
+<ul>
+<li>Developed by Apple &amp; Microsoft (1980s); competitor to Adobe Type 1 fonts used in PostScript.<br></li>
+</ul></li>
+<li>OpenType (OTF; <code>.otf</code>)
+
+<ul>
+<li>Successor to TrueType; developed by Microsoft &amp; Adobe; now a standard; (Web) Open Font Format (OFF/WOFF).</li>
+<li><a href="https://en.wikipedia.org/wiki/Embedded_OpenType" title="@ Wikipedia">Embedded Open Type</a> (EOT; <code>.eot</code>) &mdash; Compressed form of OTF; designed and implemented by and for Microsoft (for Internet Explorer).</li>
+</ul></li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/Web_Open_Font_Format" title="@ Wikipedia">Web Open Font Format</a> (WOFF; <code>.woff</code> &amp; <code>.woff2</code>) &mdash; Compressed format of TTF (<code>.ttf</code>) or OTF (<code>.otf</code>); the defacto standard for web-served, browser-rendered fonts:
+
+<ul>
+<li>WOFF 1.0 (<code>.woff</code>) is <a href="https://en.wikipedia.org/wiki/Web_Open_Font_Format#Vendor_support" title="@ Wikipedia">supported by most</a> modern browsers; Chrome(v36+), Firefox(v35+), and Opera(v26+); MIME Type <code>font/woff</code>.<br></li>
+<li>WOFF 2.0 (<code>.woff2</code>) compression (~ 30% smaller) is not as widely supported; MIME Type <code>font/woff2</code>.</li>
+</ul></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorial/SVG_fonts" title="@ MDN">SVG Fonts</a> &mdash; Font description per <a href="https://en.wikipedia.org/wiki/Scalable_Vector_Graphics" title="@ Wikipedia">SVG</a> <code>&lt;font&gt;</code> element; rejected by most browser vendors; <em>&quot;&hellip; not meant for compatibility with other formats &hellip; currently [2019] supported only in Safari and Android Browser &hellip; removed from Chrome 38 (and Opera 25) &hellip; Firefox has postponed its implementation indefinitely to concentrate on WOFF&quot;</em></li>
+</ul></li>
+<li>ClearType &mdash; Sub-pixel font rendering technology by Microsoft and utilized in Windows OS; improves legibility (important); sacrifices color accuracy (less important).<br></li>
+<li><a href="#typeface" title="above">Typeface</a> Classifications <a name="typeface-classifications">&nbsp;</a>
+
+<ul>
+<li>Buckets of ambiguous notions; multiple contradictory meanings, even within the same context. E.g., both 'Humanist' and 'Realist' may refer to either serif or sans-serif; 'Old Style' is serif, whereas 'Old English' is Blackletter; 'Gothic' is sans-serif, whereas 'Gothic Script' is Blackletter; 'Geometric' is sans-serif, but may reference a certain subset of typefaces therein. Here's the <em>hellscape</em>:</li>
+<li>Roman: An ambiguous term having different meanings per context:
+
+<ul>
+<li>Typeface Category: Serif  (vs. Blackletter or Gaelic/Irish)<br></li>
+<li>Style: normal (vs. italic).<br></li>
+<li>Weight: normal (vs. bold).<br></li>
+<li>Variety of Cyrillic script (vs. Slavonic).<br></li>
+</ul></li>
+<li>Serif Categories:<br>
+
+<ul>
+<li>Roman<br></li>
+<li>Old Style (Humanist)<br></li>
+<li>Transitional (Baroque)<br></li>
+<li>Modern (Didone)<br></li>
+<li>Slab (Egyptian, Realist)<br></li>
+</ul></li>
+<li>Sans-serif Categories:<br>
+
+<ul>
+<li>Grotesque (Grotesk{German})<br></li>
+<li>Gothic<br></li>
+<li>Realist (if modern)<br></li>
+<li>Neo-grotesque<br></li>
+<li>Geometric<br></li>
+<li>Humanist<br></li>
+</ul></li>
+<li>Blackletter: A class of typeface; mimics handwriting; scripts of old (1100–1800) W. Europe; Antiqua, Textura, Gothic Script, Gothic Minuscule, Old English;
+
+<ul>
+<li>Blackletter categories:
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Fraktur" title="@ Wikipedia">Fraktur</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Kurrent" title="@ Wikipedia">Kurrentschrift</a></li>
+<li>Sütterlin</li>
+</ul></li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/Vox-ATypI_classification" title="@ Wikipedia">Vox-ATypI</a> (Association Typographique Internationale) &mdash; An older (1962), defunct (2010), typeface classification scheme:<br>
+
+<ul>
+<li>Classicals<br>
+
+<ul>
+<li>Humanist, Garalde, Transitional<br></li>
+</ul></li>
+<li>Moderns<br>
+
+<ul>
+<li>Didone, Mechanistic, Lineal, Grotesque, Neo-grotesque,Geometric,Humanist<br></li>
+</ul></li>
+<li>Calligraphics<br>
+
+<ul>
+<li>Glyphic, Script, Graphic, Blackletter, Gaeilic<br></li>
+</ul></li>
+<li>Non-Latin/Exotic<br>
+
+<ul>
+<li>Greek, Cyrillic, Hebrew, Arabic, Chinese<br></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Typographic Properties :: <a href="https://material.io/design/typography/understanding-typography.html" title="material.io">Material Design</a></h2>
+
+<h2>Grammatical Usage</h2>
+
+<h3>Hyphen / En dash / Em dash</h3>
+
+<ul>
+<li><p><strong>Hyphen</strong>  (-)</p>
+
+<ul>
+<li>As a <strong>compound modifier</strong> <em>before</em> a noun:<br>
+<em>dog-friendly apartments</em></li>
+<li>As a <strong>separator for prefix</strong>, <strong>suffix</strong>, <strong>compound number</strong>, or <strong>line-break</strong>:<br>
+<em>mid-October</em>, <em>president-elect</em>, <em>forty-five</em>, <em>inter-</em><br>
+<em>national</em><br></li>
+<li>As a <strong>field separator</strong>:<br>
+<em>1-800-123-4567</em>
+<br></li>
+</ul></li>
+
+<li><p><strong>En dash</strong>  (&ndash;)</p>
+
+<ul>
+<li>As a <strong>range separator</strong>:<br>
+<em>pages 32&ndash;37</em>, <em>Ja&ndash;Li</em>,  <em>6:30&ndash;8:00</em>,  <em>1995&ndash;</em></li>
+</ul></li>
+
+<li><p><strong>Em dash</strong> (&mdash;)</p>
+
+<ul>
+<li>In place of <strong>parentheses</strong>, perhaps as a second parenthetical:<br>
+<em>Start main notion &mdash; inject parenthetical notion &mdash; continue with main (perhaps containing this too) notion.</em>
+
+<ul>
+<li>Apply the em dash with or without spaces, but do so consistently.</li>
+</ul></li>
+<li>In place of a <strong>colon</strong>:<br>
+<em>The verdict was in &mdash; guilty.</em></li>
+<li>To indicate some kind of <strong>lexical distinction</strong>:<br>
+<em>&hellip; label, input, button &mdash; they're all HTML Form elements.</em><br>
+<em>That's wizardry &mdash; peddling a perfect inversion of reality</em>.<br></li>
+<li>Use <strong>2 consecutively</strong> to indicate <strong>missing letter</strong>(s):<br>
+<em>The mob was chanting something like ad&mdash;&mdash;n [addiction?].</em><br></li>
+<li>Use <strong>3 consecutively</strong> to indicate <strong>missing word</strong>(s):<br>
+<em>They &mdash;&mdash;&mdash; before, and then &mdash;&mdash;&mdash; drug store.</em></li>
+</ul>
+
+<blockquote>
+<p>The Em dash is <strong><em>less formal</em></strong> than its alternatives; less prevalent in business and academia; more so in consumer-facing prose. <strong><em>Especially useful for</em></strong> depicting <strong><em>verbal dialogue</em></strong>.</p>
+</blockquote></li>
+</ul>
+
+<h3>Round/Square <a href="https://www.lexico.com/en/grammar/parentheses-and-brackets" title="lexico.com">Brackets</a></h3>
+
+<ul>
+<li><p><strong>Round brackets</strong>, a.k.a. parentheses, are mainly used to separate off information that isn’t essential to the meaning of the rest of the sentence:</p>
+
+<ul>
+<li><em>Mount Denali (in Alaska) is the highest mountain in North America.</em><br>
+<em>There are several books on the subject (see page 120).</em><br></li>
+</ul></li>
+
+<li><p><strong>Square brackets</strong>, a.k.a. braces, are mainly used to enclose words added by someone other than the original writer or speaker, typically in order to clarify the situation:</p>
+
+<ul>
+<li><em>He [the cousin] left the house long before that happened.</em></li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

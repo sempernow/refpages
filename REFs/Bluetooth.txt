@@ -1,0 +1,72 @@
+# Audio 
+
+    BT transmitting digital audio data from a source to an audio amplifier or other receiving device inherently involves some form of COMPRESSION, especially when the audio codec used is lossy. This compression can lead to a degradation of audio quality compared to a lossless wired connection. However, the extent of this degradation depends on several factors:
+
+    - Bluetooth Codec: The codec used for Bluetooth audio transmission plays a significant role in the quality of the output. Common codecs include:
+        
+        - SBC (Subband Codec) : A universally supported codec and the default of most Android devices. It provides standard audio quality for casual listening. 
+        - AAC (Advanced Audio Codec) : Another mainstream codec; best suited for iOS devices and is their default codec. Unsupported on some Android devices. Compared to SBC, it's louder.
+        - SSC (Samsung Scalable Code) : Samsung codec that adjusts sound quality based on the Bluetooth connection strength. 
+        - aptX: A group of Qualcomm codecs: 
+          aptX, "aptX HD", "aptX LL", "aptX Voice", "aptX Adaptive". 
+          The oldest is aptX, with slightly higher transfer rates than SBC. "aptX Adaptive" is the best, providing great quality sound for calling, gaming, and streaming music with low latency. These codecs don't work well on iPhones, and some Android devices don't support them, including Google Pixel phones. 
+        - LDAC : Sony codec with three bitrate profiles ranging from standard and high-quality to high-resolution. It's perfect for audiophiles who want the best quality on their flagships. 
+        
+    - Bluetooth Version: The version of Bluetooth technology also affects audio quality. Newer versions, like Bluetooth 5.0, provide improvements in data transmission rates and connection stability, which can help maintain higher audio quality.
+
+    - Source and Receiver Quality: The quality of both the audio source (e.g., smartphone, tablet, computer) and the receiver (e.g., headphones, speakers, audio amplifiers) influence the final audio output. High-quality devices are better at encoding, transmitting, decoding, and amplifying the audio signal without significant loss of fidelity.
+
+    - Environmental Factors and Interference: Bluetooth operates in the 2.4 GHz ISM band, which is shared with many other devices, including Wi-Fi routers, cordless phones, and microwave ovens. Interference from these devices can affect the stability and quality of a Bluetooth connection.
+
+    In summary, while Bluetooth can potentially degrade the quality of digital audio output due to compression, especially with older or lower-quality codecs, advancements in Bluetooth technology and codecs have significantly mitigated these effects. With high-quality codecs like LDAC and aptX HD, and when using devices that support these codecs on both ends, the difference in audio quality compared to wired connections can be minimal for most listeners.
+
+
+# Win 10 
+    
+    - Bluetooth USB device installs per Win10 (v19H1) AUTOMATICALLY.
+        Do NOT install any of the HW software (manually).
+    
+    - Headset (Paired) becomes Default Input Device, 
+        but NOT the Default Playback Device.
+        KEEP THIS (Windows Default) Setting.
+        
+        - Comms @ browser (Google Voice) 
+            - @ Sounds icon @ Taskbar > CLICK 
+                > Select your Bluetooth Headset for "Playback Device" 
+                (Manually change this setting per use.)
+
+# Win 7/10
+
+PAIRing
+-------- 
+	For limited-input devices [headset, mouse, etc.], 
+	PIN is typically "0000" or "1234", 
+	or [typically] just press-hold a connect-button,
+	or is automatic.
+
+
+File Transfer
+-------------
+	Join "Personal Area Network", from Bluetooth taskbar menu  
+		- BT-Device Folder[s] mapped to Windows Folder 
+		  @ Computer\<BT-Device-Name> [Win-Explorer]
+		  
+		- BT-Device downloads files to Documents\Bluetooth Exchange Folder
+
+ISSUES:
+-------
+	* Drivers install per Device Manager [directed to appropriate extracted-drivers folder] works for BT dongles.
+
+	* Drivers install per Broadcom's WIDCOMM [SetupBtwDownloadSE.exe] method; installs the most recent drivers; lengthy download/install/reboot process, but can save downloaded package [%TEMP%\BluetoothBTW], and run its Setup.exe, e.g., @ .\BTW_6.5.1.5800 folder, for installs thereafter. 
+
+	* File transfers from Moto-G [XT1045] to XPC go to various dirs, e.g., %USERPROFILE%\Pictures, regardless of Bluetooth settings.
+
+	* Bluetooth Adapter causes intermittent NET VIEW fail. 
+
+		- Can disable @ Network Adapter window, or Device Manager, cures this. 
+		"Turn Adapter Off" @ system tray DOES NOT cure this; does NOT disable device.
+
+		- cmd "NET VIEW /ALL" appeared to clear NET VIEW problem; may be coincidence. 
+
+	* TurtleBeach Headset issue - unwanted shut-off while playing media via audio-out/TOSLINK. Prevent this by Bluetooth on/enabled/connected/paired.
+

@@ -1,0 +1,22 @@
+http://www.techradar.com/us/news/computing/hdmi-vs-displayport-which-is-best-922876/2#articleContent
+
+HDMI v1.4 (2010)	10.4 GB/s		4096 x 2160, 3D 	xvYCC colour space [native]
+DisplayPort v1.2	17.3 GB/s
+
+
+HDMI
+----
+
+	Digital; carries uncompressed TV signal up to 48-bit colour & 8 channels of audio, and 1 bit "AV kit" control. Compatible w/ DVI ; NOT w/ DVI-A (analog); proprietary; royalty ($0.04 per).
+
+	Max Cable Length: No spec; varies w/ cable quality; ~ 1m (copper)
+	
+DisplayPort
+-----------
+
+	Completely new; DisplayPort uses a packet-based transmission system, enabling flexible use of bandwidths; one-, two- and four-link versions with increasing data capacities; DisplayPort++ (Dual-mode DisplayPort) allows passive adapter to HDMI/DVI. Open Source / no royalties.
+	
+	Supports multiple monitors on one cable, so you can daisy-chain two or more together. Thus, full DisplayPort 1.2 can drive four 1920 x 1200 monitors, one on each link, yowza.
+	
+
+	Max Cable Length: 3m @ copper; 15m @ fibre optic

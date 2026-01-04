@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>RHEL.CentOS@Hyper-V</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.altaro.com/hyper-v/centos-linux-hyper-v/" title="altaro.com, 'CentOS Linux on Hyper-V', 2017">CentOS 7 on VM @ Hyper-V</a></h1>
+
+<ul>
+<li><p>Virtual Machine (VM) Specs</p>
+
+<ul>
+<li>External Virtual Switch, <code>CentOS-GbE</code>, created.</li>
+
+<li><p>ISO <a href="http://isoredirect.centos.org/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-1804.iso" title="centos.org">CentOS-7 List</a> | <a href="http://mirror.vcu.edu/pub/gnu_linux/centos/7.5.1804/isos/x86_64/" title="mirror.vcu.edu">mirror.vcu.edu</a> | <a href="http://mirror.vcu.edu/pub/gnu_linux/centos/7.5.1804/isos/x86_64/CentOS-7-x86_64-Everything-1804.torrent" title="Drag link to torrent client">torrent</a></p>
+
+<p><code>D:\SCRATCH\[NO_SYNCH]\VMs\CentOS\CentOS-7-x86_64-DVD-1804.iso</code></p></li>
+
+<li><p>Generation <code>2</code> (VM)</p></li>
+
+<li><p><code>2</code> vCPUs</p></li>
+
+<li><p>Dynamic Memory: <code>512MB</code>/<code>256MB</code>/<code>1GB</code> (START/MIN/MAX)</p></li>
+
+<li><p>VHDX: <code>40GB</code> (<code>42949672960 byte</code>); <code>1MB</code> block size<br>
+Modified on 1<sup>st</sup> launch @ VM creation. (See PowerShell script).</p>
+
+<pre><code class="language-powershell">Stop-VM -VM $VMname -Force
+New-VHD -Path $VHDStoragePath -SizeBytes $VHDXSizeBytes -Dynamic -BlockSizeBytes 1MB
+</code></pre></li>
+</ul></li>
+
+<li><p>Create VM @ PowerShell<br>
+<a href="li>
+
+<li><p>Start + Connect<br>
+Hyper-V launches a VM window, as the install-media loads.</p></li>
+</ul>
+
+<h2>Install CentOS per GUI (<a href="h2>
+
+<h3>Hyper-V specific settings ...</h3>
+
+<ul>
+<li><p>Installation Destination</p>
+
+<ul>
+<li><p>Local Standard Disks<br>
+<code>40 GiB</code><br>
+<code>Msft Virtual Disk</code><br>
+<code>sda / 2014.5 KiB free</code></p>
+
+<ul>
+<li>per VM config @ <a href="li>
+</ul></li>
+</ul></li>
+
+<li><p>Software Selection</p>
+
+<ul>
+<li>Base Environment<br>
+
+<ul>
+<li><strong>Virtualization Host</strong></li>
+</ul></li>
+<li>Add-Ons<br>
+
+<ul>
+<li>Network File System Client</li>
+<li>Virtualization Platform</li>
+<li>Development Tools</li>
+<li>System Administration Tools</li>
+</ul></li>
+</ul></li>
+
+<li><p>Security Policy</p>
+
+<ul>
+<li>&quot;Standard <strong>Docker Host</strong> Security Profile&quot;</li>
+</ul></li>
+</ul>
+
+<h3>Admin</h3>
+
+<h4><a href="h4>
+
+<ul>
+<li><p>@ CentOS (VM)</p>
+
+<pre><code class="language-bash"># Config client (user acct)
+mkdir ~/.ssh 
+chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Config server (sshd)
+sudo vim /etc/ssh/sshd_config
+PubkeyAuthentication yes
+# required by ssh-copy-id (to receive pub key):
+PasswordAuthentication yes
+</code></pre>
+
+<ul>
+<li><p><code>ssh ...</code> Pubkey login WILL FAIL if owner|perms|SELinux-context is wrong.<br>
+Debug login issues:</p>
+
+<pre><code>ls -ZA ~/.ssh
+systemctl status sshd -l     
+grep AVC /var/log/{secure,audit.log}
+</code></pre></li>
+</ul></li>
+
+<li><p>@ host</p>
+
+<ul>
+<li><p>Create key-pair; send public key to VM.</p>
+
+<pre><code class="language-bash"># Generate key pair 
+ssh-keygen -t ed25519 -a 100  
+# ... prompts for save-path &amp; passphrase 
+# Send newly generated pub key to VM user acct @ ~/.ssh/authorized_keys
+ssh-copy-id -i $_ID_FILE $_USER@$_VM
+# ... prompts for password
+</code></pre>
+
+<ul>
+<li>Sending the key requires <code>PasswordAuth...</code> enabled @ <code>sshd_config</code> .<br>
+Disable that afterward (at VM) to better secure.</li>
+</ul></li>
+
+<li><p>Add <a href="file:///S:/HOME/.ssh/config">identity @ <code>~/.ssh/config</code></a></p>
+
+<pre><code class="language-bash">Host $_VM 
+  HostName 192.168.1.10 # IP or HOST.DOMAIN
+  User $_USER
+  CheckHostIP yes
+  IdentityFile ~/.ssh/centosvm_ed25519
+</code></pre>
+
+<ul>
+<li>Note that &quot;Host&quot; here is the VM, not the host accessing it.<br>
+And &quot;Host&quot; <em>name</em> (<code>$_VM</code>) has no meaning beyond this SSH tool;<br>
+can be any name; is merely the SSH configuration reference.<br></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>SSH access (thereafter)</h4>
+
+<ul>
+<li><p><code>ssh $_VM</code>, or override User with <code>$_USER@$_VM</code>.<br>
+    Either one references this configuration.</p>
+
+<ul>
+<li>Sessions (concurrent)<br>
+<code>tty1</code> @ first connect (terminal 1).<br>
+<code>tty2</code>-<code>tty6</code> (Up @ <code>Alt+RightArrow</code>; Down @ <code>Alt  +LeftArrow</code>)<br>
+<code>tty</code> to see current terminal number.<br>
+
+<ul>
+<li><code>Alt+Arrows</code> work only @ Hyper-V &gt; Connect, <strong>not</strong> @ any external console (<code>cmd.exe</code>, PowerShell, WSL, ConEmu, or <code>mintty</code>).</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>Backup <code>/home</code></h4>
+
+<ul>
+<li><p>@ VM</p>
+
+<pre><code class="language-bash">cd /home
+sudo tar -caf /home/$USER.tgz -C /home $USER
+</code></pre></li>
+
+<li><p>@ host</p>
+
+<pre><code class="language-bash">rsync -auz root@$_VM:/home/$_USER.tgz ~/etc/platforms/$_VM/$_USER.tgz
+</code></pre></li>
+</ul>
+
+<h4>Update home</h4>
+
+<ul>
+<li><p>@ host</p>
+
+<pre><code class="language-bash"># .tgz selected files and folders @ ~
+find ~ -maxdepth 1 \( \
+    -name 'etc' \
+    -o -name '.passgo' \
+    -o -name '.bash*' \
+    \) | tar -caf updates.tgz --files-from -
+# push the .tgz
+rsync -auz updates.tgz $_USER@$_VM:/home/$_USER/updates.tgz
+</code></pre></li>
+</ul>
+
+<h4>Enable Dynamic Memory In-Guest</h4>
+
+<p>@ <code>/etc/udev/rules.d/100-balloon.rules</code> (create)<br>
+<code>SUBSYSTEM==&quot;memory&quot;, ACTION==&quot;add&quot;, ATTR{state}=&quot;online&quot;</code></p>
+
+<ul>
+<li><p>No; removed it; perhaps unnecessary @ Gen 2 Hyper-V</p></li>
+
+<li><p>Install Extra Hyper-V Tools<br>
+<code>yum install -y hyperv-daemons</code></p></li>
+
+<li><p>Disable CentOS Disk I/O Scheduler (Hyper-V handles optimization)</p>
+
+<pre><code class="language-bash">su root 
+cat /sys/block/sda/queue/scheduler
+noop [deadline] cfq
+echo noop &gt; /sys/block/sda/queue/scheduler
+cat /sys/block/sda/queue/scheduler
+[noop] deadline cfq
+exit
+</code></pre></li>
+</ul>
+
+<h4>Other install/search</h4>
+
+<pre><code class="language-bash">su
+yum check-update
+yum update
+# EPEL [Extra Packages for Enterprise Linux]  https://fedoraproject.org/wiki/EPEL
+yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# And to better handle dependencies (though does not work @ Hyper-V, nor containers):
+#subscription-manager repos --enable &quot;rhel-*-optional-rpms&quot; --enable &quot;rhel-*-extras-rpms&quot;
+yum list installed | grep hyperv 
+yum list install httpd 
+shutdown now     # poweroff
+shutdown -r now  # reboot 
+reboot           # works too
+</code></pre>
+
+<pre><code class="language-bash"># Install VS Code
+rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sh -c 'echo -e &quot;[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc&quot; &gt; /etc/yum.repos.d/vscode.repo'
+
+yum check-update
+sudo yum install code
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,1044 @@
+REF: CompTIA Network+ [2012 videos; Keith Barker]
+
+OSI (Open Systems Interconnection) Model 
+----------------------------------------
+    Protocol layers                    Function                    PDU name
+    ----------------       --------------------------------------  ---------
+    Layer 7: Application   - Services; net processes to apps         DATA
+    Layer 6: Presentation  - Data Rep; format/compress/encrypt       DATA
+    Layer 5: Session       - Interhost Apps; comms/manage/track      DATA
+
+    Layer 4: Transport     - Data Structure/Delivery     (TCP,UDP)   SEGMENT/DATAGRAM
+
+    Layer 3: Network       - Data Addressing/Routing     (IP)        PACKET
+    Layer 2: Data-link     - reliable pt-to-pt connect   (MAC)       FRAME
+    Layer 1: Physical      - unreliable pt-to-pt connect ("Wire")    BITS
+
+ 
+PDU (Protocol Data Unit)    Data delivered as a unit (names per layer)
+-----------------------     ------------------------------------------
+    Layer 7: Application    - Data; HTTP,FTP,SMTP,SNMP,DNS,RIP,NFS,SSH,Telnet
+    Layer 6: Presentation   - Data; ASCII,EBCDIC,TIFF,GIF,PICT,JPEG,MPEG,MIDI
+    Layer 5: Session        - Data; NFS,NetBIOS,RPC,SQL
+
+    Layer 4: Transport      - Segment/Datagram; TCP/UDP 
+    Layer 3: Network        - Packet; 'IP Datagram' 
+    Layer 2: Data-link      - Frame; MPDU (MAC Layer PDU)
+    Layer 1: Physical       - Bits; PPDU (Physical PDU); Wire, Stream, Symbol
+ 
+ 
+OSI 7-Layer Model        TCP/IP Protocol Architecture  TCP/IP Protocol Suite 
+-----------------------  ----------------------------  ------------------------
+ Layer 7: Application   |\                            \   @TCP: HTTP,FTP,SMTP,
+ Layer 6: Presentation  | >  Application Layer         >  SSH,Telnet,NFS
+ Layer 5: Session       |/                            /   @UDP: DNS,RIP,SNMP
+ ---------------------   ----------------------------  ------------------------
+ Layer 4: Transport     |> Host-Host Transport Layer   TCP,UDP,ICMP(ping)
+ ---------------------   ----------------------------  ------------------------
+ Layer 3: Network       |>   Internet Layer            IP [ARP,IGMP,ICMP(ping)]
+ ---------------------   ----------------------------  ------------------------
+ Layer 2: Data-link     |\                            |\  Ethernet,Token-Ring,
+ Layer 1: Physical      |/   Network Interface Layer  |/  Frame-Relay,ATM
+
+MAC (Media Access Control) Address; Layer 2 Address; Physical Address;
+    Unique; 6 groups of 2 hexidecimal digits; HH:HH:HH:HH:HH:HH
+    12 hex-digits; 6 bytes (octets), or 48 bits; 2^48 possible addresses.
+
+    Manufacturer ID:  Most-sig  3 bytes; assigned; OUI (Organizational Unique Identifier)
+    Device ID:        Least-sig 3 bytes. 
+
+Ethernet II Frame [most common type]
+
+    The data part of a PDU is 46,1500 bytes (octets).
+    The frame (MPDU) is 64,1518 bytes (octets).
+    The frame is the payload of the PPDU, which is 72,1526 bytes (octets).
+    PPDU max is 1536 bytes (octets), incl. "interpacket gap"
+
+MPDU (MAC Layer PDU) 
+                
+     |MAC-header|<--- Data -->|CRC-chksum|  - Data-link Layer
+     | 14 bytes |46-1500 bytes|  4 bytes |
+
+     |<-------- Ethernet Frame --------->|
+                     
+PPDU (Physical Layer PDU); Physical Layer
+
+    |preamble|SFD|<-------- Ethernet Frame --------->|
+    |preamble|SFD|MAC-header|     data    |CRC-chksum|   - Physical Layer
+    |7 bytes | 1 | 14 bytes |46-1500 bytes|  4 bytes |
+
+Interpacket Gap :: 12 bytes    
+
+MAC-header (14B) :: Destination MAC addr (6B) + Source MAC addr (6B) + EtherType (2B) 
+
+MTU (Max Transmission Unit) of 1500 octets (bytes) is standard
+"Jumbo Frame" to ~ 9000 octets (bytes)
+ 
+TCP Segment is data & header; header includes source and destination ports. Header is 5-15 words (32bit); 20-60 bytes. TCP Segments are encapsulated into an IP Datagrams. 
+
+Ports & Sockets; both send & recieve apps reserve a port number. Arriving TCP data packets are identified as belonging to a specific TCP connection by its sockets; by the combination of source host address, source port, destination host address, and destination port. 
+
+Well known port numbers are assigned by Internet Assigned Numbers Authority (IANA). System-level processes, root processes and apps running as servers passively listen for connections typically use these ports, e.g., FTP (20 and 21), SSH (22), TELNET (23), SMTP (25), SSL (443) and HTTP (80). 
+
+SMTP (587) - to submit mail.
+
+Socket Address - combination of port number and IP address.
+
+Denial of Service (attack) - send bogus header info; send a "spoofing IP" and repeatedly send SYN packets (protocol is one per data stream) then ACK packets; that's called SYN flood attack. 
+
+"Connection Hijacking" & "TCP Veto" are eavesdropping-based attacks.
+
+PDU (Protocol Data Unit) - upper 2 layers 
+ 
+At each level, two entities (layer-N peers) exchange protocol data units (PDUs) by means of a layer-N protocol. A Service Data Unit (SDU) is the payload of a PDU, transmitted unchanged to a peer entity.    
+    
+Ethernet (IEEE 802.3); physical (PHY) layer LAN tech from 1973; Now @ 10Mbps - 100Gbps. Uses CSMA/CD (Carrier Sense, Multiple Access, Collision Detect); a contention protocol; rules for how network devices sense/respond when using a data channel simultaneously. (IEEE 802.3 and ISO 8802.3).
+
+IEEE 802; family of standards dealing with data networks (Ethernet, WLAN, WPAN, Bluetooth, WiMAX,...) carrying variable-size packets (vs. "cell relay" networks; short, uniformly sized units called cells). Data link & physical layers (2 lowest layers of OSI model). IEEE 802 splits Data link layer into sub-layers (LLC/MAC); "Logical Link Control" (LLC) and "Media Access Control" (MAC). LLC (802.2) is "inactive"; absorbed into transport level. 
+
+Carrier Ethernet; Ethernet services to the (biz) customer. Ethernet transport network is 2 layers; Ethernet MAC (ETH) & Ethernet PHY (ETY). ETH is a pure packet layer. ETY is physical layer of IEEE 802.3. ETH layer divided into ETH subnetworks a.k.a. ETH flow domain (EFD). Termination of link is "flow point pool" (FPP). Ethernet frame is exchanged over ETH layer; contains preamble, start frame delimiter (SFD), destination MAC address (DA), source MAC address (SA), (Optional) 802.1QTag, Ethernet Length/Type (EtherType), user data, padding if required, frame check sequence (FCS), and extension field if operating @ 100 Mbp half-duplex.
+
+Frame; unit of data sent between NICs; incl. MAC of both send and recieve NICs, a CRC and data. 1500 bytes max.
+
+Ethernet 10BaseT/100BaseT/1000BaseT
+
+Star Bus Topology - the switch is the bus; cables (segments) form star; node is any device with a connection.
+
+Ethernet cable; 2 pairs of twisted wires; one RX; one TX; terminated w/ RJ-45 (Registered Jack; Bell/AT&T); handles up to 4 pairs. RJ-11 (up to 2 twisted pairs) almost never used, but for phone lines.
+RJ-45 connections via one of two standards (color-coded wirings of pins 1-8): TIA/EIA 568A (T568A) & TIA/EIA 568B (T568B). Either is acceptable.
+NOTE: Mixing on 1 cable (568A/568B) constitutes a crossover cable.
+
+AUTO-MDIX; software that senses TX/RX (T568A/B) and applies appropriate signals ( no need for crossover cable).
+
+Fiber Ethernet networks typically use 62.5/125 multimode fiber optic cable, driven by LEDs. Connectors; round (ST) or square (SC); half-duplex, so 2 cables per connection. Newer: LC, MT-RJ. Laser driven is for long distance, high data-rates, and uses single mode (in 2011; 100 Tbits / 100 mi).
+
+Coax/BNC - old days. RG-59 (thinner, for shorter disances, e.g., lab equipment.), RG-6; both @ 75 ohms. RG-59 w/ F-type connector (screw on), as used in Cable TV.
+
+Hub v. switch - hub is a repeater; obsolete; Layer 1 device; broadcasts to all lines; shared bandwidth. Switch forms lone connection btwn 2 machines; MAC aware (MAC Address Table); Layer 2 device. Until switch builds MAC address table -- if destination MAC is unknown to switch --it WILL broadcast (act like a hub).
+
+Bridge - synonym for switch; interface btwn 2 types of line (media), e.g., connecting coax to UTP, or UTP to wireless, ...; forwards only to target MAC.
+
+router - connects LANs w/ TCP/IP.
+
+MMF; multi-mode fiber optic cable; 10 Gbps to 500m w/out repeater
+SMF; Single-mode goes further; 10 Gbps to 2,000m; miles w/ special equip.
+Unshielded Twisted Pair (UTP) wiring is the norm; >~ 100m w/out repeater.
+Sheilded Twisted Pair (STP) is rarely needed; used @ shop floors w/ big electric motors or other EMI.
+
+Fiber connectors; ST (stick-and-twist), SC (stick-and-click), LC (little-connector; pair; full-duplex).
+SFP; small-form pluggable (port); goes w/ LC connectors.
+MTRJ; duplex (2 small connectors)
+
+Plenum/non-plenum equipment; plenum-rated is more fire resistant and not as toxic when burning.
+
+CAT 1 - phone line; CAT 3 - 10-Mbps (variant using all four pairs of wires goes to 100-Mbps); CAT 5 100-Mbps; CAT 5e 1000-Mbps; CAT 6 1000-Mbps @ 100-meter segments; 10-Gbps @ 55-meter segments.
+Connectors are also CAT-rated. 
+
+Network protocols organized into groups (stacks),
+e.g., NetBIOS/NetBEUI (old) and TCP/IP. The NetBIOS protocol handled naming conventions, while NetBEUI chopped up data for delivery via frames. Names were simple Uppercase letters, numbers and a few special chars. Every computer broadcast; sent to MAC address FF-FF-FF-FF-FF-FF which meant everybody. Handled up to about 300 machines on a net.
+
+Transmission Control Protocol/Internet Protocol (TCP/IP) - 1983; doesn't broadcast; handles additional addressing needed for larger networks (WANs). Routers intentionally kill all broadcasting. 
+TCP/IP is THE default protocol. TCP handles getting the data between computers, while IP 
+handles the addressing scheme. IP address (of host) replaces old NetBIOS names scheme; and maps/updates IP w/ MAC. IP version 4 (IPv4); 4 sets of octets, separated by periods. IPv6 differs.
+
+Subnet Mask - informs which part of IP is Network ID; all non-zero octets (all the "1"s; all the "on" bits) mask the Network ID (from use in Host ID), e.g., 255.255.255.0 or 255.255.192.0 (both are "24 bit masks"), the latter being a "custom subnet mask". Note mask limits max # of hosts.
+
+Network ID - the part of IP address common to all in broadcast domain (LAN), e.g., IP of 190.24.16.11 w/ Subnet Mask of 255.255.255.0 has Network ID of 190.24.16
+
+Host ID - the last octet(s); "11" @ above example. Forbidden: 0, 255. So, if LAN w/ > 254 machines, then subnet mask would be "255.255.0.0" and Host ID would be "16.11".
+
+Class Licenses: A, B, C; biggest to smallest networks. Class A has Network ID of only 1st octet, w/ remaining 3 octets for hosts. 
+
+IP Address Class  https://en.wikipedia.org/wiki/Classful_network
+----------------
+
+Address        1st octet    # Network IDs    # Host IDs    Default Mask     Bits @ Submask
+-------        ---------    -------------    ----------    --------------    -------------
+Class A          1-126              129      16,777,214     255.0.0.0            /8
+Class B        128-191           16,384          65,534     255.255.0.0          /16
+Class C        192-223        2,097,152             254     255.255.255.0        /24
+
+Class    1st Octet Decimal Range        1st Octet High Order Bits
+A               1 - 126
+B             128 - 191                                   10
+C             192 - 223                                  110
+D             224 - 239                                 1110
+E             240 - 254                                 1111
+
+multicast       224-239
+
+Classful - adhere to default mask  https://en.wikipedia.org/wiki/Classful_network
+Classless - custom mask, say for constructing more sub-nets; take a few bits from host id, adding them to network id (bigger subnet mask), e.g., "/19"
+
+TCP/IP Subnet Addressing
+------------------------
+    Subnet is a range of IP addresses in a network;    
+    IP Address is typically a DECIMAL REPRESENTATION thereof; 
+    DOT NOTATION: a 32 bit binary number separated into four sets of bytes (octets); DECIMAL <==> BINARY  
+    {0-255}.{0-255}.{0-255}.{0-255}  <==>  {00000000-11111111}.{00000000-11111111}....   
+
+    SUBNET  https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html
+        CIDR (Classless Inter-Domain Routing); 1993  https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing 
+            https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#IPv4_CIDR_blocks   
+            A method for allocating IP addresses and IP routing;  
+            IPv4 CIDR BLOCK range notation: ADDR.ADDR.ADDR.ADDR/BITS  (all in DECIMAL) 
+
+            SUBNET MASK (`/dd`) a.k.a. NETMASK; the NUMBER OF BITS in the NETWORK ADDRESS, in DECIMAL 
+                ON (1)  bits represent NETWORK  
+                OFF (0) bits represent HOSTS (allowable nodes on the subnet)   
+
+                E.g., '/20', a 20 bit (8+8+4) NETMASK
+                    11111111.11111111.11110000.00000000  <==>  FF.FF.F0.00  <==>  255.255.240.0
+                    |<------ 20 -------->|< --- 12 -->|
+
+            WILDCARD MASK; bit-inverted subnet mask; bits NOT of the Nework ID; those for host addresses
+                E.g., '/20' has 12 (32-20) WILDCARD BITS; 4,096 (2^12) host addresses:
+                    00000000.00000000.00001111.11111111  <==>  00.00.0F.FF  <==>  0.0.15.255
+                I.e., a 12 bit Wildcard Mask.
+
+            auto-calculations @ http://cidr.xyz/  |  https://www.ipaddressguide.com/cidr  
+
+        PRIVATE Addresses
+                     CIDR Block      Network Ranges   Network IDs  Hosts; 2^(32-('/dd'))  bits@Mask
+            Class A  10.d.d.d/8      10.d.d.d         10           2^24  16,777,216        /8
+            Class B  172.16.d.d/12   172.{16-31}.d.d  172.{16-31}  2^20   1,048,576       /12
+            Class C  192.168.d.d/16  192.168.d.d      192.168      2^16      65,536       /16
+
+            E.g., 172.31.32.0/20  
+                Calculate # Hosts: 2^(32-20) => 2^12 = 4,096
+                Calculate Netmask: 20 = 16+4 => 255.255.(255-(4 bits)); Address range 
+                of 4 bits, 2^4=16, is 0-15 => 255 - 15 = 240 
+                    Subnet Mask: 255.255.240.0
+                    Wildcard Bits:  0.0.15.255 (bit-inverted mask)
+                So, host address range is 172.31.32.0 - 172.31.47.255; 4,096 addresse
+
+                CIDR Block      Network Ranges      Network IDs     # Hosts; 2^(32-('/dd'))
+                172.31.32.0/20  172.31.{32-47}.d.d  172.31.{32-47}  2^12  4,096 
+
+            - IP Addresses (nodes) available @ /dd subet: n = 32-(dd) bits; 2^n  
+            - Class scheme is from 1981-1993; pre CIDR; less efficient allocation; lingers @ default subnet addr 
+            - Though Classless, CIDR Block addressing having default/standard subnet masks may be referred to as CLASSFUL.  https://en.wikipedia.org/wiki/Classful_network#Classful_addressing_definition
+                           Address Range           Subnet Mask     CIDR notation
+                Class A    0.0.0.0-127.0.0.0        255.0.0.0        /8
+                Class B    128.0.0.0-191.255.0.0    255.255.0.0     /16
+                Class C    192.0.0.0-223.255.255.0  255.255.255.0 	/24            
+
+        @ CIDR Range            172.31.32.0/20      12 bits for hosts; 32 - 20; 4096 addresses
+            Netmask             255.255.240.0       240 = 256 - 16; 256 - 2^(12-8)
+            Wildcard Bits            0.0.15.255     addresses, NOT bits!
+            First host IP       172.31.32.0         per CIDR Block range
+            Last host IP        172.31.47.255       47 = 32 + 15
+            Total Hosts         4096    
+
+        @ CIDR Range            192.168.1.0/24      leaves 8 bits for hosts; 256
+            Network IP Address: 192.168.1.0     
+            Subnet Mask:        255.255.255.0    
+            Private Addresses:  192.168.1.{0-255}   256 hosts    
+            Private Addresses:  192.168.1.{4-254}   251 hosts @ AWS; 5 reserved per subnet   
+
+Loopback range/address
+----------------------
+127.x.x.x is reserved for network testing (loopback) operations; 127.0.0.1 typical for "localhost", but any starting w/ 127 will work. Each class has band reserved for private networks.
+
+CIDR (Classless Inter-domain Routing) notation: 190.24.16.11/24
+That is, IP/#, where # is the number of bits in the Subnet Mask.
+
+Custom Subnet Mask; how to ... arbitrary #bit mask. Subnet mask is Network ID, rest is Host ID. Since we're taking highest order bits [out of ".255."], from host; 2^8 - 2^[8-n], where n is # bits taken (beyond higher octet of 8 bits). E.g., /10 (bit mask) is 2 bits taken, so 
+     2^8 - 2^6 
+    = 256 - 64 
+    = 192
+
+    255.192.0.0 /10  <= custom (10 bit) subnet mask
+    
+    * The necessary binary arithmatic is hidden by the base-10 decimal notion of the IP address convention.
+
+Private Address Spaces (IPs), RFC 1918:
+Class A:    10.0.0.0 to 10.255.255.255       for private addresses.
+Class B:    172.16.0.0 up to 172.31.255.254  for private addresses 
+Class B:    169.254.0.0 to 169.254.255.254   for APIPA (Automatic Private IP Addressing).
+Class C:    192.168.0.0 to 192.168.255.254   for private addresses.
+
+Private Address Spaces (only); rewritten in CIDR notation.
+Class A:  10.x.x.x/8
+Class B:  172.16-31.x.x/12 
+Class C:  192.168.x.x/16 
+
+APIPA - 169.254.xx; machine can't find server.
+
+Routers block private IP addresses, but "NAT" gets around that.
+
+LAN - group of computers connected by one or more switches; can hear broadcasts of each other; a broadcast domain. Physically grouped < few hundred meters.
+
+WAN - widespread group connected using long-distance tech. LANs are connected to a WAN using a router. Internet is a WAN.
+    
+Router has at least 2 IP addresses. 1 connects to LAN switch, and 1 to WAN (ISP, another router, ...). LAN side IP has Network ID and address is usually first one, e.g., 202.16.34.1 -- all network traffic sent by LAN machines to WAN is sent to that address. It's called the Default Gateway. 
+
+Domain Name Service (DNS); maps IP to (human-friendly) name & registers it; DNS servers maintain the database; serves IP per name.
+
+Top Level Domain: .com, .edu, .gov, .org, .net, ...
+Internet Corporation for Assigned Names & Numbers (ICANN) adds names.
+
+Dynamic Host Configuration Protocol (DHCP); typical. Upon boot, computer broadcasts a DHCP request for IP. Comm in 4 msgs:
+    D - discover by client
+    O - Offer from server
+    R - Request from client
+    A - Acknowledgment from server
+
+Network Organization
+Workgroups/Domains/Homegroups - MS creates schemes; everyone adopts them.
+
+Workgroups - no centralized control. Shares are controlled via usernames and passwords. Those from other machines: <computername>\<username> (confused).
+
+Domains - much stronger; logon to it, once, not to your computer; others' computers' for shares. Windows Server OS; Domain Controller.
+
+Homegroups - simplified; for home networks. Share libraries, not folders, by default. Encrypt data between machines.
+
+
+Protocols
+---------
+TCP (Transmission Control Protocol) - connection-oriented
+UDP (User Datagram Protocol) - connectionless (fire and forget); much faster.
+
+The app sets the protocol. E.g., HTTP is built on TCP; VoIP uses UDP.
+
+TCP/IP Services
+---------------
+HTTP (Hyper-Text Transfer Protocol), File & Printer Sharing, Telnet (remote access), ping, ipconfig, nslookup, tracert. Links any two hosts (machines).
+
+TCP/IP Settings
+---------------
+Many; confusing; not all used for all network types. By default, set to recieve IP address, subnet mask, and default gateway automatically by DHCP server.
+
+DHCP (Dynamic Host Configuration Protocol) Server; sends IP and other config info. Every machine must be assigned one DNS server (in addition to a IP address, a subnet mask, and a default gateway). DHCP creates a pool of IP addresses that are given temporarily to machines; especially handy for networks of a lot of machines that come and go (laptops, Xbox, ...). Default method vs. static assignment. Router acts as DHCP server.
+
+When using DHCP, ipconfig/renew renews IP address; ipconfig/release gives up current IP address. (@ home network, router DHCP/DNS server just reassigns.)
+
+APIPA (Automatic Private IP Addressing) - If DHCP/DNS server not available, then IP address is assigned (169.254.0.1 to 169.254.255.254); computer randomly chooses an address in the form of 169.254.x.y (where x.y is the computer's identifier) and broadcasts it on the network segment (subnet). If no other computer responds to the address, the system assigns this address to itself, and subnet mask is 16-bit (255.255.0.0). APIPA is enabled by default in Windows if system is configured to obtain an IP address automatically. I.e., if your IP is in this range, you have problem connecting to DHCP server.
+
+NAT (Network Address Translation) - re-maps public to private IP addresses and vise versa; masquerades; allows public visibility while protecting private addresses. Say, map all IP addresses of a subnet to one (router's public) IP address. That's "Basic NAT", "network address and port translation" (NAPT), "port address translation" (PAT), "IP masquerading", "NAT overload" and "many-to-one NAT". This is the most common type of NAT.
+
+Because of the popularity of this technique to conserve IPv4 address space, the term NAT has become virtually synonymous with the method of IP masquerading.
+
+"Port forwarding" is "static NAT". The vast bulk of Internet traffic is TCP and UDP packets, and for these protocols the port numbers are changed so that the combination of IP and port information on the returned packet can be unambiguously mapped to the corresponding private address and port information.
+
+Dynamic Port Forwarding (DPF) - on demand method, e.g., for SSH, SOCKS proxy server, of traversing a firewall/NAT through the use of firewall pinholes. The goal is to enable clients to connect securely to a trusted server that acts as an intermediary for the purpose of sending/receiving data to one or many destination servers.
+
+        DPF can protect data when connected insecurely, e.g., public WAP.
+    
+        DPF can be used to bypass firewalls that restrict access to outside websites, such as in a corporate network.
+    
+        DPF can be used as a precaution against hacking.
+
+
+IPv4    32 bits (2^32    = 4,294,967,296 addresses)
+IPv6 128 bits (2^128 = 3.4028237 * 10^38 addresses). 
+Developed by IETF (Internet Engineering Task Force)
+Network IDs (first 64 bits) generated by IANA
+(Internet Assigned Number Authority) 
+Assigned to machines on LAN by router.
+
+EUI-64 - maps MAC address (layer 2) to 2nd 64 bits of IPv6 address (layer 3) 
+
+IPv6 uses dotted-hexidecimal format ... 8 "hextets"
+2001:0000:0000:3210:0800:200C:00CF:1234
+2001:0:0:3210:800:200C:CF:1234    - leading zeros dropped
+2001::3210:800:200C:CF:1234       - remove 1 or more consecutive zero groups, 
+                                    leaving 1 pair of colons together
+                                    
+First hextet must be 2000-3999; globally routable IPv6 address
+Forbidden: all "0", and all "F"
+IPv6 loopback address: 
+0000:0000:0000:0000:0000:0000:0000:0000:0001
+using the shorthand ...
+::1    
+Subnet masks are written as /x where x is number of bits in mask.
+[Classless Inter-Domain Routing (CIDR) nomenclature]
+So, here's IPv6 address and its subnet mask
+FEDC::CF:0:BA98:1234/64
+1 machine can have up to 3 IPv6 addresses.
+
+Link-local address - on boot, w/ first 64 bits always "FE80" 
+Global address - router assigns it. That is, on boot, computer sends a packet called a "router solicitation (RS) message" (FF02::2), looking for a router; router responds with a "router advertisement (RA)"; a Network ID (64 bits) and subnet (/64) (together called the "prefix"), along w/ DNS server ID (if so configured). Computer generates last half (64 bits). 
+
+Last 64 bits (half) are generated either (1) randomly per machine, in Windows OS (2) 64 bit (EUI-64) MAC address of NIC. Hence, no subnet mask is longer than 64 bits (half). Bigger networks have 48 bit subnet masks; biggest have 32 bit subnet masks.
+
+A global address is a true Internet address. If another computer is running IPv6 and also has a global address, it can access your system unless you have some form of firewall.
+
+NIC - modern ones run in full-duplex mode, but will drop to half-duplex on bad connections; on direct crossover connects machine to machine w/out a switch.
+
+Link lights - connection LEDs on NIC, switch, ...
+Activity lights - flickers on w/ traffic. Good indicator.
+No standards; manuf/device specific.
+
+@ NIC install, Windows installs TCP/IP protocol, "Client for Microsoft 
+Networks", and "File and Printer Sharing for MicrosoftNetworks".
+
+Wake-on-LAN - client sends "magic packet"; a broadcast packet that essentially repeats the destination MAC address many times 
+
+UNC (Universal Naming Convention)
+\\<computername>\<path>
+
+Map a network share (path) to local drive-letter ...
+NET USE x: \\<computername>\<path>
+
+NBTstat (NetBIOS over TCP/IP statistics)
+
+Cable testing - diagnosing a bad horizontal cabling run is easy w/ midrange time-domain reflectometer (TDR) tester such as the Fluke MicroScanner; impedance in network cabling is measured w/ one end terminated by a loopback device. If the tester measures "any impedance", something is wrong with the cable. Toner / Tone Probe (by Fox and Hound) is also useful; tone generator at one end; probe at other end.
+
+Wi-Fi - IEEE 802.11 Wireless Ethernet Standard. (Spread Spectrum.)
+
+Bluetooth IEEE 802.15 - personal area network (PAN); 79 frequencies ~ 2.4 GHz, hops 1,600 times per sec; v1.1-1.2 @ 1 Mbps; v2.0-2.1 @ 3Mbps (EDR - Enhanced Data Rate). 3 classes; 
+    Class 1    100   mW    100 meters
+    Class 2      2.5 mW     10 meters
+    Class 3      1.0 mW      1 meter
+    
+IrDA (Infrared Data Association) protocol - infrared transceiver ports are standard on laptops, printers, ... 4 Mbps 1 meter; point-to-point, ad hoc.
+
+Wi-Fi (IEEE 802.11/b/a/g/n/ac - broadcast and receive on one of two (a/b/g/n) or both (n-dual-band/ac) bands; license-free industrial, scientific, and medical (ISM): 2.4 GHz and 5.8 GHz. (Upper band is called "5 GHz".)
+
+11/b - 11 Mbps     300ft   2.4 GHz
+11/a - 54 Mbps     150ft             5.8 GHz
+11/g - 54 Mbps     300ft   2.4 GHz
+11/n - 600 Mbps    300ft   2.4 GHz   5.8 GHz
+
+11/b - croweded - baby monitors, garage door openers, microwaves, and wireless phones
+
+11/n - multiple in/multiple out (MIMO); up to 4 antennas; beamforming; makes many connections simultaneously
+
+WAP - Wireless Access Point / AP / Wireless Router [synonymous]
+PoE - Power over Ethernet (UTP), so WAP needs only one cable, can be more remote at less cost.
+
+Avoidance (wireless) vs. Detection (wired)
+-------------------------------------------
+Where wired Ethernet networks use "carrier sense multiple access/collision detection" (CSMA/CD), wireless devices use "carrier sense multiple access/collision avoidance" (CSMA/CA) networking scheme; "Request to Send" / "Clear to Send" (RTS/CTS) protocol.
+
+Modes
+Ad-hoc (peer-to-peer) - Independent Basic Service Set (IBSS); Extended Basic Service Set (EBSS); for temporary, small networks. 
+
+Infrastructure - more structured; configured.
+
+Wireless Security
+-----------------
+SSID - service set identifier (SSID); id for network.
+Always change default SSID/password.
+SSID is sent w/ every packet.
+Don't broadcast SSID.
+MAC filtering.
+WEP (Wired Equivalent Privacy) - 40-104-128 bit encryption. Flawed.
+WPA (Wi-Fi Protected Access) - Temporal Key Integrity Protocol (TKIP), which provides a new encryption key for every sent packet. Flawed.
+Extensible Authentication Protocol (EAP)
+WPA2 (WiFi Protected Access 2) - IEEE 802.11i
+Advanced Encryption Standard (AES)
+WPS - WiFi Protected Setup (WPS), a standard included on most WAPs and clients to make secure connections easier to configure. Flawed. Turn it off.
+
+Cellular Wireless - phone companies; smartphones, tablets, ....
+
+Tiers
+Tier 1 providers - Globally; 9 fiber optic backbones; interconnected.
+Tier 2           - smaller regional providers; big ISPs; pay Tier 1. 
+Tier 3           - ISPs.
+Backbone routers.
+
+Internet Connections
+--------------------
+Modems/Dial-up; Windows DUNS service; 28.8Kbps, 56Kpbs (1995)
+UART - converts serial to parallel data.
+PPP (point-to-point) protocol; especially for dial-up internet access.
+
+ISDN (integrated services digital network) service; phone company equip to handle all the modem traffic; Bearer (B) channels (64Kbps), for data and voice; Delta (D) channels (16Kbps) for setup/config. 
+
+BRI (Basic Rate Interface) ISDN line - 2 B channels & one D channel. 
+
+PRI (Primary Rate Interface) ISDN line - 23 64Kbps B channels & one 64Kbps D channel, totalling 1.544 Mbps (T1).
+
+DSL (Digital subscriber line ) - phone lines connected to special modem/gateway at each end; 3 Mbps (down) & 768Kbps (up)
+
+Cable - up to 100Mbps (down); RG-59 or RG-6 cable connected to router.
+
+LAN - biz connects their LAN to ISP-supplied Ethernet network.
+
+Fiber - fiber-to-the-node (FTTN) and fiber-to-the-premises (FTTP).
+Verizon's FiOS FTTP 150 Mbps/50 Mbps.
+
+Cellular - marketing: 2G, 2.5G, 3G, 4G. 1G was analog. Technologies - GSM (1G) became GPRS & EDGE (2.5G) , CDMA (1G) became EV-DO / CDMA2000 (3G). 3G ~ 3-4 Mbps. 4G; WiMAX (Worldwide Interoperability for Microwave Access) and LTE (Long Term Evolution) ~ 10 Mbps. LTE a bit faster than WiMAX.
+LTE is based on GSM/EDGE and UMTS/HSPA 
+
+Tethering - sharing cellular thru smartphone/tablet w/ computer. 
+
+Satellite - Dish/weather/latency. 
+
+ICS (Internet Connection Sharing) - Windows; only 1 machine connected to internet, so others connect thru it.
+
+Internet Application Protocols
+HTTP, HTTPS, Telnet, FTP, SFTP, SSH, RDP (remote desktop) VoIP/SIP, POP3, IMAP4; hundreds behind the scenes "utility protocols" (DNS, DHCP, ...)
+
+All email clients recieve via:
+    - POP3 (Post OfficeProtocol 3), or
+    - IMAP4 (Internet Message Access Protocol 4)
+    
+All email apps send via:
+SMTP (Simple Mail Transfer Protocol)
+
+All TCP/IP protocols use defined ports, require an app w/ settings unique to that app. 
+
+Ports per Protocol (per IANA)
+-----------------------------
+Ports bind Network Socket to an IP Address.
+
+TCP & UDP Ports per App:    http://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers
+
+
+Other well known protocols/ports:
+
+        20 & 21: File Transfer Protocol (FTP)
+        22: Secure Shell (SSH)
+        23: Telnet remote login service
+        25: Simple Mail Transfer Protocol (SMTP)
+        53: Domain Name System (DNS) service
+        80: Hypertext Transfer Protocol (HTTP) used in the World Wide Web
+        110: Post Office Protocol (POP3)
+        119: Network News Transfer Protocol (NNTP)
+        143: Internet Message Access Protocol (IMAP)
+        161: Simple Network Management Protocol (SNMP)
+        194: Internet Relay Chat (IRC)
+        443: HTTP-Secure (HTTPS)
+        465: SMTP-Secure (SMTPS)
+
+FTP - all sites require logon, but logon as "anonymous".
+ftp://ftp.example.com else as <username> ftp://<username>@ftp.example.com 
+FTP sends username/password as clear-text. (NOT secure.)
+
+Telnet - terminal emulation program for TCP/IP; remote access to servers, routers, ... . Username/password are NOT secure. Use inside private LAN.
+
+SSH (Secure Shell) - a secure replacement for telnet; encrypted connection. AND does file transfers therein (tunneling); core of SFTP, VPN.
+
+SFTP - FTP thru SSH tunnel. OpenSSH; a popular SSH server w/ built-in SFTP feature.
+
+VoIP - a collection of protocols for voice calls over data lines. SIP is most common protocol. Others (Skype) are proprietary. Low latency is more important than high data-rate. Dedicated home VoIP phones/solutions exist.
+
+Remote Desktop
+Windows (RDC; mstsc.exe). TightVNC is cross-platform. All require server/client apps installed.
+
+Remote Assistance - Windows. 
+
+VPN/Proxy Server - multiple machines connect to internet thru one (remote) machine. 
+
+VPN - encrypted tunnel between computers thru internet. Req. client/server apps. 
+
+Windows Server to Windows client(s) - PPTP (Point-to-
+Point Tunneling Protocol) endpoints @ client and RRAS (Routing and Remote Access Service) at server. Client public IP becomes that of Server; Web browsing is accessed via the VPN server, so it's slow.
+
+Support Apps (Internet Utilities)
+---------------------------------
+LDAP (Lightweight Directory Access Protocol) - Windows Active Directory.
+
+SNMP (Simple Network Management Protocol) - enables remote query and remote configuration of 
+just about anything on a network.
+
+SMB (Server Message Block) and SAMBA, which emulates SMB to make other OSs look like Windows on a network.
+
+IRC (Internet Relay Chat); Google, AOL, Yahoo!, and Microsoft all have apps; apps like mIRC.
+
+File Sharing - BitTorrent protocol
+
+AD DS (Active Directory Domain Services) - Microsoft; hosted by a domain controller. Single sign-on (SSO)
+
+Lightweight Directory Access Protocol (LDAP) versions 2 and 3, Microsoft's version of Kerberos, and DNS. Used for Active Directory.
+
+Routers @ Network Layer;
+----------------------
+IOS - Cisco's router operating system, w/ CLI interface.
+Ex. @ router "R1"    (Default Gateway = Default Router or just "Router")
+
+Static - MANUALLY
+R1#show ip route
+R1#config t
+To config a static route of: sent 192... of sub-net 255... to router 10.12...
+R1#ip route 192.168.0.0 255.255.255.0 10.12.0.2
+To remove, just add "no" in front of same command: 
+R1#no ip route 192...
+
+Device to device -- "hop".
+
+Dynamic 
+DV (Distance Vector) - a type of routing protocol.
+ 
+Convergence - all routers agree / have same info.
+
+Routing Protocols
+-----------------
+RIP - Routing Information Protocol; a DV protocol; sends entire "routing table" every 30 seconds. Converges too slow.
+
+    R1#configure terminal
+    R1(config)#router rip
+    R1(config-router)#version2
+    R1(config-router)#no auto
+    R1(config-router)#network 0.0.0.0
+
+    ... 4 commands; all that's needed to config cisco router to dynamically learn everything, regarding all interfaces.
+
+OSPF (Open Shortest Path First); a "Link State" routing protocol; converges    quicker.
+LSA (Link State Advertising); each router advertises only its links.
+SPF (Shortest Path First).
+
+EIGRP (Enhanced Interior Gateway Routing Protocol); Cisco proprietary, so not used much; uses bandwidth and delay metric.
+
+IGP (Interior Gateway Protocol); protocol for within a domain; RIP, OSPF, and EIGRP are all IGP protocols.
+
+EGP (Exterior Gateway Protocol); protocols for the world; how SP (service providers) cooperate. 
+BGP (Border Gateway Protocol); the only EGP in the world.
+
+Switch Ports; in production, they're 48 port switches.
+
+VLAN (Virtual LAN) - logically separating computers (separate broadcast domains), while they're physically connected to same switch.
+
+Trunk; carry multiple VLANs. 
+802.1q; trunking; adding tag to frame to determine which VLAN on shared switch.
+
+Well Known Port
+---------------
+TCP & IP ports;
+
+TCP
+    HTTP - Web servers listen @ TCP:80 - destination port; default port for server @ appl layer (layer 3).
+    Client picks unique port @ appl layer to track    session (return traffic).
+    SSH TCP:22 - secure shell [secure ver. of telnet]
+    FTP - file transfer protocol
+    RDP - remote desktop protocol
+    RFB - Remote Frame Buffer; Virtual Network Computing (VNC), alt to Windows RDC
+
+UDP
+    NTP - network time protocol
+    DHCP UDP:67 & 68 - dynamic host configuration protocol; assigns IP addresses to LAN clients; 4 messages; 2 from client; 2 from server; D.O.R.A.; If client shows IP starting w/ 169, means DHCP failed.
+    
+ARP (Address Resolution Protocol)
+---------------------------------
+How PC finds layer 2 address (MAC address) of router; PC broadcasts ARP request; router unicasts its local IP address. arp.exe - Windows CLI command [cmd.exe] to show all layer 2 addresses (MAC addresses) you learned on the network; show all "ARP entries". 
+All stored in ARP cache.
+
+R:\>arp -a
+
+Interface: 192.168.1.2 --- 0xe
+    Internet Address        Physical Address          Type
+    192.168.1.1             00-1f-90-89-c6-12         dynamic
+    192.168.1.4             00-1c-c0-4d-94-bf         dynamic
+    192.168.1.255           ff-ff-ff-ff-ff-ff         static    
+    224.0.0.22              01-00-5e-00-00-16         static
+    224.0.0.252             01-00-5e-00-00-fc         static
+    239.255.255.250         01-00-5e-7f-ff-fa         static
+    255.255.255.255         ff-ff-ff-ff-ff-ff         static
+
+To delete the table; so client can regenerate a new one ...
+R:\>arp -d *
+ 
+(For list of command options, type "arp" w/out any options.)
+
+ARP is a layer 2 (MAC) to layer 3 (IP) mapping.
+
+ff-ff-ff-ff-ff-ff    - is a broadcast; used @ ARP, DHCP, ... 
+
+ICMP (Internet Control Message Protocol) - a management protocol and messaging 
+service provider for IP; the workhorse for TCP/IP.
+(Typically referred to as a layer 3 protocol; although it's the first layer 4 protocol.) E.g., "ping" is ICMP
+
+Transport Layer Protocol Numbers http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
+    Where Host layers (layers 5,6,7) use ports to identify protocols/sercvices, the Transport Layer (layer 4) uses numbers to identify protocols. ICMP #1, TCP #6, UDP #17
+
+VoIP (Voice over IP) - latency is the big issue, not bandwidth; 
+QoS is used to mitigate. VoIP uses TCP to establish connection, then SIP (Session Initiation Protocol)    to stream data (voice) via RTP (Realtime Transport Protocol) which uses UDP; 
+
+SNMP (Simple Network Management Protocol) - Server (manager); Client (Agent); SNMP v.3 encrypts the traffic. "Trap" - message sent by agent on event; e.g., Router @ 80% capacity. Read/Get - message sent per manager request. Write - message to make changes, e.g., shutdown an interface.
+
+Trace Route
+R:\>tracert -d www.cbtnuggets.com
+
+Tracing route to e6430.dsca.akamaiedge.net [23.59.244.151]
+over a maximum of 30 hops:
+
+    1      <1 ms        <1 ms        <1 ms    192.168.1.1
+    2      21 ms        20 ms        20 ms    71.178.197.1
+    3      23 ms        24 ms        23 ms    130.81.182.6
+    4     127 ms        27 ms        22 ms    130.81.151.230
+    5      22 ms        22 ms        22 ms    152.63.38.137
+    6      22 ms        22 ms        22 ms    204.255.169.218
+    7      21 ms        22 ms        21 ms    144.232.11.92
+    8      23 ms        22 ms        24 ms    23.59.244.151
+
+Trace complete.
+
+DNS
+---
+    Resolving Server
+    Root Server
+    TLD Server
+    Authoritative Name Servers
+
+    "DNS Server" is synonymous w/ "Name Server"
+
+
+Resolving (DNS/Name) Server 
+---------------------------
+The client-side of the DNS is called a DNS resolver. It is responsible for initiating and sequencing the queries that ultimately lead to a full resolution (translation) of the resource sought, e.g., translation of a domain name into an IP address.
+
+
+Root (DNS/Name) Server
+----------------------
+Finds/Returns the appropriate Top Level (DNS/Name) Server (TLD Server)
+
+    "Root"; IP address is resolved right-to-left; ending dot (not needed and never used) is the "root"; i.e., www.google.com. <-- yeah, that trailing dot; that's where the DNS/Name server scheme starts to resolve Name-to-IP
+
+Full Path for IP/Name resolution
+--------------------------------
+Client [www.oracle.com] => Resolving DNS Server => Root DNS Server [.com, .org, ...] => "com Server" [a Top Level Domain Server] => Authoratative DNS Server [oracle] => 23.44.65.55    (all using UDP)
+
+That address gets "cached" (Non-authoritative) @ Resolving DNS Server for future (Non-authoritative) answers.
+
+nslookup.exe
+------------
+    Name Server lookup - cmd-line tool
+
+    R:\>nslookup google.com
+    Server:    FiOS.WORKGROUP
+    Address:    192.168.1.1
+
+    Non-authoritative answer:
+    Name:      google.com
+    Addresses: 2607:f8b0:4004:800::1003
+     74.125.228.2
+     74.125.228.14
+     74.125.228.8
+     74.125.228.4
+     74.125.228.1
+     74.125.228.7
+     74.125.228.0
+     74.125.228.5
+     74.125.228.6
+     74.125.228.3
+     74.125.228.9
+
+    Enter interactive mode ...
+                
+    R:\>nslookup
+    Default Server:  FiOS.WORKGROUP
+    Address:         192.168.1.1
+
+    # CMD to Reset server (to google's public DNS server) ...
+
+        > server 8.8.8.8
+        Default Server: google-public-dns-a.google.com
+        Address:        8.8.8.8
+
+    # CMD to change type of address lookup ...
+        Record Types: A, AAAA, A+AAAA, ANY, CNAME, MX, NS, PTR, SOA, SRV
+        A        [IPv4 address]
+        AAAA     [IPv6 address]    
+        CNAME    [canonical name (alias)]        
+        MX       [mail    exchange]
+        PTR      [pointer record (reverse lookup)]; 
+
+        ip => domain [url]
+        >
+        > set type=AAAA
+        > www.cisco.com
+        Server:   google-public-dns-a.google.com
+        Address:  8.8.8.8
+
+        Non-authoritative answer:
+        Name:       e144.dscb.akamaiedge.net
+        Addresses:  2600:807:320:202:8100::90
+                    2600:807:320:202:9e00::90
+        Aliases:    www.cisco.com
+                    www.cisco.com.akadns.net
+                    wwwds.cisco.com.edgekey.net
+                    wwwds.cisco.com.edgekey.net.globalredir.akadns.net
+
+Dynamic DNS [DDNS]
+-----------
+A service [for a fee perhaps] maps a changing IP to a DNS Name ("friendly name"), i.e., www.myhome.dynamicDNS.com
+
+Active Directory [AD]
+---------------------
+Microsoft; does DDNS.
+
+Virtualization
+--------------
+Hypervisor :: VMware's EMXi
+
+"VMware vSphere Hypervisor (ESXi)"
+http://www.vmware.com/products/vsphere-hypervisor/
+
+Building a Network
+------------------
+Ethernet          -    10 Mbps
+Fast Ethernet     -   100 Mbps
+Gigabit Ethernet  -  1000 Mbps
+
+Modular Router
+--------------
+A bank of ports at each "slot"; id'd by slot#/port#, or slot#/module#/port# so "Serial 2/0" means serial interface on slot 2, port 0.
+
+Full Duplex - 4 wires; 2 pairs; RX on 1, TX on other; CSMA/CD is off (un-needed).
+
+Default Route
+---------------
+0.0.0.0
+A special IP for unresolvable addresses; "Gateway of last resort". Typically, is IP of another router. Default Route is to router what Default Gateway is to PC.
+
+Wireless operates in Half Duplex; CSMA/CA is on.
+801.11
+
+2.4 GHz Band has 13 channels; they overlap;
+ 
+    ch  1    spans 1 -   3 
+    ch  6    spans 4 -   8
+    ch 11    spans 9 -  13
+
+    Avoid overlaps w/ Site Survey.
+
+5 GHz Band; dozens of non-overlapping channels.
+
+Service Set (SS)
+----------------
+"Associate" w/ Access Point.
+Wireless Access Point advertises its SSID (name of the network); 
+Several types of Serice Sets; ISS (Independent SS);
+* ISS - Ad hoc; uses NICs only.
+* Basic Service Set; "Infrastructure Mode"; SSID is WAP @ a router-based network.
+
+Site Survey -- SSIDs, channels in use, ... -- is the first thing to do when configuring a WLAN.
+
+Security
+--------
+WPE - broken
+WAP - TKIP - broken
+WPA2 Personal Mode; Preshared Key
+WPA2 Enterprise Mode (802.11i); Server generates key @ to authenticate;    CCMP/AES; requires a (RADIUS) server.
+
+Wi-Fi        http://en.wikipedia.org/wiki/802.11
+
+    802.11       GHz      Mbps         Modulation    meters in/out-side
+    ------       ----     ----         ----------    ------------------
+    11b          2.4       11           DSSS           35/140
+    11a          5         54           OFDM           35/120
+    11g          2.4       54           OFDM/DSSS      35/140
+    11n          2.4,5    150/300       OFDM           70/250
+    11ac         5        150/400(x3)   QAM/256-QAM    70/250
+    11ad        60       7,000
+
+Bluetooth 
+
+    Bluetooth    GHz      Mbps     Modulation    meters in/out-side
+    ---------    ----     ----     ----------    ------------------
+    1.2          2.4       0.721
+    2+EDR        2.4       3       GFSK/PSK        
+    3+HS         2.4      24
+    4 LE         2.4      24
+
+    Bluetooth was IEEE 802.15.1; standard no longer maintained;
+    v1 - v3 use 79 1MHz channels; v4.0 uses 40 2MHz channels; 
+    1600 hops per second, w/ Adaptive Freq-Hopping (AFH) enabled.
+
+         Class:    1        2         3 
+            mW:  100        2.5       1
+        Meters:  100       10         1
+
+    Bluetooth is a packet-based protocol with a master-slave structure. One master may communicate with up to seven slaves in a piconet; PAN - Personal Area Network; WPAN - Wireless PAN
+    http://en.wikipedia.org/wiki/Bluetooth#Bluetooth_vs._Wi-Fi_.28IEEE_802.11.29
+
+Network Topologies
+------------------
+Bus, Ring, Star, Mesh
+Conceptual; Ethernet (Partial) Mesh typically implemented as a star, physically, as was Token Ring.
+
+Ether-Channel - multiple lines in a switch programmed to act as one big    pipe.
+
+MPLS; tunnel path (services) through a big network; transparent to clients. LPS; label path switch. 
+
+Network HW
+----------
+110 Block; replaced 66 Block; patch panel
+
+Client > patch-cable to RJ-11 to cable going to patch panel @ a "110 Block" (rack), say 7U tall (19" wide). Patch panel is in a Wiring Closet (IDF), no further than 100m [90m + 5m patch-cable @ ea end]). Cable is "punched in" to connectors @ patch-panel. Patch cable w/ RJ-45 btwn patch-panel & switch. 
+
+IDF (Intermediate Distribution Frame); one on ea floor
+MDF (Main Distribution Frame)
+
+Demarc; Demarcation Point; @ which tranfers btwn SP and client.
+Smart Jack; @ demarc allows SP to verify their equipment functions. 
+Demarc extension; move (extend) the (actual) demarc to a more accessible location/connector (beyond the physical demarc having the Smart Jack).
+
+CSU/DSU (Channel Service Unit / Data Service Unit; makes appropriate signaling btwn Demarc and client, say between a syncronous high speed serial interface and the Demarc equipment; often internal to T1-module/router.
+
+Network Appliances
+------------------
+* Load Balancer
+* Proxy Server; is a man-in-the-middle; can analyze the traffic at lower layers; provide security.
+* Content Filter
+* VPN Concentrator; termination point for many VPN tunnels; perhaps @ a firewall.
+* Firewall vendors: Cisco, PaloAlto, Juniper
+* Cache Engine; local storage of oft-used files
+* WAN Optimizer; compress traffic, ...
+
+VPN; Virtual Private Network; 
+
+Software Tools
+---------------
+ipconfig /all              - all tcp/ip/mac config info of this machine
+ping <ip>                  - test connectivity
+arp -a                     - ARP Table; what this machine learned of its net
+tracert                    - show path; all routers; all hops
+nslookup                   - for interactive mode, use no options
+nslookup 70.123.15.20      - resolve IP (find its name)
+nslookup server 8.8.8.8    - use google's DNS server to resolve IP <==> Name
+nslookup 
+> type=ptr                 - reverse lookup; Name => IP 
+
+netstat                    - shows protocol stats and current TCP/IP connections/ports
+nbstat                     - shows protocol stats and current TCP/IP connections 
+                             using NBT (NetBIOS over TCP/IP).
+route                      - manipulate network route table.
+route print                - show 
+
+Network Management
+------------------
+SNMP (Simple Network Management Protocol); launch an SNMP Manager (S/W); SNMP "Set" Command (SNMP Write) and "Get" command; query w/ SNMP Agent. Agents can set "Trap"; rpt on event.
+SNMP v3, can (and should) authenticate & encrypt; v1 & v2 are both insecure; plain-text password.
+
+Optimization 
+------------
+QoS, Traffic Shaping, load balancing, caching engines, High Availability (HA), Fault Tolerance (CARP); Preferencial ["unfair"] treatment per traffic; Handling Realtime Apps, e.g., VoIP, Video comms, ...; Solves ISSUES: latency [150ms limit], Jitter [variations in latency over successive packets], drops.
+
+
+Network Security 
+----------------
+
+Network Access Control [Technical Control]; permit/deny access
+        
+    Access Control List [ACL] 
+        layer-2 [MAC list]
+        layer-3 [IP Access List]
+        layer-4 [protocols; UDP, TCP:80,...]
+    
+        ACL app: Cicsco Configuration Professional [GUI]
+
+AAA [Authentication, Authorization, Accounting];
+Authentication Server = AAA Server; e.g., RADIUS or TACACS+ Server or ACS Server
+Router, or Network Switch, is a client of a AAA Server;
+    
+    AAA Client-Server Protocols 
+        RADIUS; Remote Authentication DIalin User Service; open protocol; unencrypted except for password.
+        TACACS+; Cisco proprietary protocol; entire session encryption 
+
+    Wireless encryption protocols: 
+        WEP, WPA, WPA2 [802.11i], WPA2 ENT 
+        WPA2 ENT uses PSK [Preshared Key]s and a RADIUS Server for AAA
+        802.1X [literally 'X']; Authentication per User/Pass/IP-address
+    
+pfSense; router OS/software [FreeBSD] https://en.wikipedia.org/wiki/PfSense
+inSSIDer; Wi-Fi network tool by MetaGeek Inc https://en.wikipedia.org/wiki/InSSIDer
+
+User Authentication 
+    802.1X Authentication
+    EAP [Extensible Authentication Protocol]; many flavors; EAP-TLS, (L)EAP; extends layer-2
+    Posture Assessment; validate client [suplicant] has all the required software pieces 
+    Multi-factor Authentication 
+        1. user knows [password]
+        2. user has [physical-key] 
+        3. user is [biological]
+    Kerberos; for secure 2-party comms; single sign-on
+        mutual authentication & session encryption; client <=> KDC [Key Distribution Center] Server <=> server
+        KDC grants TGT/Key; i.e., 
+        TGS [Ticket Granting Service] grants a ticket; 
+        TGT [TGS-granted Ticket] 
+    Single Sign-on; use Kerberos to allow access to everything on LAN per one sign-on. 
+    PKI; Public Key Infrastructure; https [SSL, TLSv1,v?]
+        Asymmetric Encryption; [Public/Private] Key Pair; different keys on each end [encrypt/decrypt]; Unlike Symmetric Encryption; encrypt & decrypt with one key
+        Certificate; contains Public Key; Issued by Certificate Authority [CA], e.g., Verisign, GoDaddy, ...; all browsers have builtin lists of trusted CAs
+        Session Key is created using Public Key, encrypted, then sent to server; server decrypts with their Private Key.
+        Users can also be issued a certificate, e.g., on a smartcard, for 2-factor auth.
+        
+Tunneling; logical 'tunnels' across an untrusted network;
+i.e., Virtual Private Network (VPN); uses IPsec, SSL, PPTP [old & vulnerable], L2TP, OpenVPN
+
+    demo: traffic [e.g., ping] LAN to LAN peers [PC1@LAN1 <=> PC2@LAN2], across the internet [through the ISP's servers] using private IP address of target machine.
+    
+    Encapsulate & encrypt each packet
+    
+        IPsec; encapsulate & encrypt each packet; ESP layer-4 protocol [#50]
+        demo using wireshark [net+]; capture per node; before/after IPsec/router 
+        
+    Site-to-Site [VPN] Tunnel; IPsec
+        - software required
+        - sets up 2 tunnels; Internet Key Exchange [IKE] 
+            IKE Phase-1; router-to-router comms
+            IKE Phase-2; the IPsec Tunnel; encrypts packets 
+        - ISAKMP; suite of protocols assisting routers to dynamically config protocols, keys, etc 
+        
+    Remote Access VPN; IPsec or SSL
+        - SSL encrypts sessions; no software installation required.
+        
+Remote Access; e.g., admin per CLI 
+    - Telnet [port 23] 
+    - SSH [port 22]; Secure Shell; Putty
+        demo @ cisco CLI:    ssh -l admin 23.0.0.2 
+    - RAS; Remote Access Server; e.g., a router
+    - PPP; Point to Point Protocol; authentication [CHAAP, PAP, MS-PAP], encryption, compression
+    - PPPoE; PPP over Ethernet
+    - RDP; Remote Desktop Protocol; PC to PC; handles GUI
+    - VNC; like RDP
+    - ICA; proprietary protocol [Citrix]; connect everyone's PC for video conf call presentations 
+
+Threats/Vulnerabilities/Mitigation 
+
+    Threats
+    
+    - Evil Twin, e.g., cloned WAP w/ stronger signal.
+    - Man in the Middle; Evil Twin may forward to legit WAP, so client is clueless; thereby Evil Twin is Man-in-the-Middle [attacker]; all traffic goes thru Evil Twin
+    - DoS; Denial of Service; stopping the service by any means; cut power, overwhelm server with bad packets, overwhelm with pings, ...
+    - DDoS; Distributed DoS; many [10,000] coordinating attackers; e.g., overwhelm with pings or with TCP SYN requests
+    - Buffer Overflow
+    - Packet sniffing; demo @ DEFCON had live exploit of usernames/IP/destination/passwords
+    - FTP bounce [per port command]
+    Smurf; attacker broadcasts ping request to victim-1 from [bogus] victim-2 source to overwhelm victim-2 using resources of victim-1 
+
+    Tools
+    
+    - inSSIDer; Wi-Fi network tool by MetaGeek Inc https://en.wikipedia.org/wiki/InSSIDer
+    - Kali [Backtrack]; linux distro for penetration [testing], forensics, etc; 
+        APPS: Armitage (a graphical cyber attack management tool), nmap (a port scanner), Wireshark (a packet analyzer), John the Ripper (a password cracker), Aircrack-ng (a software suite for penetration-testing wireless LANs), Burp suite and OWASP ZAP (both web application security scanners).[2][3]
+        
+    Mitigation
+    
+    - Rate Limiting
+    - DHCP Snooping; IP <=> MAC map + Dynamic ARP inspection
+    - Patches, Awareness, ...
+    
+    Firewall 
+    --------
+    HW; Appliance
+    SW-based firewall; OS based, on general purpose machine, e.g., pfSense [FreeBSD]
+    
+    Inside Zone (IZ), Outside Zone (OZ), DMZ
+    
+    LAN --IZ-- Firewall --OZ-- Gateway [DMZ] -- Internet/ISP
+    
+    Default; block all IZ <= OZ and DMZ <= OZ
+    
+    Stateful Firewall; all modern firewalls are stateful; Stateful Inspection vs. Packet Filtering; [NAT/PAT]; Stateful database maintained; dynamically monitors session [NAT IP-address & port] of each LAN node,    allows exceptions to that default [returns from website servers to LAN client requests]; Port Security; ACL; Access List; e.g., TCP ANY, if port-80, if to session.
+    
+    Cisco HW Firewall CLI
+        interface vlan 1                     # Create VLAN
+        nameif inside                        # name VLAN interace 
+        security-level 100                     # 0-100 ; least to most secure 
+        ip address 10.0.0.1 255.255.255.0     # IP & Mask 
+    
+    
+Network Security Appliances 
+
+    IDS/IPS; Intrusion Detection/Prevention System; based on behavior, signature, network or host
+    
+    Deep Packet Analysis; IPS; cuz packet payload may contain other than what protocol/port implies.    
+    
+    Network Scanners; used by white-hat/black-hat
+
+    

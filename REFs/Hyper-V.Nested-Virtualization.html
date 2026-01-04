@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hyper-V.Nested-Virtualization</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h2><a href="https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/user-guide/nested-virtualization">Nested Virtualization</a></h2>
+
+<p>Expose <code>Intel-VT</code> extenstions to guest OS.<br>
+Hyper-V nests only Hyper-V.<br>
+Does <strong>not</strong> allow VirtualBox or any other 3rd party virtualization app.</p>
+
+<pre><code class="language-powershell"># Expose VT Extensions
+Set-VMProcessor -VMName $VMName -ExposeVirtualizationExtensions $true
+# MAC Spoofing (Networking with Nested VMs)
+Get-VMNetworkAdapter -VMName $VMName | Set-VMNetworkAdapter -MacAddressSpoofing On
+</code></pre>
+
+<h3>App @ VM on VirtualBox on Linux (<a href="h3>
+
+<blockquote>
+<p>E.g., for running <a href="https://www.vagrantup.com/"><strong>Vagrant</strong></a>'s popular <code>ubuntu/trusty64</code> box, which requires <a href="https://www.virtualbox.org/"><strong>VirtualBox</strong></a> as the <code>provider</code>.<br>
+Hyper-V and VirtualBox are mutually exclusive hypervisors; <strong>cannot co-exist</strong> on one Win-OS, so would be a work-around.</p>
+</blockquote>
+
+<pre><code>VM-based-app:     Vagrant|Minikube|...
+                     -----------
+Type-2 Hypervisor:    VirtualBox
+                       -------
+OS @ VM @ Hyper-V:   Linux Guest
+                       -------
+Type-1 Hypervisor:     Hyper-V  
+</code></pre>
+
+<ul>
+<li><strong><em>Nope</em></strong>; Hyper-V nests only Hyper-V.</li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

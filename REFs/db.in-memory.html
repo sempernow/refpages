@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>db.in-memory</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>In-memory Data Store</h1>
+
+<p>There are several popular open-source alternatives to Redis,
+each with different strengths.</p>
+
+<p>Here's a breakdown:</p>
+
+<hr>
+
+<h2><strong>🎯 Direct &quot;Redis-like&quot; Alternatives</strong></h2>
+
+<h3><strong>1. <a href="https://docs.keydb.dev/">KeyDB</a></strong> | <a href="https://hub.docker.com/r/eqalpha/keydb">OCI</a></h3>
+
+<ul>
+<li><strong>What</strong>: Multi-threaded fork of Redis (Redis is single-threaded) | <a href="https://hub.docker.com/r/bitnamicharts/keydb">OCI Helm</a></li>
+<li><strong>Key difference</strong>: Better multi-core utilization, same protocol</li>
+<li><strong>Best for</strong>: Higher throughput on modern multi-core servers</li>
+<li><strong>Protocol</strong>: Fully Redis-compatible</li>
+</ul>
+
+<h3><strong>2. <a href="https://www.dragonflydb.io/">Dragonfly</a></strong></h3>
+
+<ul>
+<li><strong>What</strong>: Modern, high-performance drop-in replacement</li>
+<li><strong>Key difference</strong>: Built from scratch, uses newer algorithms, better memory efficiency</li>
+<li><strong>Best for</strong>: High performance at scale, large datasets</li>
+<li><strong>Protocol</strong>: Redis-compatible</li>
+</ul>
+
+<h3><strong>3. <a href="https://valkey.io/">Valkey</a></strong> (The new official fork)</h3>
+
+<ul>
+<li><strong>What</strong>: Community fork of Redis (after Redis changed license)</li>
+<li><strong>Key difference</strong>: Truly open-source (BSD), community-driven</li>
+<li><strong>Best for</strong>: Those wanting FOSS without commercial restrictions</li>
+<li><strong>Protocol</strong>: 100% Redis-compatible</li>
+</ul>
+
+<hr>
+
+<h2><strong>🔄 Similar Use Cases (Different Approaches)</strong></h2>
+
+<h3><strong>4. Memcached</strong></h3>
+
+<ul>
+<li><strong>What</strong>: Original in-memory key-value store (simpler than Redis)</li>
+<li><strong>Key difference</strong>: No persistence, simpler, multi-threaded, older but battle-tested</li>
+<li><strong>Best for</strong>: Simple caching, when you don't need Redis's data structures</li>
+<li><strong>Protocol</strong>: Own protocol (not Redis-compatible)</li>
+</ul>
+
+<h3><strong>5. Apache Ignite</strong></h3>
+
+<ul>
+<li><strong>What</strong>: In-memory computing platform with SQL support</li>
+<li><strong>Key difference</strong>: SQL queries, ACID transactions, distributed computing</li>
+<li><strong>Best for</strong>: Applications needing SQL + caching + compute</li>
+<li><strong>Protocol</strong>: Various (JDBC, REST, custom)</li>
+</ul>
+
+<h3><strong>6. Hazelcast</strong></h3>
+
+<ul>
+<li><strong>What</strong>: In-memory data grid</li>
+<li><strong>Key difference</strong>: Java-centric, distributed data structures, compute on data</li>
+<li><strong>Best for</strong>: Java applications needing distributed caching/computation</li>
+<li><strong>Protocol</strong>: Client libraries (Java/.NET/etc)</li>
+</ul>
+
+<hr>
+
+<h2><strong>📊 Feature Comparison Table</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th><strong>System</strong></th>
+<th><strong>Redis Protocol</strong></th>
+<th><strong>Data Structures</strong></th>
+<th><strong>Persistence</strong></th>
+<th><strong>Threading</strong></th>
+<th><strong>Primary Strength</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Redis</strong></td>
+<td>Native</td>
+<td>Rich (strings, hashes, lists, sets, etc)</td>
+<td>RDB/AOF</td>
+<td>Single-threaded</td>
+<td>Mature, feature-rich</td>
+</tr>
+
+<tr>
+<td><strong>KeyDB</strong></td>
+<td>✅ Compatible</td>
+<td>Same as Redis</td>
+<td>RDB/AOF</td>
+<td><strong>Multi-threaded</strong></td>
+<td>Performance on multi-core</td>
+</tr>
+
+<tr>
+<td><strong>Valkey</strong></td>
+<td>✅ Compatible</td>
+<td>Same as Redis</td>
+<td>RDB/AOF</td>
+<td>Single-threaded (for now)</td>
+<td>Open-source future</td>
+</tr>
+
+<tr>
+<td><strong>Dragonfly</strong></td>
+<td>✅ Compatible</td>
+<td>Redis subset + more</td>
+<td>Snapshots</td>
+<td>Multi-threaded</td>
+<td>Memory efficiency, scale</td>
+</tr>
+
+<tr>
+<td><strong>Memcached</strong></td>
+<td>❌</td>
+<td>Simple key-value</td>
+<td>❌ None</td>
+<td>Multi-threaded</td>
+<td>Simplicity, speed</td>
+</tr>
+
+<tr>
+<td><strong>Ignite</strong></td>
+<td>❌</td>
+<td>SQL tables + more</td>
+<td>Yes (disk)</td>
+<td>Distributed</td>
+<td>SQL + transactions</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2><strong>🔄 When to Choose What:</strong></h2>
+
+<h3><strong>Choose Redis (or Valkey) if:</strong></h3>
+
+<ul>
+<li>You need specific Redis features (pub/sub, Lua scripting, etc.)</li>
+<li>Mature ecosystem and documentation matter</li>
+<li>You have existing Redis code/tools</li>
+</ul>
+
+<h3><strong>Choose KeyDB/Dragonfly if:</strong></h3>
+
+<ul>
+<li>You're CPU-bound with Redis</li>
+<li>Need better multi-core performance</li>
+<li>Willing to try newer implementations</li>
+</ul>
+
+<h3><strong>Choose Memcached if:</strong></h3>
+
+<ul>
+<li>You only need simple key-value caching</li>
+<li>Want maximum simplicity</li>
+<li>Have multi-threaded read-heavy workloads</li>
+</ul>
+
+<h3><strong>Choose Ignite/Hazelcast if:</strong></h3>
+
+<ul>
+<li>You need distributed computing capabilities</li>
+<li>SQL access to cached data is important</li>
+<li>Working mainly in Java ecosystem</li>
+</ul>
+
+<hr>
+
+<h2><strong>🔍 Quick Decision Guide:</strong></h2>
+
+<pre><code class="language-yaml">Need Redis compatibility?
+├── Yes → Want multi-core?
+│   ├── Yes → KeyDB or Dragonfly
+│   └── No → Redis or Valkey
+└── No → Need SQL/transactions?
+    ├── Yes → Apache Ignite
+    └── No → Simple caching only?
+        ├── Yes → Memcached
+        └── No → Evaluate Hazelcast
+</code></pre>
+
+<hr>
+
+<h2><strong>📈 Current Trends (2024):</strong></h2>
+
+<ul>
+<li><strong>Valkey</strong> is gaining traction as the community-driven Redis alternative</li>
+<li><strong>Dragonfly</strong> showing impressive benchmarks for large datasets</li>
+<li><strong>Redis itself</strong> remains most popular, but license changes pushed people to alternatives</li>
+<li><strong>Memcached</strong> still widely used for simple caching</li>
+</ul>
+
+<p><strong>Most common path</strong>: Start with Redis/Valkey, migrate to KeyDB/Dragonfly if hitting single-threaded limits. Use Memcached if you truly don't need Redis's extra features.</p>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

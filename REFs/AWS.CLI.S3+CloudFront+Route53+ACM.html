@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AWS.CLI.S3+CloudFront+Route53+ACM</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h2>S3 Bucket Setup</h2>
+
+<pre><code class="language-bash">export _DOMAIN='uqrate.org'
+export _BUCKET=&quot;uqrate.org&quot;
+export _OAI='E3E32ST6ZZJXB0'
+export _CERT_ARN='arn:aws:acm:us-east-1:971733315851:certificate/6fa27e32-1d84-4c2b-911b-1c0ffacb7b71'
+export _DIST_ID='E2I1ETCIRQ3PLX' # d2z2qif30xj0ym.cloudfront.net
+export _ZONE_ID='Z03607433CJ17NGTHYTYE'
+
+_DOMAIN='gd9.ch'
+_BUCKET=&quot;gd9.ch&quot;
+_OAI='E2HAZADACQ2G1'
+_CERT_ARN='arn:aws:acm:us-east-1:971733315851:certificate/2bce3bf8-5d83-4f9e-b0bf-91eb574a350d'
+_DIST_ID='EM5ELRXIN61EW' # 'd191omt5dusrvf.cloudfront.net'
+_ZONE_ID='Z03661092A3ARWLAMYFZE'
+
+# -----------------------------------------------------------------------------
+# @ S3 
+# CREATE (make bucket from folder having name of bucket)  
+aws s3 mb &quot;s3://${PWD##*/}&quot; --region 'us-east-1' 
+# UPLOAD/SYNC (from folder having name of bucket and subdir ./bucket)
+aws s3 sync ./bucket s3://${PWD##*/} --delete
+# STATIC Website ENABLE + CONFIGure  
+#  https://docs.aws.amazon.com/cli/latest/reference/s3/website.html
+aws s3 website s3://$_BUCKET/ --index-document 'index.html' --error-document 'error.html'
+# SETUP www. subdomain-name bucket for naked-domain-name bucket 
+aws s3 mb s3://www.$_BUCKET  --region 'us-east-1' 
+# REDIRECT www. subdomain-name bucket to naked-domain-name bucket 
+printf '{&quot;RedirectAllRequestsTo&quot;:{&quot;HostName&quot;: &quot;%s&quot;}}\n' $_BUCKET &gt; 'redirect.json'
+aws s3api put-bucket-website --bucket www.$_BUCKET --website-configuration file://bucket/redirect.json
+
+# ADD Bucket POLICY (create per template @ aws/policy.templates)
+aws s3api put-bucket-policy --bucket $_BUCKET --policy file://s3api.policy.json 
+# GET Bucket POLICY (unescape &quot;Policy&quot; key)
+aws s3api get-bucket-policy --bucket $_BUCKET | jq -r .Policy | jq . &gt; 's3api.policy.got.json'
+
+# -----------------------------------------------------------------------------
+# @ ACM (Using GUI allows for auto CNAME record creation)
+# https://docs.aws.amazon.com/cli/latest/reference/acm/
+
+# LIST Certificates
+aws acm list-certificates 
+
+# REQUEST Certificate(s)
+aws acm request-certificate --domain-name $_DOMAIN \
+    --validation-method 'DNS' \
+    --subject-alternative-names &quot;*.${_DOMAIN}&quot; \
+    --idempotency-token 'elrewh55' &gt; &quot;acm.request-cert-ALL${_DOMAIN}.json&quot;
+# VALIDATEs by adding its CNAME to DNS records @ Route53 (hosted zone)
+# Easiest way to generate CNAME records is during ACM Request process, 
+# else at CloudFront &gt; Edit, else manually at Route53. 
+# CNAME record required to add/use any non-CloudFront-default domain name to distribution. 
+
+# Describe (includes CNAME Name/Value pairs; get Cert ARN from above return or `aws acm list-certificates`)
+aws acm describe-certificate --certificate-arn $_CERT_ARN &gt; &quot;acm.describe-cert-ALL${_DOMAIN}.json&quot;
+# GET Cert (.pem) :: install per select @ CloudFront; installs automatically
+aws acm get-certificate --certificate-arn $_CERT_ARN &gt; &quot;acm.get-cert-ALL${_DOMAIN}.pem&quot;
+# DELETE Cert 
+aws acm delete-certificate --certificate-arn CERT_ARN
+# -----------------------------------------------------------------------------
+# @ CloudFront
+
+# CREATE OAI (@ CloudFront dist key &quot;OriginAccessIdentity&quot;) 
+# (OAI is a user-id;  static site configured such that OAI is lone user allowed S3 access)
+aws cloudfront create-cloud-front-origin-access-identity \
+    --cloud-front-origin-access-identity-config \
+    &quot;CallerReference=$(date &quot;+%s&quot;),Comment=S3-$_BUCKET&quot; \
+    &gt; 'cf.oai.created.json'
+
+# LIST distributions 
+aws cloudfront list-distributions --query &quot;DistributionList.Items[*].{Bucket:Origins.Items[0].Id,OAI:Origins.Items[0].S3OriginConfig.OriginAccessIdentity,DistID:Id,Domain:DomainName}&quot;
+# GET distribution (can use existing dist as template for new)
+aws cloudfront get-distribution --id $_DIST_ID &gt; 'cf.dist.get.json'
+# CREATE distribution per value @ &quot;DistributionConfig&quot; key (of 'cf.dist.get.json')
+aws cloudfront create-distribution \
+    --distribution-config file://cf.dist.create.json \
+    &gt; 'cf.dist.created.json'
+
+# UPDATE distribution (requires full distribution data + new/changed)
+aws cloudfront update-distribution --id $_DIST_ID \
+    --distribution-config  file://cf.dist.update.json &gt; 'cf.dist.updated.json'
+# ... remove &quot;Etag&quot; key.
+
+# -----------------------------------------------------------------------------
+# @ Route53  https://docs.aws.amazon.com/cli/latest/reference/route53/  
+
+# LIST hosted zones [and get zone-id of $_DOMAIN]
+aws route53 list-hosted-zones --query &quot;HostedZones[].[Name,Id]&quot; --output text 
+aws route53 list-hosted-zones &gt; 'route53.list.hosted-zones.json'
+
+# CREATE hosted zone
+aws route53 create-hosted-zone --name $_DOMAIN \
+    --caller-reference $(date +%H.%M) &gt; &quot;route53.create.json&quot;
+# LIST records
+aws route53 list-resource-record-sets \
+    --hosted-zone-id $_ZONE_ID &gt; 'route53.list.json'
+# LIST nameservers 
+aws route53 list-resource-record-sets \
+    --hosted-zone-id $_ZONE_ID \
+    --query &quot;ResourceRecordSets[0].ResourceRecords[]&quot; --output text 
+
+# TEST DNS 
+aws route53 test-dns-answer --hosted-zone-id $_ZONE_ID \
+    --record-name $_DOMAIN --record-type 'A'
+
+# CHANGE record-sets (Add 'A' records for CloudFront dist)
+aws route53 change-resource-record-sets \
+    --hosted-zone-id $_ZONE_ID \
+    --change-batch file://route53.add.cf.A.json
+</code></pre>
+
+<h2>&quot;Custom Domain&quot; (any website domain name)</h2>
+
+<ul>
+<li><em>Any public-usable domain name</em>, &mdash;that is, anything other than the AWS-default, e.g., <code>d2z2qif30xj0ym.cloudfront.net</code> &mdash;<strong><em>requires SSL</em></strong>, which is requested/issued per ACM (Certificate Manager) service.<br>
+
+<ul>
+<li>During the ACM Certificate Request process, click on each domain name and then on the button to add CNAME to Route53.</li>
+<li>Else, do similarly at CloudFront whilst editing the distribution to add those <em>custom</em> domain names, e.g., <code>foo.com</code>, <code>www.foo.com</code>.</li>
+
+<li><p>Else do so manually at Route53; the required CNAME Name/Value pairs are obtained per &hellip;</p>
+
+<pre><code class="language-bash">aws acm describe-certificate --certificate-arn $_CERT_ARN
+</code></pre></li>
+</ul></li>
+<li>See <code>CNAMES.DNS_Configuration.csv</code>, a consolidation of <code>DNS_Configuration.csv</code> files, which may be downloaded during SSL/TLS certificate requests at ACM service (GUI).</li>
+<li>Can create AWS-Alias ('A') records whereof source is CloudFront distribution, but doesn't take affect until TLS Cert.</li>
+</ul>
+
+<p>(foo.com) Setup and HTTPS (S3/CloudFront/ACM/Route53)<br>
+<a href="http://docs.aws.amazon.com/AmazonS3/latest/dev/website-hosting-custom-domain-walkthrough.html">http://docs.aws.amazon.com/AmazonS3/latest/dev/website-hosting-custom-domain-walkthrough.html</a></p>
+
+<ul>
+<li>@ ACM, request/validate public SSL Certificate
+
+<ul>
+<li>use GUI</li>
+<li>ONE CERT FOR ALL &quot;Alternate Domain Names&quot; @ CloudFront distro
+
+<ul>
+<li>See &quot;AWS.IAM.txt&quot; and &quot;AWS.CLI.sh&quot;</li>
+</ul></li>
+<li>Add CNAME record by clicking on the domain name(s) listed @ ACM Request process
+
+<ul>
+<li>It handles the Route53 record(s) creation.</li>
+</ul></li>
+</ul></li>
+<li>@ CloudFront &gt; (select the certified-domain distro) &gt; Edit
+
+<ul>
+<li>&quot;Alternative Domain Names (CNAMEs)&quot;
+
+<ul>
+<li>ADD ALL certified (sub)domains;
+
+<ul>
+<li>foo.com *.foo.com; one per line</li>
+</ul></li>
+</ul></li>
+<li>SSL Certificate &gt; Custom SSL Certificate (select-box)
+
+<ul>
+<li>Select the proper (domainname-bound) cert, per its Identifier</li>
+</ul></li>
+</ul></li>
+<li>@ Route 53, create a DNS record for EACH of &quot;Alternate Domain Names&quot; specified @ CloudFront distro:
+
+<ul>
+<li>Type: A &gt; Alias: Yes &gt; &quot;Alias Target&quot; &gt; CloudFront endpoint (hhh...hhh.cloudfront.net)
+
+<ul>
+<li>The CloudFront distro/endpoint appears @ select-box ONLY IF the
+domainname is specified at distro's &quot;Alternate Domain Names&quot;.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

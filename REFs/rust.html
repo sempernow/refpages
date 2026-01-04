@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>rust</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><code>rust</code></h1>
+
+<h2><code>rustup</code> TLS</h2>
+
+<p>UPDATE:</p>
+
+<p><code>rustup</code>__  uses <strong><code>rustls</code></strong> as the default TLS backend by default if <code>v1.28+</code>.
+For earlier verions, set the enivornment variable:</p>
+
+<p><strong><code>RUSTUP_USE_RUSTLS=1</code></strong></p>
+
+<h3>Q:</h3>
+
+<p>Does <code>rustup</code> on Windows rely on the OS trust store to verify TLS certificates?</p>
+
+<h3>A:</h3>
+
+<p>No, <strong><code>rustup</code></strong> on Windows <strong>does not rely on the OS trust store</strong> to verify TLS certificates directly. Instead, it uses <strong><code>reqwest</code></strong> for HTTP requests, which in turn uses <strong><code>rustls</code></strong> as the default TLS backend. <code>Rustls</code> is a Rust-native TLS library that includes a bundled version of <strong>Mozilla's root certificates</strong> at the time of its release, rather than relying on the operating system's trust store. This setup helps ensure that <code>rustup</code> maintains a consistent set of trust roots across different platforms and configurations.</p>
+
+<h3>Q:</h3>
+
+<p>How to configure for TLS using <code>rustls</code> if CA is private (custom) yet already loaded into Windows trust store?</p>
+
+<h3>A:</h3>
+
+<p>To configure <code>rustls</code> to use a private (custom) Certificate Authority (CA) that is already trusted in the Windows trust store when the default <code>rustls</code> setup doesn't directly use the OS trust store, you need to explicitly load the CA certificates into <code>rustls</code>. Here’s how you can approach this task in Rust, focusing on incorporating the custom CA:</p>
+
+<ol>
+<li><p><strong>Extract the CA Certificate from Windows:</strong> First, you need to export the CA certificate from the Windows trust store. This can be done using the Microsoft Management Console (MMC) or other Windows tools.</p></li>
+
+<li><p><strong>Convert the Certificate:</strong> Ensure the certificate is in PEM format. If it’s not, convert it using a tool like OpenSSL.</p></li>
+
+<li><p><strong>Load the Certificate in Rust:</strong> You will need to read the CA certificate file and add it to the <code>rustls</code> configuration in your Rust application. Here’s an example of how you can do this:</p>
+
+<pre><code class="language-rust">use rustls::{ClientConfig, RootCertStore};
+use std::fs::File;
+use std::io::{BufReader, Read};
+use rustls_pemfile::certs;
+
+fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+// Path to the exported CA certificate in PEM format
+let cert_file = File::open(&quot;path_to_your_ca_cert.pem&quot;)?;
+let mut reader = BufReader::new(cert_file);
+
+// Load the certificates from the file
+let certs = certs(&amp;mut reader)?
+    .iter()
+    .map(|v| rustls::Certificate(v.clone()))
+    .collect();
+
+// Prepare the TLS configuration
+let mut root_store = RootCertStore::empty();
+root_store.add_parsable_certificates(&amp;certs);
+
+let config = ClientConfig::builder()
+    .with_safe_defaults()
+    .with_root_certificates(root_store)
+    .with_no_client_auth();
+
+// Now you can use `config` to create TLS connections that trust your custom CA
+Ok(())
+}
+</code></pre></li>
+</ol>
+
+<ul>
+<li>This script is <strong>UNTESTED</strong>.</li>
+<li>Note its required parameter : <strong><code>path_to_your_ca_cert.pem</code></strong></li>
+</ul>
+
+<p><strong>Integration Note:</strong> If your application or tool uses <code>rustup</code> or another system that internally uses <code>rustls</code> and you don't have control over the internal TLS configuration, you might need to modify the application itself to support custom CA loading as described, or proxy its network requests through a local service that can handle the custom CA verification.</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{
+    "editor.minimap.enabled": false,
+    "editor.fontFamily": "'Cascadia Code', 'Fira Code', Consolas, monospace",
+    "editor.fontLigatures": true,
+
+    // Indentation : Default for all files (fallback)
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    // Indentation : Language-specific overrides
+    "[yaml]": {
+        "editor.tabSize": 2
+    },
+    "[markdown]": {
+        "editor.tabSize": 4
+    },
+
+    "chat.commandCenter.enabled": false,
+    "deepseek.lang": "en",
+    "excalidraw.theme": "dark",
+    "makefile.configureOnOpen": false,
+    "explorer.confirmDelete": false,
+
+    "workbench.editorAssociations": {
+        "*.svg": "editor.excalidraw",
+        "*.png": "default",
+    },
+
+    "files.associations": {
+        "*.tpl": "ini",
+        "*.yaml.tpl": "yaml",
+    },
+    
+    "terminal.integrated.fontFamily": "'Cascadia Code', 'Fira Code', Consolas, monospace",
+    "terminal.integrated.fontLigatures.enabled": true,
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": [
+                "${env:windir}\\Sysnative\\cmd.exe",
+                "${env:windir}\\System32\\cmd.exe"
+            ],
+            "args": [],
+            "icon": "terminal-cmd"
+        },
+        "Git Bash": {
+            "source": "Git Bash"
+        },
+        "Ubuntu-24.04 (WSL)": {
+            "path": "C:\\WINDOWS\\System32\\wsl.exe",
+            "args": [
+                "-d",
+                "Ubuntu-24.04"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Ubuntu-24.04 (WSL)",
+    "powershell.integratedConsole.showOnStartup": false,
+    "security.workspace.trust.untrustedFiles": "open",
+    "files.eol": "\n",
+    "workbench.startupEditor": "none",
+    "git.openRepositoryInParentFolders": "never",
+    "explorer.confirmDragAndDrop": false,
+
+}

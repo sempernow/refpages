@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JS.Binding.Event.Handlers</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://URL" title="___">Binding Event Handlers</a></h1>
+
+<h2><a href="http://https://davidwalsh.name/event-delegate">Event Delegation</a></h2>
+
+<p>Bind event listener to a parent; all child node events bubble up, per <code>e.target</code>.</p>
+
+<h3>Example</h3>
+
+<p>Pass a function name to call per event</p>
+
+<pre><code class="language-js">var id = (id) =&gt; { // alias for ...
+    return document.getElementById(id)
+}
+
+id(&quot;group-1&quot;)
+    .addEventListener(&quot;click&quot;, function (e) {
+        var f = e.target.innerHTML.replace('()','')
+        if (typeof o[f] === &quot;function&quot;) { 
+            o[f]()
+        }
+    })
+</code></pre>
+
+<ul>
+<li><p><code>o</code> is parameter for namespace injected into the enclosing IIFE.<br>
+E.g.,</p>
+
+<pre><code class="language-js">(function(o){
+    o.aFunc = () =&gt; {/*...*/}
+    // ...
+})($);
+</code></pre></li>
+</ul>
+
+<h3>Example</h3>
+
+<p>Pass an attribute as parameter for function called per event</p>
+
+<pre><code class="language-js">// To shorten these common DOM references ...
+var els = (tag) =&gt; {return document.getElementsByTagName(tag)}
+var elID = (id) =&gt; {return document.getElementById(id)}
+
+// @ e.target method 
+elID(&quot;group-1&quot;)
+    .addEventListener(&quot;click&quot;, (e) =&gt; {
+        if (e.target &amp;&amp; e.target.nodeName == 'BUTTON') {
+            var el = els('BUTTON')[e.target.id]
+            _toggleClass(el.title)
+        }
+    })
+
+function _toggleClass(c) {
+    c = c || 'default'
+    var el = elID(&quot;target&quot;);
+    el.className ? el.classList.toggle(c) : el.className = c;
+    el.innerHTML = c
+    console.log('@ _do(' + c + ')');
+}
+</code></pre>
+
+<h3><a href="https://medium.com/free-code-camp/the-complete-javascript-handbook-f26b2c71719c">Event Bubbling and Capturing</a></h3>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/API/DOMStringMap" title="MDN"><code>DOMStringMap</code> :: <code>data-*</code> :: Global Attrib</a></h2>
+
+<h3>HTML</h3>
+
+<pre><code class="language-html">&lt;div id=&quot;group-1&quot;&gt;
+    &lt;button data-func=&quot;func1&quot; id=&quot;event-1&quot; title=&quot;Start SSE&quot;&gt;Start&lt;/button&gt;
+    &lt;button data-func=&quot;func2&quot; id=&quot;event-2&quot; title=&quot;Stop SSE&quot;&gt;Stop&lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+
+<h3>JS <a href="scripts/dataset.js">@ <code>dataset.js</code></a></h3>
+
+<pre><code class="language-js">// button Event Handler per Event Delegation (1 for all @ group)
+id(&quot;group-1&quot;)
+    .addEventListener(&quot;click&quot;, function (e) {
+        if (e.target &amp;&amp; e.target.nodeName == &quot;BUTTON&quot;) {
+            var f = tags('BUTTON')[e.target.id].dataset.func
+            if (typeof $[f] === &quot;function&quot;) { // validate
+                // pass this element's title attribue (value)
+                $[f](tags('BUTTON')[e.target.id].title)
+            }
+        }
+    })
+</code></pre>
+
+<ul>
+<li><p><code>.dataset</code>, of the <code>DOMStringMap</code> API, accesses values at &quot;<code>data-*</code>&quot;, per method (<code>*</code>).<br>
+E.g., <code>tags('BUTTON')[1].dataset.func</code> returns value &quot;<code>func1</code>&quot; (@ <code>data-func=&quot;func1&quot;</code>).</p></li>
+
+<li><p>Event delegation, per <code>e.target</code>, binds all child elements (<code>button</code>)<br>
+of the parent (<code>#group-1</code>), all with one <code>EventListener</code> .</p></li>
+</ul>
+
+<h4>Above is embedded in an IIFE with an injected namespace (<code>$</code>)</h4>
+
+<pre><code class="language-js">(function(o){
+    // ...
+})($);
+</code></pre>
+
+<p>So <code>$[f]</code> calls <code>$.f</code> per that specific (required) object notation syntax.</p>
+
+<h2>Event Handler Array</h2>
+
+<blockquote>
+<p>UPDATE: This is more complicated than it need be. Use Event Delegation.</p>
+</blockquote>
+
+<ul>
+<li><p>Attach a <code>click</code> event handler (<code>f</code>) to an HTML element (<code>id</code>)</p>
+
+<pre><code class="language-js">function eHandlerId(id, f) {
+    console.log('@ _eHandlerId(' + id + ',' + f.name + ')');
+    var el = document.getElementById(id);
+    el.addEventListener('click', f);
+}
+
+eHandlerID('json-button', &quot;fetchJSON&quot;);
+</code></pre>
+
+<h3>Modify to Accept an Array of such Bindings, and Wrap in <code>app</code> Method.</h3>
+
+<pre><code class="language-js">var eHandlArr = eHandlArr || [
+    ['json-button', &quot;fetchJSON&quot;],
+    ['img-button', &quot;fetchImage&quot;],
+    ['text-button', &quot;fetchText&quot;],
+    ['head-button', &quot;headRequest&quot;],
+    ['post-button', &quot;postRequest&quot;]
+];
+
+app.eHandlersArr(eHandlArr);
+</code></pre></li>
+
+<li><p>@ <code>app</code> Object (<a href="https://addyosmani.com/resources/essentialjsdesignpatterns/book/#modulepatternjavascript" title="Learning JavaScript Design Patterns @ addyosmani.com">Revealing Module Pattern</a>).</p>
+
+<pre><code class="language-js">var app = (function () {
+    ...
+
+    function _eHandlersArr(bindings) {
+        for (var pair of bindings) {
+            console.log('@ _eHandlersArr(' + pair[0] + ',' + pair[1] + ')');
+            var el = document.getElementById(pair[0]);
+            el.addEventListener('click', app[pair[1]]);
+        }
+    }
+
+    return 
+        eHandlersArr: (_eHandlersArr),
+        ...
+})();
+</code></pre></li>
+
+<li><p>@ HTML</p>
+
+<pre><code class="language-html">  &lt;button id=&quot;json-button&quot; title=&quot;See object @ console&quot;&gt;Fetch JSON&lt;/button&gt;
+  &lt;button id=&quot;img-button&quot;&gt;Fetch image&lt;/button&gt;
+  &lt;button id=&quot;text-button&quot;&gt;Fetch text&lt;/button&gt;
+  ...
+</code></pre>
+
+<ul>
+<li>Separation of concerns; <code>index.html</code> is HTML only.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

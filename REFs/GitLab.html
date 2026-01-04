@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>GitLab | <a href="https://docs.gitlab.com/runner/executors/kubernetes/">Docs</a></h1>
+
+<h2><a href="https://about.gitlab.com/install/">Self-hosted GitLab EE|CE</a></h2>
+
+<ul>
+<li><p><a href="https://docs.gitlab.com/ee/administration/reference_architectures/index.html">Reference Architectures</a></p>
+
+<ul>
+<li><p>GitLab package (<strong>Omnibus</strong>) | <a href="https://about.gitlab.com/install/">Install</a></p>
+
+<ul>
+<li><p>Omnibus GitLab architecture and components : Omnibus GitLab is a customized fork of the <strong>Omnibus project from Chef</strong> (<a href="https://gitlab.com/gitlab-org/omnibus-gitlab" title="GitLab.com/gitlab-org/omnibus-gitlab"><code>omnibus-gitlab</code></a>), and it uses Chef components like cookbooks and recipes to perform the task of configuring GitLab on a user’s computer. Omnibus GitLab repository on GitLab.com hosts all the necessary components of Omnibus GitLab. These include parts of Omnibus that are required to build the package, like configurations and project metadata, and the <strong>Chef related components that are used in a user’s computer after installation</strong>.</p>
+
+<ul>
+<li>Runit, a lightweight init system (predates <code>systemd</code>), is the service supervisor of GitLab Omnibus. The term <code>runsvdir</code> refers to a Runit component that handles serivce directories (<code>svdir</code>) created by Runit. So, while GitLab uses <code>systemd</code>, service supervision is delegated to Runit. | <a href="https://chatgpt.com/c/67098a1c-eb8c-8009-a07a-df93d1bf9b50">ChatGPT</a>
+
+<ul>
+<li>See <code>/opt/gitlab/sv/*</code></li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Single-node</strong> : <a href="https://docs.gitlab.com/ee/administration/reference_architectures/1k_users.html">Up to 20 RPS or 1,000 users</a> | <a href="gitlab-single-server-architecture.png">GitLab Single Server Architecture</a></p></li>
+
+<li><p>Multi-node : <a href="https://docs.gitlab.com/ee/administration/reference_architectures/2k_users.html">Up to 40 RPS or 2,000 users</a></p></li>
+
+<li><p>&vellip;</p></li>
+</ul></li>
+
+<li><p><a href="https://docs.gitlab.com/ee/administration/reference_architectures/#cloud-native-hybrid">Cloud native hybrid</a> : Single- or Multi- node</p></li>
+
+<li><p><strong>GitLab Operator</strong>  : a <strong>K8s Operator</strong> (Not for production)</p>
+
+<ul>
+<li><p><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases" title="gitlab.com/gitlab-org/cloud-native/">Releases</a> : <a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/raw/1.4.2/CHART_VERSIONS"><code>/-/raw/&lt;OPERATOR_VERSION&gt;/CHART_VERSIONS</code></a></p>
+
+<table>
+<thead>
+<tr>
+<th>Operator</th>
+<th>Chart</th>
+<th>GitLab</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>1.4.2</td>
+<td>8.4.2</td>
+<td>v17.4.2</td>
+</tr>
+
+<tr>
+<td>1.4.2</td>
+<td>8.3.5</td>
+<td>v17.3.5</td>
+</tr>
+
+<tr>
+<td>1.4.2</td>
+<td>8.2.9</td>
+<td>v17.2.9</td>
+</tr>
+</tbody>
+</table>
+
+<ul>
+<li><a href="https://docs.gitlab.com/operator/" title="docs.gitlab.com">Docs</a></li>
+<li><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator"><code>gitlab-org/cloud-native</code></a></li>
+<li>Installation : <a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/installation.md"><code>gitlab-org/cloud-native</code></a> | <a href="https://docs.gitlab.com/operator/installation.html"><code>docs.gitlab.com</code></a>
+
+<ul>
+<li>Ingress : <a href="https://kubernetes.github.io/ingress-nginx/deploy/">Ingress-NGINX Controller</a> (forked chart).</li>
+<li>TLS : <a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/installation.md#ingress-controller"><code>cert-manager</code></a></li>
+<li>Auth by <a href="https://docs.gitlab.com/ee/administration/auth/ldap/index.html" title="docs.gitlab.com/ee/administration/auth/ldap">LDAP</a>, <a href="https://docs.gitlab.com/ee/integration/omniauth.html" title="docs.gitlab.com/ee/integration/omniauth">SAML, and OAuth</a></li>
+</ul></li>
+</ul></li>
+
+<li><p><a href="https://gitlab.com/gitlab-org/gl-openshift/gitlab-runner-operator">GitLab Runner Operator</a></p></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>Install &amp; <a href="https://docs.gitlab.com/ee/administration/configure.html" title="docs.gitlab.com">Configure</a> : <code>/etc/gitlab/gitlab.rb</code></h3>
+
+<pre><code class="language-bash"># Install the package (RPM)
+sudo dnf install -y gitlab-ee
+# Else also inject configuration parameter(s) here (imperatively)
+host=gitlab.local # Example; add/edit DNS record(s) of (sub)domain as apropos
+sudo EXTERNAL_URL=&quot;https://$host&quot; dnf install -y gitlab-ee
+# Configure (further) declaratively (optional actually, but advised)
+sudo vi /etc/gitlab/gitlab.rb
+# Apply (re)configuration (REQUIRED; runs many Chef recipes)
+gitlab-ctl reconfigure
+# Verify the service is active (optional)
+systemctl status gitlab-runsvdir.service # &quot;status&quot; else &quot;is-active&quot;
+# Restart (optional)
+gitlab-ctl restart [nginx] # All else one component by subcommand
+</code></pre>
+
+<p><a name=ldap></a></p>
+
+<ul>
+<li><a href="https://docs.gitlab.com/ee/administration/auth/ldap/ldap_synchronization.html">LDAP synchronization</a>
+
+<ul>
+<li><p><a href="https://docs.gitlab.com/ee/administration/auth/ldap/ldap_synchronization.html#group-sync">Group sync</a> : <em>If your LDAP supports the <code>memberof</code> property, when the user signs in for the first time GitLab triggers a sync for groups the user should be a member of. ... group sync process runs every hour on the hour, and</em> <strong><em><code>group_base</code> must be set in LDAP configuration for LDAP synchronizations based on group <code>CN</code> to work.</em></strong> <em>This allows GitLab group membership to be automatically updated based on LDAP group members.</em> : <code>/etc/gitlab/gitlab.rb</code> :</p>
+
+<pre><code class="language-ruby">gitlab_rails['ldap_servers'] = {
+    'main' =&gt; {
+        'group_base' =&gt; 'ou=groups,dc=example,dc=com',
+        }
+}
+</code></pre>
+
+<ul>
+<li><p><a href="https://docs.gitlab.com/ee/administration/auth/ldap/ldap_synchronization.html#external-groups">External groups</a> : <code>/etc/gitlab/gitlab.rb</code></p>
+
+<pre><code class="language-ruby">gitlab_rails['ldap_servers'] = {
+'main' =&gt; {
+    'external_groups' =&gt; ['interns', 'contractors'],
+    }
+}
+</code></pre></li>
+</ul></li>
+</ul></li>
+<li><a href="https://docs.gitlab.com/ee/administration/external_users.html">External users</a> : <em>This feature may be useful when for example a contractor is working on a given project and should only have access to that project.</em> Such users are best handled as members of &quot;<a href="#ldap">External&nbsp;groups</a>&quot; (above).
+
+<ul>
+<li>Features:
+
+<ul>
+<li>Cannot create project, groups, and snippets in their personal namespaces.</li>
+<li>Can only create projects (including forks), subgroups, and snippets within top-level groups to which they are explicitly granted access.</li>
+<li>Can access public groups and public projects.</li>
+<li>Can only access projects and groups to which they are explicitly granted access. External users cannot access internal or private projects or groups that they are not granted access to.</li>
+<li>Can only access public snippets.</li>
+</ul></li>
+<li>Methods to set user as &quot;External user&quot;:
+
+<ul>
+<li>LDAP groups
+
+<ul>
+<li>See &quot;<a href="#ldap">External&nbsp;groups</a>&quot; section above.</li>
+</ul></li>
+<li>SAML groups</li>
+<li>OmniAuth: <a href="https://docs.gitlab.com/ee/integration/omniauth.html#supported-providers">Supported providers</a> includes AuthO, AWS Cognito, Atlassian, GitHub, GitLab.com, Google, and &hellip;
+
+<ul>
+<li>JWT</li>
+<li>OpenID Connect (OIDC)</li>
+<li>Generic OAuth2</li>
+<li>SAML</li>
+<li>Kerberos</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>Upon any (re)configuration</h4>
+
+<blockquote>
+<p>Running &quot;<code>gitlab-ctl reconfigure</code>&quot; is the advised and standard method to apply changes made to <code>/etc/gitlab/gitlab.rb</code>. This command <strong>ensures that all configuration changes are correctly applied across all GitLab components and services</strong>.</p>
+</blockquote>
+
+<pre><code class="language-bash"># Apply the reconfiguration
+gitlab-ctl reconfigure
+
+# Verify service is active
+systemctl is-active gitlab-runsvdir.service
+# Or, for more info
+systemctl status gitlab-runsvdir.service
+
+</code></pre>
+
+<h3>Install GitLab on K8s</h3>
+
+<p><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/blob/master/doc/installation.md">Install GitLab : operator and app</a></p>
+
+<h4>Install GitLab Operator</h4>
+
+<p>Helm method</p>
+
+<pre><code class="language-bash">v=8.4.2 # Chart
+# Download for offline install
+helm pull gitlab/gitlab-operator --version $v
+# Install the Operator
+helm repo add gitlab https://charts.gitlab.io
+helm repo update
+helm update gitlab-operator gitlab/gitlab-operator \
+    --install  \
+    --version $v \
+    --create-namespace \
+    --namespace gitlab-system
+</code></pre>
+
+<p>Manifest method</p>
+
+<pre><code class="language-bash">v=1.4.2 # Operator
+url=https://gitlab.com/api/v4/projects/18899486/packages/generic/gitlab-operator/$v/gitlab-operator-kubernetes-$v.yaml
+curl -sSLO $url
+kubectl apply -f gitlab-operator-kubernetes-$v.yaml
+
+</code></pre>
+
+<ul>
+<li><a href="https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases" title="gitlab.com/gitlab-org/cloud-native/">GitLab Operator Releases</a></li>
+</ul>
+
+<h4>Install GitLab (app)</h4>
+
+<p>Manifest method (only).</p>
+
+<pre><code class="language-bash"># Install the app : GitLab (CRD)
+crd=gitlab 
+vi $crd.yaml # Configure for version and domain at least
+kubectl -n gitlab-system apply -f $crd.yaml
+
+# Monitor install process
+kubectl -n gitlab-system get gitlab
+kubectl -n gitlab-system logs deployment/gitlab-controller-manager -c manager -f
+
+# Teardown
+kubectl -n gitlab-system delete -f $crd.yaml
+</code></pre>
+
+<p>@ <code>gitlab.yaml</code></p>
+
+<pre><code class="language-yaml">apiVersion: apps.gitlab.com/v1beta1
+kind: GitLab
+metadata:
+  name: gitlab
+spec:
+  chart:
+    ## https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/raw/1.4.2/CHART_VERSIONS 
+    version: &quot;8.4.2&quot; # Chart
+    values:
+      global:
+        hosts:
+          domain: gitlab.k8s.local # use a real domain here
+        ingress:
+          configureCertmanager: true
+      certmanager-issuer:
+        email: admin@gitlab.k8s.local # use your real email address here
+</code></pre>
+
+<p><a href="https://docs.gitlab.com/ee/install/next_steps.html">Steps after installing GitLab</a></p>
+
+<h2><a href="https://gitlab.com/gitlab-org/gitlab-runner">GitLab Runner</a> | <a href="https://gitlab.com/gitlab-org/gitlab-runner/-/releases">Releases</a></h2>
+
+<h3><a href="https://docs.gitlab.com/runner/install/kubernetes/">Helm chart : How To</a></h3>
+
+<pre><code class="language-bash">repo=gitlab
+chart=gitlab-runner
+ver=0.76.3 # runner: v17.11.3
+
+# Add repo
+helm repo update $repo ||
+    helm repo update $repo
+
+# Available versions : chart vs. runner
+helm search repo -l $repo/$chart
+
+helm template $repo/$chart --version $ver
+
+</code></pre>
+
+<h2><a href="https://chatgpt.com/share/680b9e25-1020-8009-83d4-12758edf02b1">GitLab Agent for Kubernetes</a></h2>
+
+<h2>CI/CD Pipelines</h2>
+
+<p>Reference: &quot;GitLab CICD Intermediate&quot; [2023]</p>
+
+<ul>
+<li>GitLab CE Server (+Web GUI) | Linode VM @ 4 CPU / 8 Gi Memory
+
+<ul>
+<li>GitLab Runner (Golang) | Linode VM @ 2 CPU / 4Gi Memory
+See &quot;3. Install GitLab Runner on Linux&quot;</li>
+</ul></li>
+<li><a href="https://docs.gitlab.com/runner/install/linux-repository.html">Install GitLab Runner | Linux</a>
+
+<ul>
+<li><a href="https://operatorhub.io/operator/gitlab-runner-operator">GitLab Runner Operator</a>
+The GitLab Runner operator manages the lifecycle of GitLab Runner in Kubernetes or Openshift clusters. The operator aims to automate the tasks needed to run your CI/CD jobs in your container orchestration platform.</li>
+<li><a href="https://docs.gitlab.com/runner/install/kubernetes-agent.html">Use the agent to install GitLab Runner</a>
+
+<ul>
+<li><a href="https://docs.gitlab.com/ee/user/clusters/agent/">Connecting a Kubernetes cluster with GitLab</a>
+Connect your K8s cluster with GitLab to deploy, manage, and monitor your cloud-native solutions. To connect a Kubernetes cluster to GitLab, you must first <a href="https://docs.gitlab.com/ee/user/clusters/agent/install/index.html">install an agent in the cluster</a>.</li>
+</ul></li>
+<li>May have several, each scoped to a team, each available to that team only.
+
+<ul>
+<li>Must register and configure Runners with GitLab via Web UI (<a href="https://chatgpt.com/share/670ad40b-24d4-8009-8d08-49c3e51b8cf2">ChatGPT</a>). Use the &quot;Register an Instance Runner&quot; (Button)</li>
+</ul></li>
+<li>Executor : Where the pipelines run; several options:
+
+<ul>
+<li>Kubernetes - Use the Kubernetes executor to use Kubernetes clusters for your builds.
+The executor calls the Kubernetes cluster API and creates a pod for each GitLab CI job,
+dividing the build into multiple steps:
+
+<ol>
+<li>Prepare: Create Pod having containers required for the build and services to run.</li>
+<li>Pre-build: Clone, restore cache, and download artifacts from previous stages.
+This step <strong>runs on a special container</strong> as part of the pod.</li>
+<li>Build: User build.</li>
+<li>Post-build: Create cache, <strong>upload artifacts to GitLab</strong>.
+This step also <strong>uses the special container</strong> as part of the pod.</li>
+</ol></li>
+<li>Docker - runs pipeline in container</li>
+<li>Shell - runs pipline at shell of host OS.</li>
+</ul></li>
+</ul></li>
+<li>Metrics :
+
+<ul>
+<li><a href="https://www.influxdata.com/products/influxdb/">InfluxDB</a> All-in-One solution : Collect/Proccess/Graph
+
+<ul>
+<li><a href="https://www.influxdata.com/time-series-platform/telegraf/">Telegraf</a> Agent at each Runner</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://gitlab.com/sempernow/gitlab-workflow" title="sempernow/gitlab-workflow">GitLab <code>git</code> workflow</a></h2>
+
+<h3>Initialize a Project</h3>
+
+<pre><code class="language-bash"># (Re)Set global/local(default) config param(s)
+git config --global user.name &quot;YOUR NAME&quot;
+git config --global user.email &quot;YOUR_EMAIL&quot;
+git config --global user.account $_GIT_HOST_ACCOUNT_USERNAME
+git config --list
+
+# Create the local project from origin (Git repo)
+prj=prj
+## Set network params for SSH mode
+proto='git@'
+host='gitlab.com' # Domain name of the Git-server host
+path=&quot;$(git config user.account)/$prj&quot;
+keypath=~/.ssh/${host%.*}_$(git config user.account)
+## SSH login sans creds prompts
+ssh -T -i $keypath git@${host}
+## Initialize : git init
+git clone git@${host}:${path}.git &amp;&amp; pushd $prj
+## Create/commit  main bran
+git switch --create main || git checkout main || git checkout -b main 
+touch README.md
+git add README.md
+git commit -m &quot;Project init @ $(date -u '+%Y-%m-%dT%H:%M:%SZ')&quot;
+## Push to origin
+git push --set-upstream origin main
+# Else add origin in SSH mode and then push
+# git remote add origin ${proto}${server}:${path}.git
+# Push (securely)
+# git push -u origin main # initial
+# git push                # subsequent
+</code></pre>
+
+<ul>
+<li>The project (URI) must already exist at the Git server (<code>$host</code>).</li>
+</ul>
+
+<h3>Swap Modes (Protocols)</h3>
+
+<p>Git-server protocol/syntax allows for HTTPS using <code>'https://'</code>,
+and for SSH using either <code>'git@'</code> or <code>'ssh://'</code>.</p>
+
+<pre><code class="language-bash">proto='https://'
+git remote set-url origin ${proto}${host}:${path}.git
+git remote set-url origin git@gitlab.com:/acct-y/prj-y.git # Example
+# Verify 
+git remote show origin
+</code></pre>
+
+<h3>SSH : Key-pair Setup</h3>
+
+<p>Setup secure comms enabling login sans password.</p>
+
+<pre><code class="language-bash"># Generate key pair
+ssh-keygen [-t ed25519|ecdsa|rsa] -C &quot;$email_addr&quot; -f $keypath # ~/.ssh/gitlab
+
+# Fingerprint (fpr)
+# Show fpr of any key (public/private have common fpr)
+## -v show visual in addition to the hash.
+ssh-keygen [-E md5|sha1(default)] -l[v] -f $keypath
+# Show fpr of (remote) host(s) : VALIDATE host ON FIRST CONNECT
+ssh-keygen [-E md5|sha1(default)] -l[v] -f $keypath
+
+# Copy/Paste user's PUBLIC key (*.pub) to remote:
+# Web GUI @ https://gitlab.com/-/profile/keys
+
+# LOGIN to create SSH tunnel (sans shell) 
+ssh -T[v[v[v[v]]]] -i $keypath git@github.com # -v; verbosity [levels]
+
+# Optionally : Requires Git 2.10+
+git config core.sshCommand &quot;ssh -o IdentitiesOnly=yes -i $keypath -F /dev/null&quot;
+</code></pre>
+
+<ul>
+<li><a href="https://gitlab.com/-/profile/keys">Copy/Paste user's <strong><em>public</em></strong> key (*.pub) to remote</a></li>
+<li>See: <a href="https://docs.gitlab.com/ee/user/ssh.html" title="docs.gitlab.com/...">Use SSH keys to communicate with GitLab</a></li>
+</ul>
+
+<h4>Configure @ <code>~/.ssh/config</code></h4>
+
+<pre><code class="language-bash">Host gitlab gitlab.com
+  HostName gitlab.com
+  User git
+  RequestTTY no
+  IdentityFile ~/.ssh/gitlab_sempernow
+</code></pre>
+
+<p>Thereafter:</p>
+
+<pre><code class="language-bash"># Login : creates SSH tunnel (sans shell) 
+ssh gitlab
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

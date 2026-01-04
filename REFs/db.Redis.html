@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>db.Redis</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Redis (REmote DIctionary Server)</h1>
+
+<h2><a href="https://redis.io/documentation" title="redis.io/documentation">Redis Docs</a>  | <a href="https://redis.io/modules" title="redis.io/modules">Modules</a> | <a href="https://en.wikipedia.org/wiki/Redis" title="Wikipedia">Wiki</a> | <a href="https://redis.io/topics/twitter-clone">Example: Twitter Clone</a></h2>
+
+<blockquote>
+<p>Redis clients communicate with the Redis server using <a href="https://redis.io/topics/protocol" title="redis.io">RESP</a> (<em>REdis Serialization Protocol</em>) @ <code>TCP:6379</code>. It's a <a href="https://redis.io/topics/protocol#request-response-model">Request/Response model</a>. The protocol is very human readable and easy to implement, yet can be implemented with a performance similar to that of a binary protocol.</p>
+</blockquote>
+
+<ul>
+<li>Distributed, <strong>in-memory datastore</strong>, <strong>cache</strong> &amp; <strong>msg broker</strong><br>
+100K <code>SET</code>/second; 80K <code>GET</code>/second
+
+<ul>
+<li>key-value (NoSQL) database; many <a href="https://redis.io/topics/data-types" title="redis.io/topics/data-types">data types</a></li>
+<li><a href="https://redis.io/commands/eval">Lua scripting</a></li>
+<li><abbr title="Least Recently Used">LRU</abbr> <a href="https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)" title="Wikipedia :: Cache Replacement Policies">cache</a>, with settable <a href="https://redis.io/topics/lru-cache">eviction policies</a></li>
+</ul></li>
+<li><a href="https://redis.io/topics/pipelining" title="redis.io/topics/pipelining">Pipelining</a>  multiple commands per request; performant (<code>5x</code>) queries</li>
+<li><a href="https://redis.io/topics/pubsub" title="redis.io/topics/pubsub">Pub/Sub messaging</a><br></li>
+<li><a href="https://redis.io/topics/streams-intro" title="redis.io/topics/streams-intro">Streams</a>; log (append-only) data structure model, but allows for complex/blocking ops; consumers wait for new data; (Kafka) Consumer Groups; client groups cooperate in consuming a different portion of the same stream of messages.</li>
+<li><a href="https://redis.io/topics/transactions">Transactions</a></li>
+<li>Atomic high-level ops; intersection/union/difference between <code>sets</code>; sorting of <code>lists</code> and <code>sets</code>.<br></li>
+<li><a href="https://redis.io/topics/persistence" title="redis.io/topics/persistence">Persistence</a>
+
+<ul>
+<li>RDB persistence performs point-in-time snapshots; very compact,  single-file representation; perfect for backups.</li>
+<li><abbr title="Append Only File">AOF</abbr> persistence logs every write op received by server;</li>
+</ul></li>
+<li><a href="https://redislabs.com/redis-features/high-availability" title="High Availability / Redis Sentinel / Redis Cluster">HA; Clustering; Replication (master-replica)</a>; read-scalability</li>
+<li>Modules
+
+<ul>
+<li><a href="https://oss.redislabs.com/redisjson/">ReJSON</a>; a JSON data type for Redis; allows storing, updating and fetching JSON values from Redis keys (documents); JSONPath-like syntax.</li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>Unusual data model; commands do not describe a query, but rather specific operations to perform on data types, hence data must be identifiable by primary index alone (no secondary index). Yet can implement RDB on top of key-value store. <a href="https://redis.io/topics/twitter-clone#data-layout" title="Twitter Clone Demo/Tutorial 2014 @ Redis.io">E.g.</a>, store users per <code>user</code>, and have <code>users</code> track the user-id key:</p>
+</blockquote>
+
+<pre><code>INCR next_user_id =&gt; 1000
+HMSET user:1000 username foo password 1234
+HSET users foo 1000
+</code></pre>
+
+<h2>Install @ Ubuntu (<a href="https://redis.io/download" title="redis.io/download">per download</a>)</h2>
+
+<pre><code class="language-bash"># Redis server + client
+$ sudo apt-get install redis-server # installed v.4
+</code></pre>
+
+<ul>
+<li><a href="https://redis.io/topics/config" title="redis.io">Redis config</a> @ <code>/etc/redis/redis.conf</code></li>
+</ul>
+
+<h2><a href="https://hub.docker.com/_/redis" title="hub.docker.com">Redis @ Docker</a></h2>
+
+<pre><code class="language-bash">dokcer run --rm --name 'rds' -d -p 6379:6379 redis
+docker exec -it 'rds' redis-cli
+</code></pre>
+
+<p>@ Swarm service (<code>app_rds</code>), task <code>1</code>, node <code>h3</code> (<code>f0pd8lcif0m433yp6h0iqpgzp</code>)</p>
+
+<pre><code class="language-bash">_CTNR='app_rds.1.f0pd8lcif0m433yp6h0iqpgzp'
+docker-machine ssh h3 &quot;docker exec -it $_CTNR redis-cli&quot;
+</code></pre>
+
+<h5><a href="redis.conf"><code>redis.conf</code></a> | <a href="https://blog.opstree.com/2019/04/16/redis-best-practices-and-performance-tuning/">Optimizing</a></h5>
+
+<pre><code class="language-plaintext">tcp-backlog 511
+#... @ boot2docker :: cat /proc/sys/net/core/somaxconn =&gt; 128
+#...                  cat /proc/sys/net/ipv4/tcp_max_syn_backlog =&gt; 128
+</code></pre>
+
+<h2>Start/Connect</h2>
+
+<pre><code class="language-bash"># Start Redis server; pass args
+$ redis-server --port 6380 --slaveof 127.0.0.1 6379
+</code></pre>
+
+<pre><code class="language-bash"># Start Redis server as bkgnd proc
+$ redis-server &amp;  # ... prints startup msgs 
+# Connect per Redis CLI
+$ redis-cli
+127.0.0.1:6379&gt; QUIT # to exit
+</code></pre>
+
+<ul>
+<li><a href="https://redis.io/clients" title="redis.io/clients">Clients per language</a>, aside from the native (<code>redis-cli</code>).</li>
+</ul>
+
+<h2><a href="https://redis.io/commands" title="redis.io/commands">Commands</a> per <a href="https://redis.io/topics/data-types" title="redis.io/topics/data-types">Data Type</a></h2>
+
+<h4>@ Strings (<a href="https://redis.io/commands/#string">commands</a>)</h4>
+
+<ul>
+<li><em>Binary-safe</em>; any kind of (blob) data; JPEG, serialized objects; up to <code>512 MB</code> per string<br></li>
+
+<li><p><a href="https://redis.io/topics/data-types-intro#bitmaps">Bitmaps</a> included; bit-oriented <strong>operations</strong> <em>defined on String data type</em>.</p>
+
+<pre><code class="language-bash">SET foo 100   # (integer) 100
+INCR foo      # (integer) 101
+DECR foo      # (integer) 100
+GET foo       # &quot;100&quot;
+GET bogus     # (nil)
+EXISTS foo    # (integer) 1
+EXISTS bogus  # (integer) 0
+DEL foo       # (integer) 1
+EXPIRE foo 5  # (integer) 1 ; DEL in 5 seconds
+SETEX foo 5 bar # SET+EXPIRE; &quot;bar&quot; DELs in 5 sec
+TTL foo       # (integer) 2 ; seconds remaining
+PERSIST foo   # Undo prior EXPIRE|SETEX
+FLUSHALL      # OK
+CLEAR         # clear terminal
+
+SET foo:bar baz  # ... namespaces
+SET foo 100
+GET foo       # &quot;100&quot;
+GET foo:bar   # &quot;baz&quot;
+
+# SET MULTIPLE VALUEs
+MSET foo &quot;hello&quot; bar &quot;you&quot;
+APPEND foo &quot; world&quot;
+GET foo       # &quot;hello world&quot;
+GET bar       # &quot;you&quot;
+RENAME foo foo2
+GET foo2      # &quot;hello world&quot;
+GET foo       # (nil)
+
+# BITs
+SETBIT key offset val  # allocates, per offset, if not exist
+SETBIT foo 3 0  # set 3rd bit of foo to 0  
+GET foo         # &quot;\x00&quot;, OR its Unicode equiv rune
+
+GETBIT key offset 
+GETBIT foo 3    # 0
+</code></pre></li>
+
+<li><p>Use as Atomic counters</p></li>
+
+<li><p>For Appending / Encoding / <a href="https://en.wikipedia.org/wiki/Bloom_filter" title="wiki/Bloom_filter">Bloom Filter</a></p></li>
+</ul>
+
+<h4>@ Lists (<a href="https://redis.io/commands/#list">commands</a>)</h4>
+
+<ul>
+<li>Ordered set of strings (sorted by <em>insertion order</em>); up to <code>4</code> billion (<code>2</code><sup><code>32</code></sup><code>-1</code>) <strong>elements</strong> per list.</li>
+
+<li><p>Push/Pop ; Left/Right ; Head/Tail</p>
+
+<pre><code class="language-bash">LPUSH foo a   # (integer) 1; &quot;a&quot;
+LPUSH foo b   # (integer) 2; &quot;b&quot;,&quot;a&quot;
+RPUSH foo c   # (integer) 3; &quot;b&quot;,&quot;a&quot;,&quot;c&quot;
+LLEN foo      # (integer) 3; list length
+LRANGE foo 0 -1  # `-1` = to the end element
+1) &quot;b&quot;
+2) &quot;a&quot;
+3) &quot;c&quot;
+LRANGE foo 1 -1
+1) &quot;a&quot;
+2) &quot;c&quot;
+LRANGE foo 0 1
+1) &quot;b&quot;
+2) &quot;a&quot;
+
+LPOP foo     # &quot;b&quot;; removes left-most element 
+RPOP foo     # &quot;c&quot;; removes right-most element
+LRANGE foo 1 -1 
+1) &quot;a&quot;
+
+LPUSH foo a
+LPUSH foo b
+LPUSH foo c
+
+LINSERT foo BEFORE &quot;b&quot; &quot;bar&quot;
+LRANGE foo 0 -1
+1) &quot;c&quot;
+2) &quot;bar&quot;
+3) &quot;b&quot;
+4) &quot;a&quot;
+
+RPOPLPUSH src dst  # right-most @ src moved to left-most @ dst
+RPOPLPUSH foo foo  # circle, moving tail el to head
+BRPOPLPUSH src dst timeout  # blocking variant
+
+# Add el(s) but maintain size
+LPUSH foo new
+LTRIM foo 0 9  # limits size to 10 els; #0-9
+</code></pre></li>
+
+<li><p>Model a timeline in a social network</p></li>
+
+<li><p>Use as a message passing primitive</p></li>
+
+<li><p>Blocking lists; wait for a key to get new elements to fetch</p></li>
+</ul>
+
+<h4>@ Sets (<a href="https://redis.io/commands/#set">commands</a>)</h4>
+
+<ul>
+<li>Unordered collection of <em>unique</em> Strings; up to <code>4</code> billion (<code>2</code><sup><code>32</code></sup><code>-1</code>) <strong>members</strong> per list.</li>
+<li>Constant time to add, remove, or test member exist</li>
+
+<li><p>Native commands for <em>union</em>, <em>intersection</em>, and <em>difference</em></p>
+
+<pre><code class="language-bash">SADD foo bar       # add member bar to set foo
+SMEMBERS foo       # list all members
+SCARD foo          # cardinality; the # of members 
+SISMEMBER foo baz  # test member baz exist (1|0) in set foo
+SMOVE foo bar baz  # move member baz from set foo to set bar
+SREM foo baz       # remove member baz from set foo
+
+SINTER k1 [k2 ...] # Rtn INTERsection of sets
+SDIFF k1 [k2 ...]  # Rtn DIFFerence between sets.
+
+# @ one or more (count) RANDOM members from set
+SPOP k1 [count]        # remove + return member(s)
+SRANDMEMBER k1 [count] # return member(s)
+</code></pre></li>
+
+<li><p>Track unique things, e.g., IP addresses per <code>SADD</code></p></li>
+
+<li><p>Represent relations; create a tagging system; add all the IDs of all the objects having a given tag using <code>SADD</code>; get all IDs of all objects having multiple tags using <code>SINTER</code>.</p></li>
+
+<li><p>Extract elements at random using the <code>SPOP</code> or <code>SRANDMEMBER</code>.</p></li>
+</ul>
+
+<h4>@ Sorted Sets (<a href="https://redis.io/commands#sorted_set">commands</a>)</h4>
+
+<ul>
+<li>Ordered collection of <em>unique</em> Strings; ordered per member-associated <strong>score</strong>, from <strong>low to high</strong>.<br></li>
+
+<li><p>Log time, O(log(n)), to add, remove, or update; very fast access</p>
+
+<pre><code class="language-bash">ZADD key [NX|XX] [CH] [INCR] score member [score member ...] 
+
+XX  # Update only. Never add elements.  
+NX  # Always add. Don't update if exist.   
+CH  # Changed; new elements and existing elements if score changed.
+
+ZADD users 1980 &quot;Joe&quot;
+(integer) 1
+ZADD users 1980 &quot;Sam&quot;
+(integer) 1
+ZADD users 1983 &quot;Sally&quot;
+(integer) 1
+ZADD users 1977 &quot;Oldman&quot;
+(integer) 1
+
+ZRANK users Oldman  # returns rank; scores sorted low to high
+(integer) 0
+ZRANK users Sally
+(integer) 3
+
+ZRANGE users 0 -1
+1) &quot;Oldman&quot;
+2) &quot;Joe&quot;
+3) &quot;Sam&quot;
+4) &quot;Sally&quot;
+
+ZRANGE users 0 -1 WITHSCORES
+1) &quot;Oldman&quot;
+2) &quot;1977&quot;
+3) &quot;Joe&quot;
+4) &quot;1980&quot;
+5) &quot;Sam&quot;
+6) &quot;1980&quot;
+7) &quot;Sally&quot;
+8) &quot;1983&quot;
+</code></pre></li>
+
+<li><p><strong>Leader board</strong> in a massive online game; new scores updated using <code>ZADD</code>; top users using <code>ZRANGE</code>; given an user name, return <strong>rank</strong> in listing using <code>ZRANK</code>; show users with a score similar to a given user using <code>ZRANK</code> and <code>ZRANGE</code> together.</p></li>
+
+<li><p>Index data such as users; with age as score and ID as value, so can retrieve all users across a range of ages using <code>ZRANGEBYSCORE</code>.</p></li>
+</ul>
+
+<h4>@ Hashes (<a href="https://redis.io/commands#hash">commands</a>)</h4>
+
+<ul>
+<li><p>Maps (assoc. arrays) between <em>string</em> fields and <em>string</em> values; perfect data type for working with live (not-serialized) objects; <code>{k1: {k11: v11, k12: v12, ...}, k2: {...}, ...}</code></p>
+
+<pre><code class="language-bash">HMSET user:1000 uname foo pass bAr age 44
+HGETALL user:1000
+1) &quot;uname&quot;
+2) &quot;foo&quot;
+3) &quot;pass&quot;
+4) &quot;bAr&quot;
+5) &quot;age&quot;
+6) &quot;44&quot;
+HSET user:1000 pass 12345
+HGET user:1000 pass
+&quot;12345&quot;
+</code></pre></li>
+</ul>
+
+<h4>@ <a href="https://redis.io/topics/streams-intro" title="redis.io/topics/streams-intro">Streams</a> (<a href="https://redis.io/commands#stream">commands</a>)</h4>
+
+<ul>
+<li><p><em>Messaging system</em> &amp; <em>time-series store</em>; @ Redis 5.0+ .</p></li>
+
+<li><p>Log (time-series; append-only) data structure model, but <em>allows for complex/blocking ops</em>; consumers wait for new data; (Kafka) <em>Consumer Groups</em>;  client groups cooperate in consuming a different portion of the same stream of messages.</p></li>
+
+<li><p>Each  <strong>entry</strong> (<strong>item</strong>) is composed of one or multiple time-ordered field-value pairs; so structured, a sort of append-only CSV-formatted file; multiple fields per line.</p></li>
+
+<li><p>@ auto-generated ID, &quot;<code>*</code>&quot;, <code>&lt;msecTime&gt;-&lt;seqNumber&gt;</code>; local <strong>Unix-time</strong> @ local Redis node generating the stream ID, as long as current <code>msecTime</code> is larger than previous entry, else previous entry used instead; so, if a clock jumps backward, then the monotonically incrementing ID property still holds. The <code>seqNumber</code> is used for entries created @ same <code>msecTime</code>.</p>
+
+<ul>
+<li>The <code>msecTime</code> part of the ID facilitates nearly free <strong>range queries</strong> by ID (time), per <code>XRANGE</code>.<br></li>
+</ul></li>
+</ul>
+
+<p>Add <a href="https://redis.io/commands/xadd">(<code>XADD</code>)</a> and Query <a href="https://redis.io/commands/xrange">(<code>XRANGE</code>)</a></p>
+
+<pre><code class="language-bash"># Add entries
+XADD key ID field string [field string ...] 
+XADD strm * sensor-id 1234 temp 19.8 # `*` to auto-generate ID (time-series)
+XADD strm * sensor-id 7777 temp 16.3
+
+XLEN strm  # stream length; number of entries
+
+# Query entries; access items over a range
+XRANGE key start end [COUNT n]  # COUNT for 1st n items only
+XRANGE strm - +  # `-/+` is min/max ID (time) of stream @ key &quot;strm&quot;
+1) 1) &quot;1555877533372-0&quot;
+   2) 1) &quot;sensor-id&quot;
+      2) &quot;1234&quot;
+      3) &quot;temp&quot;
+      4) &quot;19.8&quot;
+2) 1) &quot;1555879971871-0&quot;
+   2) 1) &quot;sensor-id&quot;
+      2) &quot;7777&quot;
+      3) &quot;temp&quot;
+      4) &quot;16.3&quot;
+
+XRANGE strm 1555879971800 +
+1) 1) &quot;1555879971871-0&quot;
+   2) 1) &quot;sensor-id&quot;
+      2) &quot;7777&quot;
+      3) &quot;temp&quot;
+      4) &quot;16.3&quot;
+</code></pre>
+
+<ul>
+<li>Each entry returned is an array of two items: ID &amp; list of field-value pairs.<br></li>
+<li><code>XRANGE</code> query complexity is <code>O(log(N))</code> to seek; <code>O(M)</code> to return M elements.</li>
+</ul>
+
+<p>Listening <a href="https://redis.io/commands/xread">(<code>XREAD</code>)</a> for new items</p>
+
+<pre><code class="language-bash"># Subscribe to new items arriving to the stream
+XREAD [COUNT n] [BLOCK msec] STREAMS key [key ...] ID [ID ...] 
+XREAD STREAMS strm 1555879971870 # all GREATER than ID 
+1) 1) &quot;strm&quot;
+   2) 1) 1) &quot;1555879971871-0&quot;
+         2) 1) &quot;sensor-id&quot;
+            2) &quot;7777&quot;
+            3) &quot;temp&quot;
+            4) &quot;16.3&quot;
+XREAD STREAMS strm $  # NEW only; since listening started
+(nil)
+</code></pre>
+
+<ul>
+<li><p>Read data from one or multiple streams, only returning entries with an ID <strong>greater</strong> than last received ID (arg) reported by caller. This command has an option to block if items are not available, in a similar fashion to <code>BRPOP</code> or <code>BZPOPMIN</code> and others.</p></li>
+
+<li><p>A stream can have multiple clients (consumers) waiting for data. Every new item, by default, will be delivered to every consumer that is waiting for data in a given stream; this differs from <strong>blocking lists</strong>, where <em>each consumer will get a different element</em>; ability to fan out to multiple consumers is <em>similar to Pub/Sub</em>.</p></li>
+
+<li><p>While in Pub/Sub messages are fire and forget and are never stored anyway; blocking list messages are popped from the list when received by the client; streams work in a fundamentally different way.</p></li>
+
+<li><p>All the messages are appended in the stream indefinitely (unless the user explicitly asks to delete entries): consumers  know what is a <strong>new</strong> message to it by remembering ID of their last received message.</p></li>
+
+<li><p>Streams <strong>Consumer Groups</strong> provide a level of control that Pub/Sub or blocking lists cannot achieve; different groups for same stream, explicit acknowledge of processed items, ability to inspect the pending items, claiming of unprocessed messages, and coherent history visibility for each single client, that is only able to see its private past history of messages.</p></li>
+</ul>
+
+<p><a href="https://redis.io/topics/streams-intro#consumer-groups">Consumer Groups</a></p>
+
+<pre><code class="language-bash"> XREADGROUP GROUP group consumer [COUNT n] [BLOCK msec] [NOACK] STREAMS key [key ...] ID [ID ...] 
+
+# Create consumer group
+XGROUP CREATE strm grp1 $
+
+# Add entries
+XADD strm * msg apple
+XADD strm * msg orange
+XADD strm * msg strawberry
+XADD strm * msg apricot
+XADD strm * msg banana
+
+# Read from stream using group grp1; consumer Alice. 
+# &quot;&gt;&quot;; returns only new msgs never delivered to other consumers so far
+XREADGROUP GROUP grp1 Alice COUNT 1 STREAMS strm &gt; 
+1) 1) &quot;strm&quot;
+   2) 1) 1) &quot;1555885532198-0&quot;
+         2) 1) &quot;msg&quot;
+            2) &quot;apple&quot;
+
+# Acknowledge msg(s); REMOVEs msg(s)
+XACK key group ID [ID ...] 
+
+XACK strm grp1 1555885532198-0
+(integer) 1
+XREADGROUP GROUP grp1 Alice COUNT 1 STREAMS strm 0
+1) 1) &quot;strm&quot;
+   2) (empty list or set)
+
+XREADGROUP GROUP grp1 Alice COUNT 1 STREAMS strm1 &gt; 
+(nil)
+</code></pre>
+
+<h4><a href="https://redis.io/topics/pipelining" title="redis.io/topics/pipelining">Pipelining</a></h4>
+
+<ul>
+<li><p>Multiple commands per request; performant (<code>5x</code>) queries; demonstrated here with the native Redis client/CLI or <code>nc</code> (Netcat):</p>
+
+<ul>
+<li><code>(printf &quot;...&quot;) | redis-cli --pipe</code></li>
+
+<li><p><code>(printf &quot;...&quot;) | nc localhost 6379</code></p>
+
+<pre><code class="language-bash"># per `redis-cli --pipe`
+$ (printf &quot;PING\r\nPING\r\nPING\r\n&quot;) | redis-cli --pipe
+All data transferred. Waiting for the last reply...
+Last reply received from server.
+errors: 0, replies: 3 
+# ... the client returns only a summary report, and STDERR
+
+# per Netcat
+$ (printf &quot;PING\r\nPING\r\nPING\r\n&quot;) | nc localhost 6379
++PONG
++PONG
++PONG
+^C  # manually exit
+
+# Scripting (Lua) per pipeline; SET/GET
+$ (printf &quot;eval \&quot;return redis.call('set','foo','bar')\&quot; 0\r\n&quot;) | nc localhost 6379
+$ (printf &quot;eval \&quot;return redis.call('get','foo')\&quot; 0\r\n&quot;) | nc localhost 6379
+$3
+bar
+^C  # manually exit
+</code></pre></li>
+</ul></li>
+</ul>
+
+<h4>Pipelining a file containing many Redis statements:</h4>
+
+<p>Use to <strong>insert</strong> a <strong>large amount of data</strong>; starting with a <code>DATA_SERIES</code> <em>file</em> of many <code>key</code>/<code>val</code> pairs, prepend &quot;<code>SET</code> &quot; to each line:</p>
+
+<pre><code class="language-bash">$ awk '{print &quot;SET &quot; $0}' DATA_SERIES &gt; 'data.txt'
+</code></pre>
+
+<ul>
+<li><p>So, <code>data.txt</code> is an ASCII file containing the &quot;<code>SET key val</code>&quot; commands:</p>
+
+<pre><code>SET Key0 Val0
+SET Key1 Val1
+...
+SET KeyN ValN
+</code></pre></li>
+</ul>
+
+<p>Then, enter the data into Redis:</p>
+
+<pre><code class="language-bash"># Pipelining a file containing many Redis statements
+cat 'data.txt' | redis-cli --pipe
+</code></pre>
+
+<ul>
+<li>Pipelining is much faster than a series of individual statements.</li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!--  
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

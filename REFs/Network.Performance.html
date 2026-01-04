@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Network.Performance</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Network Performance</h1>
+
+<h2>Q:</h2>
+
+<p>A private network having both Windows Server and RHEL 8 hosts under vSphere hypervisors has notoriously poor performance, with intermittent latencies of several (if not tens of) seconds, yet network admins claim their metrics are not capturing that.</p>
+
+<ol>
+<li>Is that plausible?</li>
+<li>How to best demonstrate (capture) these intermittent latencies?</li>
+</ol>
+
+<p>Kubernetes clusters built of kubeadm suffer etcd leader changes many times per day, if not per hour.</p>
+
+<h2>A:</h2>
+
+<h3>Part 1: Is it plausible for network admins' metrics to miss intermittent latencies?</h3>
+
+<p><strong>Absolutely yes, and it's very common.</strong> Here’s why:</p>
+
+<ol>
+<li><strong>Polling Intervals:</strong> Most SNMP/SNMP-based monitoring systems (like Nagios, SolarWinds, PRTG) poll devices every 1-5 minutes. An intermittent latency spike lasting 10-30 seconds can begin and end completely between polls, leaving no trace in the data.</li>
+<li><strong>Averaging:</strong> Many tools show average latency or utilization over time. A 30-second spike in a 5-minute average gets diluted to a minor blip.</li>
+<li><strong>Wrong Metrics:</strong> They might be monitoring link utilization (which is fine) or basic ICMP ping latency to the router/gateway, but not the <em>path latency</em> between specific critical hosts (e.g., between a Windows Server host and a RHEL host) or, more importantly, <strong>TCP latency</strong> which includes processing delay.</li>
+<li><strong>Monitoring the Wrong Layer:</strong> Network teams often monitor the physical and data link layers (switch ports, routers) and maybe network layer (IP). The problem could be at the <strong>transport layer (TCP)</strong> or <strong>application layer</strong>—caused by host-level issues (CPU starvation, memory pressure, storage I/O wait) that manifest as network latency. Their switches see clean, error-free frames.</li>
+<li><strong>Hypervisor Network Stack:</strong> The problem may be <strong>inside the vSphere host</strong>. Issues with:
+
+<ul>
+<li><strong>Driver/vSwitch:</strong> Poorly performing VMXNET3 driver, misconfigured vSwitch (e.g., incorrect teaming/LB policy), or resource contention on the vSphere host's networking (e.g., CPU ready time affecting the network interrupt handler).</li>
+<li><strong>Storage Network Contention:</strong> If storage (iSCSI/NFS) and VM traffic share the same physical NICs or VLAN, a storage burst can cause TCP retransmits and latency for VM traffic.</li>
+<li><strong>Network I/O Control (NIOC):</strong> If not configured or misconfigured, critical traffic isn't prioritized.</li>
+</ul></li>
+</ol>
+
+<p><strong>Conclusion:</strong> It's entirely plausible. The admins are likely telling the truth—their <strong>current</strong> metrics aren't capturing the event. The challenge is to move from &quot;the network is fine&quot; to &quot;let's find where this <em>end-to-end</em> latency is actually occurring.&quot;</p>
+
+<hr>
+
+<h3>Part 2: How to demonstrate (capture) these intermittent latencies?</h3>
+
+<p>You need <strong>continuous, high-frequency, end-to-end active probing</strong> between the actual affected endpoints. Here is a layered strategy:</p>
+
+<h4><strong>Phase 1: Strategic, Continuous Pinging (Simple Proof)</strong></h4>
+
+<p>This is your first, low-overhead proof.
+*   <strong>Tool:</strong> Use <code>smokeping</code> or a simple script with <code>ping -D</code> (Linux) to log timestamped pings.
+*   <strong>Method:</strong> Set up continuous pings (100ms intervals) <strong>between the problematic VMs themselves</strong> (e.g., RHEL 8 to Windows Server) <strong>and also from each VM to their respective default gateways</strong>.
+*   <strong>Why?</strong> This isolates the problem:
+    *   If latency spikes <strong>only</strong> between VMs, but not to their gateways, the issue is likely beyond the first hop (deep in the core/network, or on the destination host).
+    *   If latency spikes <strong>to the gateway as well</strong>, the problem is in the first hop (vSwitch, physical switch port, host CPU).
+*   <strong>Capture the proof:</strong> The log files with microsecond timestamps (<code>-D</code> on Linux) are irrefutable evidence of the latency spikes.</p>
+
+<h4><strong>Phase 2: Advanced TCP/Application Layer Tracing</strong></h4>
+
+<p>Ping (ICMP) can be de-prioritized. To see what applications experience, use TCP-based tools.
+*   <strong><code>tcpping</code> (or <code>nping --tcp</code>):</strong> Simulates a TCP handshake. Latency here is more representative of application connections.
+*   <strong><code>hping3</code>:</strong> Can flood with TCP SYN packets to see if loss/latency increases under load.
+*   <strong><code>curl</code> with Time Details:</strong> Use <code>curl -w &quot;dnslookup: %{time_namelookup} connect: %{time_connect} starttransfer: %{time_starttransfer} total: %{time_total}\n&quot; -o /dev/null -s &lt;URL&gt;</code> between hosts. This breaks down where in the connection the delay is (DNS, TCP connect, app response).
+*   <strong>Wireshark/Tcpdump on both ends:</strong> This is the ultimate weapon. Perform a simultaneous packet capture on the source and destination VMs during a known problem period (or during a scheduled test). Filter for traffic between them.
+    *   <strong>Look for:</strong> <strong>TCP Retransmissions, Duplicate ACKs, or Out-of-Order packets.</strong> These indicate packet loss the network may not alert on.
+    *   <strong>Look for Spikes in <code>TCP Delta</code>:</strong> The time between a data packet and its ACK. A sudden increase points to network bufferbloat or host stalls.
+    *   <strong>Correlate timestamps:</strong> A packet sent at T=0, ACK received at T=12 seconds is undeniable proof of a 12-second RTT.</p>
+
+<h4><strong>Phase 3: Hypervisor-Level Investigation</strong></h4>
+
+<ul>
+<li><strong>vSphere Performance Graphs:</strong> Check for <strong>&quot;CPU Ready&quot; (%)</strong> and <strong>&quot;CPU Co-Stop&quot;</strong> on the affected VMs. High CPU Ready (&gt;10%) means the VM is waiting for CPU cycles from the hypervisor—it will freeze, making all responses slow, mimicking network latency.
+
+<ul>
+<li>Note the counter-intitive meaning of &quot;<strong>CPU Ready</strong>&quot;.
+
+<ul>
+<li>The VM is &quot;Ready&quot;: The virtual machine's kernel or applications have requested CPU time and are prepared to execute instructions.</li>
+<li>The <strong>Hypervisor is Busy</strong>: The ESXi hypervisor, which manages all the physical resources, acknowledges the VM's request but has no free physical CPU cores available at that exact moment.</li>
+<li>The <strong>Wait Time</strong>: The metric measures the <em>duration of this waiting period</em>; the time the &quot;ready&quot; VM spent queued up for service.</li>
+</ul></li>
+<li><strong>Co-Stop</strong> (<code>%CSTP</code>) measures &quot;co-scheduling&quot; constraints;  the percentage of time a VM had to wait for all of its assigned vCPUs to be scheduled on physical CPU cores simultaneously. Ironically, the most common cause is assigning more vCPUs to a VM than the workload actually needs or can use efficiently.</li>
+</ul></li>
+<li><strong>esxtop:</strong> From the ESXi shell, run <code>esxtop</code>. Check:
+
+<ul>
+<li><code>NETWORK</code> view: Look for <code>%DRPTX</code> (dropped transmits) on the vSwitch or physical NICs (vmnic).</li>
+<li><code>INTERRUPT</code> view: High interrupt rates can indicate poor driver performance.</li>
+</ul></li>
+<li><strong>Check NIOC Settings:</strong> Ensure shares/limits are set for critical VM traffic if sharing with storage.</li>
+</ul>
+
+<hr>
+
+<h3>Part 3: The Kubernetes etcd Leader Change Problem</h3>
+
+<p>Frequent etcd leader changes are a <strong>symptom, not a root cause</strong>. They are the <strong>canary in the coal mine</strong> for the issues above. Etcd is exquisitely sensitive to:
+1.  <strong>Network Latency:</strong> The etcd raft protocol has strict heartbeat intervals (default election timeout of 1000ms). A latency spike &gt;100ms can cause missed heartbeats, leading to leader elections.
+2.  <strong>I/O Latency:</strong> etcd writes to disk before committing. If the underlying storage (even if it's a virtual disk) experiences high I/O wait, the etcd node can't respond in time.
+3.  <strong>CPU Starvation:</strong> If the etcd pod/VM is not getting scheduled CPU (high CPU Ready in vSphere), it will freeze and drop heartbeats.</p>
+
+<p><strong>How to Investigate the etcd Issue:</strong>
+*   <strong>Check etcd Metrics:</strong> Use <code>etcdctl endpoint status</code> and <code>etcdctl endpoint health</code>. Look for high leader heartbeat round-trip times.
+*   <strong>Check etcd Logs:</strong> <code>journalctl -u etcd</code> (on the host) or <code>kubectl logs -n kube-system &lt;etcd-pod-name&gt;</code>. You will see lines like:
+    *   <code>&quot;lost leader&quot;, &quot;took too long&quot;, &quot;heartbeat send error&quot;</code>
+*   <strong>Correlate:</strong> The timestamps of etcd warnings <strong>will directly correlate</strong> with the latency spikes you capture using the methods above. This is your knockout punch: &quot;At 14:23:17, the RHEL VM experienced a 14-second TCP latency spike. At 14:23:18, etcd node on that server lost its leader. Here are both logs.&quot;</p>
+
+<h3>Recommended Action Plan:</h3>
+
+<ol>
+<li><strong>Immediate Evidence:</strong> Set up <code>smokeping</code> between two problematic VMs and from each VM to its gateway. Run it for 24 hours. The graphs will show the spikes.</li>
+<li><strong>Demand Coordination:</strong> Schedule a short maintenance window with the network and virtualization teams.</li>
+<li><strong>Conduct a Test:</strong> During the window, run a <code>iperf3</code> or <code>nuttcp</code> bandwidth/latency test between VMs while simultaneously:
+
+<ul>
+<li>Running <code>esxtop</code> on the ESXi hosts.</li>
+<li>Running <code>tcpdump</code> on the VMs.</li>
+<li>Monitoring the etcd cluster status.</li>
+</ul></li>
+<li><strong>Root Cause:</strong> The combined data will pinpoint the layer: Host CPU Ready, vSwitch, physical NIC, switch port, storage network contention, etc.</li>
+</ol>
+
+<p>By moving the conversation from &quot;the network is fine&quot; to &quot;here is the evidence of latency between these two VMs at layer 3 and layer 4, and here is the correlated impact on our Kubernetes control plane,&quot; you shift the focus to a collaborative troubleshooting effort across teams.</p>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

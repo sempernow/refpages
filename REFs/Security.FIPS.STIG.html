@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Security.FIPS.STIG</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Federal Compliance : FIPS and STIG : Civilian vs. Military</h1>
+
+<p><strong>FIPS</strong> and <strong>STIGs</strong> are two critical <strong>cybersecurity compliance frameworks</strong> used primarily by the U.S. government and its contractors, but they have become de facto standards in many high-security industries.</p>
+
+<h3><strong>FIPS (Federal Information Processing Standards)</strong></h3>
+
+<p><strong>What it is:</strong> FIPS are publicly announced standards developed by the U.S. federal government for use by all non-military government agencies and by government contractors. They are created and maintained by the National Institute of Standards and Technology (NIST).</p>
+
+<p><strong>Primary Focus:</strong> <strong>Cryptography and data security.</strong>
+FIPS compliance is primarily about <strong>validating and certifying cryptographic modules and algorithms</strong>. The most important FIPS publications for compliance are:</p>
+
+<ul>
+<li><strong>FIPS 140-3:</strong> <em>Security Requirements for Cryptographic Modules.</em> This is the flagship standard. It specifies the security requirements for hardware and software cryptographic modules (e.g., encryption chips, SSL/TLS libraries, encrypted hard drives). Compliance is validated through independent laboratory testing, resulting in an official certificate.
+
+<ul>
+<li><strong>Levels:</strong> It has 4 security levels (Level 1 to Level 4), with Level 1 being the least stringent (e.g., software encryption) and Level 4 providing the highest protection (e.g., tamper-proof hardware in a hostile physical environment).</li>
+</ul></li>
+<li><strong>FIPS 199 &amp; 200:</strong> Standards for categorizing information systems and setting minimum security requirements.</li>
+<li><strong>FIPS 201:</strong> Standard for Personal Identity Verification (PIV) cards for federal employees and contractors.</li>
+</ul>
+
+<p><strong>In simple terms:</strong> <strong>FIPS answers, &quot;Is your encryption strong and implemented correctly according to the government's approved methods?&quot;</strong> If a product is &quot;FIPS 140-3 Validated,&quot; it means its crypto has been rigorously tested and certified.</p>
+
+<hr>
+
+<h3><strong>STIG (Security Technical Implementation Guide)</strong></h3>
+
+<p><strong>What it is:</strong> STIGs are detailed, step-by-step configuration guides for securing information systems and software. They are created and maintained by the <strong>Defense Information Systems Agency (DISA)</strong> for the <strong>U.S. Department of Defense (DoD)</strong>. Conformance is required of both <strong>civilian and military</strong> systems.</p>
+
+<p><strong>Primary Focus:</strong> <strong>System hardening and secure configuration.</strong>
+STIGs provide &quot;checklists&quot; for locking down everything from operating systems (Windows, Linux, Unix) and databases (Oracle, SQL Server) to network devices (routers, switches) and specific applications (like web servers and VMware). The goal is to <strong>reduce the attack surface</strong> by disabling unnecessary services, enforcing strict password policies, configuring audit logging, and applying hundreds of other security settings.</p>
+
+<ul>
+<li><strong>How they work:</strong> Each STIG contains numerous individual security rules (called &quot;Vulnerability IDs&quot; or &quot;VulIDs&quot;), each with a severity rating (CAT I, CAT II, CAT III).</li>
+<li><strong>Automation:</strong> Tools like <strong>SCAP (Security Content Automation Protocol)</strong> compliant scanners (e.g., Tenable Nessus, OpenSCAP) can automatically check a system against a STIG and produce a report showing &quot;findings&quot; (non-compliant settings).</li>
+<li><strong>Compliance:</strong> To be &quot;STIG compliant,&quot; a system must have all CAT I findings remediated and have a plan of action for CAT II/III findings, often documented in a <strong>POA&amp;M (Plan of Action and Milestones)</strong>.</li>
+</ul>
+
+<p><strong>In simple terms:</strong> <strong>STIGs answer, &quot;Is every single setting on this server, network device, or application configured in the most secure way possible according to DoD standards?&quot;</strong></p>
+
+<hr>
+
+<h3>Key Differences and Relationship</h3>
+
+<table>
+<thead>
+<tr>
+<th align="left">Feature</th>
+<th align="left"><strong>FIPS</strong></th>
+<th align="left"><strong>STIG</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><strong>Issuing Body</strong></td>
+<td align="left">NIST (Commerce Department)</td>
+<td align="left">DISA (Department of Defense)</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Primary Scope</strong></td>
+<td align="left"><strong>Cryptographic modules &amp; algorithms</strong></td>
+<td align="left"><strong>System hardening &amp; configuration</strong></td>
+</tr>
+
+<tr>
+<td align="left"><strong>What it Certifies</strong></td>
+<td align="left">A <strong>specific product's</strong> crypto implementation.</td>
+<td align="left">The <strong>configuration state</strong> of an entire system.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Compliance Method</strong></td>
+<td align="left">Independent lab testing and formal validation.</td>
+<td align="left">Scanning, manual checks, and documentation.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Typical Requirement</strong></td>
+<td align="left">&quot;Use FIPS 140-3 validated cryptography.&quot;</td>
+<td align="left">&quot;Harden this Windows Server using the latest Windows STIG.&quot;</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>How They Work Together:</strong>
+In a DoD environment, compliance often requires <strong>BOTH</strong>.
+1.  <strong>FIPS:</strong> Ensures that underlying encryption (e.g., for disk encryption, VPNs, web traffic) is using a certified module.
+2.  <strong>STIG:</strong> Ensures that the operating system and applications hosting that FIPS-validated crypto are themselves locked down and securely configured.</p>
+
+<p>For example, a DoD web server must:
+*   Use a <strong>FIPS-validated cryptographic module</strong> for its TLS certificates (FIPS 140-3).
+*   Have its operating system (e.g., RHEL) hardened according to the <strong>RHEL STIG</strong>.
+*   Have its web server (e.g., Apache) hardened according to the <strong>Apache STIG</strong>.</p>
+
+<hr>
+
+<h3>Who Needs to Comply?</h3>
+
+<ul>
+<li><strong>Mandatory for:</strong> All U.S. federal agencies (FIPS) and the Department of Defense, its contractors, and the Defense Industrial Base (STIGs). This is enforced via contracts and regulations like <strong>DFARS</strong>.</li>
+<li><strong>Common in:</strong> Other high-security industries like aerospace, finance, healthcare, and energy, where these standards are seen as best practices.</li>
+<li><strong>Related Framework:</strong> The <strong>Risk Management Framework (RMF)</strong> is the overall DoD process for authorizing systems to operate. <strong>STIG implementation is a core requirement within the RMF process.</strong></li>
+</ul>
+
+<h3>Summary</h3>
+
+<ul>
+<li><strong>FIPS</strong> is about <strong>certified cryptography</strong>.</li>
+<li><strong>STIGs</strong> are about <strong>secure configuration checklists</strong> for every part of an IT system.
+Together, they form a foundational pillar of U.S. government cybersecurity, ensuring both that strong crypto is used <em>and</em> that the systems using it are locked down to prevent compromise.</li>
+</ul>
+
+<hr>
+
+<h2>Military</h2>
+
+<p>For U.S. military systems, <strong>STIGs are actually the primary framework</strong>.
+They are <strong>specifically designed for and mandated by DoD</strong>.
+However, the DoD's compliance ecosystem is broader and more rigorous than just STIGs.
+It's a multi-layered, overlapping set of directives, controls, and processes.</p>
+
+<p>Here’s a breakdown of the key frameworks and requirements specific to U.S. military systems,
+building on the FIPS/STIG foundation:</p>
+
+<h3>1. The Overarching Directive: <strong>DoDI 8500.01</strong> and <strong>DoDI 8510.01</strong></h3>
+
+<p>Everything starts here. These directives establish the <strong>DoD Cybersecurity Program</strong> and mandate the <strong>Risk Management Framework (RMF)</strong> as the official process for managing cybersecurity risk. STIG implementation is a critical activity <em>within</em> the RMF process.</p>
+
+<h3>2. The Core Process: <strong>Risk Management Framework (RMF)</strong></h3>
+
+<p>RMF (defined by <strong>NIST SP 800-37</strong>) is the <strong>six-step lifecycle process</strong> that all DoD information systems must follow:
+1.  <strong>Categorize</strong> the system (using FIPS 199/NIST SP 800-60).
+2.  <strong>Select</strong> security controls (using the <strong>NIST SP 800-53 control catalog</strong>, tailored by the <strong>Overlay</strong>).
+3.  <strong>Implement</strong> the controls (this is where applying STIGs happens).
+4.  <strong>Assess</strong> the controls (using STIG checklists with SCAP tools).
+5.  <strong>Authorize</strong> the system (the Authorizing Official signs an ATO - Authority to Operate).
+6.  <strong>Monitor</strong> continuously.</p>
+
+<p><strong>Key Point:</strong> STIGs are the primary tool for <em>implementing</em> and <em>assessing</em> the technical controls selected in RMF Step 2.</p>
+
+<h3>3. The Control Baseline: <strong>NIST SP 800-53 with DoD Overlays</strong></h3>
+
+<ul>
+<li><strong>NIST SP 800-53:</strong> Provides a massive catalog of security and privacy controls. It's the foundation.</li>
+<li><strong>DoD Overlays:</strong> This is the critical military-specific layer. An &quot;overlay&quot; tailors the NIST 800-53 controls for a specific community (like the DoD). The <strong>DoD Overlay</strong> adds <strong>mandatory, stricter requirements</strong> not found in the base NIST guide.
+
+<ul>
+<li><strong>Example:</strong> NIST 800-53 might say &quot;use encryption where appropriate.&quot; The DoD Overlay will specify &quot;use <strong>FIPS 140-3 validated</strong> encryption&quot; and &quot;comply with the <strong>CNSSI 1253</strong> baseline&quot; (see below).</li>
+</ul></li>
+</ul>
+
+<h3>4. The Classification &amp; Impact Guide: <strong>CNSSI 1253</strong></h3>
+
+<p>The <strong>Committee on National Security Systems Instruction No. 1253</strong> is the bible for classifying systems that handle <strong>Classified National Security Information (CNSI)</strong>. It defines the <strong>security control baselines</strong> for systems at different classification levels (e.g., Confidential, Secret, Top Secret).
+*   It's far more stringent than FIPS 199.
+*   It dictates the minimum controls (from <strong>NIST 800-53</strong>) that <strong>must</strong> be implemented for a given system impact level. The DoD Overlay is built upon CNSSI 1253.</p>
+
+<h3>5. The Program Management Standard: <strong>CMMC (Cybersecurity Maturity Model Certification)</strong></h3>
+
+<p>While STIGs/RMF apply to <strong>information systems</strong>, <strong>CMMC applies to defense contractors (the Defense Industrial Base or DIB)</strong> as an organization.
+*   <strong>Goal:</strong> Protect <strong>Controlled Unclassified Information (CUI)</strong> and <strong>Federal Contract Information (FCI)</strong> in contractor networks.
+*   <strong>It's a tiered model</strong> (Levels 1-3), with Level 3 requiring the implementation of all 110 security practices from <strong>NIST SP 800-171</strong>, which itself is derived from NIST 800-53.
+*   <strong>Connection to STIGs:</strong> A contractor using STIGs to harden their servers that store CUI would be demonstrating compliance with the technical requirements of CMMC Level 3/NIST 800-171.</p>
+
+<h3>6. Operational &amp; Tactical Directives: <strong>USCYBERCOM Orders</strong></h3>
+
+<p>For warfighting systems and networks, U.S. Cyber Command issues specific orders and directives (e.g., the <strong>Command Cyber Readiness Inspection (CCRI)</strong> program). These are real-world, operational assessments that check if systems deployed in-theater are actually configured according to STIGs and can withstand adversarial attacks.</p>
+
+<h3>The Hierarchy in Practice:</h3>
+
+<p>For a new military weapons system or IT network, the compliance flow looks like this:</p>
+
+<ol>
+<li><strong>Governance:</strong> DoDI 8510.01 says &quot;Use RMF.&quot;</li>
+<li><strong>Categorization:</strong> CNSSI 1253 defines how to categorize a system holding Secret data.</li>
+<li><strong>Control Selection:</strong> The DoD Overlay, based on CNSSI 1253, selects the required controls from NIST 800-53.</li>
+<li><strong>Implementation &amp; Assessment:</strong> <strong>STIGs</strong> provide the actionable, step-by-step instructions to meet those technical controls. Tools like ACAS (Nessus) and SCAP check for STIG compliance.</li>
+<li><strong>Authorization:</strong> The system owner documents everything in eMASS (Enterprise Mission Assurance Support Service) and requests an ATO.</li>
+<li><strong>Contractor Support:</strong> If a contractor is building/maintaining the system, they must also meet <strong>CMMC</strong> requirements at the organizational level.</li>
+</ol>
+
+<h3>Summary: The Military-Specific Stack</h3>
+
+<table>
+<thead>
+<tr>
+<th align="left">Layer</th>
+<th align="left">Framework/Directive</th>
+<th align="left">Purpose</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><strong>Process</strong></td>
+<td align="left"><strong>Risk Management Framework (RMF)</strong></td>
+<td align="left">The mandatory 6-step lifecycle process for all systems.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Technical Guidance</strong></td>
+<td align="left"><strong>Security Technical Implementation Guides (STIGs)</strong></td>
+<td align="left">The &quot;how-to&quot; checklists for locking down specific technologies.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Control Catalog</strong></td>
+<td align="left"><strong>NIST SP 800-53</strong> + <strong>DoD Overlay</strong></td>
+<td align="left">The &quot;what&quot; - the list of security requirements, tailored for DoD.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Classification Baseline</strong></td>
+<td align="left"><strong>CNSSI 1253</strong></td>
+<td align="left">Defines control baselines for <strong>classified systems</strong>.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Cryptographic Standard</strong></td>
+<td align="left"><strong>FIPS 140-3 / FIPS 201</strong></td>
+<td align="left">Mandates validated crypto and PIV cards.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Contractor Security</strong></td>
+<td align="left"><strong>CMMC / NIST SP 800-171</strong></td>
+<td align="left">Protects sensitive data in the defense supply chain.</td>
+</tr>
+
+<tr>
+<td align="left"><strong>Operational Assessment</strong></td>
+<td align="left"><strong>USCYBERCOM Directives (CCRI)</strong></td>
+<td align="left">&quot;Live fire&quot; operational testing and inspections.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>In essence, STIGs are a <em>component</em> of the much larger, more complex military compliance universe.</strong>
+A military system isn't just &quot;STIG compliant&quot; &mdash;it is <strong>RMF-compliant</strong>, implemented using STIGs, authorized under DoD directives, and often managed by CMMC-certified contractors.</p>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

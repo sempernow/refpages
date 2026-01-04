@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JWT</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://jwt.io" title="JSON Web Token @ JWT.io">JWT</a> | OAuth/SSO (<a href="h1>
+
+<h3>RFC7519 <a href="https://tools.ietf.org/html/rfc7519" title="RFC7519 @ 2015"> JSON Web Token (JWT)</a></h3>
+
+<h3>RFC7523 <a href="https://tools.ietf.org/html/rfc7523#section-1" title="RFC7523 @ 2015">JWT Profile for OAuth 2.0 Client Authentication and Authorization Grants</a></h3>
+
+<h3><a href="auth.go"><code>/DEV/.../kit/auth/auth.go</code></a></h3>
+
+<h2><a href="https://is.docs.wso2.com/en/latest/learn/json-web-key-set-endpoint/">JWKS &mdash; JWT Key Set</a> Server</h2>
+
+<blockquote>
+<p>The JSON Web Key Set (JWKS) endpoint is a read-only endpoint that returns the Identity Server's public key set in the JWKS format. This contains the signing key(s) that the Relying Party (RP) uses to validate signatures from the Identity Server. For more information on this endpoint, see the OpenID Connect Discovery specification.</p>
+</blockquote>
+
+<p>Endpoint:</p>
+
+<pre><code>https://&lt;IS_HOST&gt;:&lt;IS_PORT&gt;/t/&lt;TENANT_DOMAIN&gt;/oauth2/jwks
+</code></pre>
+
+<p>Example:</p>
+
+<pre><code>https://localhost:9443/t/foo.com/oauth2/jwks
+</code></pre>
+
+<p>Response:</p>
+
+<pre><code class="language-json">{
+  &quot;keys&quot;: [
+    {
+      &quot;kty&quot;: &quot;RSA&quot;,
+      &quot;e&quot;: &quot;AQAB&quot;,
+      &quot;use&quot;: &quot;sig&quot;,
+      &quot;kid&quot;: &quot;MTk5NjA3YjRkNGRmZmI4NTYyMzEzZWFhZGM1YzAyZWMyZTg0ZGQ4Yw&quot;,
+      &quot;alg&quot;: &quot;RS256&quot;,
+      &quot;n&quot;: &quot;0OA-yiyn_pCKnldZBq2KPnGplLuTEtGU7IZP66Wf7ElhFJ-kQ87BMKvZqVNDV84MSY3XQg0t0yL6gITg-W8op61PWO2UrEcxhhMHN_rra22Ae2OCaUfOr43cW1YFc54cYj5p7v-HSVvjTuNLGMMrNfTGAOCPzuLxbSHfq62uydU&quot;
+    }
+  ]
+}
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

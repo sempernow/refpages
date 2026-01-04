@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.OS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>OS for On-prem K8s cluster</h1>
+
+<p>For <strong>on-premises (on-prem)</strong> Kubernetes deployments—typically on <strong>bare-metal servers</strong> or virtualized environments—the choice of operating system for worker and control plane nodes is critical for security, maintainability, performance, and ease of operations.</p>
+
+<p>Kubernetes officially requires <strong>Linux</strong> for the control plane, with worker nodes supporting <strong>Linux</strong> (primary) or <strong>Windows</strong> (for running Windows containers in mixed clusters). As of late 2025, there is no strict &quot;certified OS&quot; list from kubernetes.io for nodes, but conformance-tested and community-recommended distributions focus on compatibility, container runtimes (e.g., CRI-O, containerd), and minimal overhead.</p>
+
+<h3>General-Purpose Distributions (Traditional, Familiar)</h3>
+
+<p>These are full-featured Linux distros widely used for on-prem Kubernetes due to their stability, ecosystem, and support.</p>
+
+<ul>
+<li><strong>Ubuntu Server LTS</strong> (e.g., 24.04) — Most popular for beginners and production on-prem. Excellent documentation, huge community, easy package management, and strong support from tools like kubeadm, k3s, or RKE2. Commonly recommended for bare-metal setups.</li>
+<li><strong>Red Hat Enterprise Linux (RHEL)</strong> or clones (Rocky Linux, AlmaLinux) — Enterprise favorite for compliance, long-term support (10+ years), and security hardening. Often used in corporate on-prem environments with OpenShift or vanilla Kubernetes. RHEL includes built-in tools for container orchestration.</li>
+</ul>
+
+<p>These require manual patching, user management, and configuration, which can add operational overhead.</p>
+
+<h3>Container-Optimized / Immutable Distributions (Modern Best Practice)</h3>
+
+<p>These are minimal, secure-by-default OSes designed specifically for Kubernetes. They reduce attack surface (no SSH, no package manager), use immutable infrastructure (A/B updates), and are API-managed—ideal for production on-prem clusters.</p>
+
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>Key Features</th>
+<th>Best For</th>
+<th>Drawbacks</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong><a href="https://www.talos.dev/">Talos Linux</a></strong></td>
+<td>Purpose-built for Kubernetes; API-driven (no SSH); immutable; minimal footprint; fast provisioning; certified Kubernetes distribution.</td>
+<td>Security-focused production on-prem/bare-metal; teams wanting minimal maintenance.</td>
+<td>Steeper learning curve; everything via <code>talosctl</code> (API).</td>
+</tr>
+
+<tr>
+<td><strong>Fedora CoreOS</strong></td>
+<td>Automatic updates; container-focused; Ignition provisioning; from Red Hat ecosystem.</td>
+<td>Clusters needing rpm-ostree updates; integration with OpenShift-like workflows.</td>
+<td>Less &quot;pure&quot; Kubernetes focus than Talos.</td>
+</tr>
+
+<tr>
+<td><strong><a href="https://www.flatcar.org/">Flatcar Container Linux</a></strong></td>
+<td>Fork of CoreOS; immutable; automatic updates; secure boot.</td>
+<td>Stable, large-scale deployments.</td>
+<td>Smaller community than Ubuntu.</td>
+</tr>
+
+<tr>
+<td><strong>Bottlerocket</strong></td>
+<td>AWS-optimized but works on-prem; immutable; container-only.</td>
+<td>AWS-integrated or high-security needs.</td>
+<td>Tied to containerd; less flexible.</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Talos Linux</strong> stands out in 2025 discussions as the top choice for pure on-prem Kubernetes due to its Kubernetes-native design (declarative config, no unnecessary components).</p>
+
+<h3>Recommendations by Use Case</h3>
+
+<ul>
+<li><strong>Learning/Prototyping/Small Clusters</strong> — Start with <strong>Ubuntu Server LTS</strong>—it's forgiving and has vast tutorials.</li>
+<li><strong>Enterprise Production/Security-Critical</strong> — <strong>Talos Linux</strong> or <strong>Flatcar</strong> for minimal attack surface and automated operations.</li>
+<li><strong>If Using OpenShift</strong> — <strong>RHEL</strong> or <strong>RHCOS</strong> (Red Hat CoreOS).</li>
+<li><strong>Mixed Windows Workloads</strong> — Linux nodes for control plane + Windows Server (2019/2022/2025) worker nodes.</li>
+</ul>
+
+<p>Ultimately, any modern Linux distro with a compatible kernel and CRI will work, but container-optimized ones like <strong>Talos</strong> are increasingly favored for on-prem to avoid &quot;two OSes to manage&quot; (host + Kubernetes). Pair with tools like kubeadm, k3s/k0s (lightweight), or Rancher for easier cluster management.</p>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

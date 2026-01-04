@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>pipelining</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Pipelining</h1>
+
+<p>AKA The Industrial Revolution<br>
+(fathered by Henry Ford).</p>
+
+<p>Here's a pipeline voyage from laundry to heaven:</p>
+
+<h2>Example : Laundry</h2>
+
+<p>Laundry takes, say, 60 minutes per load.</p>
+
+<p>What happens when we decompose
+the laundry task into its constituent tasks,
+and exploit that with pipeline processing:</p>
+
+<pre><code>T1  T2  Δt  L    T      NT     D
+--  --  --  -   ----   -----  ---
+ 1   0   0  0     0
+ 2   1  20  0    20
+ 3   2  40  1    60      60     0
+ 4   3  40  2   100     120    20
+ 5   4  40  3   140     180    40
+ 6   5  40  4   180     240    60
+</code></pre>
+
+<ul>
+<li>T1 : Washer task iteration, which takes 20 minutes/task</li>
+<li>T2 : Dryer task iteration, which takes 40 minutes/task</li>
+<li>Δt : Time per final result (iteration)</li>
+<li>L  : Number of loads (final results) completed</li>
+<li>T  : Total time since pipeline start</li>
+<li>NT : L * 60 : Total time if no pipeline : L * (T1.time + T2.time)</li>
+<li>D  : NT - T : Total-time difference : Sans pipelining v. pipelining</li>
+</ul>
+
+<h2>Findings:</h2>
+
+<ul>
+<li>Before the pipeline fills, it has no benefit.
+That is, T grows identically to that of no pipeline,
+which is the sum of all completed tasks.</li>
+<li>Once the pipeline fills,
+T grows by increments of only the longest task (T2).
+That is, a final <strong>result is delivered per longest-task</strong>,
+rather than per sum-of-all-tasks.</li>
+<li>Pipeline <strong>benefit scales linearly</strong>, and <strong>in both dimensions</strong>:
+
+<ul>
+<li>Number of tasks</li>
+<li>Number of iterations (final results)</li>
+</ul></li>
+</ul>
+
+<p>This also reveals why information technology (IT)
+is not Computer Science.
+It isn't about computers,
+and it's not a science.
+It's rather about the technologies born of humans
+harvesting the (super)natural properties of information.</p>
+
+<p>The entirety of the physical world is fully definable.
+That is, this &quot;real&quot; world is mappable to information.
+However, the inverse is not true.
+Information is not bound by the physical (natural) world.
+Mathematics, for example.
+This implies the natural world is only a subset of information.
+Hence, information is definitively supernatural.</p>
+
+<hr>
+
+<p>Space and time (R4) and all matter and energy therein,
+otherwise referred to in modernity as &quot;reality&quot;,
+is merely a kind of shadow (subset) cast by
+a higher-dimensional reality
+(some call that heaven),
+which suggests if not implies
+a supernatural totality of all realities
+(some call that God).</p>
+
+<hr>
+
+<!--
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

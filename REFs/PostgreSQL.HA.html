@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>PostgreSQL.HA</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>PostgreSQL HA Cluster | <a href="https://www.postgresql.org/docs/current/runtime-config.html">Server Configuration</a></h1>
+
+<h2><a href="https://www.postgresql.org/docs/current/reference-client.html">Client Apps</a> : <a href="https://www.postgresql.org/docs/current/app-psql.html"><code>psql</code></a> | <a href="https://www.postgresql.org/docs/current/app-pg-ctl.html"><code>pg_ctl</code></a> | <a href="https://www.postgresql.org/docs/current/app-initdb.html"><code>initdb</code></a> | <a href="https://www.postgresql.org/docs/current/app-pgbasebackup.html" title="postgresql.org/docs"><code>pg_basebackup</code></a> | &hellip;</h2>
+
+<h2><a href="https://www.postgresql.org/docs/current/runtime-config.html">Configuration</a> (<a href="https://www.postgresql.org/docs/current/runtime-config-file-locations.html">fnames/locations</a>) : <a href="assets/pgha/config/pg_hba.conf"><code>pg_hba.conf</code></a></h2>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/current/warm-standby.html">Log-Shipping Standby Servers</a>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/current/protocol-replication.html">Streaming-Replication Protocol</a></li>
+<li><a href="https://www.postgresql.org/docs/current/warm-standby.html#STREAMING-REPLICATION">Streaming Replication</a>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#RUNTIME-CONFIG-REPLICATION-standby">Standby Servers</a></li>
+<li><a href="https://www.postgresql.org/docs/current/warm-standby.html#FILE-standby-SIGNAL">Standby Server Operation</a></li>
+<li><a href="https://www.postgresql.org/docs/current/runtime-config-replication.html">Replication params</a></li>
+<li><a href="https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-REPLICATION">Replication Functions</a>
+
+<ul>
+<li><code>SELECT pg_drop_replication_slot('foo');</code></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="https://www.postgresql.org/docs/13/backup.html">Backup/Restore</a>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/13/continuous-archiving.html">Continuous Archiving</a>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/current/warm-standby.html#CONTINUOUS-ARCHIVING-IN-standby">Continuouos Archiving @ Standby</a></li>
+<li><a href="https://www.postgresql.org/docs/13/runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY">Archive Recovery</a>
+
+<ul>
+<li><code>recovery.signal</code> file, <code>archive_command</code>, <code>recovery_command</code></li>
+<li><a href="https://www.postgresql.org/docs/current/recovery-config.html"><code>recovery.conf</code> : DEPRICATED (v12)</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="https://www.postgresql.org/docs/current/functions-admin.html">System Administration Functions</a></li>
+<li><a href="https://www.postgresql.org/docs/current/runtime-config.html">Server Configuration</a>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/current/runtime-config-wal.html">Write Ahead Log (WAL)</a></li>
+</ul></li>
+<li><a href="https://www.postgresql.org/docs/current/auth-methods.html">Authentication Methods</a></li>
+</ul>
+
+<h1>TL;DR</h1>
+
+<h2>Streaming Replication : Symmetric Servers</h2>
+
+<p>Streaming Replication with Replication Slots implemented on a symmetrical pair of containerized PostgreSQL servers running in a Docker swarm stack. This is a native PostgreSQL (v12/13) implementation, sans external dependencies. The servers are stateless. State is maintained in the peristent data store mounted thereto.</p>
+
+<p>The functional difference between the two servers is that one is in primary (read/write) mode and the other is in hot standby (read-only). The primary is continuously archiving, and the standby is continuously recovering; both per WAL (file) shipping. Separately, point-in-time recovery (PITR) and cluster backup (base backup) are available ad-hoc, imperatively, while the servers are online. All such functionality is per canonical PostgreSQL implementation.</p>
+
+<p>The symmetrical arrangement is robust and simple to configure. The distinctions between the two servers amount to a zero-byte signal file (<code>standby.signal</code>) existing exclusively in the <code>$PGDATA</code> directory of whichever is in standby mode; that and the requisite anti-symmetrical settings of replication-connection parameters. Beyond that, they are identical. Each server has a unique host name, and each its own data and archive stores. Extending the scheme to multiple standby servers requires only cloning the one and the processes to configure it.</p>
+
+<blockquote>
+<p>Note that <em>primary</em>/<em>standby</em> are <strong><em>operational</em></strong> declarations, whereas each server/service is configured per <strong><em>hardware</em></strong> declarations and its relevant identity and connection parameters. The point being the former are swappable, while the latter must remain immutable; the (operational) role of a server/service is what toggles, not the server-service-hardware associations. All relevant code must abide the distinction. In a containerized deployment, each PostgreSQL server is a named service, constrained (tethered) to its (configured) hardware regardless of its container(s) popping in and out of existence to provide the services.</p>
+</blockquote>
+
+<p>Bootstrapping and ad hoc backup (tarball) processes both utilize the same PostgreSQL utility (<code>pg_basebackup</code>); both operating on the <code>$PGDATA</code> directory. After servers' initialization and bootstrap, failover(s) are performed by merely adding the <code>standby.signal</code> file to the former (demoted) primary, and deleting same from the former (promoted) standy. PITR is performed similarly. Though the servers can swap modes on demand at any time, the scheme is primarily for automated failover. Total transition time is set by application latency; there should never be two primary servers, so the demote/promote duration should be sufficient to assure this. Lest the PostgreSQL servers are spread across the globe, this is typically tens of milliseconds. That's the duration over which clients would lose write access on failover (or any other change of primary).</p>
+
+<p>Routing requests to the appropriate server is an external responsibility. According to PostgreSQL documentation, best performance is achieved when the (hot) standby services all read requests, lightening the load of the primary as it services all write requests. The idea there is the anti-symmetrical nature of such processes; the former being relatively greater in number and lower in computational intensity per, and the latter being the reverse of those two metrics.</p>
+
+<h2>Features / Functions / Modes / Topologies</h2>
+
+<ul>
+<li>Write-Ahead Log Shipping; Streaming Replication (SR) with Replication Slots (RS) assures replica integrity, yet sacrifices limitation on required storage size.</li>
+<li>Shared-Disk Failover; the simplest HA topology; implement with a lone server (sans SR) as a Docker service; under Docker swarm other topologies are available, scaling out from this one server/storage; multiple nodes/storage schemes.</li>
+<li>Continuous Archiving (CA) works with SR/RS<del>, but for ephemeral IPs</del> UPDATE: Accepts Docker hostnames.</li>
+<li>Two symmetrical servers (primary/standby)
+
+<ul>
+<li>SR/RS + CA</li>
+<li>Servers each have their own set of data and archive volumes</li>
+<li>Declarative promote/demote.</li>
+<li>Bootstrap standby off of primary.
+
+<ul>
+<li><del>The primary does the archiving, so it too must be restarted on new config, yet ephemeral IPs then require standby restart to affect new <code>primary_conninfo</code>.</del></li>
+
+<li><p>UPDATE: Using Docker hostnames (See stack YAML) and declarative CIDR subnet, connection config settings are created/loaded only once per cluster; unchanged per (ephemeral) container/IP.</p>
+
+<pre><code class="language-bash">docker network create --driver=overlay --attachable \
+    --subnet=${PGHA_CIDR} \
+    --gateway=10.0.200.1 \
+    ${PGHA_NET}
+</code></pre></li>
+</ul></li>
+</ul></li>
+<li>Streaming Replication is its own orthogonal world. Each server has its own volume. Archive volume is shared. Restore/backup per bootstrap method only, else recovery states (primary/standby) are out of synch and prevent streaming thereafter.
+
+<ul>
+<li><code>pg_basebackup</code> is the tool for both bootstrapping the standby and for archiving; merely different option settings. Used for the former, it generates the config/connectivity settings and writes them to <code>postgresql.auto.conf</code>, and creates the <code>standby.signal</code> file @ <code>$PGDATA</code> that triggers streaming.
+
+<ul>
+<li>Bootstrapping is cloning the <code>$PGDATA</code> dir of primary to that of the standby; requires the source (primary) server running and the target (standby-to-be) server not running. See the <code>bootstrap</code> bash functions @ <code>make.do.sh</code>.</li>
+</ul></li>
+<li>Archive thereunder/thereafter is a clone of <code>$PGDATA</code> directory, either as is or two <code>tar(.gz)</code> files; utilizing the same tool as for bootstrapping (<code>pg_basebackup</code>), but with different options (sans streaming/config).
+
+<ul>
+<li>one file is of WAL files, the other is of everything else.</li>
+</ul></li>
+<li>Automating failover requires orthogonal process(es); hence <code>repmgr</code> etal.</li>
+</ul></li>
+<li><del>Contiuous archive --<code>archive_mode = on</code>, <code>archive_command</code>, <code>restore_command</code>, ... --interferes with streaming replication, at least if using replication slots. Untested otherwise.</del> UPDATE: works with SR/RS !! (See above.)</li>
+</ul>
+
+<h2><a href="https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-TIPS">Standalone Hot Backups</a> | <a href="https://www.postgresql.org/docs/current/app-pgbasebackup.html"><code>pg_basebackup</code></a></h2>
+
+<p>Simplest, but least live; not HA. See Barman solution.</p>
+
+<p><code>pg_basebackup</code> is used to take a base backup of a running PostgreSQL database cluster. The backup is taken without affecting other clients of the database, and can be used both for point-in-time recovery and as the starting point for a log-shipping or streaming-replication standby server.</p>
+
+<p><strong><em>Makes an exact copy of your data directory</em></strong> so, all you need to do to restore from that backup is to point postgres at that directory and start it up.</p>
+
+<pre><code class="language-bash">pg_basebackup -h $hostname -U $username -D $local_dir
+</code></pre>
+
+<ul>
+<li>User must have REPLICATION permissions or be superuser</li>
+<li><code>pg_hba.conf</code> must permit the replication connection.</li>
+
+<li><p>The server must also be configured with <code>max_wal_senders</code> set high enough to provide at least one <code>walsender</code> for the backup plus one for WAL streaming (if used).</p>
+
+<pre><code class="language-bash"># This works @ Docker stack @ default settings  ...
+pg_basebackup -h localhost -U uzr1 -D /home/pgbasebackup  
+#... 48MB
+pg_basebackup -h localhost -U uzr1 -D /home/pgbasebackup_tgz --format=tar --gzip  
+#... 4MB
+</code></pre></li>
+
+<li><p>@ service (YAML) : <code>dbp:</code> : <code>volumes:</code></p>
+
+<ul>
+<li><code>dbp1_data:/var/lib/postgresql/data</code> (named)</li>
+
+<li><p><code>${PATH_VM_ASSETS}/sql:/home</code> (mount)</p>
+
+<pre><code class="language-conf">archive_command = 'test ! -f /var/lib/pgsql/backup_in_progress || (test ! -f /var/lib/pgsql/archive/%f &amp;&amp; cp %p /var/lib/pgsql/archive/%f)'
+
+archive_command = 'local_backup_script.sh &quot;%p&quot; &quot;%f&quot;'
+
+# FAILs to do anything at all ...
+restore_command = 'cp /home/pgbasebackup/%f &quot;%p&quot;'
+</code></pre>
+
+<pre><code class="language-bash">touch /var/lib/pgsql/backup_in_progress
+psql -c &quot;select pg_start_backup('hot_backup');&quot;
+tar -cf /var/lib/pgsql/backup.tar /var/lib/pgsql/data/
+psql -c &quot;select pg_stop_backup();&quot;
+rm /var/lib/pgsql/backup_in_progress
+tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/
+</code></pre></li>
+</ul></li>
+</ul>
+
+<p>Compressed</p>
+
+<pre><code class="language-conf">archive_command = 'gzip &lt; %p &gt; /var/lib/postgresql/data/%f'
+
+restore_command = 'gunzip &lt; /home/pgbasebackup/%f &gt; %p'
+</code></pre>
+
+<h2>Recover/Restore from Hot Backup</h2>
+
+<ul>
+<li><p>Add to postgres.conf</p>
+
+<pre><code class="language-conf">restore_command = 'cp /home/pgbasebackup/%f &quot;%p&quot;'
+</code></pre></li>
+
+<li><p>Add <code>recovery.signal</code> file to data directory, and restart???</p>
+
+<ul>
+<li>Manually adding that blank file does in fact trigger some kind of failed attempt to do something, according to the logs, but  this &quot;recovery&quot; does nothing whatsoever, except complain that it can't &quot;stat&quot; archived WAL files; that it can't find the archived files it finds! It finds them, hence it can find them.
+<br></li>
+</ul></li>
+</ul>
+
+<h3><code>recovery.conf</code> is OBSOLETE per v.12</h3>
+
+<p><a href="https://www.2ndquadrant.com/en/blog/replication-configuration-changes-in-postgresql-12/"><code>FATAL:  using recovery command file &quot;recovery.conf&quot; is not supported</code></a></p>
+
+<ul>
+<li><p><del>Add this <code>recovery.conf</code> to data directory.</del></p>
+
+<pre><code class="language-bash">restore_command = 'cp /home/pgbasebackup/%f &quot;%p&quot;'
+#restore_command = 'gunzip &lt; /home/pgbasebackup_tgz/%f &gt; %p'
+recovery_target_time = '2022-01-01 00:00:00 UTC'
+recovery_target_inclusive = false
+</code></pre></li>
+
+<li><p><del>Restart server</del></p></li>
+</ul>
+
+<h3><a href="https://www.migops.com/blog/2021/03/31/setting-up-streaming-replication-in-postgresql-13-and-streaming-replication-internals/" title="2021 @ Migops.com">Streaming Replication</a></h3>
+
+<pre><code class="language-bash">pg_basebackup \
+    -h 192.169.12.1 -p 5432 -U replicator \
+    -D /var/lib/pgsql/13/data -Fp -R -Xs -P
+</code></pre>
+
+<ul>
+<li><code>-Fp</code> : Plain copy of all sub-directories and their contents (datafiles, etc).</li>
+<li><code>-R</code> : Configure replication specific settings automatically in the postgresql.auto.conf file.</li>
+<li><code>-Xs</code> : Using a separate channel/process, stream ongoing changes (WAL records) from master to standby, while the backup is in progress.</li>
+<li><code>-P</code> : Show the progress of the backup.</li>
+<li><code>-c</code> fast : This flag may be used to perform fast checkpoint and to avoid waiting until the lazy checkpoint is completed.</li>
+</ul>
+
+<h2><a href="https://www.postgresql.org/docs/current/continuous-archiving.html">Continuous Archiving and Point-in-Time Recovery (PITR)</a></h2>
+
+<p>PostgreSQL maintains a write ahead log (WAL) in the <code>/pg_wal/</code> subdirectory of the data directory; the database can be restored to consistency by <em>replaying</em> the log entries made since the last checkpoint.</p>
+
+<p>A third strategy for backing up databases: combine a file-system-level backup with backup of the WAL files. If recovery is needed, we restore the file system backup and then replay from the backed-up WAL files to bring the system to a current state.</p>
+
+<h4><a href="https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-ARCHIVING-WAL">Setting Up WAL Archiving</a></h4>
+
+<p>A running PostgreSQL system produces an indefinitely long sequence of WAL records ... divides this into <strong><em>WAL segment files</em></strong> (<code>16MB</code> apiece);  given numeric names that reflect their position in the abstract WAL sequence. When not using WAL archiving, the system normally creates just a few segment files and then “recycles” them by renaming no-longer-needed segment files to higher segment numbers.</p>
+
+<p>When archiving WAL data, we need to capture the contents of each segment file ... before the segment file is recycled for reuse.</p>
+
+<p>... many different ways of “saving the data somewhere”: copy the segment files to an NFS-mounted directory on another machine, write them onto a tape drive, or batch them together and burn them onto CDs, ...</p>
+
+<p>PostgreSQL lets the administrator <strong><em>specify a shell command</em></strong> to be executed to copy a completed segment file to wherever it needs to go. The command could be as simple as a <code>cp</code>, or it could invoke a complex shell script — it's all up to you.</p>
+
+<p>To enable WAL archiving, set the <code>wal_level</code> configuration parameter to replica or higher, <code>archive_mode</code> to <code>on</code>, and specify the shell command to use in the <code>archive_command</code> configuration parameter. In practice these settings will always be placed in the <code>postgresql.conf</code> file.</p>
+
+<h5><a href="https://www.postgresql.org/docs/current/runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS">Write Ahead Log (WAL)</a> params</h5>
+
+<ul>
+<li><p>@ <code>postgresql.conf</code></p>
+
+<pre><code class="language-conf">wal_level = replica
+archive_mode = on
+
+# @ Unix
+archive_command = 'test ! -f /mnt/server/archivedir/%f &amp;&amp; cp %p /mnt/server/archivedir/%f' 
+# @ Windows
+archive_command = 'copy &quot;%p&quot; &quot;C:\\server\\archivedir\\%f&quot;' 
+</code></pre>
+
+<ul>
+<li><code>%p</code> is path of file to archive.</li>
+<li><code>%f</code> is file name only.</li>
+</ul></li>
+</ul>
+
+<p>Example <code>archive_command</code> when run ...</p>
+
+<pre><code class="language-bash">test ! -f /mnt/server/archivedir/00000001000000A900000065 \
+    &amp;&amp; cp pg_wal/00000001000000A900000065 \
+          /mnt/server/archivedir/00000001000000A900000065
+</code></pre>
+
+<blockquote>
+<p>The speed of the archiving command is unimportant as long as it can keep up with the average rate at which your server generates WAL data. Normal operation continues even if the archiving process falls a little behind. If archiving falls significantly behind, this will increase the amount of data that would be lost in the event of a disaster. It will also mean that the <code>/pg_wal/</code> directory will contain large numbers of not-yet-archived segment files, which could eventually exceed available disk space.</p>
+</blockquote>
+
+<p>Monitor the archiving process to ensure that it is working as you intend.</p>
+
+<h2><a href="https://www.postgresql.org/docs/current/runtime-config-replication.html">Replication</a></h2>
+
+<h4><a href="https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-PITR-RECOVERY">Recovering Using a Continuous Archive Backup</a></h4>
+
+<pre><code class="language-conf">restore_command = 'cp /mnt/server/archivedir/%f %p'
+</code></pre>
+
+<h2><a href="https://www.postgresql.org/docs/current/warm-standby.html">Log Shipping : Standby Servers</a></h2>
+
+<p>&hellip; continuous archiving to create a high availability (HA) cluster configuration with one or more standby servers ready to take over operations if the primary server fails; <strong>Warm Standby</strong> or log shipping. &hellip; asynchronous, i.e., the WAL records are shipped after transaction commit.</p>
+
+<p>Primary and standby server work together, loosely coupled. Primary server operates in <strong><em>continuous archiving mode</em></strong>. Standby servers operates in <strong><em>continuous recovery mode</em></strong>, reading the WAL files from the primary.</p>
+
+<p>Recovery performance is sufficiently good that the Warm Standby will typically be only moments away from full availability once it has been activated.</p>
+
+<p><a href="https://www.postgresql.org/docs/current/hot-standby.html#HOT-STANDBY-PARAMETERS"><strong>Hot Standby</strong></a> server is a standby server that can also be used for read-only queries.</p>
+
+<blockquote>
+<p><em>No changes to the database tables are required to enable this capability, so it offers low administration overhead compared to some other replication solutions. This configuration also has relatively low performance impact on the primary server.</em></p>
+</blockquote>
+
+<h3><a href="https://www.postgresql.org/docs/current/warm-standby.html#STANDBY-SERVER-OPERATION">Standby Server Operation</a></h3>
+
+<p>A PostgreSQL server enters <strong>Standby Mode</strong> if a <code>standby.signal</code> file exists in its data directory when the server is started.</p>
+
+<p>Standby servers continuously apply WAL received either directly from the master (streaming replication), or from a WAL archive (see <a href="https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-RESTORE-COMMAND"><code>restore_command</code></a>).</p>
+
+<h4><code>/pg_wal</code></h4>
+
+<p><strong><em>Shared archive directory</em></strong>; must be available to all standby servers in the cluster; the standby servers attempt to restore any WAL files found therein. That typically happens after a server restart, when the standby replays WAL that was streamed from the master before the restart; can also manually copy files to <code>/pg_wal</code> at any time to have them replayed.</p>
+
+<p>This is a kind of backup bin for Streaming Replication; if the standby servers can't keep up, so the primary &quot;recycles&quot; WAL data before the standby servers process it from the stream, the data will  automatically be revovered (replayed) from WAL files in this directory.</p>
+
+<h4>The Loop</h4>
+
+<p>At startup, the standby begins by restoring all WAL available in the archive location, calling <a href="https://www.postgresql.org/docs/current/runtime-config-wal.html#GUC-RESTORE-COMMAND"><code>restore_command</code></a>. Once it reaches the end of WAL available there and <code>restore_command</code> fails, it tries to restore any WAL available in the <code>pg_wal</code> directory. If that fails, and streaming replication has been configured, the standby tries to connect to the primary server and start streaming WAL from the last valid record found in archive or pg_wal. If that fails or streaming replication is not configured, or if the connection is later disconnected, the standby goes back to step 1 and tries to restore the file from the archive again. This loop of retries from the archive, <code>pg_wal</code>, and via streaming replication goes on until the server is stopped or failover is triggered by a trigger file.</p>
+
+<ul>
+<li><code>pg_promote()</code> | <code>pg_ctl promote</code> | <code>promote_trigger_file</code>
+
+<ul>
+<li>Standby mode is exited and the server switches to normal operation when <code>pg_ctl promote</code> is run, <code>pg_promote()</code> is called, or a trigger file is found (<code>promote_trigger_file</code>). Before failover, any WAL immediately available in the archive or in <code>pg_wal</code> will be restored, but no attempt is made to connect to the master.</li>
+</ul></li>
+</ul>
+
+<h3><a href="https://www.postgresql.org/docs/current/warm-standby.html#PREPARING-MASTER-FOR-STANDBY">Prepare Master for Standby Servers</a></h3>
+
+<ul>
+<li>Archive directory accessible from the standby; accessible even when the master is down.</li>
+<li>For streaming replication, set up authentication on the primary server
+
+<ul>
+<li>Allow replication connections from the standby server(s); create a role and provide a suitable entry or entries in <code>pg_hba.conf</code> with the database field set to <code>replication</code>.</li>
+<li>Set <code>max_wal_senders</code> @ primary to a sufficiently large value in the configuration file of the primary server.</li>
+<li>Set apropos <code>max_replication_slots</code> if slots used.</li>
+</ul></li>
+<li>Bootstrap with a <a href="https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-BASE-BACKUP">Base Backup</a></li>
+</ul>
+
+<h3><a href="https://www.postgresql.org/docs/current/warm-standby.html#STANDBY-SERVER-SETUP">Set Up a Standby Server</a></h3>
+
+<ul>
+<li><a href="https://www.postgresql.org/docs/current/continuous-archiving.html#BACKUP-PITR-RECOVERY">Restore the base backup taken from primary server</a>.</li>
+<li>Create <code>standby.signal</code> file in the standby's data directory.</li>
+<li>Set <code>restore_command</code> to a simple command to copy files from the WAL archive.
+
+<ul>
+<li>If you plan to have multiple standby servers for high availability purposes, make sure that <code>recovery_target_timeline</code> is <em>set to latest</em>(the default), to make the standby server follow the timeline change that occurs at failover to another standby.</li>
+</ul></li>
+</ul>
+
+<p>Set up identical to primary (WAL archiving, connections and authentication) because the standby server will work as a primary server after failover.</p>
+
+<p>If you're using a WAL archive, its size can be minimized using the</p>
+
+<h4><code>archive_cleanup_command</code></h4>
+
+<p>WAL archive parameter to remove files that are no longer required by the standby server. The <code>pg_archivecleanup</code> utility is designed specifically to be used with <code>archive_cleanup_command</code> in typical single-standby configurations, see <code>pg_archivecleanup</code>. Note however, that if you're using the archive for backup purposes, you need to retain files needed to recover from at least the latest base backup, even if they're no longer needed by the standby.</p>
+
+<p>Example configuration (@ <code>postgresql.conf</code> ???):</p>
+
+<pre><code class="language-plaintext">primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass options=''-c wal_sender_timeout=5000'''
+restore_command = 'cp /path/to/archive/%f %p'
+archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
+</code></pre>
+
+<p>For streaming replication set <code>max_wal_senders</code> high enough in the primary to allow them to be connected simultaneously.</p>
+
+<h2><a href="https://www.postgresql.org/docs/current/warm-standby.html#STREAMING-REPLICATION" title="postgresql.org/docs/current">Streaming Replication</a></h2>
+
+<p>The step that turns a file-based log-shipping standby into streaming replication standby is setting the <code>primary_conninfo</code> setting to point to the primary server. Set <code>listen_addresses</code> and authentication options (see <a href="https://www.postgresql.org/docs/current/auth-pg-hba-conf.html"><code>pg_hba.conf</code></a>) on the primary so that the standby server can connect.</p>
+
+<p>&hellip; allows a standby server to stay more up-to-date than is possible with file-based log shipping;  <strong><em>the primary streams WAL records to the standby as they're generated</em></strong>; asynchronous by default; a small delay between committing a transaction in the primary and the changes becoming visible in the standby; the delay is much smaller than with file-based log shipping, <strong><em>typically under one second</em></strong> assuming the standby is powerful enough to keep up with the load. With streaming replication, <code>archive_timeout</code> is not required to reduce the data loss window.</p>
+
+<p>Use in conjunction with file-based continuous archiving;  set up a WAL archive that's accessible from the standby, else ...</p>
+
+<blockquote>
+<p>If you use streaming replication without file-based continuous archiving, the server might recycle old WAL segments before the standby has received them. If this occurs, the standby will need to be reinitialized from a new base backup. You can avoid this by setting <code>wal_keep_size</code> to a value large enough to ensure that WAL segments are not recycled too early, or by configuring a replication slot for the standby. If you set up a WAL archive that's accessible from the standby, these solutions are not required, since the standby can always use the archive to catch up provided it retains enough segments.</p>
+</blockquote>
+
+<p>On systems that support the keepalive socket option, setting <code>tcp_keepalives_idle</code>, <code>tcp_keepalives_interval</code> and <code>tcp_keepalives_count</code> helps the primary promptly notice a broken connection.</p>
+
+<p>Set the maximum number of concurrent connections from the standby servers (see <code>max_wal_senders</code> for details).</p>
+
+<p>When the standby is started and <code>primary_conninfo</code> is set correctly, the standby will connect to the primary after replaying all WAL files available in the archive. If the connection is established successfully, you will see a <code>walreceiver</code> in the standby, and a corresponding <code>walsender</code> process in the primary.</p>
+
+<h2>Parameters</h2>
+
+<ul>
+<li><code>archive_timeout</code> &hellip; limits size of the data loss window in file-based log shipping &hellip; can be set as low as a few seconds. However such a low setting will substantially increase the bandwidth required for file shipping. Streaming replication allows a much smaller window of data loss.</li>
+</ul>
+
+<h3>Hot Standby params</h3>
+
+<ul>
+<li>@ Primary
+
+<ul>
+<li><code>wal_level</code></li>
+<li><code>vacuum_defer_cleanup_age</code></li>
+</ul></li>
+<li>@ Standby
+
+<ul>
+<li><code>hot_standby</code></li>
+<li><code>max_standby_archive_delay</code></li>
+<li><code>max_standby_streaming_delay</code></li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

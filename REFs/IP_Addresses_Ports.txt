@@ -1,0 +1,79 @@
+DHCP range [default]
+--------------------
+	192.168.1.100 - 192.168.1.149
+
+Private IP Address
+------------------
+	Private internet addresses are often used on the LAN.
+	The allowed private IPv4 addresses are specified in rfc1918:
+
+    10.0.0.0 	- 10.255.255.255  (10/8 prefix)
+    172.16.0.0 	- 172.31.255.255  (172.16/12 prefix)
+    192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+	
+	Typical Home setup ...
+	
+		192.168.1.1   ... is Gateway Router LAN [inside] IP Address
+		255.255.255.0 ... Subnet Mask [24 bit mask]; allows 254 Host IDs
+		192.168.1     ... Network ID
+		192.168.100.1 ... is DOCSIS Modem
+		
+		Router client is referred to as 'host'; 
+		on LAN, all have same 'Network ID', and each has unique 'Host ID'. 
+
+	
+Static DHCP [DHCP Reservation]
+------------------------------
+	Set static IP addresses for any computers you would like to forward ports to. This can be done using Static DHCP or by manually configuring IPs in your OS. Be sure to set your static IPs outside of your automatic (DHCP) address range. 
+	
+	UPnP port forwards may overwrite static port forwards. If your static port forwarding is important, turn off UPnP. 
+		
+Ports
+-----
+	80		Web server 
+	21		FTP server 
+	22		SSH server 
+	5190	AIM server
+	5351	NAT-PMP 		UDP
+	
+Port Forwarding [Port Range Forwarding]
+----------------------------------------
+	UPnP is the easiest [automatic] way to handle Port Forward settings.
+	
+	Applications supporting UPnP automatically request the [gateway/NAT] router to open/close the port they're listening on whenever the application starts/stops. Automatic port forwarding with UPnP means you needn't manually script IP addresses, ports, nor any such parameters, neither at client PC nor router. 
+	
+	[The application using [UPnP] Port Forwarding must be in the list of Windows Firewall exceptions!]
+
+	REF:
+		http://www.portforward.com
+		http://www.dd-wrt.com/wiki/index.php/Port_Forwarding
+
+Port Triggering [Triggered Port Forwarding]
+-------------------------------------------
+	Forwarding requests to a range of ports to whatever machine connected to a remote host on the Trigger Port. It's semi-automatic and doesn't care about static IP addresses. Used for web services having a known/unique port. 
+	
+	E.g., AIM client machine/app sends request to, e.g., 207.234.129.65:5190 [trigger port is 5190], so setup Port Triggering @ router to forward on that trigger to local ports [range] 4117-4443. [The local port range is specified by the client app.]
+
+NAT-PMP [NAT Port Mapping Protocol]
+-----------------------------------	
+	Implemented in many network address translation (NAT) routers. NAT-PMP allows a computer in a private network (behind a NAT router) to automatically configure the router to allow parties outside the private network to contact it. NAT-PMP runs over UDP port 5351. It essentially automates the process of port forwarding. NAT-PMP is the precursor to Port Control Protocol (PCP). It's an alternative to Internet Gateway Device (IGD) Standardized Device Control Protocol, created by Apple, 2005.
+
+Port Control Protocol (PCP)
+---------------------------
+	Newest scheme [2013] to solve NAT/port public/private WAN/LAN issues; to replace all prior/existing port forwarding schemes.
+
+uTorrent :: Port Forward Listening Port @ Router [2015]
+-------------------------------------------------------
+	if UPnP enabled [WAN - Internet Connection > Enable UPnP > Yes], 
+	then DO NOTHING; ports are automatically opened/closed per app use.
+
+	if UPnP NOT enabled ... 
+	
+		Each install of uTorrent uses a different listening port. So, find it @ Preferences > Connection. Then use router Port Forwarding to open TCP/UDP of that port, for "uTorrent". Do NOT select "Random port".
+
+		Port checker should show the listening port open ... WHEN uTorrent is RUNNING.
+
+		uTorrent listening port, currently [2014-11-01] ...
+
+		28091 @ XPC		192.168.1.251
+		18220 @ HTPC	192.168.1.125

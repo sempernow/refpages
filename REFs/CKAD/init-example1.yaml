@@ -1,0 +1,38 @@
+##################################################################
+## Use init container to load server content into shared volume.
+##################################################################
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-demo1
+
+spec:
+
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: workdir
+      mountPath: /usr/share/nginx/html
+
+  ## These containers are run during pod initialization
+  initContainers:
+  - name: install
+    image: busybox
+    command:
+    - wget
+    - "-O"
+    - "/work-dir/index.html"
+    - http://info.cern.ch
+    volumeMounts:
+    - name: workdir
+      mountPath: "/work-dir"
+
+  dnsPolicy: Default
+
+  ## Shared volume
+  volumes:
+  - name: workdir
+    emptyDir: {}

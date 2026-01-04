@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>vSphere.IO.Trap</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Disk I/O @ vSphere Guest VMs : <strong>Write Stall</strong> AKA <strong>I/O Trap</strong> ? Yes!</h1>
+
+<p><strong>Yes, absolutely. This is a classic and well-known issue on vSphere as well, often referred to as the &quot;vSphere etcd latency problem.&quot;</strong> Using default settings for a VM that will host etcd is very likely to lead to the same kind of <code>fsync</code> delays and cluster instability.</p>
+
+<p>The root cause is the same: the default configuration for virtual disks in most hypervisors is optimized for capacity and general-purpose workloads, not for the extreme low-latency synchronous writes that etcd requires.</p>
+
+<h3>Default vSphere Settings That Cause Problems</h3>
+
+<ol>
+<li><p><strong>Default Virtual Disk Type:</strong> The default is often <strong>&quot;Thin Provision&quot;</strong> (the vSphere equivalent of Hyper-V's dynamic disk). This introduces overhead for space allocation during writes, which can cause significant latency for <code>fsync</code> operations.</p></li>
+
+<li><p><strong>Default Caching Policy:</strong> The default is often <strong>&quot;Caching from the host&quot;</strong> which is not aggressive enough. The critical setting for etcd is the <strong>Disk Write Cache</strong> policy <em>inside the guest OS</em>, which is often disabled by default for VMs due to fear of data loss on host failure.</p></li>
+
+<li><p><strong>Paravirtualized Controller (PVSCSI):</strong> While the VMware Paravirtual SCSI (PVSCSI) controller is high-performance, its default behavior with the <code>vmw_pvscsi</code> driver in Linux guests can still introduce latency if not tuned correctly alongside the disk type.</p></li>
+</ol>
+
+<h3>How to Configure a vSphere VM for etcd (Best Practices)</h3>
+
+<p>To avoid this exact problem on vSphere, you must change the defaults. Here is the standard checklist for a production-ready etcd node on vSphere:</p>
+
+<table>
+<thead>
+<tr>
+<th align="left">Setting</th>
+<th align="left">Default (Problematic)</th>
+<th align="left">Recommended for etcd</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><strong>Disk Provisioning</strong></td>
+<td align="left">Thin Provision</td>
+<td align="left"><strong>Thick Provision Eager Zeroed</strong></td>
+</tr>
+
+<tr>
+<td align="left"><strong>Controller Type</strong></td>
+<td align="left">LSI Logic SAS</td>
+<td align="left"><strong>Paravirtual (PVSCSI)</strong></td>
+</tr>
+
+<tr>
+<td align="left"><strong>Guest OS Cache</strong></td>
+<td align="left">Usually <code>none</code> or <code>writethrough</code></td>
+<td align="left"><strong><code>writeback</code></strong></td>
+</tr>
+
+<tr>
+<td align="left"><strong>VMware Tools</strong></td>
+<td align="left">Installed</td>
+<td align="left"><strong>Installed &amp; Updated</strong> (for optimal driver performance)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>Step-by-Step vSphere Configuration</h3>
+
+<h4>1. Disk Type: Use &quot;Thick Provision Eager Zeroed&quot;</h4>
+
+<p>This is the single most important change. It pre-allocates all space and zeros it out on creation, eliminating the allocation overhead that causes <code>fsync</code> delays in thin-provisioned disks.
+*   <strong>Power off the VM.</strong>
+*   In the vSphere Client, edit the VM's settings.
+*   For the virtual disk, change the provisioning from &quot;Thin Provision&quot; to <strong>&quot;Thick Provision Eager Zeroed&quot;</strong>.
+*   This is the vSphere equivalent of using a Fixed disk in Hyper-V.</p>
+
+<h4>2. Disk Controller: Use &quot;Paravirtual SCSI (PVSCSI)&quot;</h4>
+
+<p>This provides the best performance and lowest CPU overhead for virtualized storage.
+*   In the VM's settings, change the SCSI controller type to <strong>VMware Paravirtual</strong>.</p>
+
+<h4>3. Enable Write Caching <em>inside the Guest OS</em></h4>
+
+<p>Just like with Hyper-V, you need to ensure the guest OS is configured for write-back caching. Since you're using RHEL, the process is similar.</p>
+
+<pre><code>```bash
+# Check current cache policy for your etcd disk (e.g., /dev/sdb)
+sudo lsblk # to identify the disk
+sudo hdparm -W /dev/sdb
+
+# If supported, enable it (this often works for PVSCSI disks)
+sudo hdparm -W1 /dev/sdb
+
+# Make it persistent across reboots with a udev rule
+echo 'ACTION==&quot;add|change&quot;, KERNEL==&quot;sdb&quot;, ATTR{queue/write_cache}=&quot;write_back&quot;' | sudo tee /etc/udev/rules.d/99-enable-write-cache.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+*Note: With PVSCSI and modern kernels, the cache policy is often better handled by the `vmw_pvscsi` driver, but explicitly setting it is good practice.*
+</code></pre>
+
+<h4>4. (Optional but Recommended) VM Advanced Settings</h4>
+
+<p>You can add these advanced parameters to the VM's configuration file (.vmx) to further optimize for latency:
+*   <code>disk.EnableUUID = &quot;TRUE&quot;</code> - Ensures consistent disk device identification.
+*   <code>scsiX:Y.virtualSSD = 1</code> - (Where X is controller number, Y is disk number) hints to the ESXi host that the disk is SSD-backed, which can influence scheduling.
+*   <code>scsiX:Y.throughputCap = &quot;off&quot;</code> - Removes any artificial I/O throughput cap.</p>
+
+<h3>Summary: vSphere vs. Hyper-V</h3>
+
+<table>
+<thead>
+<tr>
+<th align="left">Hypervisor</th>
+<th align="left">Problem</th>
+<th align="left">Solution</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><strong>Hyper-V</strong></td>
+<td align="left">Dynamic Disk + no guest write cache</td>
+<td align="left">Use <strong>Fixed Disk</strong> + enable write caching on host</td>
+</tr>
+
+<tr>
+<td align="left"><strong>vSphere</strong></td>
+<td align="left"><strong>Thin Provisioned Disk</strong> + default guest cache</td>
+<td align="left">Use <strong>Thick Provision Eager Zeroed</strong> disk + <strong>PVSCSI controller</strong> + enable <code>writeback</code> in guest</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Conclusion: Yes, using default vSphere settings will very likely cause the same etcd <code>fsync</code> latency issues.</strong> The virtualized storage stack must be properly configured for low-latency, synchronous I/O in any hypervisor environment. The principles are the same: use pre-allocated (thick/fixed) disks and ensure write caching is appropriately enabled.</p>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# … ⋮ ︙ • “” ‘’ – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻  ⚐ ⚑
+# ☢  ☣  ☠  ¦ ¶ § † ‡ ß µ ø Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦  ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 𝐋𝐀𝐁
+# ⚠️ ✅ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🧳 🥇 ✨️ 🔚
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

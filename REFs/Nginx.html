@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Nginx</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://nginx.org/en/docs/" title="nginx.org">Nginx</a> | <a href="https://nginx.org/en/docs/http/ngx_http_core_module.html" title="nginx.org">Core Module</a> | <a href="https://nginx.org/en/docs/http/ngx_http_upstream_module.html">Upstream</a></h1>
+
+<h2>Commands</h2>
+
+<pre><code class="language-bash"># Validate (-t) and print (-T) the currently running config
+nginx -T
+# Signal : reload, ...
+nginx -s SIGNAL
+</code></pre>
+
+<p>E.g., dump valid/total config of first-found container of <code>rpx</code> service</p>
+
+<pre><code class="language-bash">docker exec -it $(docker ps -q --filter name=rpx -n 1) sh -c 'nginx -T' &gt; 'nginx-T.log'
+</code></pre>
+
+<h2>References @ <a href="nginx.info.conf"><code>nginx.info.conf</code></a></h2>
+
+<h2><a href="https://www.nginx.com/blog/avoiding-top-10-nginx-configuration-mistakes/#keepalive" title="nginx.com">Top 10 Mistakes</a></h2>
+
+<h2>Dockerfile</h2>
+
+<p>The entrypoint for a containerized NGINX server should be:</p>
+
+<pre><code class="language-bash">nginx -g daemon off
+</code></pre>
+
+<p>This is required for nginx to run in the foreground,
+else the container stops immediately after starting!</p>
+
+<pre><code class="language-Dockerfile">CMD [&quot;nginx&quot;, &quot;-g&quot;, &quot;daemon off;&quot;]
+
+</code></pre>
+
+<h2>File server</h2>
+
+<p>Serve files of the current directory:</p>
+
+<pre><code class="language-bash"># Start the file server detached
+docker run -d --rm --name ngx -p 8080:80 -v $(pwd):/usr/share/nginx/html:ro nginx
+
+# GET host file: $(pwd)/this.txt
+wget http://localhost:8080/this.txt # -O dump.here
+</code></pre>
+
+<h2><a href="https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/" title="nginx.com">Reverse Proxy</a></h2>
+
+<pre><code class="language-bash">docker run -d \
+    --name nginx-proxy \
+    -p 80:80 \
+    -p 443:443 \
+    -v /path/to/nginx.conf:/etc/nginx/nginx.conf:ro \
+    -v /path/to/certs:/etc/nginx/certs:ro \
+    -v /path/to/conf.d:/etc/nginx/conf.d:ro \
+    nginx:1.29.4-alpine3.23-slim
+</code></pre>
+
+<pre><code class="language-nginx">events {
+    worker_connections 1024;
+}
+
+http {
+    # Upstream definitions
+    upstream backend1 {
+        server backend-app1:3000;
+        server backend-app2:3000 backup;
+    }
+    
+    upstream backend2 {
+        server api-service:8080;
+        keepalive 32;
+    }
+    
+    upstream backend3 {
+        server legacy-system:9000 max_fails=3 fail_timeout=30s;
+    }
+    
+    # Logging
+    access_log  /var/log/nginx/access.log combined buffer=32k flush=5s;
+    error_log   /var/log/nginx/error.log warn;
+    
+    # SSL/TLS settings
+    ssl_certificate     /etc/nginx/certs/cert.pem;
+    ssl_certificate_key /etc/nginx/certs/key.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    
+    # Common proxy settings
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection &quot;upgrade&quot;;
+    
+    include /etc/nginx/conf.d/*.conf;
+}
+</code></pre>
+
+<p>Expose a service running at <code>127.0.0.1:3000</code> (<code>localhost</code>)</p>
+
+<pre><code class="language-nginx">http {
+    server {
+        listen 80;
+        server_name example.com;
+
+        location /foo/ {
+            proxy_pass http://127.0.0.1:3000/bar/;
+
+            # Universally essential headers (sort of)
+            proxy_set_header   Host $host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $server_name;
+            proxy_set_header   X-Forwarded-Proto $scheme;
+        }
+    }
+}
+</code></pre>
+
+<ul>
+<li>Okay to use either IP address or domain name</li>
+</ul>
+
+<h3>Using the <code>upstream{}</code> block</h3>
+
+<blockquote>
+<p>&quot;&hellip; <a href="https://www.nginx.com/blog/avoiding-top-10-nginx-configuration-mistakes/#upstream-groups">unlocks several features that improve performance</a>&quot;</p>
+</blockquote>
+
+<pre><code class="language-nginx">http {
+
+    upstream auth_svc {
+        zone upstreams 64K;
+        server 127.0.0.1:3000 max_fails=1 fail_timeout=2s;
+        keepalive 2;
+    }
+
+    server {
+        listen 8080;
+        server_name example.com;
+
+        location / {
+            proxy_set_header Host $host;
+            proxy_pass http://auth_svc/;
+            proxy_next_upstream error timeout http_500;
+        }
+    }
+}
+</code></pre>
+
+<ul>
+<li><p>Set <code>max_fails</code> <strong><em>else Nginx dies when an upstream service stops</em></strong>.</p>
+
+<pre><code class="language-bash">docker service update --replicas=0
+</code></pre></li>
+
+<li><p>At Docker <code>service</code>, <code>stack</code> and <code>swarm</code>,
+the upstream reference, <code>auth_svc</code>, is the Docker <strong><em>service name</em></strong>,
+and the upstream <code>server IP_ADDR:PORT</code> references the container.
+That port, perhaps set per <code>docker</code> YAML, must also match the application configuration of course.
+The <code>server {listen 8080; ...}</code> would also be the <strong><em>container port</em></strong>; typically set to <code>8080</code> or so.</p>
+
+<pre><code class="language-yaml">    ports:
+        - 80:8080
+        - 443:8443
+</code></pre></li>
+</ul>
+
+<blockquote>
+<p>The service-name referencing allows Nginx to keep up with container changes lest the service itself is terminated; <code>docker service stop</code>/<code>start ...</code> commands are okay. And <code>swarm</code> handles the load balancing.</p>
+</blockquote>
+
+<h4>Routing</h4>
+
+<p><code>location /THIS/</code> <em>versus</em> <code>proxy_pass .../THAT/</code></p>
+
+<pre><code class="language-nginx">upstream server_reference {
+    # Server declaration (container perspective)
+}
+
+server {
+    listen 8080
+    server cdn.example.com
+
+    location /THIS/ {
+        proxy_pass &lt;scheme&gt;://&lt;server_reference&gt;/THAT/
+    }
+}
+</code></pre>
+
+<ul>
+<li>The  <code>/THIS/</code> <strong><em>is replaced</em></strong> by the <code>/THAT/</code>
+
+<ul>
+<li>The request from downstream (web) is of <code>/THIS/</code> .</li>
+<li>The request sent upstream is of <code>/THAT/</code> .
+
+<ul>
+<li>Upstream is the application server.
+
+<ul>
+<li>Up/Down is from client perspective, as in UPload versus DOWNload.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>Multiple Services</h3>
+
+<p>Using the above service declarations as a template, repeat  as necessary &hellip;</p>
+
+<pre><code class="language-nginx">http {
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        location / {
+            proxy_set_header Host $host;
+            proxy_pass http://localhost:3000/;
+        }
+
+        location /svcX/v1/ {
+            proxy_set_header Host $host;
+            proxy_pass http://localhost:4000/foo/;
+        }
+
+        location /svcY/ {
+            proxy_bind 127.0.0.2; # declare the network adapter
+            proxy_pass http://example.com/app2/;
+        }
+    }
+}
+</code></pre>
+
+<ul>
+<li>@ Docker <code>stack</code> (<code>swarm</code>)
+
+<ul>
+<li><code>location</code> regards request from downstream (web/client)</li>
+<li><code>proxy_pass</code> regards request sent upstream (@ CTNR)</li>
+</ul></li>
+</ul>
+
+<h2>Wordpress-Nginx <code>.conf</code> examples | <a href="https://github.com/search?q=wordpress+nginx">Search GitHub</a></h2>
+
+<ul>
+<li><a href="nginx-T.command.log.conf"><code>bitnami/wordpress-nginx</code> (<code>nginx-T.command.log.conf</code>)</a></li>
+<li><a href="https://github.com/mjstealey/wordpress-nginx-docker/blob/master/nginx/default.conf" title="GitHub"><code>mjstealey/wordpress-nginx-docker</code></a></li>
+</ul>
+
+<h3>Nginx Config Generator : <a href="https://github.com/digitalocean/nginxconfig.io" title="DigitalOcean">NGINXConfig.io</a></h3>
+
+<h2>Nginx : <code>ngx_http_upstream_module</code> : <a href="http://nginx.org/en/docs/http/ngx_http_upstream_module.html#keepalive"><code>keepalive</code></a></h2>
+
+<p>&hellip; and associated params:</p>
+
+<pre><code class="language-ini">upstream SERVICE_{
+    server SERVICE_NAME:SERVICE_PORT;
+
+    keepalive 2x_REPLICAS;
+}
+
+server {
+    ...
+    location /THIS/ {
+        proxy_pass http://SERVICE_THAT/;
+
+        proxy_http_version 1.1;
+        proxy_set_header Connection &quot;&quot;;
+        ...
+    }
+} 
+</code></pre>
+
+<ul>
+<li><code>/THIS/</code> is the request sent by the client (downstream)</li>
+<li><code>/THAT/</code> is the request recieved by the server (upstream)</li>
+
+<li><p><code>SERVICE_PORT</code> is that of <strong><em>container</em></strong>, not that exposed.</p>
+
+<ul>
+<li><p>I.e., @ Docker Compose file</p>
+
+<pre><code class="language-yaml">...
+ports: 
+    - 7770:${SERVICE_PORT}
+</code></pre></li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>We recommend setting the parameter to <strong><em>twice the number of servers listed</em></strong> in the <code>upstream{}</code> block. This is large enough for NGINX to maintain keepalive connections with all the servers, but small enough that upstream servers can process new incoming connections as well. &mdash; <a href="https://www.nginx.com/blog/avoiding-top-10-nginx-configuration-mistakes/#no-keepalives)">https://www.nginx.com/blog/avoiding-top-10-nginx-configuration-mistakes/#no-keepalives)</a></p>
+</blockquote>
+
+<h2>ERR : <a href="https://gosamples.dev/broken-pipe/">Broken Pipe</a></h2>
+
+<blockquote>
+<p>The broken pipe is a TCP/IP error occurring when you write to a stream where
+the other end (the peer) has <strong><em>closed</em></strong> the underlying <strong><em>connection</em></strong>.</p>
+</blockquote>
+
+<pre><code class="language-plaintext">core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:28.609143 logger.go:54: (200) : GET /app/start -&gt; 10.0.3.6:53812 (60.1168ms)
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:28.739194 errors.go:33: 0000000… : ERR : write tcp 10.0.3.3:3030-&gt;10.0.3.6:53828: write: broken pipe
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:28.739337 main.go:269: main: @ PWA Shutdown per signal: terminated
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:28.742779 errors.go:33: 0000000… : ERR : write tcp 10.0.3.3:3030-&gt;10.0.3.6:53816: write: broken pipe
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:28.751308 errors.go:33: 0000000… : ERR : write tcp 10.0.3.3:3030-&gt;10.0.3.6:53824: write: broken pipe
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:33.739488 main.go:156: main: @ PWA Shutdown : Disconnecting from 'db1' @ host : 'pg1'
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:33.741392 main.go:278: main: Completed
+core_pwa.1.ybx10pk8sguo@docker-desktop    | PWA : 2022/09/07 15:10:33.741418 main.go:66: main: error: could not stop PWA server gracefully: context deadline exceeded
+</code></pre>
+
+<h2><code>/rpx_status</code></h2>
+
+<p>Our alias of <code>/basic_status</code>, so that standard returns 404 regardless.
+Still, denies all but for HQ and such.</p>
+
+<pre><code class="language-bash">☩ curl https://swarm.foo/rpx_status
+Active connections: 1
+server accepts handled requests
+ 3 3 45
+Reading: 0 Writing: 1 Waiting: 0
+</code></pre>
+
+<h2><a href="https://stackoverflow.com/questions/55338127/server-static-files-from-ftp-server-using-nginx" title="StackOverflow.com 2019">Proxy FTP</a></h2>
+
+<blockquote>
+<p>Nginx doesn't support proxying to FTP servers. At best, you can proxy the socket... and this is a real hassle with regular old FTP due to it opening new connections on random ports every time a file is requested.</p>
+
+<p>What you can probably do instead is create a FUSE mount to that FTP server on some local path, and serve that path with Nginx like normal. To that end, CurlFtpFS is one tool for this. Tutorial: <a href="https://linuxconfig.org/mount-remote-ftp-directory-host-locally-into-linux-filesystem">https://linuxconfig.org/mount-remote-ftp-directory-host-locally-into-linux-filesystem</a></p>
+</blockquote>
+
+<h2><a href="https://docs.nginx.com/nginx/admin-guide/load-balancer/using-proxy-protocol/" title="docs.nginx.com">PROXY Protocol</a></h2>
+
+<blockquote>
+<p>The PROXY protocol &hellip; to receive client connection information passed through proxy servers and load balancers such as HAproxy and Amazon Elastic Load Balancer (ELB).</p>
+
+<p>With the PROXY protocol, NGINX can learn the originating IP address from HTTP, SSL, HTTP/2, SPDY, WebSocket, and TCP. Knowing the originating IP address of a client may be useful for setting a particular language for a website, keeping a denylist of IP addresses, or simply for logging and statistics purposes.</p>
+
+<p>The information passed via the PROXY protocol is the client IP address, the proxy server IP address, and both port numbers.</p>
+</blockquote>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

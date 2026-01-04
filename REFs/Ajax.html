@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ajax</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h2><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch" title="Using Fetch @ MDN">Fetch API</a></h2>
+
+<pre><code class="language-js">o.jFetch3 = function () {
+    fetch(o.url)
+        .then(validate)
+        .then(jreduceFetch)
+        .then(toDOM)
+        .catch(log)
+}
+</code></pre>
+
+<h2>XHR: <a href="https://developer.mozilla.org/en-US/docs/Glossary/XHR_(XMLHttpRequest)" title="@ MDN"><code>XMLHttpRequest()</code></a> | Promisified: <a href="[misc]/ajax/xhr.js"><code>fetchXHR()</code></a></h2>
+
+<h4>@ Basic <code>GET</code></h4>
+
+<pre><code class="language-js">document.querySelector('H1').onclick = makeRequest
+
+function makeRequest() {
+    var xhr = new XMLHttpRequest()
+    xhr.open('GET', '/foo', true)
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === XMLHttpRequest.DONE &amp;&amp; xhr.status === 200){
+            toDOM(xhr) // callback
+        }
+    }
+    xhr.send()
+}
+
+var toDOM = (xhr) =&gt; {
+    var el = document.querySelector('H1'),
+        html = `&lt;h2&gt;&lt;code&gt;${xhr.responseText}&lt;/code&gt;&lt;/h2&gt;`
+
+    el.insertAdjacentHTML(&quot;afterend&quot;,html)
+    document.querySelector('BODY').prepend(el) // APPENDs to BODY
+}
+</code></pre>
+
+<h4>@ JSON <code>POST</code>/<code>GET</code></h4>
+
+<pre><code class="language-js">// POST
+function post(url, data, callback) {
+    var xhr = new XMLHttpRequest()
+
+    xhr.open(&quot;POST&quot;, url, true)
+    xhr.setRequestHeader(&quot;Content-type&quot;, &quot;application/x-www-form-urlencoded&quot;)
+    xhr.onload = function() {
+        callback(JSON.parse(xhr.response))
+    }
+
+    xhr.send(JSON.stringify(data))
+}
+// GET
+function get(url, callback) {
+    var xhr = new XMLHttpRequest()
+
+    xhr.open(&quot;GET&quot;, url, true)
+    xhr.onload = function() {
+        callback(JSON.parse(xhr.response))
+    };
+
+    xhr.send(null)
+}
+</code></pre>
+
+<h2>( XHR | Fetch ) &amp; Render</h2>
+
+<h3>Various schemes profiled @ JSON payload</h3>
+
+<ul>
+<li><a href="[misc]/ajax/jrender.js">(<code>jrender.js</code>)</a><br>
+Fetch and render one large set of serialized blocks of an html component, coded in JSON; one file.</li>
+<li><a href="[misc]/ajax/hrender.js">(<code>hrender.js</code>)</a><br>
+Fetch and render a serialized set of html files, each one block of the html component.</li>
+</ul>
+
+<h3>tl;dr</h3>
+
+<p>Injecting pre-rendered html fragments is very performant, in both network efficiency and DOM manipulation. JSON works as well too. Template literals are great for mapping JSON to html components very quickly; bypasses the per-node javascript code. The DOM performance will suffer some, but the tradeoff is well worth it for most text rendering scenarios, e.g., chat/comments threads and such.</p>
+
+<ul>
+<li><p><strong>XHR</strong> vs. <strong>Fetch</strong></p>
+
+<ul>
+<li>Both use Promise chained processing, from HTTP GET, all the way through to HTML injected into DOM. Here, XHR refers to a <em>promisified</em> <a href="[misc]/ajax/xhr.js">XHR function (<code>fetchXHR</code>)</a>.</li>
+
+<li><p>The <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch" title="Using Fetch [MDN]">Fetch API</a> is a low-level API, just like its predecessor, <code>XHR</code>. Fetch requires explicit coding to handle the full set of AJAX processing fail modes. Asent such, it provides zero HTTP response info, e.g., on <code>HTTP 404</code>; from MDN: <em>The Promise returned from <code>fetch()</code></em> <strong><em>won’t reject on HTTP error status</em></strong> ... <em><code>HTTP 404</code> or <code>500</code></em>. Instead, <strong><em>it will resolve normally</em></strong> (with <code>ok</code> status set to <code>false</code>), and <strong>it will only reject on network failure</strong> or if anything prevented the request from completing. Worse, <code>.json()</code> is deadly. Forbids <strong>any scheme to catch any error on any malformed json</strong> payload. (It fails internally, somehow, and offers no hooks for any ES6 error catching schemes.) (<a href="https://gomakethings.com/why-i-still-use-xhr-instead-of-the-fetch-api/" title="'Why I still use XHR instead of the Fetch API' @ GoMakeThings.com">More on Fetch API.</a>)</p>
+
+<ul>
+<li><p><code>fetch()</code> defaults to <strong>allow</strong> CORS.</p>
+
+<pre><code class="language-js">// @ CORS, if server Response Header:  
+// Access-Control-Allow-Origin: &lt;origin&gt;
+var initFetch = {
+method: 'GET',
+mode: 'cors',
+cache: 'default'
+}
+$.url = new Request($.domain+'/data/data-serial-1.json', initFetch)
+$.jFetch2()
+</code></pre></li>
+</ul></li>
+</ul></li>
+
+<li><p>HTML DOM<br>
+Best performance is by promise/resolve all data prior to DOM manipulation. Fetching a single JSON file of 1000 serialized html components takes about 50 ms, from fetch to DOM injection. Here is a single block of the tested component:</p>
+
+<pre><code class="language-html">&lt;h2&gt;&lt;code&gt;el[008] @ 150&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;rTJqlr dm41uf L6UI36 gN9MkT pFvxbQ dBucYJ NfBsHt GVCPNf 
+xS1khx k8TNLV KCv4kJ 2eWBBG LgjG3K 3qj5M6 rxvSXZ qTZqQ9 YGxMTD kFWJ56 
+5BK0Cl 3YepEy couB64 ND12vF WEXeYr AWXfiX kYWrPc &lt;/p&gt;
+&lt;div&gt;&lt;span&gt;foo&lt;/span&gt; ☧ &lt;i&gt;bar&lt;/i&gt; &lt;span&gt;baz&lt;/span&gt;&lt;/div&gt;
+</code></pre></li>
+
+<li><p>ES6 _<strong>Tagged Template Literal</strong> is used to generate string,<br>
+injected by <code>insertAdjactentHTML()</code> method.</p>
+
+<pre><code class="language-js">    // Render HTML from JSON; this is the data reducer callback.
+    function render(s, j) {
+        s += 
+        `\n&lt;h2&gt;&lt;code&gt;${j.head}&lt;/code&gt;&lt;/h2&gt;
+        &lt;p&gt;${j.body}&lt;/p&gt;
+        &lt;div&gt;&lt;span&gt;${j.f1}&lt;/span&gt; ${j.f2} &lt;i&gt;${j.f3}&lt;/i&gt; &lt;span&gt;${j.f4}&lt;/span&gt;&lt;/div&gt;\n`
+        return s
+    }
+</code></pre>
+
+<ul>
+<li>@ <code>d.reduce(render, '')</code></li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

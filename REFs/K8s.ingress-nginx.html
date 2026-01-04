@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.ingress-nginx</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters" title="kubernetes.github.io">Ingress-NGINX Controller</a> | <a href="https://github.com/kubernetes/ingress-nginx/releases">Releases</a> | <a href="https://github.com/kubernetes/ingress-nginx/blob/main/docs/user-guide/nginx-configuration/index.md">Configuration</a></h1>
+
+<h2><code>Ingress</code> : Rewrite (<a href="https://github.com/kubernetes/ingress-nginx/blob/main/docs/examples/rewrite/README.md" title="github.com/kubernetes/ingress-nginx"><code>rewrite-target</code></a>) Syntax</h2>
+
+<p>URL rewrite rules are based on RegEx <a href="https://www.regular-expressions.info/refcapture.html" title="regular-expressions.info">Capture Group</a>s, which are saved in numbered placeholders; <code>$1</code>, <code>$2</code> &hellip; <code>$n</code>.
+So, rewrite rule <code>\$n</code> declares the capture group (of the request) that survives the rewrite, and is sent upstream.</p>
+
+<p><strong>Here are some example patterns</strong>:</p>
+
+<h3>1. <code>/*</code> --&gt; <code>/*</code></h3>
+
+<p>Here there is no actual rewrite.
+Request for <code>/a1</code> is sent to upstream app as <code>/a1</code>.
+The pattern is used only to optimize
+handling by NGINX processor.</p>
+
+<pre><code class="language-yaml">apiVersion: networking.k8s.io/v1
+kind: Ingress
+...
+  annotations:
+    # Apply rewrite to the 1st ($1) Capture Group.
+    # That is, preserve only that group.
+    nginx.ingress.kubernetes.io/use-regex: &quot;true&quot;
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+ ...
+  rules:
+    ...
+      paths:
+        # This 1st (only) capture group to capture everything after leading slash and rewrite to root. So actually rewrite nothing, yet this pattern informs NGINX to fully injest and process, resulting in optimized handling of edge-cases and query params.
+      - path: /(.*) 
+        # Inform K8s that path interpretation is performed by Ingress Controller (RegEx)
+        pathType: ImplementationSpecific
+        ...
+</code></pre>
+
+<blockquote>
+<p>Different Ingress controllers support different annotations.</p>
+</blockquote>
+
+<h3>2. <code>/a/*</code> --&gt; <code>/*</code></h3>
+
+<pre><code class="language-yaml">...
+  annotations:
+    # Apply rewrite to the 2nd ($2) Capture Group.
+    # That is, preserve only that group.
+    nginx.ingress.kubernetes.io/use-regex: &quot;true&quot;
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+..
+      - path: /a(/|$)(.*)
+        pathType: ImplementationSpecific
+
+</code></pre>
+
+<ul>
+<li><code>/a</code> is the literal string.</li>
+<li><code>(/|$)</code> is the 1st capture group,
+matching either a forward slash <code>/</code>
+or the end of the string <code>($)</code>.</li>
+<li><code>(.*)</code> is the 2nd capture group,
+matching <code>/a</code> strictly,
+or anything that comes after <code>/a/</code>.</li>
+</ul>
+
+<p>So <strong>client request</strong> <code>/a/1/2?q=v</code>
+is <strong>rewritten</strong> to <code>/1/2?q=v</code>,
+<strong>before it is sent upstream</strong>.
+Request <code>/a</code> matches, yet <code>/aany</code> does not.</p>
+
+<h3>3. <code>/a/*</code> --&gt; <code>/b/*</code></h3>
+
+<pre><code class="language-yaml">...
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: &quot;true&quot;
+    nginx.ingress.kubernetes.io/rewrite-target: /b/$1
+...
+      - path: /a/(.*)
+        pathType: ImplementationSpecific
+
+</code></pre>
+
+<p>So, <strong>client request</strong> <code>/a/any</code> matches and
+is <strong>rewritten</strong> to <code>/b/any</code>, yet <code>/aany</code> does not match.</p>
+
+<h3><code>app-root: /a</code></h3>
+
+<pre><code class="language-yaml">...
+  annotations:
+    nginx.ingress.kubernetes.io/app-root: /a
+...
+      - path: /
+        pathType: Prefix
+        ...
+</code></pre>
+
+<ul>
+<li>Request of <code>http://foo.lime.lan/</code> responds with HTTP <strong>redirect</strong>:
+
+<ul>
+<li>Code: <code>302 Moved Temporarily</code></li>
+<li>Header: <code>Location: http://foo.lime.lan/a</code></li>
+</ul></li>
+</ul>
+
+<p>Respond to request of root (<code>/</code>) with redirect to app root <code>/a</code>. There is no interal rewrite; the application is not sent that original (<code>/</code>) request.</p>
+
+<h2>Deploy (DaemonSet) : Baremetal (On-prem) Configuration</h2>
+
+<p>@ <a href="ingress-nginx-baremetal-v1.12.0.yaml"><strong><code>ingress-nginx-baremetal-v1.12.0.yaml</code></strong></a></p>
+
+<p>The Ingress-NGINX-Controller project uses the term &quot;bare metal&quot; as a synonym for on-prem. Use their &quot;baremetal&quot; configuration for on-prem clusters,
+whether those hosts are &quot;bare-metal&quot; (physical sever) or on a hypervisor. Compare to the default by generating the manifest using &quot;<code>helm template ...</code>&quot;. (See below.)</p>
+
+<pre><code class="language-bash"># https://github.com/kubernetes/ingress-nginx/releases
+v=1.11.3
+url=https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v$v/deploy/static/provider/baremetal/deploy.yaml
+manifest=ingress-nginx-baremetal.yaml
+curl -sSL -o $manifest $url
+
+kubectl apply -f $manifest
+</code></pre>
+
+<ul>
+<li>This manifest is from project owners;
+an edited version of that generated
+by a &quot;<code>helm template ...</code>&quot; statement.</li>
+</ul>
+
+<p>Else by Helm chart :</p>
+
+<pre><code class="language-bash">v=4.12.0
+release=ingress-nginx
+chart=$release # Folder name of extracted chart
+repo=https://kubernetes.github.io/$chart
+values=values.yaml
+# To use manifest method:
+manifest=helm.template.$chart.$v.yaml
+# 1. Use helm chart to generate the manifest; edit as desired.
+# Configured here for external (HA)LB upstreaming to NodePorts, 
+# and using PROXY protocol to preserve client IP.
+helm template $release $chart \
+    --repo $repo \
+    --version $v \
+    --set controller.service.externalTrafficPolicy=Local \
+    --set controller.service.type=NodePort \
+    --set controller.service.ports.http=30080 \
+    --set controller.service.ports.https=30443 \
+    |tee $manifest
+# 2. Apply the generated manifest
+kubectl apply -f $manifest
+
+# To use remote chart
+helm show values $repo/$chart |tee $values
+# Or
+helm show values $chart --repo $repo |tee $values
+vi $values # Edit to fit environment
+helm upgrade $release $chart \
+    --install \   
+    --repo $repo \
+    --values $values \
+    --namespace $release \
+    --create-namespace 
+
+# To use local chart
+helm pull $repo/$chart --version $v
+# Or
+helm pull $chart --repo $repo
+tar -xaf ${chart}-${v}.tgz
+cp $chart/$values .
+vi $values # Edit to fit environment
+helm upgrade $release $chart \
+    --install \
+    --values $values \  
+    --namespace $release \
+    --create-namespace 
+
+</code></pre>
+
+<ul>
+<li><a href="helm.template.ingress-nginx.4.12.0.yaml"><code>helm.template.ingress-nginx.4.12.0.yaml</code></a></li>
+</ul>
+
+<p>The baremetal configuration Service <code>ingress-nginx-controller</code>
+wires each service port (<code>http</code>, <code>https</code>) to a <code>nodePort</code> (<code>port</code>),
+each an upstream target of the external (HA)LB pool of such.
+See <a href="https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#using-a-self-provisioned-edge" title="Ingress NGINX Controller : Deployment : Bare-metal considerations">Using a self-provisioned edge</a>.</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+  ...
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+spec:
+  type: NodePort
+  ports:
+
+  - appProtocol: http
+    name: http
+    port: 30080
+    protocol: TCP
+    targetPort: http
+
+  - appProtocol: https
+    name: https
+    port: 30443
+    protocol: TCP
+    targetPort: https
+  ...
+</code></pre>
+
+<h2><a href="https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#configuration-options">Configuration Options</a></h2>
+
+<p>Modify the <code>ConfigMap</code> (<code>cm.ingress-nginx-controller</code>) of a release <strong>to overwrite any parameter</strong>.</p>
+
+<pre><code class="language-yaml">---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    ...
+data:
+  ## allow-snippet-annotations : Enable only if we TRUST users with permission to create Ingress objects; may allow programmatic mods to nginx.conf file.
+  allow-snippet-annotations: &quot;true&quot;
+  annotation-value-word-blocklist: &quot;load_module,lua_package,_by_lua,location,root,proxy_pass,serviceaccount,{,},',\&quot;&quot;
+  ## client-body-buffer-size : &quot;0&quot; # No limit, else HTTP 413 if over limit.
+  client-body-buffer-size: &quot;4096m&quot; # E.g., allow OCI-image uploads
+  ssl-protocols: &quot;TLSv1.2 TLSv1.3&quot; # Restrict TLS versions
+  ssl-ciphers: &quot;ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384.&quot; #... the default list
+  ## use-proxy-protocol : Must set this key to &quot;true&quot; if the downstream 
+  ## (external HA)LB uses PROXY protocol, else must set to &quot;false&quot;.
+  ## In TCP (TLS-passthrough) mode, HAProxy (LB) configured for &quot;send-proxy&quot; 
+  ## adds cleartext PROXY-protocol header(s) to TLS payload. 
+  ## NGINX responds HTTP 400 if not so informed of PROXY protocol/mode.
+  ## https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#use-proxy-protocol
+  use-proxy-protocol: &quot;true&quot; # Default: &quot;false&quot;
+  ## enable-real-ip : To preserve client-endpoint IP address under PROXY protocol.
+  enable-real-ip: &quot;true&quot;
+  forwarded-for-header: &quot;X-Forwarded-For&quot; # Default: &quot;X-Forwarded-For&quot;
+  proxy-real-ip-cidr: &quot;192.168.11.0/24&quot;   # Default: &quot;0.0.0.0/0&quot;
+
+</code></pre>
+
+<h2>E2E Test</h2>
+
+<ul>
+<li><p><a href="ingress-nginx.sh"><code>ingress-nginx.sh</code></a></p>
+
+<ul>
+<li><p><a href="ingress-nginx-usage.yaml"><code>ingress-nginx-usage.yaml</code></a></p>
+
+<pre><code class="language-bash">☩ bash ingress-nginx.sh e2e
+</code></pre></li>
+</ul></li>
+</ul>
+
+<p>Or</p>
+
+<pre><code class="language-bash">☩ k apply -f ingress-nginx-usage.yaml
+
+☩ k get node a1 -o wide
+NAME   STATUS   ROLES           AGE   VERSION   INTERNAL-IP      EXTERNAL-IP ...
+a1     Ready    control-plane   17h   v1.29.6   192.168.11.101   &lt;none&gt;      ...
+
+☩ kubectl -n ingress-nginx get svc ingress-nginx-controller
+NAME                       TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                     
+ingress-nginx-controller   NodePort   10.37.30.17   &lt;none&gt;        80:30409/TCP,443:32390/TCP
+
+☩ curl http://192.168.11.101:30409/foo/hostname
+foo
+</code></pre>
+
+<ul>
+<li>HTTP @ <code>30409</code></li>
+<li>HTTPS @ <code>32390</code></li>
+</ul>
+
+<p>We would declare these if connecting to an external (HA) load balancer (LB).
+Those service ports of this Ingress controller would be
+the cluster's data-plane upstreams proxied by that HA LB.</p>
+
+<p>Typically, a single external loadbalancer (HA LB)
+is configured to proxy both the control and data planes,
+providing a single, stable (HA) entrypoint to the (multi-node) cluster.</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

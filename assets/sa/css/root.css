@@ -1,0 +1,86 @@
+:root {
+    --font-size: 16px;
+    font-size: var(--font-size);
+    font-family: sans-serif;
+
+    --msg-option-svg-size: 1.5em;
+    --msg-avatar-size: 3.5em;
+
+    --net-transient-time: 20s; /* +@ JS: cfg.view, view.httpStatus */
+
+    --oauth-link-size: 7em;
+
+    /* ===  header  */
+    --header-site-font-size: 1.4rem;
+    --header-page-font-size: 1.2rem;
+    --header-site-height: calc(var(--header-site-font-size) * 2.2);
+    --header-page-height: calc(var(--header-page-font-size) * 2);
+
+    /* ===  structure 
+
+        width per rem for lexical consistency
+
+            width [px] = width [em] * font-size [px] 
+               587.2px = 36.7em * 16px
+    */
+
+    --width-main: 36.7rem; /* p @ 58ch */
+
+    --width-aside: 18.1rem;  /* p @ 28ch */
+    --width-view: calc(var(--width-main) + 2 * var(--width-aside));
+    /* --width-view: 100%; */ /*  want @ iframe  */
+
+    --size-avatar: 130px;
+
+}
+
+/* =================================== */
+/* ===  DUPLICATE @ structure.css  === */
+/* =================================== */
+
+/* 1.5 * max-width =< view */
+@media only screen and (min-width : 1900px) {
+    :root {
+        font-size: 150%;
+    }
+}
+/* 1.3 * max-width =< view =< 1.5 max-width */
+@media only screen and (min-width : 1518px) and (max-width : 1900px) {
+    :root {
+        font-size: 120%;
+    }
+}
+
+/* (main + aside) =< view =< (main + (2 * aside)) */
+@media only screen and (min-width : 920px) and (max-width : 1226px) {
+    #view {
+        --width-view: 100%;
+    }
+    #channel aside.left {
+        flex-grow: 0;
+    }
+}
+
+/* view =< (main + aside) */
+@media only screen and (min-width : 600px) and (max-width : 920px) {
+    #view {
+        --width-view: var(--width-main);
+    }
+    #channel aside.left { /* guarantee, else fail @ boundary */
+       --width-aside: var(--width-main);
+    }
+}
+
+/* view =< (main) */ /*  16px * 26.7em = 587.2px  */
+@media only screen and (max-width : 600px) {
+    :root {
+        font-size: 100%;
+        font-size: 2.7vmin;
+    }
+    #view {
+        --width-main: auto;
+        --width-view: auto;
+        --width-view: var(--width-main);
+    }
+
+}

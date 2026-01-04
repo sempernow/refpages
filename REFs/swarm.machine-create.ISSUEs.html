@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>swarm.machine-create.ISSUEs</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://docs.docker.com/machine/reference/create/"><code>docker-machine create</code></a> | <a href="https://github.com/docker/docker.github.io/blob/master/machine/AVAILABLE_DRIVER_PLUGINS.md">Drivers</a></h1>
+
+<ul>
+<li><p>ISSUE @ <code>docker-machine</code> @ Cloud (AWS) Machine(s)</p>
+
+<ul>
+<li><p>Not communicating properly; can ssh, can init/join swarm, but fails to properly connect and report engine version etc; vpc and/or security group issue?</p>
+
+<pre><code class="language-bash">docker-machine ls 
+#... does not report engine version etc.; &quot;unable to connect&quot;.
+</code></pre></li>
+</ul></li>
+
+<li><p><a href="https://github.com/docker/machine/issues/4608" title="BretFisher @ GitHub">ISSUE @ <code>v18.09.0</code></a> <a href="https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso">of <code>boot2docker.iso</code></a>. It <strong>breaks Swarm Ingress</strong>, so no internet connectivity; can <code>ping</code> but not browse (or <code>curl</code>, <code>wget</code>, &hellip;) to any exposed port(s) of any service.</p>
+
+<ul>
+<li><p><strong>Workaround</strong> by selecting another version, per &quot;<code>--hyperv-boot2docker-url</code>&quot; option &hellip;</p>
+
+<pre><code class="language-powershell">docker-machine create -d hyperv --hyperv-virtual-switch &quot;External Switch&quot; --hyperv-boot2docker-url \
+    &quot;https://github.com/boot2docker/boot2docker/releases/download/v18.06.1-ce/boot2docker.iso&quot; \
+    $_VM
+</code></pre></li>
+
+<li><p><a href="https://github.com/docker/docker.github.io/issues/7780#issuecomment-469022882" title="github.com/docker/docker.github.io/issues">FIXED? (Mar 3, 2019) @ <code>v18.09.2</code></a> Yes, this is fixed.</p>
+
+<pre><code class="language-powershell">PS&gt; docker-machine ssh h1                                                                              ( '&gt;')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@h1:~$ uname -a
+Linux h1 4.19.130-boot2docker #1 SMP Mon Jun 29 23:52:55 UTC 2020 x86_64 GNU/Linux
+</code></pre>
+
+<ul>
+<li>Use <strong>Git for Windows</strong> (<code>MINGW64</code>) or <strong>PowerShell</strong> for all <code>docker-machine</code> commands.
+
+<ul>
+<li>WSL FAILs @ <code>docker swarm join ...</code>; only leader &quot;joins&quot;, but not even it is &quot;active&quot; @ &quot;<code>docker-machine active</code>&quot; or <code>docker-machine ls</code>.</li>
+<li>WSL 2 FAILs @ all things Docker.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://docs.docker.com/machine/reference/create/"><code>docker-machine create</code></a><a href="https://docs.docker.com/machine/drivers/hyper-v/"><code>--driver hyperv</code></a></h2>
+
+<ul>
+<li>Must use <strong>Git for Windows</strong> (<code>MINGW64</code>) or <strong>PowerShell</strong>  for all <code>docker-machine</code> tool commands
+
+<ul>
+<li>WSL cannot create its storage:
+
+<ul>
+<li>@ <code>/c/HOME/.docker/machine/machines/vm2/fixed.vhd</code></li>
+</ul></li>
+<li>WSL-created nodes fail @ <code>... swarm join ...</code></li>
+<li>WSL 2 FAILs @ all things Docker.</li>
+</ul></li>
+<li>OS (<a href="https://github.com/boot2docker/boot2docker"><code>boot2docker</code></a>) Automatically installed, unlike other drivers, e.g., AWS.
+
+<ul>
+<li>Use default (latest); <strong><em>earlier-version issue</em></strong> (broke swarm) <strong><em>is resolved</em></strong>.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

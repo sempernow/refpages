@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.GatewayAPI</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Kubernetes <a href="https://kubernetes.io/docs/concepts/services-networking/gateway/">Gateway API</a></h1>
+
+<p>Dynamic infrastructure provisioning and advanced traffic routing.</p>
+
+<p>Role-oriented (RBAC-based): Gateway API kinds are modeled after organizational roles::</p>
+
+<ul>
+<li><strong>Infrastructure Provider</strong>:<br>
+Hypervisor Dev/Ops/Admin</li>
+<li><strong>Cluster Operator</strong>:<br>
+Cluster Dev/Ops/Admin</li>
+<li><strong>Application Developer</strong>:<br>
+App Dev/Ops/Admin</li>
+</ul>
+
+<p>Gateway API <code>kind</code>s</p>
+
+<ol>
+<li><p><strong>GatewayClass</strong>: Defines a set of gateways with common configuration and managed by a controller that implements the class.</p></li>
+
+<li><p><strong>Gateway</strong>: Defines an instance of traffic handling infrastructure, such as cloud load balancer.</p></li>
+
+<li><p><strong>HTTPRoute</strong>: Defines HTTP-specific rules for mapping traffic from a Gateway listener to a representation of backend network endpoints. These endpoints are often represented as a Service.</p></li>
+</ol>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

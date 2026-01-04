@@ -1,0 +1,2 @@
+fsutil.exe file queryCaseSensitiveInfo "S:\DEV"
+fsutil.exe file setCaseSensitiveInfo "S:\DEV" enable|disable

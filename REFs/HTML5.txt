@@ -1,0 +1,274 @@
+https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5
+http://diveintohtml5.info/table-of-contents.html
+https://www.w3schools.com/tags/default.asp
+https://developers.google.com/web/fundamentals/  Web Fundamentals
+
+DOM [Document Object Model] https://www.w3schools.com/xml/dom_intro.asp
+
+	The DOM defines a standard for accessing and manipulating documents:
+		"The W3C Document Object Model (DOM) is a platform and language-neutral interface that allows programs and scripts to dynamically access and update the content, structure, and style of a document". 
+	Browser constructs DOM [objects] to render page [elements]; browser also creates objects outside DOM, such as 'window', 'document', 'navigator'; varies per browser & version.
+	
+	HTML DOM 
+		defines a standard way for accessing and manipulating HTML documents. It presents an HTML document as a tree-structure.
+
+	XML DOM 
+		defines a standard way for accessing and manipulating XML documents. It presents an XML document as a tree-structure.  Properties & Methods.  https://www.w3schools.com/xml/dom_document.asp
+		CDATA section   https://www.w3schools.com/xml/dom_cdatasection.asp
+
+	XMLHttpRequest  https://www.w3schools.com/xml/dom_http.asp
+	
+	XML AJAX        https://www.w3schools.com/xml/ajax_intro.asp
+	
+	DETECTION TECHNIQUES  http://diveintohtml5.info/detect.html#techniques
+	
+		Modernizr is an HTML5 Detection Library [javascript library]; reveals available features --of HTML5, CSS, and JavaScript --per browser.
+		https://modernizr.com/ http://diveintohtml5.info/detect.html#modernizr
+	
+ELEMENTS  
+
+	<svg>  is XML, not HTML5, but is embeddable in HTML5 per tags
+		SVG  https://www.w3schools.com/graphics/svg_inhtml.asp
+				 
+	
+	<canvas>  http://diveintohtml5.info/detect.html#canvas
+	          https://www.w3schools.com/graphics/canvas_drawing.asp
+		a resolution-dependent bitmap canvas that can be used for rendering graphs, game graphics, or other visual images on the fly.
+		
+	<video>, <audio>, <picture>
+		<source>, <track> 
+			http://diveintohtml5.info/detect.html#video-formats
+			https://www.w3schools.com/html/html5_video.asp
+			Audio/Video DOM Ref   https://www.w3schools.com/tags/ref_av_dom.asp
+			Global Attributes  https://www.w3schools.com/tags/ref_standardattributes.asp
+			Event Attributes   https://www.w3schools.com/tags/ref_eventattributes.asp
+
+		Format    MIME-type   Audio Codec
+		------    ---------   -----------
+		MP4 	    video/mp4    AAC
+		WebM 	    video/webm   Vorbis
+		Ogg 	    video/ogg    Vorbis
+		
+	DRAG AND DROP  https://www.w3schools.com/html/html5_draganddrop.asp
+	
+	LOCAL STORAGE  https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+	               http://diveintohtml5.info/detect.html#storage
+	               https://www.w3schools.com/html/html5_webstorage.asp
+	
+		Caches DATA [any stringified object]; a BLOCKING, SYNCHRONOUS storage mechanism that is potentially very slow on some devices; similar to cookies, but designed to handle more data. Cookies are limited in size, and browser sends back to web server on every page request. HTML5 storage resides on client; accessed with javascript after page load. Security: same-origin restriction [browser policy] protects stored info from one site from access by another. NOT safe from local/physical access of client machine.
+	
+	APP CACHE [~5MB]  
+	
+		>>> DEPRICATED <<< [Use Service Workers]
+		
+		https://developer.mozilla.org/en-US/docs/Web/HTML/Using_the_application_cache
+		https://www.w3schools.com/html/html5_app_cache.asp
+		https://www.html5rocks.com/en/tutorials/appcache/beginner/
+		https://alistapart.com/article/application-cache-is-a-douchebag
+		
+		Per WEB WORKER, caches FILEs [html, js, css, jpg, png, ...]; varies per browser; makes an offline version of a web application; specify which files to CACHE PER URL; can make app available offline; invoked by creating a manifest
+		
+		[CACHE] MANIFEST FILE ['*.appcache'] @ <html> tag
+	
+			Specifies what to/not-to cache; 
+			3 sections, each delimited by its header: 
+		
+				CACHE MANIFEST
+					cached after they are downloaded for the first time
+				NETWORK
+					never cached; require a connection to the server
+				FALLBACK
+					fallback pages if a page is inaccessible
+
+			<html manifest="foo.appcache" type="text/cache-manifest">...</html>
+				# foo.appcache [example]
+			
+				CACHE MANIFEST
+				# v1 - 2011-08-13    # app must alter this, e.g., 'v2', to trigger browser update
+				# This is a comment.
+				http://www.example.com/index.html
+				http://www.example.com/header.png
+				http://www.example.com/blah/blah
+					
+			Must be served with MIME type "text/cache-manifest"; must be configured on the web server, e.g., @ .htaccess, 'AddType text/cache-manifest .manifest'. https://www.sitepoint.com/common-pitfalls-avoid-using-html5-application-cache/
+
+	WEB WORKERs  https://www.html5rocks.com/en/tutorials/workers/basics/
+	             https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
+	             http://diveintohtml5.info/detect.html#workers
+	             https://www.w3schools.com/html/html5_webworkers.asp
+		
+		A standard of both HTML5 -and- WEB API; Javascript FILEs running concurrently in the background worker thread, in multiple threads; an object; created using a constructor, e.g., Worker(); for, e.g., calculations, storage acess, network requests, ... etc.; Does NOT affect page performance; NOT parsed by JS engines on page render; workers run in SEPARATE GLOBAL CONTEXT, NOT [current] 'window'; TWO TYPES: DedicatedWorker (default), SharedWorker; CAN DO: XMLHttpRequest, WebSockets, IndexedDB; workers message each other per postMessage(); respond to messages via the onmessage event handler.
+		
+		Worker()  Interface 
+		
+			postMessage()
+			onmessage handler 
+			Event.data
+
+			https://www.html5rocks.com/en/tutorials/workers/basics/
+			https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+			
+				@ MAIN SCRIPT [index.html]:
+
+					var worker = new Worker('doWork.js');
+
+					worker.addEventListener('message', function(e) {
+						console.log('Worker said: ', e.data);
+					}, false);
+
+					worker.postMessage('Hello World'); // Send data to our worker.
+					
+				@ WORKER SCRIPT [doWork.js]:
+
+					self.addEventListener('message', function(e) {
+						self.postMessage(e.data);
+					}, false);
+		
+			NO NEED FOR 'new'; per pwa-training-labs:
+			
+				@ index.html
+				
+					<script>
+						var jsonButton = document.getElementById('json-button');
+						jsonButton.addEventListener('click', app.fetchJSON);
+					</script>
+					
+				@ /app/main.js
+				
+					var app = (function() {
+						function fetchJSON() { 
+							fetch('examples/kitten.jpg')
+							.then(validateResponse) 
+							.then(readResponseAsBlob) 
+							.then(showImage)
+							.then(logResult)
+							.catch(logError);
+						}
+					}());
+		
+		TRANSFERABLE OBJECTS
+		
+			speed things up; like pass-by-reference  https://developers.google.com/web/updates/2011/12/Transferable-Objects-Lightning-Fast
+		
+		
+	SERVICE WORKERs [NEW, for PWAs]  
+	
+		https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+		https://developers.google.com/web/fundamentals/getting-started/codelabs/your-first-pwapp/
+		https://developers.google.com/web/fundamentals/getting-started/primers/service-workers
+		https://developers.google.com/web/ilt/pwa/lab-scripting-the-service-worker
+		https://developers.google.com/web/ilt/pwa/caching-files-with-service-worker
+		https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API/Using_Service_Workers
+		https://jakearchibald.github.io/isserviceworkerready/resources.html
+	  https://developers.google.com/web/tools/service-worker-libraries/
+		https://medium.com/@boopathi/service-workers-gotchas-44bec65eab3f
+		
+		Newest [partially supported] browser feature; successor to APP CACHE; EVENT-DRIVEN SCRIPTS [*.js]; A type of Web Worker; acts as proxy server to control web page/site/app, intercepting/modifying nav/resource requests, and caching resources; run independently of web pages; 'registered' [@first-download] against an origin and a path; require HTTPS; intercept/modify network requests, e.g., serve [selected] cached data unless newer [push] and network available; for offline experiences, periodic background syncs, push notifications.
+		
+			EVENTS                               FUNCTIONAL EVENTS
+			
+			install   instantiate cache          fetch   successor to XMLHttpRequest
+			activate  del/update cache           synch   do stuff ... ???
+			message   comms btwn SWs             push    push notifications
+			
+		
+		
+		Progressive Web Applications [PWA] [See 'REF.HTML5.PWApp.txt']
+			https://developers.google.com/web/fundamentals/getting-started/codelabs/your-first-pwapp/
+			https://developer.mozilla.org/en-US/Apps/Progressive
+
+		Cache API [Service Worker cache, NOT 'App Cache']
+			https://developer.mozilla.org/en-US/docs/Web/API/Cache
+			https://davidwalsh.name/cache
+			https://medium.com/dev-channel/offline-storage-for-progressive-web-apps-70d52695513c
+
+		MANIFEST FILE ['*.manifest' or 'manifest.json'] @ <link> tag
+
+			1. Discoverable Single-page App [SPA] per manifest file
+			2. Add-to-Homescreen ability; Auto, or at least on browser menu
+			
+			<link rel="manifest" type="application/manifest+json" href="/manifest.json">
+			
+				https://w3c.github.io/manifest/#media-type-registration
+
+	SERVER SENT EVENTS [SSE]  
+		https://www.w3schools.com/html/html5_serversentevents.asp	https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+		https://en.wikipedia.org/wiki/Server-sent_events
+		
+		E.g., Facebook/Twitter updates, stock price updates, news feeds, etc.
+		Typically sent/served as event streams, per JSON. NOT supportted by IE/Edge
+	
+	OFFLINE WEB APPs  http://diveintohtml5.info/detect.html#offline
+	
+		All requisite files are downloaded on first page request. Subsequently served from client's storage [offline]. Uses APP CACHE, or Service Workers
+	
+	GEOLOCATION  https://www.w3.org/2008/geolocation/
+	
+		Actually separate working group [WG] from HTML5 WG.
+		
+		GeoPosition.js [fallback]
+			a JavaScript library that aims to provide Geolocation support in older browsers like Blackberry, Palm OS, and Microsoft Internet Explorer 6, 7, and 8. It’s not quite the same as the navigator.geolocation API, but it serves the same purpose. 
+		
+	INPUT TYPES  http://diveintohtml5.info/detect.html#input-types
+						   https://www.w3schools.com/tags/tag_input.asp
+							 
+		lots of additional types.
+	
+		PLACEHOLDER TEXT  http://diveintohtml5.info/detect.html#input-placeholder
+		
+			is displayed inside the input field as long as the field is empty and not focused; disappears on click.
+	
+		FORM AUTOFOCUS  http://diveintohtml5.info/detect.html#input-autofocus
+			
+			Can specify in the HTML markup, without javascript.
+			
+	MICRODATA  http://diveintohtml5.info/extensibility.html
+		
+		standardized way to provide additional semantics; declare that a photograph is available under a specific Creative Commons license; mark up an “About Me” page. Browsers, browser extensions, and search engines can convert your HTML5 microdata markup into a vCard, a standard format for sharing contact information.
+
+		The HTML5 microdata standard includes both HTML markup (primarily for search engines) and a set of DOM functions (primarily for browsers). There’s no harm in including microdata markup in your web pages. It’s nothing more than a few well-placed attributes, and search engines that don’t understand the microdata attributes will just ignore them. But if you need to access or manipulate microdata through the DOM, you’ll need to check whether the browser supports the microdata DOM API. 
+		https://html.spec.whatwg.org/multipage/microdata.html#microdata
+	
+	HISTORY API  http://diveintohtml5.info/detect.html#history
+	
+WEB APIs [separate from, but congruous with, HTML5 spec]
+
+	WebSockets  https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
+		an interactive communication session between the user's browser and a server. With this API, you can send messages to a server and receive event-driven responses without having to poll the server for a reply.
+
+	IndexedDB  https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+	
+		An ASYNRONOUS DATA STORE; relational database; a low-level API for client-side storage of significant amounts of STRUCTURED DATA, including FILES/BLOBS;  Interface namespace: IDB{method}
+		
+	Web Storage [DOM Storage] [~10MB]
+	             https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API
+	             https://html.spec.whatwg.org/multipage/webstorage.html
+		
+		SYNCHRONOUS, but fast, DATA store; key/value pairs; more intuitive than using cookies.
+			
+			localStorage     attribute	  stores data; persists; survives browser close
+			sessionStorage   attribute	  stores data; per session
+			
+		  Interfaces: Window, Storage, StorageEvent 
+
+HTML5 BACKGROUND [tldr: HTML5 supercedes XML/XHTML]
+
+	MIME TYPES
+
+		The web server sends “headers” before it sends the actual page markup; normally invisible, although web development tools can make them visible. Headers are sent with every [browser] page request. Headers specify how to interpret the page markup that follows. The most important header is called Content-Type or “MIME type”, and it looks like this:
+
+				Content-Type: text/html
+
+		This header is the only thing that determines what a particular resource truly is, and therefore how it should be rendered. Images have their own MIME types, e.g., image/jpeg, image/png, etc., javaScript and CSS files, and everything else, have their own MIME types. 
+		
+		The web runs on MIME types. 
+
+	XHTML [tldr: is dead]
+
+		'application/xhtml+xml' MIME type triggers XML’s draconian error handling; page rendering fails on any error. So, XHTML 1.0 doctype are typically served as text/html MIME type. XHTML 1.1 (and the unfinished XHTML 2.0) closed that loophole. Thus, 99% of 'XHTML' doctype pages are 'XML' in name only; served as 'text/html' MIME type per headers. [The XHTML 2 Working Group shut down 2009.] 
+
+
+	W3C & WHATWG  https://www.w3.org/  https://developers.whatwg.org/
+
+		Web Hypertext Applications Technology Working Group [WHATWG]; a W3C splinter group [cuz XHTML 1.1] to develop newer HTML methods that [would continue to] handle errors forgivingly, unlike XML. Their work was much more popular, but WHATWG was ignored by W3C for years. As of 2006, WHATWG is accepted by W3C as 'W3C HTML Working Group'; maintain HTML5 specs.
+		

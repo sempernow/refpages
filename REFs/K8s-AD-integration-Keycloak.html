@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s-AD-integration-Keycloak</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://chatgpt.com/share/35e90294-e894-45a6-bf5d-881c924be7af" title="ChatGPT.com">K8s-AD Integration using Keycloak</a></h1>
+
+<h2>Q:</h2>
+
+<p>How to integrate keycloak on K8s on RHEL 8 with AD,
+given RHEL 8 is integrated with AD via Kerberos and password auth.</p>
+
+<h2>A:</h2>
+
+<p>Integrating Keycloak on Kubernetes (K8s) running on RHEL 8 with Active Directory (AD),
+especially when RHEL 8 is already integrated with AD via Kerberos and password authentication, involves several steps. Below is a high-level guide to achieve this integration:</p>
+
+<h3>Prerequisites</h3>
+
+<ul>
+<li>Kubernetes Cluster: Ensure you have a running Kubernetes cluster on RHEL 8.</li>
+<li>Keycloak Deployment: Keycloak should be deployed on your Kubernetes cluster.</li>
+<li>AD Integration on RHEL: Confirm that RHEL 8 is successfully integrated with AD using SSSD for Kerberos and password authentication.</li>
+</ul>
+
+<h3><a href="https://en.wikipedia.org/wiki/Lightweight_Directory_Access_Protocol">LDAP</a> : Lightweight Directory Access Protocol</h3>
+
+<blockquote>
+<p>Successor to DAP (Directory Access Protocol) of switched-based telecoms era,
+and is origin of <a href="https://en.wikipedia.org/wiki/X.500">X.500</a> series standards.</p>
+</blockquote>
+
+<h4>Port(s):</h4>
+
+<ul>
+<li>LDAP : <code>389 TCP and UDP</code></li>
+<li>LDAPS : <code>636 TCP and UDP</code> (TLS)</li>
+</ul>
+
+<p>Both schemes use TCP mostly, but for Connectionless LDAP (CLDAP) protocol, which is a lightweight version of LDAP that uses UDP for simple, stateless queries, such as when a client needs to locate a domain controller in a Microsoft Active Directory environment. This is commonly seen in the initial stages of authentication, such as during a &quot;ping&quot; to locate domain controllers.</p>
+
+<h4><a href="https://ldap.com/glossary-of-ldap-terms/">Terminology</a></h4>
+
+<blockquote>
+<p><strong><code>CN=ldap-reader,OU=Service Accounts,DC=example,DC=com</code></strong></p>
+</blockquote>
+
+<ul>
+<li><strong>DC</strong> : Domain Component</li>
+<li><strong>DN</strong> : Distinguished Name: a name that uniquely identifies an entry and its position in the DIT. It is comprised of a series of zero or more relative distinguished names (RDNs) separated by commas.
+
+<ul>
+<li><strong>RDN</strong> : Relative Distinguished Name: one or more attribute name-value pairs. DNs are comprised of zero or more RDNs, but it is common to use the term RDN <em>to refer to the leftmost component</em> of a DN because the attribute values included in the leftmost RDN component for a DN must also be present in the entry referenced by that DN.</li>
+</ul></li>
+<li><strong>DIT</strong> : Directory Information Tree: the hierarchy of entries contained in a directory server.</li>
+</ul>
+
+<p>LDAP Security Objects</p>
+
+<ul>
+<li><strong>OU</strong> : Organizational Unit (OU): similar to a Window directory. For LDAP, it typically holds either Group objects or User objects.</li>
+<li><strong>CN</strong> : Common Name
+
+<ul>
+<li><strong>Group</strong> :  object containing a member attribute that is a list of Distinguished Names that define the users in that group.</li>
+<li><strong>User</strong> : object describing a single person within the LDAP structure. Unlike a Group, a User does not contain a list. Instead, its attributes describe a user in as much detail as necessary.</li>
+</ul></li>
+</ul>
+
+<h3>Step 1: Deploy Keycloak on Kubernetes</h3>
+
+<ol>
+<li><p>Create a Namespace for Keycloak:</p>
+
+<pre><code class="language-bash">kubectl create namespace keycloak
+</code></pre></li>
+
+<li><p>Deploy Keycloak: You can deploy Keycloak using a Helm chart or a custom deployment. Here's an example using a Helm chart:</p>
+
+<pre><code class="language-bash">helm repo add codecentric https://codecentric.github.io/helm-charts
+helm install keycloak codecentric/keycloak --namespace keycloak
+</code></pre></li>
+
+<li><p>Expose Keycloak: Use an Ingress or a LoadBalancer service to expose Keycloak externally. Example:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Service
+metadata:
+name: keycloak
+namespace: keycloak
+spec:
+ports:
+- port: 80
+targetPort: 8080
+protocol: TCP
+selector:
+app: keycloak
+type: LoadBalancer
+</code></pre></li>
+</ol>
+
+<h3>Step 2: Integrate Keycloak with Active Directory</h3>
+
+<ol>
+<li>Access Keycloak Admin Console:
+
+<ul>
+<li>Access the Keycloak admin console using the external IP or DNS name
+provided by the LoadBalancer or Ingress.</li>
+<li>Log in using the default admin credentials (which should be set during deployment).</li>
+</ul></li>
+<li><strong>Create a New Realm</strong>:
+
+<ul>
+<li>In the Keycloak admin console, create a new realm that will be used for AD integration.</li>
+</ul></li>
+<li><strong>Add LDAP/AD</strong> as a <strong>User Federation</strong> Provider: Allowing Keycloak to connect to, and synch with, other <dfn title="Identity Provider">IdP</dfn>/<dfn title="Identity Management">IdM</dfn> such as Active Directory Domain Services (AD DS), and otherwise act as an <strong>intermediary IdP</strong>. Implementing such <strong>Federated Identity</strong> allows users to quickly move between systems securely.
+
+<ul>
+<li>Navigate to <strong>User Federation</strong> in the Keycloak admin console.</li>
+<li>Click on Add provider and select LDAP.</li>
+<li><strong>Configure LDAP</strong> settings as follows:
+
+<ul>
+<li><strong>Vendor</strong>: Active Directory</li>
+<li><strong>Connection URL</strong>: <code>ldap://&lt;AD_SERVER_IP&gt;:389</code> or <code>ldaps://&lt;AD_SERVER_IP&gt;:636</code> (for LDAPS)</li>
+<li><strong>Users DN</strong>: The base DN where your users are located, e.g., <code>OU=Users,DC=example,DC=com</code></li>
+<li><strong>Bind DN</strong>: The DN of an AD service account that has read access to the user data, e.g., <code>CN=ldap-reader,OU=Service Accounts,DC=example,DC=com</code></li>
+<li><strong>Bind Credential</strong>: The password for the Bind DN account.</li>
+<li><strong>Kerberos Integration</strong>: Set Allow Kerberos Authentication to ON
+if Keycloak is to delegate authentication to AD using Kerberos.</li>
+<li><strong>Sync Settings</strong>: Configure how and when to synchronize user data from AD to Keycloak.</li>
+</ul></li>
+<li>Test the connection to ensure that Keycloak can communicate with the AD server.</li>
+</ul></li>
+<li><strong>Configure Kerberos</strong> Authentication (Optional):
+
+<ul>
+<li>If you want Keycloak to use Kerberos for authentication, additional configuration is required:
+
+<ul>
+<li><strong>Kerberos Realm</strong>: Set the Kerberos realm, which should match your AD domain.</li>
+<li><strong>Server Principal</strong>: The principal name Keycloak will use,
+usually something like <code>HTTP/&lt;keycloak-hostname&gt;@EXAMPLE.COM</code>.</li>
+<li><strong>Keytab File</strong>: Upload the keytab file for the Keycloak service principal,
+which should be generated and exported from AD.</li>
+</ul></li>
+</ul></li>
+<li><strong>Sync Users</strong>:
+
+<ul>
+<li>After configuring the LDAP provider,
+trigger a full sync to import AD users into Keycloak.</li>
+</ul></li>
+</ol>
+
+<h3>Step 3: Integrate Kubernetes with Keycloak</h3>
+
+<p>UPDATE: <a href="https://chatgpt.com/c/670b12d7-e734-8009-a1d1-2699eee21d6e" title="ChatGPT">OIDC v. SAML</a></p>
+
+<ol>
+<li><strong>Enable OIDC Authentication</strong> on Kubernetes :</li>
+
+<li><p>Update your Kubernetes API server configuration (<code>kube-apiserver.yaml</code>)
+to <strong>use Keycloak as the OIDC provider</strong>.
+This involves adding flags to the API server configuration:</p>
+
+<pre><code class="language-bash">--oidc-issuer-url=https://&lt;keycloak-url&gt;/auth/realms/&lt;realm-name&gt;
+--oidc-client-id=&lt;client-id&gt;
+--oidc-username-claim=preferred_username
+--oidc-groups-claim=groups
+</code></pre></li>
+
+<li><p><strong>Create a Keycloak Client</strong> for Kubernetes:</p>
+
+<ul>
+<li>In the Keycloak admin console, create a new client for Kubernetes within your realm.</li>
+<li>Set the Client ID to match the <code>--oidc-client-id</code> configured in Kubernetes.</li>
+<li>Set the Access Type to <code>confidential</code>.</li>
+<li>Configure the <strong>Valid Redirect URIs</strong> to include the Kubernetes API server URL.</li>
+<li>See <a href="https://github.com/int128/kubelogin" title="github.com/int128/kubelogin"><code>kubelogin</code></a></li>
+</ul></li>
+
+<li><p><strong>Configure RBAC in Kubernetes</strong>:</p>
+
+<ul>
+<li>Map the Keycloak roles/groups to Kubernetes RBAC roles.
+You can use a <code>ClusterRoleBinding</code> or <code>RoleBinding</code>
+to grant appropriate permissions to the users authenticating via Keycloak.</li>
+</ul></li>
+</ol>
+
+<h3>Step 4: Testing and Verification</h3>
+
+<ol>
+<li>Login to Kubernetes using Keycloak:
+
+<ul>
+<li>Use a Kubernetes client (like <code>kubectl</code>) with an OIDC plugin
+or a custom script to obtain an OIDC token from Keycloak.</li>
+<li>Test the login and ensure users can authenticate to Kubernetes
+via Keycloak using their AD credentials.</li>
+</ul></li>
+<li>Monitor Logs and Debug:
+
+<ul>
+<li>Check the Keycloak and Kubernetes logs to ensure
+that the integration is working correctly and troubleshoot any issues.</li>
+</ul></li>
+</ol>
+
+<h2>Step 5: Optionally <a href="https://chatgpt.com/share/78b62726-6535-4851-aa28-5baa1446a164" title="ChatGPT">Refactor Groups/Roles</a></h2>
+
+<blockquote>
+<p>In environment having AD DS as the domain-level IdP,
+both K8s and its workloads (application services)
+have the option of abiding AD groups exclusively or
+refactoring to better fit upstream services.</p>
+</blockquote>
+
+<h3>@ AD DS (Domain IdP)</h3>
+
+<blockquote>
+<p>AD's org-based groups (having users);<br>
+are all synchronized with RHEL clients,<br>
+providing realm-level (domain) <strong>Authn</strong>:</p>
+</blockquote>
+
+<ul>
+<li><code>team_1_*</code><br>
+&vellip;</li>
+<li><code>team_3_members</code>
+
+<ul>
+<li><code>u11</code></li>
+<li><code>u33</code></li>
+<li><code>u5</code></li>
+<li><code>u44</code></li>
+</ul></li>
+<li><code>team_3_leaders</code>
+
+<ul>
+<li><code>u11</code></li>
+<li><code>u33</code><br>
+&vellip;</li>
+</ul></li>
+<li><code>team_11_*</code><br>
+&vellip;</li>
+</ul>
+
+<h3>@ Keycloak (OIDC / User-Federation IdP)</h3>
+
+<ul>
+<li><strong>Authn</strong> : LDAP Realm has AD Groups. That is the coupling.<br>
+The resulting <strong>OIDC</strong> identity may match nothing but upstream (containerized) application(s).
+
+<ul>
+<li>Groups and Users synched with AD
+
+<ul>
+<li><strong>Requires AD service-account credentials</strong>.</li>
+<li>Groups may be refactored
+(per application) for better fit.</li>
+</ul></li>
+</ul></li>
+<li><strong>Authz</strong> is per role(s) bound to OIDC Group(s)
+
+<ul>
+<li><strong>OAuth2</strong> Role(s)
+
+<ul>
+<li>Realm-level</li>
+<li>Client-level</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>Example @ Unchanged:</h4>
+
+<ul>
+<li><code>team_3_members</code>
+
+<ul>
+<li>Role-B</li>
+</ul></li>
+<li><code>team_3_leaders</code>
+
+<ul>
+<li>Role-A</li>
+<li>Role-B<br>
+&vellip;</li>
+</ul></li>
+<li><code>team_11_*</code><br>
+&vellip;</li>
+</ul>
+
+<h4>Example @ Refractored:</h4>
+
+<ul>
+<li><p>App-X</p>
+
+<ul>
+<li><code>TestRack-B-Leaders</code>
+
+<ul>
+<li>Role-8</li>
+<li>Role-4</li>
+<li>Role-9</li>
+</ul></li>
+
+<li><p><code>POSTGRESQL_DB_OWNER</code></p>
+
+<ul>
+<li>Role-3</li>
+<li>Role-7</li>
+</ul>
+
+<p>&vellip;</p></li>
+</ul></li>
+
+<li><p>App-Y</p>
+
+<ul>
+<li><code>team_3_members</code>
+
+<ul>
+<li>Role-N</li>
+<li>Role-R<br>
+&vellip;<br>
+
+<br></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p>An authenticated subject (identity) is issued a bearer token (JWT)
+having claims including <code>id: &lt;UUID&gt;</code>, <code>groups:[]</code> and <code>roles:[]</code>.
+Such claims scope all upstream API access (Authz) regardless (K8s API, App-X API, Web UI SSO, &hellip;).</p>
+</blockquote>
+
+<h3>@ K8s API <strong>Authn</strong> modes for <strong>Authz</strong></h3>
+
+<ul>
+<li>Bearer token
+
+<ul>
+<li><code>groups: []</code>
+
+<ul>
+<li>Has <code>Role</code>s via <code>RoleBinding</code>s</li>
+</ul></li>
+<li><code>user: &lt;UUID&gt;</code>
+
+<ul>
+<li><del>Has <code>Role</code>s via <code>RoleBinding</code>s</del>
+
+<ul>
+<li>Okay, but rather not.</li>
+</ul></li>
+</ul></li>
+<li><del><code>roles: []</code></del>
+
+<ul>
+<li>K8s API ignores this.</li>
+</ul></li>
+</ul></li>
+<li><code>ServiceAccount</code> token
+
+<ul>
+<li>Has <code>Role</code>s via <code>RoleBinding</code>s</li>
+</ul></li>
+<li>X.509 Certificate
+
+<ul>
+<li>groups from <code>/OU=team_3_members /OU=TestRack-B-Leaders</code>
+
+<ul>
+<li>Has <code>Role</code>s via <code>RoleBinding</code>s</li>
+</ul></li>
+<li>user from <code>/CN=u33</code>
+
+<ul>
+<li><del>Has <code>Role</code>s via <code>RoleBinding</code>s</del>
+
+<ul>
+<li>Okay, but rather not.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<blockquote>
+<p><code>Role</code> and <code>RoleBinding</code> <strong>are objects</strong> of K8s API,
+whereas <code>group</code> and <code>user</code> are merely <strong>concepts</strong> of K8s API,
+known only as token subjects. The latter map
+to <code>Role</code> only by <code>RoleBinding</code>.</p>
+</blockquote>
+
+<p><code>ClusterRole</code> and <code>ClusterRoleBinding</code> objects are ommitted here for clarity.
+Where <code>Role</code> and <code>RoleBinding</code> are scoped to a <code>Namespace</code>, the <code>Cluster*</code>
+versions apply cluster-wide.</p>
+
+<p>So, the lone coupling is the map from domain IdP (AD DS) user/group
+to DevOps-controlled IdP (Keycloak) group/role.</p>
+
+<p>User/Group (Authn) is otherwise decoupled from roles (Authz).
+Moreover, access to K8s API endpoints is entirely decoupled from that of applications.
+Though decoupled, these may be configured identically, entirely refactored,
+or any mix thereof, all at the discretion of cluster/application administrators,
+and that separation too (cluster admin vs teams/apps admin)
+is discretionary and maintains its flexibility.</p>
+
+<h2>Summary</h2>
+
+<ul>
+<li>Keycloak serves as the OIDC provider for Kubernetes,
+integrating with AD via LDAP and optionally Kerberos.</li>
+<li>RHEL 8 acts as the underlying OS for Kubernetes and is already integrated with AD,
+which facilitates secure communication and authentication.</li>
+<li>Kerberos can be configured in Keycloak if you require Kerberos-based SSO for users,
+although it's optional.</li>
+</ul>
+
+<p>This setup provides a secure and centralized authentication mechanism for Kubernetes users, leveraging existing AD infrastructure and using Keycloak as a flexible and powerful identity broker.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

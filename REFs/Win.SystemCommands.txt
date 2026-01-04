@@ -1,0 +1,67 @@
+
+Recover host keyboard on RDC hijack
+-----------------------------------
+FN+CTRL+ENTER || CTRL+ALT+BREAK
+
+
+start browser minimized & goto url ...
+-----------------------------
+PUSHD "%ProgramFiles%\Internet Explorer"
+START /MIN iexplore.exe http://www.google.com/
+POPD
+
+The following method launches default browser [e.g., Firefox] ...
+
+START /MIN "%ProgramFiles%\Internet Explorer\iexplore.exe" http://www.google.com/
+----------------
+
+Repair/Recovery 
+---------------
+    Online, from the problemed OS
+    
+        GUI
+            * Launch Task Manager [press CTRL-SHIFT-ESC]
+            * File > New Task > Run >  sfc /scannow
+
+        CLI
+			sfc /scannow
+
+            DISM.exe /Online /Cleanup-image /Restorehealth
+			OPTIONALLY: Mount the latest OS WIM and reference it: /Source:c:\mount\windows
+			Mount the WIM:
+			dism /Mount-Wim /WimFile:<path_to_wim_file> /Index:<index> /MountDir:c:\mount
+			
+			Use mounted Windows-install-media ISO @ k: : Has either /sources/install.wim (or compressed to install.esd)
+            dism /Online /Cleanup-Image /RestoreHealth /Source:esd:K:\sources\install.esd:1 /LimitAccess
+
+    Offline, from Recovery mode or WinPE
+    
+        sfc /scannow /offbootdir=c:\ /offwindir=c:\windows
+
+        ... where "c:" is the drive containing the (offline) Windows OS.
+
+
+cleanmgr	- Disk Cleanup  
+*************************************
+Setup how you want it done:
+cleanmgr /sageset:11
+
+THEN, run disk cleaner 
+cleanmgr /sagerun:11
+
+Defrag
+------
+defrag.exe -? 
+%windir%\system32\defrag.exe c: 
+
+Run batch file
+---------------
+%windir%\system32\cmd.exe /C call %_batch_files_path%
+
+Start In:
+%SYSTEMDRIVE%
+
+Local Group Policy Editor
+-------------------------
+Run ...
+gpedit.msc

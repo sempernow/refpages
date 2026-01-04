@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TLS.OID.PEN.CP.CPS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>OID / PEN / CP / CPS</h1>
+
+<h2><a href="https://en.wikipedia.org/wiki/Object_identifier">Object Identifier (OID)</a></h2>
+
+<p>A <strong>hierarchical</strong> ID scheme that provides <strong>unique</strong> identifiers:</p>
+
+<pre><code class="language-plaintext">1               # ISO
+1.3             # Identified-org (ISO/IEC 6523)
+1.3.6           # DoD
+1.3.6.1         # Internet
+1.3.6.1.4       # Private
+1.3.6.1.4.1     # IANA enterprise
+1.3.6.1.4.1.343 # Intel Corporation
+</code></pre>
+
+<ul>
+<li>Within <strong>X.500</strong> and <strong>LDAP</strong> schemas and protocols, OIDs <em>uniquely name</em> <strong>each attribute type and object class</strong>, and other elements of schema.</li>
+</ul>
+
+<h2><a href="https://en.wikipedia.org/wiki/Private_Enterprise_Number">Private Enterprise Number (PEN)</a></h2>
+
+<p><strong>IANA</strong> assigns PENs to organizations <a href="https://pen.iana.org/pen/PenApplication.page" title="pen.iana.org">by&nbsp;request</a>.
+These PENs are a foundation used by an oranization to build its internal OIDs,
+including those for certificate policies.</p>
+
+<p><strong>OIDs</strong> of <strong>PEN</strong>: <strong><code>32473</code></strong></p>
+
+<pre><code class="language-plaintext">1.3.6.1.4.1.32473             # Your organization
+1.3.6.1.4.1.32473.1.1         # PKI sub-tree
+1.3.6.1.4.1.32473.1.1.1001    # &quot;High Assurance TLS Policy&quot; for servers (manually) verified otherwise
+1.3.6.1.4.1.32473.1.1.1002    # &quot;Low Assurance Client Policy&quot; for automated certificates
+</code></pre>
+
+<ul>
+<li>Find the assigned PENs from the <a href="https://www.iana.org/assignments/enterprise-numbers/?q=">IANA Registry</a></li>
+</ul>
+
+<p>If a CSR has extension parameter <code>certificatePolicies</code> &hellip;</p>
+
+<pre><code class="language-plaintext">certificatePolicies = 1.3.6.1.4.1.32473.1.1.1001
+</code></pre>
+
+<p>&hellip; OpenSSL would parse the resulting certificate  &hellip;</p>
+
+<pre><code class="language-bash">openssl x509 -text -in example.org.crt
+</code></pre>
+
+<p>&hellip; and report &hellip;</p>
+
+<pre><code class="language-plaintext">...
+X509v3 Certificate Policies:
+    Policy: 1.3.6.1.4.1.32473.1.1.1001
+      CPS: http://pki.example.org/cps.html
+...
+</code></pre>
+
+<h2>Certificate Policy (CP) Template</h2>
+
+<pre><code class="language-plaintext">Certificate Policy for Example Corp Internal PKI  
+OID: 1.3.6.1.4.1.32473.1.1.1001  
+Version: 1.0  
+Date: 2025-06-27  
+
+1. Introduction
+   1.1 Overview
+       This Certificate Policy (CP) defines the requirements and procedures under which digital certificates are issued, managed, and used within the Example Corp internal Public Key Infrastructure (PKI).
+   1.2 Document Name and Identifier
+       - Policy OID: 1.3.6.1.4.1.32473.1.1.1001
+       - Policy Name: Example Corp High Assurance Server Authentication Policy
+
+2. PKI Participants
+   2.1 Certification Authorities
+       - Root CA (offline)
+       - Intermediate CA(s) (online, used for signing end-entity certificates)
+   2.2 Registration Authorities (RA)
+       - Designated security team members who validate identity prior to issuance
+   2.3 Subscribers
+       - Servers and services within the Example Corp network
+   2.4 Relying Parties
+       - Systems within Example Corp that validate certificates
+
+3. Certificate Usage
+   3.1 Appropriate Usage
+       - Server authentication (e.g., TLS for internal services)
+   3.2 Prohibited Usage
+       - Code signing, client authentication, or external/public use
+
+4. Policy Administration
+   4.1 Organization Administering the Document
+       - Example Corp Security &amp; Compliance Department
+   4.2 Contact Information
+       - pki-admin@example.org
+
+5. Identification and Authentication
+   - Identity is confirmed through the corporate asset inventory and CMDB records.
+   - Authentication by asset ownership and MAC address validation.
+
+6. Certificate Lifecycle Management
+   6.1 Certificate Application
+       - Via automated CSR interface or manual submission
+   6.2 Certificate Issuance
+       - After identity verification
+   6.3 Certificate Renewal/Rekey
+       - Allowed 30 days prior to expiration
+   6.4 Certificate Revocation
+       - On compromise, decommission, or policy violation
+
+7. Physical, Procedural, and Personnel Security Controls
+   - Root CA stored offline
+   - Access controlled to signing infrastructure
+   - Key custodians are background-checked personnel
+
+8. Technical Security Controls
+   - RSA ≥ 3072-bit or EC P-256
+   - SHA-256 or higher
+   - Keys generated in secure HSM or TPM devices for the CA
+
+9. Certificate and CRL Profile
+   - Standard X.509 v3
+   - CRLs and OCSP available via HTTP
+   - Policy OID included in `certificatePolicies` extension
+
+10. Compliance Audit
+   - Annual internal audit of PKI operations
+</code></pre>
+
+<h2>Certification Practice Statement (CPS) Template</h2>
+
+<pre><code class="language-plaintext">Certification Practice Statement for Example Corp Internal PKI  
+Applies to: OID 1.3.6.1.4.1.32473.1.1.1001  
+Version: 1.0  
+Date: 2025-06-27  
+
+1. Introduction
+   - This CPS details the technical and procedural practices followed to implement the Example Corp CP (OID 1.3.6.1.4.1.32473.1.1.1001).
+
+2. Certificate Issuance
+   - Requests are submitted via a secure portal or API
+   - Manual validation includes asset owner contact, DNS control, and configuration checks
+   - Certificates are signed by intermediate CAs using hardware-backed private keys
+
+3. Private Key Protection
+   - Root CA keys are stored on air-gapped USB HSM
+   - Intermediate CA keys are stored on network-isolated YubiHSM
+   - Access requires quorum of 2 authorized operators
+
+4. Certificate Revocation
+   - Revocation initiated on reported compromise or incident escalation
+   - CRLs are published hourly; OCSP responders refreshed every 15 minutes
+
+5. Logging and Monitoring
+   - All CA and RA activity logged to centralized SIEM
+   - Logs retained for 7 years
+
+6. System Security Controls
+   - CA infrastructure runs on hardened RHEL VMs
+   - SSH access restricted via LDAP group and 2FA
+   - Software stack includes HashiCorp Vault, OpenSSL, and cert-manager
+
+7. Business Continuity
+   - Root CA recovery documented and tested quarterly
+   - Intermediate CA backed up and replicated to warm standby
+
+8. Compliance
+   - Internal audits are conducted yearly
+   - Based on NIST SP 800-57 and CAB Forum guidelines
+
+9. Document Control
+   - This CPS is reviewed annually or after significant change
+   - Change requests must be approved by PKI governance board
+
+</code></pre>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# … ⋮ ︙ • “” ‘’ – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × € ¢ £ ¤ ¥ ₽ ♻ ⚐ ⚑
+# ☢ ☣ ☠ ¦ ¶ § † ‡ ß µ ø Ø ƒ Δ ⚒ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖ ☘ 웃 𝐀𝐏𝐏 𝐋𝐀𝐁
+# ⚠️ ✅ 🚀 🚧 🛠️ ⚡ ❌ 🔒 🧩 📊 📈 🔍 🧪 📦 🔧 🧳 🥇 💡 ✨️ 🔚
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

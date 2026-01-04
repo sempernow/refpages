@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vagrant.Install</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.vagrantup.com/">Vagrant</a> :: <a href="https://www.vagrantup.com/docs/installation/">Installation</a> | <a href="https://www.vagrantup.com/downloads.html">Downloads</a></h1>
+
+<h2>@ Win10</h2>
+
+<ul>
+<li><p>Install per <a href="https://www.vagrantup.com/downloads.html">download/installer</a> (<code>.msi</code>) file</p></li>
+
+<li><p>Configure for Hyper-V <code>provider</code>, at <em>user level</em>,<br>
+so needn't config per project at <code>Vagrantfile</code>.</p>
+
+<pre><code class="language-powershell"># set your default provider on a user level
+[Environment]::SetEnvironmentVariable(&quot;VAGRANT_DEFAULT_PROVIDER&quot;, &quot;hyperv&quot;, &quot;User&quot;)
+# Vagrant uses SMBv1; check if enabled 
+Get-SmbServerConfiguration
+</code></pre></li>
+</ul>
+
+<h3><a href="https://www.vagrantup.com/docs/other/wsl.html">@ WSL</a> (beta)</h3>
+
+<h2>@ Ubuntu</h2>
+
+<pre><code class="language-bash"># Install VirtualBox + Vagrant (NOT AS ROOT)
+sudo apt-get install virtualbox -y
+sudo apt-get install vagrant -y
+</code></pre>
+
+<ul>
+<li><p>Do not install VirtualBox/Vagrant as <strong>root</strong>, else VirtualBox <strong>denies access by user</strong>;<br>
+this is <strong><em>irreversable</em></strong>; uninstall/reinstall &quot;properly&quot; fails; residue from original install, apparently.</p></li>
+
+<li><p>Cannot run VirtualBox or any other such 3rd party app in any OS running as a VM in Hyper-V.<br>
+Hyper-V allows <strong>nested virtualization</strong> (<a href="p>
+
+<ul>
+<li><p>E.g., Vagrant box @ VirtualBox VM on Ubuntu @ Hyper-V VM</p>
+
+<pre><code>Vagrant Box:        ubuntu/trusty64
+                     -----------
+Type-2 Hypervisor:   VirtualBox
+                       -------
+OS @ VM @ Hyper-V:   Ubuntu 18.04
+                       -------
+Type-1 Hypervisor:     Hyper-V
+</code></pre>
+
+<ul>
+<li>Nope.  (<a href="li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://www.vagrantup.com/downloads.html">@ Linux (other)</a></h2>
+
+<h1>Quick Start</h1>
+
+<pre><code class="language-bash"># Verify
+vagrant 
+# Popular box (VirtualBox provider)
+vagrant box add ubuntu/trusty64
+# Init  
+vagrant init ubuntu/trusty64
+# launch VM 
+vagrant up
+# login
+vagrant ssh  
+# debug ssh issues
+vagrant ssh-config 
+</code></pre>
+
+<h3><a href="https://blogs.technet.microsoft.com/virtualization/2017/07/06/vagrant-and-hyper-v-tips-and-tricks/" title="technet.Microsoft.com, 2017">Tips &amp; Tricks @ Hyper-V</a></h3>
+
+<pre><code class="language-ruby">Vagrant.configure(&quot;2&quot;) do |config|
+    config.vm.box = &quot;hashicorp/precise64&quot;
+    config.vm.provider &quot;hyperv&quot;
+    config.vm.network &quot;public_network&quot;
+    # Disable (SMB) Synched Folders
+    config.vm.synced_folder &quot;.&quot;, &quot;/vagrant&quot;, disabled: true
+    # Set provider to Hyper-V
+    config.vm.provider &quot;hyperv&quot; do |h|
+    # Improve spin-up time
+        h.enable_virtualization_extensions = true
+        # h.differencing_disk = true # depricated
+        h.linked_clone = true
+    end
+end
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

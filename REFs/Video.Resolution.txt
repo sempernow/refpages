@@ -1,0 +1,41 @@
+
+SVGA	 800 x 600	[4:3]	Old Standard
+XGA		1024 x 768	[4:3]	New Standard
+
+Most common display resolutions 2014
+------------------------------------
+Acronym ratio 	Width 	Height 	%SteamUsers %WebUsers
+-------	-----	-----	------	------		-----
+HD 		~16:9 	1366 	768 	24.53 		26.64
+XGA 	4:3 	1024 	768 	02.85 		09.84
+WXGA 	16:10 	1280 	800 	02.44 		08.90
+FHD 	16:9 	1920 	1080 	32.91 		08.64
+WXGA+ 	16:10 	1440 	900 	05.74 		05.95
+SXGA 	5:4 	1280 	1024 	07.05 		05.74
+
+Typical 27-inch monitor @ 2013
+------------------------------
+WQHD	2560 x 1440 [16:9] 
+
+2560x1440 QHD (Quad HD)  WQHD  1440p
+3840x2160 UHD (UHD-4K) 
+4096x2160 4K  (DCI-compliant)
+
+4K connector :: HDMI 1.4 and DisplayPort 1.2 support 4K, at up to 30 Hz using a single cable.
+                HDMI 2.0 and DisplayPort 1.2 support 4K, at up to 60 Hz using a single cable.
+
+REF: http://en.wikipedia.org/wiki/Graphics_display_resolution				
+				
+Legacy info ...
+
+http://www.doom9.org/
+
+Bitrate and Resolution Guide
+
+Suggested resolutions (these follow to the x16 rule for optimal compatibility)
+
+1:2.35 movies: 720x304, 640x272, 576x240, 512x224, 480x208, 400x176
+
+1:1.85 movies: 720x384, 640x352, 576x304, 512x272, 480x256, 400x224
+
+1:1.33 movies: 720x544, 640x480, 576x432, 512x384, 480x368, 400x304

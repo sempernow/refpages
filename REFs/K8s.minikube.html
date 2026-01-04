@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.minikube</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://minikube.sigs.k8s.io/docs/">Minikube</a> | <a href="https://kubernetes.io/docs/tasks/tools/#minikube" title="Kubernetes.io">Kubernetes.io</a> | <a href="https://kubernetes.io/docs/tutorials/hello-minikube/">QuickStart</a> | <a href="https://github.com/kubernetes/minikube">GitHub</a></h1>
+
+<h2>See <a href="K8s.minikube-setup.sh"><code>K8s.minikube-setup.sh</code></a></h2>
+
+<pre><code class="language-bash"># API Server info @ minikube
+kubectl -n kube-system describe pod kube-apiserver-minikube 
+</code></pre>
+
+<h2>WARNING : 2018 Notes</h2>
+
+<h3><a href="https://minikube.sigs.k8s.io/docs/commands/">Commands</a></h3>
+
+<pre><code class="language-powershell">minikube update-check           # list installed v. available
+minikube addons list            # list all available addons
+minikube start                  # create minikube VM (Hyper-V)
+    --vm-driver=hyperv          # Explicitly set driver
+    --hyperv-virtual-switch=External-GbE  # set Virtual Switch
+    --v=7 --alsologtostderr     # verbose report to STDOUT
+    --kubernetes-version=&quot;v1.6.0&quot;  # ver
+minikube ip                     # IP_ADDR
+minikube service NAME --url     # service IP_ADDR:PORT
+minikube service NAME --https   # open per https
+minikube dashboard              # Web UI (Dashboard)
+minikube config view            # ./minikube/config/config.json
+minikube update-context         # fix &quot;Misconfigured ...&quot;
+minikube status                 # Shows its address if running 
+minikube delete                 # delete the entire VM
+
+# Dashboard (Web UI)
+minikube dashboard
+
+# Dashboard URL
+minikube dashboard --url  
+# e.g., http://192.168.1.100:30000
+</code></pre>
+
+<ul>
+<li><p>Minikube supports a <strong><code>none</code> driver option</strong>  that runs the Kubernetes components <strong><em>on the host and not in a VM</em></strong>. Using this driver <strong>requires Docker</strong>, but <strong>not a hypervisor</strong>. The option has <strong>security issues</strong>. (<a href="Kubernetes.minik_NONE_DRIVER.md" title="Kubernetes.minik_NONE_DRIVER.md">MD</a> | <a href="Kubernetes.minik_NONE_DRIVER.html" title="@ browser">HTML</a>)<br>
+<code>minikube start --vm-driver=none</code></p></li>
+
+<li><p>Debug; <code>tee</code> verbose log to <code>STDERR</code>:<br>
+<code>minikube COMMAND -v 7 --alsologtostderr</code></p></li>
+
+<li><p>On catastrohpy, &quot;Turn off&quot; @ Hyper-V (GUI), shutdown per PowerShell method (below), or reboot.</p></li>
+
+<li><p>On <code>start</code> fail, delete machine folder @ <code>~/.minikube/machines/minikube</code></p></li>
+</ul>
+
+<h3>Stopping the VM has problems.</h3>
+
+<ul>
+<li><p><code>minikube ssh</code><br>
+This method works.</p>
+
+<pre><code class="language-powershell">minikube ssh           # SSH into VM
+$ sudo poweroff        # turn VM off, from within
+</code></pre></li>
+
+<li><p><code>minikube stop</code><br>
+This method does <strong><em>not</em></strong> work.</p>
+
+<pre><code class="language-powershell">minikube stop -v 7     # Nope; fails after long timeout 
+</code></pre></li>
+
+<li><p>@ Powershell <a href="https://docs.microsoft.com/en-us/powershell/module/hyper-v/stop-vm?view=win10-ps" title="docs.microsoft.com/.../hyper-v/stop-vm 2016">Hyper-V command</a> from guest (Windows OS)</p>
+
+<pre><code class="language-powershell">PS&gt; Stop-VM -Name minikube           # unsaved data is saved 
+PS&gt; Stop-VM -Name minikube -Force    # unsaved data may be lost
+PS&gt; Stop-VM -Name minikube -TurnOff  # unsaved data is lost
+</code></pre>
+
+<ul>
+<li><p>Minikube's <code>vEthernet</code> adapter fails to disable as well, so successive starts tend to require successive IPs from the DHCP Server (the Gateway router).</p></li>
+
+<li><p>@ <code>cmd.exe</code> method to <code>enable</code> or <code>disable</code> the adapter.<br>
+<code>NETSH interface set interface name=&quot;minikube-GbE&quot; admin=disable</code></p></li>
+</ul></li>
+</ul>
+
+<h3>Configure Docker for Minikube (<em>temporarily</em>)</h3>
+
+<p><code>minikube docker-env</code><br>
+Use to configure <strong><em>the current shell</em></strong> such that the <code>docker</code> CLI tool (Docker-for-Windows client) binds to Minikube's Docker server instead of its own.</p>
+
+<p><img src="Multiple.Docker.Installations-@-minikube.docker-env.jpg" alt="Multiple Docker Installations @ minikube docker-env (StephenGrider/DockerCasts)" title="StephenGrider/DockerCasts @ GitHub"></p>
+
+<ul>
+<li><p>@ Windows</p>
+
+<pre><code class="language-powershell">PS&gt; minikube docker-env | Invoke-Expression
+</code></pre></li>
+
+<li><p>@ Unix (Mac/Linux)</p>
+
+<pre><code class="language-bash">$ eval $(minikube docker-env)
+</code></pre></li>
+</ul>
+
+<p>Verify ...</p>
+
+<pre><code class="language-powershell"># List containers running @ minikube pod(s) ...
+PS&gt; docker ps 
+# List all images thereof 
+PS&gt; docker images
+</code></pre>
+
+<p>The command itself prints Minikube's Docker (server) Env. vars., and instructs.</p>
+
+<pre><code class="language-powershell">PS&gt; minikube docker-env
+$Env:DOCKER_TLS_VERIFY = &quot;1&quot;
+$Env:DOCKER_HOST = &quot;tcp://192.168.1.105:2376&quot;
+$Env:DOCKER_CERT_PATH = &quot;C:\Users\X1\.minikube\certs&quot;
+$Env:DOCKER_API_VERSION = &quot;1.35&quot;
+# Run this command to configure your shell:
+# &amp; minikube docker-env | Invoke-Expression
+</code></pre>
+
+<h2><a href="https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/" title="kubernetes.io/docs/.../object-management-kubectl">Kubernetes Object Management</a></h2>
+
+<pre><code class="language-bash">kubectl apply   # Declarative 
+kubectl create  # Imperative
+</code></pre>
+
+<h3><a href="https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/" title="kubernetes.io/docs/.../declarative-config">Declarative Management</a></h3>
+
+<pre><code class="language-bash">kubectl apply -f configs/     # process all @ dir
+kubectl apply -R -f configs/  # recursively process dirs
+</code></pre>
+
+<h3><a href="https://kubernetes.io/docs/concepts/overview/object-management-kubectl/overview/#imperative-object-configuration" title="kubernetes.io/docs/.../imperative-object-configuration">Imperative Management</a></h3>
+
+<pre><code class="language-bash"># Imperative commands
+kubectl create  -f nginx.yaml
+kubectl delete  -f nginx.yaml -f redis.yaml
+kubectl replace -f nginx.yaml
+
+# Two equivalent commands
+kubectl run nginx --image nginx
+kubectl create deployment nginx --image nginx  # equivalent
+
+</code></pre>
+
+<h2><a href="https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands" title="kubernetes.io/docs/.../kubectl-commands"><code>kubectl</code> commands</a></h2>
+
+<pre><code class="language-bash"># View current context
+kubectl config current-context
+# Get contexts
+kubectl config get-contexts
+# Set context to local minikube cluster  
+kubectl config set-context minikube  
+# Get minikube cluster config details  
+kubectl config view minikube  
+# Master IP:port [ALL the info]
+kubectl cluster-info [dump]
+# Run
+kubectl run hello-minikube --image=k8s.gcr.io/echoserver:1.4 --port=8080 
+
+# Get the Minikube system (VM) pods
+kubectl get pods -n kube-system
+# Get pods|services|DEPLOYMENTS|pv|pvc
+kubectl get pods
+ # Get pod labels; ensure service label (@ Manifest file) matches 
+kubectl get pods --show-labels 
+kubectl get pods --selector KEY=VALUE
+
+# Get service ENDPOINTs
+kubectl get ep            
+# Get ALL POD IPs (unstable) matching service's selector label
+kubectl describe ep $_SERVICE  
+
+# Service (Pod/App Access)
+kubectl get service          # list all services
+# Detailed info, incl internal endpoint (IP:PORT) for comms
+kubectl describe service $_SERVICE
+...
+Port:        &lt;unset&gt; 3000/TCP   # this pod localhost access
+NodePort:    &lt;unset&gt; 31172/TCP  # public access
+Endpoints:   172.17.0.5:3000    # pod-to-pod access
+
+# storage PERSISTENT VOLUME (pv) CLAIM (pvc)
+kubectl get pv
+kubectl get pvc 
+kubectl get storageclass
+
+# DEPLOYMENTs
+
+# APPLY config to a pod|deploy
+kubectl apply -f ./deploy.yml --record
+# APPLY all configs @ FOLDER
+kubectl apply -f FOLDER --record
+# HISTORY (shows command history if `--record` used)
+kubectl rollout history deployment NAME
+# Rollout Status 
+kubectl rollout status deployment NAME
+# List Replica Sets 
+kubectl get rs  # should show new and old 
+
+# DESCRIBE pod|deploy (current state; detailed info)  
+kubectl describe pod|deploy NAME [OBJECT]
+# DELETE pod|service per FILE (an imperative update)
+kubectl delete -f client-pod.yaml
+# DELETE pod|service per RESOURCE (an imperative update)
+kubectl delete pod|service NAME
+# DELETE ALL deployments|pods|services
+kubectl delete pods --all
+# DELETE deployment 
+kubectl delete deployment NAME
+kubectl delete deployments --all
+# Get logs from specific container
+kubectl logs client-deployment-f97bc8fb6-7lqlz
+# Launch SHELL @ specified container
+kubectl exec -it client-deployment-f97bc8fb6-7lqlz sh
+
+# K8s Dashboard (Web UI)
+# Manually install (if not already)
+kubectl create -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+# Access @
+https://$_K8S_MASTER_IP/ui
+
+# Get password; browser may require 
+kubectl config view
+</code></pre>
+
+<pre><code class="language-powershell">$ kubectl get storageclass
+NAME                 PROVISIONER                AGE
+standard (default)   k8s.io/minikube-hostpath   4d  
+# 'minikube-hostpath' is host machine storage, e.g., SSD|HDD
+# stanard changes per host; e.g., EBS @ AWS
+$ kubectl describe storageclass  # lots of details
+</code></pre>
+
+<h2><a href="https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/try-hyper-v-powershell">PowerShell</a> <a href="https://docs.microsoft.com/en-us/powershell/module/hyper-v/?view=win10-ps" title="docs.microsoft.com/.../hyper-v/... 2016"> Hyper-V commands</a></h2>
+
+<pre><code class="language-powershell"># Turn off Minikube VM (only -TurnOff works)
+Stop-VM -Name minikube           # data is saved 
+Stop-VM -Name minikube -Force    # data may be lost
+Stop-VM -Name minikube -TurnOff  # data is lost
+
+# disable dynamic memory, set static size
+Set-VMMemory &quot;minikube&quot; -DynamicMemoryEnabled $false -StartupBytes 2GB 
+# Get VM memory size (see Vmmem.exe @ TaskManager)
+Get-VMMemory &quot;minikube&quot;
+
+# External Virtual Switch
+New-VMSwitch -name &quot;External-GbE&quot; -NetAdapterName &quot;GbE&quot; -AllowManagementOS $true  
+# Internal Virtual Switch
+New-VMSwitch -name &quot;DockerNAT&quot; -SwitchType Internal  
+# Private Virtual Switch
+New-VMSwitch -name &quot;PrivateSwitch&quot; -SwitchType Private  
+
+# Get IP of &quot;minikube&quot; VM, from Hyper-V
+(( Hyper-V\Get-VM minikube ).networkadapters[0]).ipaddresses[0]
+</code></pre>
+
+<h2>Configuration Files (<code>config.json</code>)</h2>
+
+<h3><code>minikube</code> Command Parameters</h3>
+
+<p>@ <a href="file:///C:/HOME/.minikube/config/config.json">~/.minikube/config/</a></p>
+
+<pre><code class="language-json">{
+    &quot;WantReportError&quot;: false,
+    &quot;WantReportErrorPrompt&quot;: false,
+    &quot;hyperv-virtual-switch&quot;: &quot;minikube-GbE&quot;,
+    &quot;profile&quot;: &quot;minikube&quot;,
+    &quot;v&quot;: 1,
+    &quot;vm-driver&quot;: &quot;hyperv&quot;,
+    &quot;memory&quot;: 2048
+}
+</code></pre>
+
+<ul>
+<li><a href="https://github.com/kubernetes/minikube/blob/master/cmd/minikube/cmd/config/config.go" title="config.go #46">List of <strong>All</strong> configurable settings (<strong>keys</strong>)</a></li>
+</ul>
+
+<h3>Minikube VM Profile</h3>
+
+<p>@ <a href="file:///C:/HOME/.minikube/profiles/minikube/config.json">~/.minikube/profiles/minikube/</a></p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

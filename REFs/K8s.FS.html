@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.FS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Host FS Plan for K8S Cluster</h1>
+
+<p>A <strong>Kubernetes node–friendly FS layout</strong> that follows the FHS spirit, but also reflects how kubeadm-style clusters and container runtimes actually behave in the wild.</p>
+
+<h2>🔹 Core node layout</h2>
+
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+<th>Notes</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>/</code></td>
+<td>Root FS</td>
+<td>Keep lean; don’t fill it with containers or logs.</td>
+</tr>
+
+<tr>
+<td><code>/etc/kubernetes</code></td>
+<td>Control plane + kubelet config</td>
+<td>From kubeadm (manifests, kubeconfig, certs).</td>
+</tr>
+
+<tr>
+<td><code>/var/lib/kubelet</code></td>
+<td>Kubelet state + pod sandboxes + volume mounts</td>
+<td>This is <strong>critical</strong>; make it its own FS if you want crash isolation.</td>
+</tr>
+
+<tr>
+<td><code>/var/lib/containerd</code> or <code>/var/lib/docker</code></td>
+<td>Container runtime layers + images</td>
+<td>Put on fast disk (NVMe/SSD) for image pull and unpack speed.</td>
+</tr>
+
+<tr>
+<td><code>/var/log/pods</code></td>
+<td>Per-pod log symlinks</td>
+<td>Kubelet links container logs here.</td>
+</tr>
+
+<tr>
+<td><code>/var/log/containers</code></td>
+<td>Symlinks to container runtime logs</td>
+<td>Used by logging agents (fluent-bit, promtail, etc.).</td>
+</tr>
+
+<tr>
+<td><code>/var/log</code></td>
+<td>System logs</td>
+<td>journald, syslog, kernel. Don’t let app logs flood it.</td>
+</tr>
+
+<tr>
+<td><code>/srv/nfs</code> or <code>/srv/storage</code></td>
+<td>If this node exports volumes (NFS, Gluster, Ceph gateways, etc.)</td>
+<td>Clean separation from kubelet’s internals.</td>
+</tr>
+
+<tr>
+<td><code>/data</code></td>
+<td>General bulk storage for PV backends</td>
+<td>For CSI drivers or hostPath experiments.</td>
+</tr>
+
+<tr>
+<td><code>/backup</code></td>
+<td>Backups of etcd, manifests, configs</td>
+<td>Keep isolated from <code>/var</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>🔹 Mount strategy (fstab style)</h2>
+
+<p>Example <code>/etc/fstab</code> for a worker:</p>
+
+<pre><code class="language-fstab"># Root + boot
+UUID=...  /                  xfs  defaults,noatime  0 1
+UUID=...  /boot              ext4 defaults          0 2
+
+# Separate FS for kubelet (pods, volumes)
+UUID=...  /var/lib/kubelet   xfs  defaults          0 2
+
+# Separate FS for container runtime
+UUID=...  /var/lib/containerd xfs defaults          0 2
+
+# Log partition
+UUID=...  /var/log           xfs  defaults,nodev,noexec,nosuid  0 2
+
+# Data partition for PV backends
+UUID=...  /data              xfs  defaults          0 2
+
+# Backups (etcd snapshots, configs)
+UUID=...  /backup            xfs  defaults,noatime  0 2
+</code></pre>
+
+<hr>
+
+<h2>🔹 Why this helps</h2>
+
+<ul>
+<li><p><strong>Blast radius control</strong></p>
+
+<ul>
+<li>If <code>/var/lib/kubelet</code> fills up (e.g. stuck PVs), it won’t choke <code>/</code>.</li>
+<li>If <code>/var/log</code> fills up, kubelet still runs.</li>
+</ul></li>
+
+<li><p><strong>Performance</strong></p>
+
+<ul>
+<li>Container images (<code>/var/lib/containerd</code>) on SSD → faster pulls &amp; launches.</li>
+<li>PV backends (<code>/data</code>) on slower disks is fine.</li>
+</ul></li>
+
+<li><p><strong>Ops clarity</strong></p>
+
+<ul>
+<li><code>/srv</code> → for things exported by the node (if you run NFS-server or Ceph).</li>
+<li><code>/backup</code> → easy scripting, obvious intent.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h2>🔹 Control plane nodes (extra)</h2>
+
+<ul>
+<li><p><code>/var/lib/etcd</code> — etcd database.</p>
+
+<ul>
+<li>Put this on <em>fast, durable</em> disk (low fsync latency).</li>
+<li>Often its own volume/partition so noisy workloads don’t spike etcd I/O.</li>
+</ul></li>
+
+<li><p><code>/etc/kubernetes/pki</code> — cluster certs.</p>
+
+<ul>
+<li>Small, but back it up.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<p>✅ TL;DR:</p>
+
+<ul>
+<li><code>/var/lib/kubelet</code> and <code>/var/lib/containerd</code> → <strong>dedicated FS</strong>.</li>
+<li><code>/var/log</code> → <strong>separate FS</strong> with noexec/nodev/nosuid.</li>
+<li><code>/var/lib/etcd</code> (control plane only) → <strong>its own fast FS</strong>.</li>
+<li><code>/data</code> and <code>/srv</code> → your playground for persistent volumes and service exports.</li>
+</ul>
+
+<hr>
+
+<h2>🔹 Key directories &amp; their SELinux types</h2>
+
+<p><strong>RHEL/Kubernetes gotchas</strong>: Splitting things into separate partitions may result in loss of the expected SELinux labels (<code>system_u:object_r:container_file_t:s0</code>, etc.). That can break kubelet, containerd, or logging.</p>
+
+<p>The fix is to assign <strong>fcontext rules</strong> so mounts inherit the right labels:</p>
+
+<table>
+<thead>
+<tr>
+<th>Directory</th>
+<th>Purpose</th>
+<th>Expected SELinux type</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>/var/lib/kubelet</code></td>
+<td>Pod dirs, volumes</td>
+<td><code>container_file_t</code></td>
+</tr>
+
+<tr>
+<td><code>/var/lib/containerd</code> or <code>/var/lib/docker</code></td>
+<td>Images, layers</td>
+<td><code>container_var_lib_t</code> (RHEL9/8), sometimes <code>container_file_t</code></td>
+</tr>
+
+<tr>
+<td><code>/var/lib/etcd</code></td>
+<td>etcd DB</td>
+<td><code>etcd_var_lib_t</code></td>
+</tr>
+
+<tr>
+<td><code>/var/log/containers</code></td>
+<td>Symlinks to container logs</td>
+<td><code>container_log_t</code></td>
+</tr>
+
+<tr>
+<td><code>/var/log/pods</code></td>
+<td>Per-pod log dirs</td>
+<td><code>container_log_t</code></td>
+</tr>
+
+<tr>
+<td><code>/var/log</code> (generic system logs)</td>
+<td>journald, syslog</td>
+<td><code>var_log_t</code></td>
+</tr>
+
+<tr>
+<td><code>/srv/nfs</code> (if exporting)</td>
+<td>NFS data</td>
+<td><code>public_content_rw_t</code> (or <code>nfs_t</code> for exports)</td>
+</tr>
+
+<tr>
+<td><code>/data</code> (CSI/PV backends)</td>
+<td>App volumes</td>
+<td>Usually <code>container_file_t</code> if kubelet uses it directly</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Sizing</h2>
+
+<p>A <strong>capacity planning sketch</strong> for a generic (control or worker) Kubernetes node given <strong>1 TB total disk</strong> to allocate per node:</p>
+
+<h2>🔹Kubernetes Node Disk Allocation (1 TB total)</h2>
+
+<table>
+<thead>
+<tr>
+<th>Mount point</th>
+<th>Size (GB)</th>
+<th>% of total</th>
+<th>Notes</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>/</code> (root)</td>
+<td>50–75</td>
+<td>~7%</td>
+<td>OS, packages, <code>/etc</code>, system libs. Keep lean.</td>
+</tr>
+
+<tr>
+<td><code>/var/lib/kubelet</code></td>
+<td>200</td>
+<td>20%</td>
+<td>Pod sandboxes, ephemeral volumes, secrets/configs. Needs breathing room.</td>
+</tr>
+
+<tr>
+<td><code>/var/lib/containerd</code></td>
+<td>300</td>
+<td>30%</td>
+<td>Container images &amp; unpacked layers. Image-heavy clusters chew disk here.</td>
+</tr>
+
+<tr>
+<td><code>/var/lib/etcd</code></td>
+<td>50</td>
+<td>~5%</td>
+<td><strong>Control-plane only</strong>. Needs <strong>low latency</strong>, not huge size.</td>
+</tr>
+
+<tr>
+<td><code>/var/log</code></td>
+<td>50–75</td>
+<td>~7%</td>
+<td>System + container logs. With log rotation, 50–75 GB is comfortable.</td>
+</tr>
+
+<tr>
+<td><code>/data</code></td>
+<td>250–300</td>
+<td>25–30%</td>
+<td>Bulk storage for PersistentVolumes, NFS-backed paths, testing <code>hostPath</code>.</td>
+</tr>
+
+<tr>
+<td><code>/backup</code></td>
+<td>50–75</td>
+<td>~7%</td>
+<td>Etcd snapshots, configs, small dataset archives.</td>
+</tr>
+</tbody>
+</table>
+
+<p><img src="k8s-node-disk-allocation.webp" alt="k8s-node-disk-allocation.webp"></p>
+
+<h2>🔹 Why these sizes</h2>
+
+<ul>
+<li><p><strong>Root (<code>/</code>)</strong>: Modern RHEL installs with GNOME and full tools can bloat &gt;20 GB.
+50 GB gives you a buffer but avoids waste.</p></li>
+
+<li><p><strong><code>/var/lib/kubelet</code></strong>:</p>
+
+<ul>
+<li>Pods mount emptyDirs, configMaps, secrets → all live here.</li>
+<li>Bursty workloads (CI/CD, batch jobs) fill it quickly. 200 GB is safe.</li>
+</ul></li>
+
+<li><p><strong><code>/var/lib/containerd</code></strong>:</p>
+
+<ul>
+<li>Pulling large images (e.g. AI/ML or Java stacks) eats disk fast.</li>
+<li>If you keep multiple versions/tags, you want headroom. 300 GB is a healthy balance.</li>
+</ul></li>
+
+<li><p><strong><code>/var/lib/etcd</code></strong>:</p>
+
+<ul>
+<li>Each etcd member stores a compressed history. Even large clusters rarely need &gt;20 GB.</li>
+<li>The real requirement is <strong><em>low fsync latency</em></strong> — give it SSD/NVMe if possible.</li>
+</ul></li>
+
+<li><p><strong><code>/var/log</code></strong>:</p>
+
+<ul>
+<li>Journal logs + kubelet/containerd logs.</li>
+<li>With logrotate or fluent-bit shipping, 50–75 GB is safe.</li>
+</ul></li>
+
+<li><p><strong><code>/data</code></strong>:</p>
+
+<ul>
+<li>Largest flexible bucket.</li>
+<li>Good for app PVs, experimental workloads, or serving NFS.</li>
+</ul></li>
+
+<li><p><strong><code>/backup</code></strong>:</p>
+
+<ul>
+<li>Keeps etcd snapshots &amp; config archives separate.</li>
+<li>If you offload backups elsewhere (NAS, object store), 50 GB is plenty.</li>
+</ul></li>
+</ul>
+
+<p>The kubelet and the container runtime are <em>really greedy</em> about disk, especially once a cluster is busy.
+Here’s why they need so much breathing room:</p>
+
+<h3>🔹 <code>/var/lib/kubelet</code> (pod sandbox + ephemeral volumes)</h3>
+
+<ul>
+<li>Every pod gets a “sandbox” directory under here.</li>
+
+<li><p><strong>emptyDir volumes</strong> → all live on the node’s disk under <code>/var/lib/kubelet/pods/.../volumes/...</code>.</p>
+
+<ul>
+<li>Think CI jobs unpacking tarballs, ML jobs writing scratch data, etc.</li>
+</ul></li>
+
+<li><p>Secrets and ConfigMaps get materialized here too (lots of small files).</p></li>
+
+<li><p>If a pod crashes and restarts, kubelet may keep the old dirs until garbage collection runs.</p></li>
+</ul>
+
+<p>👉 On a busy node, this fills up shockingly fast — hence giving it 150–200 GB is sane.</p>
+
+<h3>🔹 <code>/var/lib/containerd</code> (image storage + layers)</h3>
+
+<ul>
+<li>Each image you <code>pull</code> gets unpacked into multiple layers under here.</li>
+<li>Multiple tags of the same base image = more layers.</li>
+<li>Even after container exit, unless GC has purged, old layers stay around.</li>
+<li>Large images (e.g. AI/ML with CUDA, or Java stacks) can be <strong>5–10 GB each</strong>. Multiply by dozens of apps and versions → hundreds of GB easily.</li>
+</ul>
+
+<p>👉 250–400 GB is very normal in real-world clusters with active pipelines.</p>
+
+<h3>🔹 Why it bites ops</h3>
+
+<ul>
+<li>If <code>/var/lib/containerd</code> or <code>/var/lib/kubelet</code> fill up, kubelet goes into “ImageGC” or “Eviction” mode. That means pods get killed to free space.</li>
+<li>Worse, if it fills <em>root (<code>/</code>)</em> because you didn’t split partitions, the node can hard crash (<code>Read-only file system</code> remounts).</li>
+</ul>
+
+<h3>🔹 Real-world anecdotes</h3>
+
+<ul>
+<li><strong>GitLab CI/CD runners</strong> in Kubernetes → constantly pull different images for pipelines. Nodes without big <code>/var/lib/containerd</code> partitions churned through disk in hours.</li>
+<li><strong>ML workloads</strong> pulling PyTorch/TensorFlow images (10–15 GB each) + checkpoints in <code>emptyDir</code> → 200 GB per node vanished almost overnight.</li>
+<li><strong>Default / partition only</strong> → kubelet crashes because journald + container images + pods fight for the same disk.</li>
+</ul>
+
+<p>✅ That’s why in your 1 TB plan, giving <strong>~50% of the disk</strong> (500 GB) to kubelet + containerd combined is advised. It’s not waste — it’s survival.</p>
+
+<hr>
+
+<h2>🔹 Example partitioning table</h2>
+
+<p>Single <strong>1TB</strong> physical disk (<code>sda</code>)</p>
+
+<pre><code>/dev/sda1   50G    /                   (xfs)
+/dev/sda2  200G    /var/lib/kubelet    (xfs)
+/dev/sda3  300G    /var/lib/containerd (xfs)
+/dev/sda4   50G    /var/lib/etcd       (xfs)   # control-plane only
+/dev/sda5   75G    /var/log            (xfs)
+/dev/sda6  250G    /data               (xfs)
+/dev/sda7   75G    /backup             (xfs)
+</code></pre>
+
+<h2>🔹 Variations</h2>
+
+<ul>
+<li><strong>Workers only</strong>: Drop <code>/var/lib/etcd</code> and give that 50 GB to <code>/data</code>.</li>
+<li><strong>Control-plane only</strong>: Keep <code>/var/lib/etcd</code> small but <em>fast</em>.</li>
+<li><strong>Storage-heavy nodes</strong>: Bias more towards <code>/data</code> (e.g. 400 GB) if you host PVs directly.</li>
+<li><strong>Image-heavy CI/CD nodes</strong>: Increase <code>/var/lib/containerd</code> up to 400 GB.</li>
+</ul>
+
+<h2>🔹 SELinux : Setting persistent mappings</h2>
+
+<h3>Example fcontext rules</h3>
+
+<pre><code class="language-bash"># Kubelet
+semanage fcontext -a -t container_file_t &quot;/var/lib/kubelet(/.*)?&quot;
+
+# Container runtime (containerd)
+semanage fcontext -a -t container_var_lib_t &quot;/var/lib/containerd(/.*)?&quot;
+
+# Docker alternative
+semanage fcontext -a -t container_var_lib_t &quot;/var/lib/docker(/.*)?&quot;
+
+# etcd DB
+semanage fcontext -a -t etcd_var_lib_t &quot;/var/lib/etcd(/.*)?&quot;
+
+# Pod &amp; container logs
+semanage fcontext -a -t container_log_t &quot;/var/log/containers(/.*)?&quot;
+semanage fcontext -a -t container_log_t &quot;/var/log/pods(/.*)?&quot;
+
+# PV backends
+semanage fcontext -a -t container_file_t &quot;/data(/.*)?&quot;
+
+# Service exports
+semanage fcontext -a -t public_content_rw_t &quot;/srv/nfs(/.*)?&quot;
+</code></pre>
+
+<h3>Apply them</h3>
+
+<pre><code class="language-bash">restorecon -Rv /var/lib/kubelet
+restorecon -Rv /var/lib/containerd
+restorecon -Rv /var/lib/etcd
+restorecon -Rv /var/log/containers
+restorecon -Rv /var/log/pods
+restorecon -Rv /data
+restorecon -Rv /srv/nfs
+</code></pre>
+
+<h2>🔹 Verify labels</h2>
+
+<pre><code class="language-bash">ls -Zd /var/lib/kubelet
+ls -Zd /var/lib/containerd
+ls -Zd /var/log/containers
+</code></pre>
+
+<p>Example output:</p>
+
+<pre><code>drwx------. root root system_u:object_r:container_file_t:s0 /var/lib/kubelet
+</code></pre>
+
+<h2>🔹 Why this matters</h2>
+
+<ul>
+<li>Without these, a new FS mounted at <code>/var/lib/kubelet</code> could inherit <code>default_t</code> or <code>var_lib_t</code>, and then kubelet fails to start pods with AVC denials.</li>
+<li>Same for container logs: if they’re not <code>container_log_t</code>, your log collector (fluent-bit, promtail) might get blocked.</li>
+<li>With fcontext rules, SELinux auto-applies the right labels after every reboot/remount.</li>
+</ul>
+
+<p>✅ <strong>Best practice on RHEL-based Kubernetes nodes</strong>:</p>
+
+<p>Always run <code>semanage fcontext</code> + <code>restorecon</code> after introducing new partitions for kubelet, containerd, etcd, or PV backends.</p>
+
+<hr>
+
+<p>A clean <strong>provision script</strong> to run on RHEL-based Kubernetes nodes to set all the right SELinux fcontext mappings in one go.</p>
+
+<p>It’s idempotent:</p>
+
+<ul>
+<li>If <code>semanage</code> rules already exist, it won’t duplicate.</li>
+
+<li><p>It runs <code>restorecon</code> after to apply labels immediately.</p>
+
+<pre><code class="language-bash">#!/usr/bin/env bash
+#
+# provision-selinux-k8s.sh
+# Ensure SELinux contexts are correct for Kubernetes node directories.
+#
+# RHEL / CentOS / Rocky / Alma / Fedora compatible.
+
+set -euo pipefail
+
+# Check for semanage
+if ! command -v semanage &gt;/dev/null 2&gt;&amp;1; then
+echo &quot;ERROR: semanage not found. Install policycoreutils-python-utils (RHEL8/9).&quot;
+exit 1
+fi
+
+echo &quot;▶ Setting SELinux fcontext rules for Kubernetes node directories...&quot;
+
+# Kubelet
+semanage fcontext -a -t container_file_t &quot;/var/lib/kubelet(/.*)?&quot;
+
+# Container runtime (containerd or docker)
+semanage fcontext -a -t container_var_lib_t &quot;/var/lib/containerd(/.*)?&quot;
+semanage fcontext -a -t container_var_lib_t &quot;/var/lib/docker(/.*)?&quot;
+
+# etcd DB (control-plane nodes only, harmless elsewhere)
+semanage fcontext -a -t etcd_var_lib_t &quot;/var/lib/etcd(/.*)?&quot;
+
+# Pod &amp; container logs
+semanage fcontext -a -t container_log_t &quot;/var/log/containers(/.*)?&quot;
+semanage fcontext -a -t container_log_t &quot;/var/log/pods(/.*)?&quot;
+
+# PV backends (generic /data volume)
+semanage fcontext -a -t container_file_t &quot;/data(/.*)?&quot;
+
+# Service exports (if node also exports via NFS/HTTP/etc.)
+semanage fcontext -a -t public_content_rw_t &quot;/srv/nfs(/.*)?&quot;
+
+echo &quot;▶ Applying SELinux contexts...&quot;
+restorecon -Rv /var/lib/kubelet    || true
+restorecon -Rv /var/lib/containerd || true
+restorecon -Rv /var/lib/docker     || true
+restorecon -Rv /var/lib/etcd       || true
+restorecon -Rv /var/log/containers || true
+restorecon -Rv /var/log/pods       || true
+restorecon -Rv /data               || true
+restorecon -Rv /srv/nfs            || true
+
+echo &quot;✅ SELinux fcontexts applied successfully.&quot;
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3>🔹 Usage</h3>
+
+<ol>
+<li>Save it as <code>provision-selinux-k8s.sh</code>.</li>
+
+<li><p>Run once on each node (or push via Ansible):</p>
+
+<pre><code class="language-bash">sudo bash provision-selinux-k8s.sh
+</code></pre></li>
+
+<li><p>Verify:</p>
+
+<pre><code class="language-bash">ls -Zd /var/lib/kubelet /var/lib/containerd /var/lib/etcd /var/log/containers
+</code></pre></li>
+</ol>
+
+<hr>
+
+<h2>Ansible Playbook</h2>
+
+<p>A clean <strong>Ansible role</strong> to drop into a bootstrap playbook.
+It uses Ansible’s <code>community.general.sefcontext</code> and <code>ansible.builtin.command</code>
+modules to ensure SELinux mappings are persistent and applied.</p>
+
+<h3>🔹 Role structure</h3>
+
+<pre><code>roles/
+└── selinux_fcontext_k8s/
+    ├── tasks/
+    │   └── main.yml
+    └── meta/
+        └── main.yml
+</code></pre>
+
+<hr>
+
+<h3>🔹 <code>tasks/main.yml</code></h3>
+
+<pre><code class="language-yaml">---
+- name: Ensure policycoreutils-python-utils installed (RHEL 8/9)
+  ansible.builtin.package:
+    name: policycoreutils-python-utils
+    state: present
+
+- name: Define SELinux fcontexts for kubelet
+  community.general.sefcontext:
+    target: &quot;/var/lib/kubelet(/.*)?&quot;
+    setype: container_file_t
+    state: present
+
+- name: Define SELinux fcontexts for containerd
+  community.general.sefcontext:
+    target: &quot;/var/lib/containerd(/.*)?&quot;
+    setype: container_var_lib_t
+    state: present
+
+- name: Define SELinux fcontexts for docker (if used)
+  community.general.sefcontext:
+    target: &quot;/var/lib/docker(/.*)?&quot;
+    setype: container_var_lib_t
+    state: present
+
+- name: Define SELinux fcontexts for etcd (control-plane only)
+  community.general.sefcontext:
+    target: &quot;/var/lib/etcd(/.*)?&quot;
+    setype: etcd_var_lib_t
+    state: present
+
+- name: Define SELinux fcontexts for container logs
+  community.general.sefcontext:
+    target: &quot;/var/log/containers(/.*)?&quot;
+    setype: container_log_t
+    state: present
+
+- name: Define SELinux fcontexts for pod logs
+  community.general.sefcontext:
+    target: &quot;/var/log/pods(/.*)?&quot;
+    setype: container_log_t
+    state: present
+
+- name: Define SELinux fcontexts for generic data PVs
+  community.general.sefcontext:
+    target: &quot;/data(/.*)?&quot;
+    setype: container_file_t
+    state: present
+
+- name: Define SELinux fcontexts for NFS exports
+  community.general.sefcontext:
+    target: &quot;/srv/nfs(/.*)?&quot;
+    setype: public_content_rw_t
+    state: present
+
+- name: Restore SELinux contexts recursively
+  ansible.builtin.command: restorecon -Rv {{ item }}
+  loop:
+    - /var/lib/kubelet
+    - /var/lib/containerd
+    - /var/lib/docker
+    - /var/lib/etcd
+    - /var/log/containers
+    - /var/log/pods
+    - /data
+    - /srv/nfs
+  register: restorecon_out
+  changed_when: restorecon_out.rc == 0
+</code></pre>
+
+<h3>🔹 <code>meta/main.yml</code></h3>
+
+<pre><code class="language-yaml">---
+dependencies: []
+</code></pre>
+
+<h3>🔹 Playbook example</h3>
+
+<pre><code class="language-yaml">- hosts: k8s_nodes
+  become: true
+  roles:
+    - selinux_fcontext_k8s
+</code></pre>
+
+<p>✅ This ensures:</p>
+
+<ul>
+<li>fcontext mappings are permanent (in SELinux policy).</li>
+<li>contexts are immediately applied with <code>restorecon</code>.</li>
+<li>works idempotently across re-runs.</li>
+</ul>
+
+<hr>
+
+<h3>Ansible tasks for systemd drop-ins</h3>
+
+<p>So kubelet/containerd service units depend on the correct mounts being present before they start.
+That ties neatly into this partitioning + SELinux scheme.</p>
+
+<p>Tying systemd drop-ins into the Ansible workflow ensures that <strong>kubelet</strong> and <strong>containerd</strong> (or docker)
+only start once their required mount points are present.
+This avoids <em>race conditions</em> at boot,
+where services fail because <code>/var/lib/kubelet</code> or <code>/var/lib/containerd</code> wasn’t mounted yet.</p>
+
+<h3>🔹 systemd drop-in strategy</h3>
+
+<ul>
+<li><p>Use <code>systemd_unit</code> (or <code>template</code> + <code>systemctl daemon-reload</code>) to create drop-ins under:</p>
+
+<ul>
+<li><code>/etc/systemd/system/kubelet.service.d/10-requires-mounts.conf</code></li>
+<li><code>/etc/systemd/system/containerd.service.d/10-requires-mounts.conf</code></li>
+</ul></li>
+
+<li><p>These add:</p>
+
+<pre><code class="language-ini">[Unit]
+RequiresMountsFor=/var/lib/kubelet
+</code></pre></li>
+</ul>
+
+<p>and similar for containerd/docker.</p>
+
+<p>Systemd then ensures the mount unit is active before starting the service.</p>
+
+<h2>🔹 Updated role structure</h2>
+
+<pre><code>roles/
+└── selinux_fcontext_k8s/
+    ├── tasks/
+    │   ├── main.yml
+    │   └── systemd.yml
+    ├── templates/
+    │   ├── 10-requires-mounts-kubelet.conf.j2
+    │   └── 10-requires-mounts-containerd.conf.j2
+    └── meta/
+        └── main.yml
+</code></pre>
+
+<h2>🔹 <code>tasks/systemd.yml</code></h2>
+
+<pre><code class="language-yaml">---
+- name: Ensure drop-in directory for kubelet
+  ansible.builtin.file:
+    path: /etc/systemd/system/kubelet.service.d
+    state: directory
+    mode: &quot;0755&quot;
+
+- name: Ensure drop-in directory for containerd
+  ansible.builtin.file:
+    path: /etc/systemd/system/containerd.service.d
+    state: directory
+    mode: &quot;0755&quot;
+
+- name: Deploy kubelet mount requirement drop-in
+  ansible.builtin.template:
+    src: 10-requires-mounts-kubelet.conf.j2
+    dest: /etc/systemd/system/kubelet.service.d/10-requires-mounts.conf
+    mode: &quot;0644&quot;
+  notify: Reload systemd
+
+- name: Deploy containerd mount requirement drop-in
+  ansible.builtin.template:
+    src: 10-requires-mounts-containerd.conf.j2
+    dest: /etc/systemd/system/containerd.service.d/10-requires-mounts.conf
+    mode: &quot;0644&quot;
+  notify: Reload systemd
+</code></pre>
+
+<h2>🔹 <code>templates/10-requires-mounts-kubelet.conf.j2</code></h2>
+
+<pre><code class="language-ini">[Unit]
+RequiresMountsFor=/var/lib/kubelet
+RequiresMountsFor=/var/log/pods
+RequiresMountsFor=/var/log/containers
+</code></pre>
+
+<h2>🔹 <code>templates/10-requires-mounts-containerd.conf.j2</code></h2>
+
+<pre><code class="language-ini">[Unit]
+RequiresMountsFor=/var/lib/containerd
+</code></pre>
+
+<p><em>(If using Docker, just change to <code>/var/lib/docker</code>.)</em></p>
+
+<h2>🔹 Add handlers in <code>tasks/main.yml</code></h2>
+
+<pre><code class="language-yaml">handlers:
+  - name: Reload systemd
+    ansible.builtin.command: systemctl daemon-reload
+
+  - name: Restart kubelet
+    ansible.builtin.service:
+      name: kubelet
+      state: restarted
+
+  - name: Restart containerd
+    ansible.builtin.service:
+      name: containerd
+      state: restarted
+</code></pre>
+
+<h2>🔹 Playbook snippet</h2>
+
+<pre><code class="language-yaml">- hosts: k8s_nodes
+  become: true
+  roles:
+    - selinux_fcontext_k8s
+  tasks:
+    - include_role:
+        name: selinux_fcontext_k8s
+        tasks_from: systemd.yml
+</code></pre>
+
+<p>✅ Now at boot:</p>
+
+<ul>
+<li>systemd guarantees <code>/var/lib/kubelet</code>, <code>/var/lib/containerd</code>, <code>/var/log/pods</code>, and <code>/var/log/containers</code> are mounted <em>before</em> kubelet/containerd start.</li>
+<li>Combined with SELinux fcontext setup, you get correct labeling + reliable startup.</li>
+</ul>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

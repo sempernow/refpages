@@ -1,0 +1,62 @@
+XML [userDefineLang]
+====================
+  * Language > "Define your language..." > Import [button]
+    - then edit as apropos
+
+INSTALL 
+=======
+  * Download 32-bit installer, NOT 64-bit.
+    E.g., "Notepad++ Installer 32-bit x86";
+    most plugins are incompatible w/ 64-bit;
+    
+    https://notepad-plus-plus.org/
+
+  * Run the downloaded installer
+
+    - UNcheck auto update during install.
+    - UNcheck the two APPDATA-related options. 
+    
+    - File Associations > NONE
+   
+  * Run notepad_replace.bat [v1.1]
+
+    notepad_replace.bat x  :: test-mode only
+
+    notepad_replace.bat    :: run for effect
+        
+    - REQUIRES Administrator; be member of "Administrators" group
+    
+    - Replaces all 'notepad.exe' with a modified version 
+      (named 'notepad.exe', of course) EVERYWHERE under 
+      the windows root folder (%windir%).
+
+      This fully integrates Notepad++,; Windows Explorer file manager shows the correct file type, under "type", along with its associated icon, per file type. 
+      
+      OTHERWISE, if Notepad++ is associated with certain filetypes -- which is "required" if it's not "integrated" using the notepad_replace.bat script -- then ALL associated filetypes are shown only as "Notepad++ file" and have the same Notepad++ icon.
+
+FILETYPES
+=========
+
+  * File Association; to enable icons per filetype
+  
+    - Do NOT use Notepad++ config/prefs, 
+      else ALL FILETYPES HAVE SAME ICON.
+    
+    - Use "Windows Explorer" [Microsoft OS]
+    
+      1. RT-CLICK > "Open with" > select "Notepad.exe"
+    
+    - To CHANGE ICON, use "FileTypesMan" [NirSoft]
+    
+      If you don't like the result, i.e., if it affects other filetypes unwanted, e.g., if .log and .txt have same icon, but you want different ones for each, then ...
+      
+        1. In FileTypesMan, delete that file type
+           FileTypesMan > Edit > Delete "Selected Extensions"
+          
+        2. In Win Explorer, RT-CLICK on file of target type,
+           and set "Open with" to "Notepad.exe"
+          
+        3. In FileTypeMan, DOUBLE-CLICK on the filetype, 
+           and set ONLY its "Description" and "Default Icon"
+    
+    

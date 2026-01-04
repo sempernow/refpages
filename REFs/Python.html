@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Python</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.python.org/">Python.org</a> | <a href="https://pypi.org/">PyPI</a> | <a href="https://hub.docker.com/_/python/tags?page=1&amp;name=3.7.15"><code>hub.docker.com</code></a> | <a href="https://docs.python.org/release/3.7.15/"><code>docs.python.org</code></a></h1>
+
+<h2>Install</h2>
+
+<p>Examples for Python 3.7</p>
+
+<h3>From <a href="https://www.python.org/downloads/source/">Source Releases</a></h3>
+
+<pre><code class="language-bash">ver='3.7.15'
+wget https://www.python.org/ftp/python/${ver}/Python-${ver}.tar.xz
+tar xvf Python-${ver}.tar.xz
+pushd &quot;Python-${ver}&quot;
+./configure --help # For options
+./configure --enable-optimizations
+make 
+make test
+sudo make install
+</code></pre>
+
+<h3>Using package manager</h3>
+
+<pre><code class="language-bash"># RHEL/CentOS/AlmaLinux/Fedora
+sudo dnf install python37 -y
+# Debian/Ubuntu
+sudo apt-get install python37 -y
+</code></pre>
+
+<h3>RHEL 8+</h3>
+
+<p>WARNING : Some RHEL tools, e.g., <code>sealert</code>, require the OS-default version of Python.</p>
+
+<pre><code class="language-bash"># @ Python 3.12.x
+dnf provides python312 
+sudo dnf -y install python312
+sudo dnf -y install python3.12-pip 
+
+# Register Python 3.9 with priority 1
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+
+# Register Python 3.12 with priority 2 (higher priority)
+sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 2
+
+# List versions and order (non-interactive)
+sudo alternatives --disply python3
+# List/Select default version (interactive)
+sudo alternatives --config python3
+
+# Verify 
+python --version # Python 3.12.9
+
+# Python SDK (minimal)
+sudo dnf -y install python3-devel gcc make git curl wget
+
+</code></pre>
+
+<h4>Install <code>wheel</code> and <code>setuptools</code></h4>
+
+<p><a href="https://realpython.com/python-wheels/#what-is-a-python-wheel">Wheel files</a> (<code>*.whl</code>) make for faster, smaller installs.</p>
+
+<pre><code class="language-bash">python -m venv env &amp;&amp; source ./env/bin/activate
+# Install or update to latest version
+python -m pip install -U pip wheel setuptools
+</code></pre>
+
+<h2>Run at Commandline</h2>
+
+<h3>Invoke a Python (interpreter) shell</h3>
+
+<pre><code class="language-bash">$ /usr/bin/env python
+Python 3.9.18 (main, May 16 2024, 00:00:00)
+[GCC 11.4.1 20231218 (Red Hat 11.4.1-3)] on linux
+Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+&gt;&gt;&gt; print(&quot;Hello&quot;)
+Hello
+&gt;&gt;&gt;
+</code></pre>
+
+<ul>
+<li>Exit by <code>&lt;CTRL-D&gt;</code>.</li>
+</ul>
+
+<h3>Run a script (<code>run.py</code>) from bash shell</h3>
+
+<pre><code class="language-bash">cat &lt;&lt;EOH |tee run.py
+#!/usr/bin/env python
+import sys
+print(&quot;Hello from&quot;, sys.version)
+EOH
+chmod 755 run.py
+./run.py
+</code></pre>
+
+<h2>Build @ Docker container</h2>
+
+<p>Environment is isolated inherently,
+so <code>requirements.txt</code> contains only the app's dependencies,
+unlike running that at host.</p>
+
+<pre><code class="language-bash">pushd app
+python3 -m pip install Flask
+python3 -m pip freeze |tee requirements.txt
+touch app.py
+</code></pre>
+
+<p>See <code>Python.Docker</code> (<a href="Python.Docker.html" title="@ browser">HTML</a> | <a href="Python.Docker.md">MD</a>)</p>
+
+<h2>Build @ Host OS</h2>
+
+<p>Use <code>venv</code> or some such to isolate the environment,
+so <code>requirements.txt</code> contains only the app's dependencies,
+else it contains all dependencies of both app and host environment.</p>
+
+<pre><code class="language-bash">$ pushd app
+$ python3 -m venv .venv
+$ source .venv/bin/activate
+(.venv) $ python3 -m pip install Flask
+(.venv) $ python3 -m pip freeze |tee requirements.txt
+(.venv) $ touch app.py
+</code></pre>
+
+<h2>Build using wheel files (<code>.whl</code>)</h2>
+
+<p>Wheel files are compiled binaries,
+which make for <strong>quicker subsequent builds</strong>.
+However, they are <strong>less portable</strong>.</p>
+
+<p>For example, wheels built of Debian may not be supported by Alpine,
+yet the same application may install on Alpine
+when not using those Debian-built wheel files.</p>
+
+<pre><code class="language-bash">mkdir -p /app/wheels
+
+# Compile
+python -m pip wheel \
+    --no-cache-dir \
+    --no-deps \
+    --wheel-dir /app/wheels \
+    -r requirements.txt
+
+## Install 
+python -m pip install --no-cache /app/wheels/*
+
+</code></pre>
+
+<ul>
+<li>Add <code>--force-reinstall</code> if some are already installed</li>
+</ul>
+
+<h3>Workflow</h3>
+
+<p>Building @ host OS</p>
+
+<pre><code class="language-bash">###############################################
+# PREP lest environment is otherwise isolated
+###############################################
+# venv (&quot;V Env&quot;): Setup a virtual environment (per project)
+## Activated, it sets and isolates versions;
+## for python itself and all project dependencies.
+## Useful when NOT in an already-isolated environment.
+## Keep each venv in its own subfolder under ~/.venvs/ 
+path=/path/to/project/root
+mkdir $path
+cd $path 
+python3 -m venv ~/.venvs/venv_${path##*/}
+
+# (Re)Activate WHENEVER WORKING on this project.
+source ~/.venvs/venv_${path##*/}/bin/activate
+
+# Deactivate WHENEVER NOT WORKING on this project.
+#deactivate
+
+##########
+# DEVELOP
+##########
+# Install module(s) as needed to develop
+python3 -m pip install $module[==VERSION]
+## Or 
+python3 -m pip wheel $module[==VERSION]
+
+# Run app
+python3 app.py #... or ...
+# Run app as background process 
+nohup python3 app.py &gt; app.log 2&gt;&amp;1 &amp;
+#... fg;CTRL-C to kill.
+
+# (Re)Generate the 'requirements.txt' to include all app.py dependencies.
+python3 -m pip freeze &gt; requirements.txt
+
+# Thereafter, in any other environment, install all project dependencies.
+python3 -m pip install -r requirements.txt
+
+# Deactivate WHENEVER NOT WORKING on this project.
+deactivate
+</code></pre>
+
+<p>Alternative way to manage <code>requirements.txt</code>,
+or to generate initially.</p>
+
+<pre><code class="language-bash"># Install pipreqs : to generate 'requirements.txt' 
+python3 -m pip install pipreqs
+# Generate the requirements.txt
+## The list of all PRIMARY modules (versioned) required to run 
+## this project (./*.py) in the context of this Python (python) version.
+## That is, it DOES NOT INCLUDE DEPENDENCIES of those modules.
+pipreqs .
+
+# Verify
+cat requirements.txt
+</code></pre>
+
+<h2><code>pip</code> Hacks</h2>
+
+<h3>1. Declare  PyPI server</h3>
+
+<p>If not at its nominal location, must use options to inform <code>pip</code>:</p>
+
+<pre><code class="language-bash">python3 -m pip install \
+    --trusted-host $hostname \
+    --index-url $url \
+    -r requirements.txt
+
+</code></pre>
+
+<h3>2. App-only depenedencies</h3>
+
+<p>Reveal application-only depenencies.</p>
+
+<blockquote>
+<p>Note: Building in a virgin or managed environment, such as a Docker container, removes the need for this hack  because all dependencies there are application dependencies.</p>
+</blockquote>
+
+<p>Contrary to claims, <strong>there is no Python tool that lists all versioned dependencies of an application</strong> <em>and only those dependencies</em> in environments that are not virgin. Instead, what is generated by such tools is a list of all dependencies of <em>all modules of the current environment</em> regardless of those declared, e.g., in the <code>requirements.txt</code> file. This is true for all tools tested, including the oft-advised <code>pipreqs</code>.</p>
+
+<p>However, there is a simple hack to solve this problem: Containerize it. Otherwise, if working from a host, perform <code>pip</code> install twice on an <em>unversioned</em> module(s) list (<code>requirements.txt</code>) that contains only the primary (known) module(s).  This forces <code>pip</code> to generate the list of application dependencies <em>and their versions</em>, from which a <code>requirements.txt</code> may be generated (albeit tediously):</p>
+
+<p>Example:</p>
+
+<p>@ <a href="requirements.txt"><code>requirements.txt</code></a></p>
+
+<pre><code class="language-text">flask
+</code></pre>
+
+<pre><code class="language-bash">$ python -m pip install -r requirements.txt 
+$ python -m pip install -r requirements.txt |tee pip.install.log
+</code></pre>
+
+<p>Upon that second run, <code>pip</code> generates the following report,
+listing only the actual dependencies of the app, and their versions, not all dependencies of the environment, as otherwise occurs:</p>
+
+<pre><code class="language-text">Requirement already satisfied: flask in /usr/local/lib/python3.9/site-packages (2.0.3)
+Requirement already satisfied: click&gt;=7.1.2 in /usr/local/lib/python3.9/site-packages (from flask) (8.1.6)
+Requirement already satisfied: Werkzeug&gt;=2.0 in /usr/local/lib/python3.9/site-packages (from flask) (2.3.6)
+Requirement already satisfied: Jinja2&gt;=3.0 in /usr/local/lib/python3.9/site-packages (from flask) (3.1.2)
+Requirement already satisfied: itsdangerous&gt;=2.0 in /usr/local/lib/python3.9/site-packages (from flask) (2.1.2)
+Requirement already satisfied: MarkupSafe&gt;=2.0 in /usr/local/lib/python3.9/site-packages (from Jinja2&gt;=3.0-&gt;flask) (2.1.3)
+</code></pre>
+
+<p>Use that report as the basis to generate a <em>versioned</em> <code>requirements.txt</code> :</p>
+
+<pre><code class="language-bash"># Extract the module name list
+$ cat pip.install.log |awk -F ':' '{print $NF}' |awk -F '&gt;' '{print $1}' |awk '{print $1}' |tee c0
+ flask
+ itsdangerous
+ Werkzeug
+ Jinja2
+ click
+ MarkupSafe
+
+# Extract the module version list 
+$ cat pip.install.log |awk '{print $NF}' |tr -d '(' |tr -d ')' |tee c1
+2.0.3
+2.1.2
+2.3.6
+3.1.2
+8.1.6
+2.1.3
+
+# Paste the two lists together 
+$ paste c0 c1 |sed 's/[[:space:]]/==/g' |tee app.requirements.txt
+flask==2.0.3
+itsdangerous==2.1.2
+Werkzeug==2.3.6
+Jinja2==3.1.2
+click==8.1.6
+MarkupSafe==2.1.3
+</code></pre>
+
+<ul>
+<li>This resulting file may require some manual cleanup.</li>
+</ul>
+
+<h2>Applications | <a href="https://pypi.org/">PyPI</a></h2>
+
+<p>PyPI (Python Index) references <em>the</em> server (<code>pypi.org</code>) hosting <em>the</em> repository of all published Python modules.
+To use an alternative repository, Python tools must be informed (using commandline flags and such).
+Separately, many projects host their own web sites and/or have an additional source (typically OSS) repository.</p>
+
+<h3><a href="https://docs.python.org/3/library/http.server.html"><code>http.server.py</code></a></h3>
+
+<p>FS-Directory Server (HTML only)</p>
+
+<pre><code class="language-bash">python3 -m http.server --bind 127.0.0.1 --directory /a/path/
+## --directory /a/path/     @ 3.7+
+## --bind 127.0.0.1         @ 3.4+/8+(IPv6)
+</code></pre>
+
+<pre><code class="language-bash">$ pushd dws
+$ python3.11 -m http.server 8888 --bind 127.0.0.1 --directory v1/web
+Serving HTTP on 127.0.0.1 port 8888 (http://127.0.0.1:8888/) ...
+127.0.0.1 - - [20/Jul/2023 13:03:10] &quot;GET / HTTP/1.1&quot; 200 -
+127.0.0.1 - - [20/Jul/2023 13:03:20] &quot;HEAD / HTTP/1.1&quot; 200 -
+</code></pre>
+
+<pre><code class="language-bash">$ curl -I localhost:8888
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.11.2
+...
+</code></pre>
+
+<h3><a href="https://github.com/MrAmbiG/folderview"><code>folderview</code></a> : Serve a directory</h3>
+
+<pre><code class="language-python">from flask import Flask 
+from flask_autoindex import AutoIndex
+
+app = Flask(__name__)
+
+ppath = &quot;/&quot; # update your own parent directory here
+
+app = Flask(__name__)
+AutoIndex(app, browse_root=ppath)    
+
+if __name__ == &quot;__main__&quot;:
+    app.run()
+
+</code></pre>
+
+<h3><a href="https://werkzeug.palletsprojects.com">Werkzeug</a> : <a href="https://wsgi.readthedocs.io/en/latest/index.html" title="A specification for an interface between app server and web server">WSGI</a> Library</h3>
+
+<blockquote>
+<p><em>Werkzeug is a comprehensive <abbr title="Web Server Gateway Interface">WSGI</abbr> web application library. It began as a simple collection of various utilities for WSGI applications and has become one of the most advanced WSGI utility libraries.</em></p>
+
+<p><em>Werkzeug doesn’t enforce any dependencies. It is up to the developer to choose a template engine, database adapter, and even how to handle requests.</em></p>
+</blockquote>
+
+<p>(See <a href="http://wsgi.tutorial.codepoint.net/intro">WSGI intro</a>.)</p>
+
+<p>To implement <a href="https://pypi.org/project/gunicorn/#description" title="@ PyPI">Gunicorn</a> (Python WSGI HTTP Server) for Flask, use this <code>CMD</code> in <code>Dockerfile</code> :</p>
+
+<pre><code class="language-bash">CMD [&quot;gunicorn&quot;, &quot;--bind&quot;, &quot;0.0.0.0:5555&quot;, &quot;{subfolder}.{file_name}:{flask_name}&quot;]
+</code></pre>
+
+<ul>
+<li>If main module is in root folder with file name <code>main.py</code>, and has Flask-instance variable name <code>myapp</code>, then the final command arg (above) is just &quot;<code>main:myapp</code>&quot;. If that app is moved to subfolders, then the arg becomes &quot;<code>subfolder1_name.subfolder2_name.main:myapp</code>&quot;</li>
+<li>Set workers: <code>-w 4</code></li>
+</ul>
+
+<h2>Anaconda</h2>
+
+<blockquote>
+<p><em>A distribution of the Python and R programming languages for scientific computing (data science, machine learning applications, large-scale data processing, predictive analytics, etc.), that aims to simplify package management and deployment.</em></p>
+</blockquote>
+
+<ul>
+<li><code>conda</code> package manager; the <code>pip</code> for Anaconda
+
+<ul>
+<li>Better dependancy handling than <code>pip</code>.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

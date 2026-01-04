@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AI</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Artificial Intelligence (AI)</h1>
+
+<h2>AI-assited Workflow</h2>
+
+<h3><a href="https://www.youtube.com/watch?v=LUFJuj1yIik" title="DOT">Simple Workflow Commands</a></h3>
+
+<p>References</p>
+
+<ul>
+<li><a href="https://github.com/vfarcic/dot-ai" title="GitHub"><code>dot-ai</code></a>
+
+<ul>
+<li><a href="https://github.com/vfarcic/dot-ai/blob/main/docs/quick-start.md">Quick Start</a>
+
+<ul>
+<li>Product Requirements Document (PRD)</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>Technologies</h3>
+
+<ul>
+<li><strong>AI Agent</strong> : A software system that uses artificial intelligence
+to act autonomously and pursue specific goals.</li>
+<li>LLM (Large Language Model)</li>
+<li><a href="https://modelcontextprotocol.io/docs/getting-started/intro">MCP (Model Context Protocol)</a>
+
+<ul>
+<li><strong>Standard interface</strong> : A <strong>bridge</strong> between AI agent and external systems. Using <strong>MCP servers</strong>, AI applications can connect to <strong>data sources</strong> (e.g. local files, databases), <strong>tools</strong> (e.g. search engines, calculators) and <strong>workflows</strong> (e.g. specialized prompts), enabling them to access key information and perform tasks.</li>
+<li><a href="https://www.youtube.com/watch?v=7baGJ1bC9zE" title="YouTube/DOT"><strong>MCP Server</strong></a>
+
+<ul>
+<li>Terminal agents have access to all CLI tools natively.
+No need to wrap any of that in an MCP server.
+Add an MCP server only to <strong>extend agent capabilities</strong>
+to <strong>satisfy user intentions</strong>.<br>
+
+<ul>
+<li>Access to tools and services inaccessible to the agent alone.
+
+<ul>
+<li>Bundle primitives into higher level construct.
+
+<ul>
+<li><a href="https://github.com/awslabs/mcp">AWS MCP Servers</a>
+
+<ul>
+<li><a href="https://awslabs.github.io/mcp/servers/eks-mcp-server" title="awslabs.github.io">AWS EKS MCP Server</a> |
+<a href="https://github.com/awslabs/mcp/tree/main/src/eks-mcp-server" title="github.com"><code>eks-mcp-server</code></a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Agents can be embedded in an MCP Server!
+
+<ul>
+<li>Else use Sampling; allows client agent to preserve prompts</li>
+</ul></li>
+<li>Use MCP servers to serve prompts</li>
+<li><strong>Combine code, prompts, and agent</strong> as apropos.</li>
+</ul></li>
+</ul></li>
+<li><strong>Vector Database</strong> : For semantic search. Chunk content into pieces fitting the number of elements of a model; embeddings; <strong>embedding model</strong>.</li>
+<li><strong>RAG</strong> (Retrieval Augmented Generation) : Bridge between vector database and AI responses. Provides AI with vector-database enhanced context for the subject query.
+
+<ul>
+<li><abbr title="Large Language Model">LLM</abbr> + <a href="https://en.wikipedia.org/wiki/Vector_database" title="Wikipedia">Vector Databases</a></li>
+</ul></li>
+</ul>
+
+<p>With RAG, an agent query becomes an embedding that searches the vector database, which contains all the rules and meta of your code base, org policies, and such, and provides all that context to the agent.</p>
+
+<h3>Concepts</h3>
+
+<ul>
+<li><strong>AI Context Management</strong><br>
+<a href="https://www.youtube.com/watch?v=XwWCFINXIoU" title="DOT">Serving Prompts through MCPs</a><br>
+Stop Wasting Time:<br>
+
+<ul>
+<li><strong>AI without context is useless</strong>.<br></li>
+<li><strong>Prompts are that context</strong>.</li>
+<li>Turn AI Prompts and <strong>Context</strong> Into Production Code
+
+<ul>
+<li>Treat prompts like prod code; a shared asset that evolves with your team.
+More than merely instructions, prompts are the team's collective knowledge encoded in a way that AI can execute.</li>
+<li>Build the MCP prompt server : Have AI create it, and maintain it as a real Git project, complete with documentation, MR, and such. So, the latest version of all prompts is available for use in all projects by all team members.
+See <code>shared-prompts</code> dir of <a href="https://github.com/vfarcic/dot-ai" title="GitHub : vfarcic/dot-ai"><code>dot-ai</code></a></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Terminal-based Agents</h2>
+
+<ul>
+<li><a href="https://claude.com/product/claude-code">Claude Code</a> | <a href="https://github.com/vfarcic/dot-ai" title="GitHub"><code>dot-ai</code></a>
+
+<ul>
+<li>Phases
+
+<ul>
+<li>Planning : Opus Plan Mode (best)</li>
+<li>Execution : Sonnet (cheap)</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p><a href="https://www.youtube.com/watch?v=MXOP4WELkCc">Everything else sucks.</a></p>
+
+<ul>
+<li><a href="https://cursor.com/blog/cli">Cursor Agent CLI</a></li>
+</ul>
+
+<p>Untested:</p>
+
+<ul>
+<li>goose</li>
+<li>Warp</li>
+<li>gwen-code</li>
+<li>Gemini-cli</li>
+</ul>
+
+<p>Table Stakes:</p>
+
+<ol>
+<li>MCP Servers and their status</li>
+<li>Safe Prompts; security guardrails</li>
+</ol>
+
+<h2>AI-native IDEs</h2>
+
+<p>An AI-native IDE is an Integrated Development Environment built from the ground up with an AI assistant as its core, central component.
+The AI is not a plugin; it's the fundamental interface.</p>
+
+<p>Built to contain and host AI agents</p>
+
+<ul>
+<li>Cursor Agent
+
+<ul>
+<li>IDE is fork of VS Code</li>
+<li>Interacts with IDE-integrated terminal</li>
+</ul></li>
+<li>Warp</li>
+<li>Claude Code</li>
+</ul>
+
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Account Model</th>
+<th>Who You Pay</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Cursor</td>
+<td>Cursor</td>
+<td>Cursor (subscription)</td>
+</tr>
+
+<tr>
+<td>Warp</td>
+<td>Warp</td>
+<td>Warp (freemium/subscription)</td>
+</tr>
+
+<tr>
+<td>Claude for VS Code</td>
+<td>BYOK</td>
+<td>Anthropic</td>
+</tr>
+
+<tr>
+<td>VS Code + Extensions</td>
+<td>BYOK</td>
+<td>Multiple providers directly</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Run LLMs locally</h2>
+
+<p><a href="https://ollama.com/">Ollama</a> is a model runner; run locally.</p>
+
+<ul>
+<li>Works offline</li>
+<li>Requires GPU and such resources</li>
+</ul>
+
+<p>So while Cursor, Warp, and Claude are end-user applications,
+Ollama is more like the engine that can power those applications with local,
+open-source models instead of cloud-based proprietary ones.</p>
+
+<p>It's part of the growing &quot;local-first&quot; AI movement
+that complements rather than replaces the cloud-based tools.</p>
+
+<h2>Prompt Template</h2>
+
+<p>Implement [function/class/endpoint] to [goal] using [library/framework].</p>
+
+<p>Work in [files/paths] only.</p>
+
+<p>Respect [sytle/tests/rules].</p>
+
+<p>Provide [tests/docs/migration].</p>
+
+<p>(And either a or b:)
+a. If assumptions are needed, list them first.
+b. If anything in the plan is ambiguous, stop and output options with trade-offs instead of guessing.</p>
+
+<ul>
+<li>More context begets less cost (tokens).</li>
+<li>Don't let the AI guess.</li>
+<li>Specify the model.</li>
+</ul>
+
+<hr>
+
+<h2><a href="https://www.youtube.com/watch?v=wbo7M2jF0Lc&amp;list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ" title="YouTube : ArdanLabs : Exploring Vector Databases and Embeddings in AI">ArdanLabs : Guide to AI</a></h2>
+
+<h3><a href="https://github.com/ardanlabs/ai-training" title="GitHub"><code>ardanlabs/ai-training</code></a></h3>
+
+<ul>
+<li>Ep.1 : <a href="https://www.youtube.com/watch?v=wbo7M2jF0Lc&amp;list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&amp;index=4">Exploring Vector Databases and Embeddings in AI</a>
+
+<ul>
+<li><a href="ai-training/examples/example1/main.go">example1</a> :
+
+<ul>
+<li>Hand craft a vector embedding scheme for a data set</li>
+<li>Use cosine-similarity function to evaluate it</li>
+</ul></li>
+</ul></li>
+<li>Ep.2 : <a href="https://www.youtube.com/watch?v=rV162WwQ1hw&amp;list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&amp;index=2">Leveraging LLMs for Powerful Vector Embedding</a>
+
+<ul>
+<li><a href="ai-training/examples/example2/main.go">example2</a> :
+Same as Ep.1, but use an <strong>LLM vector-embedding model</strong> to generate the embedding scheme.
+
+<ul>
+<li><p>Ollama model server : Create vector embedding</p>
+
+<pre><code class="language-Makefile">ollama-pull:
+    ollama pull mxbai-embed-large
+    ollama pull llama3.1
+</code></pre>
+
+<ul>
+<li><code>mxbai-embed-large</code> is for text data</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Ep.3 : <a href="https://www.youtube.com/watch?v=inWa6TTVdfU&amp;list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&amp;index=1">Training AI Models on Custom Data with Word2Vec</a> : <a href="https://github.com/fogfish/word2vec">Word2Vec</a> model :
+  a technique in <strong>Natural Language Processing</strong> (NLP)
+  for obtaining vector representations of words.
+  These vectors capture information about the meaning of the word
+  based on the surrounding words.
+
+<ul>
+<li><a href="ai-training/examples/example3/main.go">example3</a> :
+
+<ol>
+<li>Clean the data</li>
+<li>Train the model on the data</li>
+<li>Evaluate/experiment</li>
+</ol></li>
+</ul></li>
+<li>Ep.4 : <a href="https://www.youtube.com/watch?v=HEptRbPbbic&amp;list=PLADD_vxzPcZDzTmmub99S0Ne58ApvJZjJ&amp;index=4">Enhancing AI Similarity Searches with MongoDB</a>
+
+<ul>
+<li><a href="https://www.mongodb.com/products/self-managed/community-edition">MongoDB</a> Atlas (Vector DB extension)</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h2>Level Up</h2>
+
+<p>Fastest path to learn ML, AI/Agenic Framworks, and such</p>
+
+<p>The &quot;fastest path&quot; requires a focused, project-driven approach that prioritizes practical skills over deep theoretical understanding at the beginning. The key is to <strong>build and deploy working systems as quickly as possible.</strong></p>
+
+<p>Here is a structured, <strong><em>four-phase fast-track plan</em></strong>.</p>
+
+<h3>Guiding Philosophy: &quot;Deploy First, Theory Later&quot;</h3>
+
+<ul>
+<li><strong>Goal-Oriented:</strong> You will learn by building specific, tangible projects.</li>
+<li><strong>Stack-Focused:</strong> You'll learn a specific, modern toolchain from day one.</li>
+<li><strong>Iterative:</strong> You will start simple and progressively add complexity.</li>
+</ul>
+
+<hr>
+
+<h3>Phase 1: Foundational Grounding (2-4 Weeks)</h3>
+
+<p><strong>Goal:</strong> Understand the landscape and get your hands dirty with basic code.</p>
+
+<ol>
+<li><p><strong>Core Concepts (The &quot;What&quot;):</strong></p>
+
+<ul>
+<li>Understand the difference between AI, Machine Learning (ML), and Deep Learning.</li>
+<li>Learn key terminology: Supervised vs. Unsupervised Learning, Training vs. Inference, Models, Parameters, etc.</li>
+<li><strong>Resources:</strong> Watch short, conceptual videos on YouTube (channels like <a href="https://www.youtube.com/watch?v=aircAruvnKk">3Blue1Brown</a> for intuition).</li>
+</ul></li>
+
+<li><p><strong>Essential Tooling (The &quot;How&quot;):</strong></p>
+
+<ul>
+<li><strong>Python:</strong> If you don't know it, focus <em>only</em> on the basics: variables, loops, functions, and importing libraries. Use a crash course.</li>
+<li><strong>Libraries:</strong> Install and learn the basic usage of:
+
+<ul>
+<li><code>pandas</code> (for data manipulation)</li>
+<li><code>numpy</code> (for numerical operations)</li>
+<li><code>matplotlib</code>/<code>seaborn</code> (for plotting)</li>
+</ul></li>
+<li><strong>Environment:</strong> Use <strong><a href="https://colab.research.google.com/">Google Colab</a></strong> to start. It's free, has GPUs, and comes with most libraries pre-installed. This avoids setup hell.</li>
+</ul></li>
+
+<li><p><strong>First Project:</strong></p>
+
+<ul>
+<li><strong>Build a classic ML model.</strong> Follow a tutorial to build a simple image classifier (on MNIST dataset) or a house price predictor. Use a high-level library like <code>scikit-learn</code>. The goal is to see a full cycle: load data, train a model, evaluate it.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3>Phase 2: Core Machine Learning &amp; Deep Learning (4-6 Weeks)</h3>
+
+<p><strong>Goal:</strong> Build a solid practical understanding of how neural networks work and how to train them.</p>
+
+<ol>
+<li><p><strong>Deep Learning Fundamentals:</strong></p>
+
+<ul>
+<li><strong>Framework:</strong> Choose <strong>PyTorch</strong>. It's more pythonic and is the dominant framework in research and most new AI companies. (<a href="https://www.youtube.com/watch?v=i8NETqtGHms">TensorFlow</a> is also valid, but PyTorch is recommended for a faster start).</li>
+<li><strong>Core Concepts:</strong> Learn about Tensors, Datasets &amp; DataLoaders, building a simple Neural Network (Linear layers, ReLU), the training loop (loss functions, optimizers), and how to train on a GPU.</li>
+</ul></li>
+
+<li><p><strong>Key Project:</strong></p>
+
+<ul>
+<li><strong>Build an image classifier from scratch.</strong> Use a dataset like CIFAR-10. Don't use a pre-trained model yet. Manually build a Convolutional Neural Network (CNN) in PyTorch. Struggle with the training loop, debugging, and overfitting. This struggle is where the real learning happens.</li>
+</ul></li>
+
+<li><p><strong>Specialize:</strong></p>
+
+<ul>
+<li>Pick one domain to apply your skills:
+
+<ul>
+<li><strong>Computer Vision (CV):</strong> CNNs, Object Detection (YOLO), Image Segmentation.</li>
+<li><strong>Natural Language Processing (NLP):</strong> Transformers, Text Classification, Named Entity Recognition.</li>
+</ul></li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3>Phase 3: The &quot;Agentic&quot; &amp; Modern AI Stack (4-6 Weeks)</h3>
+
+<p><strong>Goal:</strong> Move from static models to interactive, reasoning AI systems using large language models.</p>
+
+<p>This is the most critical and high-value phase for the current market.</p>
+
+<ol>
+<li><p><strong>Master Prompt Engineering &amp; LLM APIs:</strong></p>
+
+<ul>
+<li><strong>Skill:</strong> Learn to effectively call and instruct LLMs via APIs.</li>
+<li><strong>Tool:</strong> Start with the <strong>OpenAI API</strong> (for GPT-4o) or <strong>Anthropic's Claude API</strong>. Learn about system prompts, few-shot learning, and controlling output (temperature, max tokens).</li>
+<li><strong>Project:</strong> Build a simple chatbot or a text summarizer.</li>
+</ul></li>
+
+<li><p><strong>Introduction to RAG (Retrieval-Augmented Generation):</strong></p>
+
+<ul>
+<li><strong>Concept:</strong> This is the foundation of most modern AI applications. It allows an LLM to use your own private data.</li>
+<li><strong>Toolchain:</strong> Learn a basic stack:
+
+<ul>
+<li><strong>Vector Database:</strong> <strong>ChromaDB</strong> (easiest to start with) or <strong>Pinecone</strong> (managed service).</li>
+<li><strong>Embedding Models:</strong> Learn to use OpenAI's <code>text-embedding-ada-002</code> or a similar open-source model.</li>
+</ul></li>
+<li><strong>Project:</strong> Build a <strong>Document Q&amp;A System</strong>. Ingest a PDF (or many), chunk the text, create embeddings, store them in ChromaDB, and query it using an LLM. This is a <em>massive</em> portfolio piece.</li>
+</ul></li>
+
+<li><p><strong>Introduction to AI Frameworks &amp; Agents:</strong></p>
+
+<ul>
+<li><strong>Framework:</strong> Learn <strong>LangChain</strong> or <strong>LlamaIndex</strong>. These are the standard frameworks for building LLM applications.
+
+<ul>
+<li><strong>LangChain:</strong> More flexible, great for building complex agentic workflows where an LLM can use tools (e.g., a calculator, web search, your API).</li>
+<li><strong>LlamaIndex:</strong> Specialized and often simpler for RAG applications.</li>
+</ul></li>
+<li><strong>Project:</strong> Use <strong>LangChain</strong> to build a simple agent. For example, a &quot;Research Agent&quot; that can use the Google Search API to find recent news and then write a summary.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3>Phase 4: Integration &amp; Production (Ongoing)</h3>
+
+<p><strong>Goal:</strong> Turn your scripts into deployable applications.</p>
+
+<ol>
+<li><p><strong>Build a Full-Stack AI Application:</strong></p>
+
+<ul>
+<li>Combine your skills. Build a web app with a frontend that uses your RAG system or agent on the backend.</li>
+<li><strong>Simple Stack:</strong> A <strong>Streamlit</strong> app is the fastest way to create a UI for your Python backend. It's the go-to for data scientists and ML engineers to demo their work.</li>
+</ul></li>
+
+<li><p><strong>Deployment &amp; MLOps Basics:</strong></p>
+
+<ul>
+<li><strong>Containers:</strong> Learn the absolute basics of <strong>Docker</strong>. Create a Dockerfile for your Streamlit app.</li>
+<li><strong>Cloud Deployment:</strong> Deploy your containerized app to a cloud service. The easiest path is <strong>Google Cloud Run</strong> or <strong>AWS ECS</strong>.</li>
+<li><strong>Concept:</strong> Understand what an API endpoint is and how your frontend would call your model.</li>
+</ul></li>
+</ol>
+
+<h3>Your &quot;Fast-Track&quot; Learning Stack Summary</h3>
+
+<table>
+<thead>
+<tr>
+<th align="left">Phase</th>
+<th align="left">Focus Area</th>
+<th align="left">Key Tools &amp; Technologies</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td align="left"><strong>1. Foundation</strong></td>
+<td align="left">Python, Data, Basic ML</td>
+<td align="left">Python, Pandas, NumPy, Scikit-learn, <strong>Google Colab</strong></td>
+</tr>
+
+<tr>
+<td align="left"><strong>2. Core ML/DL</strong></td>
+<td align="left">Neural Networks, Training</td>
+<td align="left"><strong>PyTorch</strong>, CNNs, Transformers</td>
+</tr>
+
+<tr>
+<td align="left"><strong>3. Modern AI</strong></td>
+<td align="left">LLMs, RAG, Agents</td>
+<td align="left"><strong>OpenAI/Claude API</strong>, <strong>ChromaDB</strong>, <strong>LangChain</strong>, <strong>LlamaIndex</strong></td>
+</tr>
+
+<tr>
+<td align="left"><strong>4. Production</strong></td>
+<td align="left">Deployment, Applications</td>
+<td align="left"><strong>Streamlit</strong>, <strong>Docker</strong>, <strong>Google Cloud Run / AWS</strong></td>
+</tr>
+</tbody>
+</table>
+
+<h3>Fastest Possible Path to a Job</h3>
+
+<p>If you need to get job-ready in 3-6 months, your portfolio should consist of these 3 projects:</p>
+
+<ol>
+<li><strong>A &quot;from-scratch&quot; DL Project:</strong> A custom image or text classifier built in PyTorch. (Shows fundamentals).</li>
+<li><strong>A RAG System:</strong> A sophisticated Document Q&amp;A system using LangChain/LlamaIndex and a vector DB. (Shows modern LLM skills).</li>
+<li><strong>A Deployed Agentic App:</strong> A Streamlit web app, deployed on the cloud, that demonstrates an AI agent using tools (e.g., search, calculator, your own data). (Shows full-stack, production potential).</li>
+</ol>
+
+<p><strong>Final Advice:</strong> Don't get stuck in &quot;tutorial purgatory.&quot; Spend 20% of your time on tutorials and 80% on building your own projects, even if they are messy and break. That is the fastest path to true, marketable expertise.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

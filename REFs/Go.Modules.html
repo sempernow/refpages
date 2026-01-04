@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Go.Modules</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Golang Modules : <code>go mod ...</code></h1>
+
+<h2>Init / Maintain</h2>
+
+<p>@ PRJ root directory</p>
+
+<pre><code class="language-bash"># Init (once) | GO111MODULE=&quot;on&quot;
+go mod init 'github.com/sempernow/uqc'
+# 1st time and whenever thereafter
+go mod tidy
+go mod vendor
+</code></pre>
+
+<ul>
+<li>Generates: <code>/go.mod</code> and <code>/go.sum</code> files, and <code>/vendor</code> directory containing the required packages/versions; &quot;vendoring&quot;.</li>
+<li>The required packages must already be @ <code>GOPATH</code>. (See <code>go get</code> section below.)</li>
+<li>To <strong>update</strong> a package version, must MANUALLY CHANGE @ <code>go.mod</code>; versions are set @ 1st run.</li>
+</ul>
+
+<h2>Versioning/Module Incompatibilities of <code>git</code>/<code>go</code></h2>
+
+<p>Deleting cache (@ <code>GOPATH</code>) does nothing for versioning. Git tags (versions) are immutable; entirely orthogonal to, and override, commits. For example, even if an old tag (version) is deleted from its commit (both locally and at origin) and then added back to a newer commit, the old commit remains hard welded thereto regardless. The only way to update its imported Golang package (@ <code>/vendor</code>) to the new commit is to either update the version number (@ <code>git</code>) and manually change to it at <code>go.mod</code>, not use <code>git</code> versioning (tags) at all, or &quot;version&quot; per repo name, e.g., <code>repo/v3</code>. That last method gets declared at <code>go.mod</code> as <code>v0.0.0-...-&lt;SVN-reference&gt;</code>. Note also that <code>go get ...</code> behavior changes per <code>GO111MODULE</code> setting; to include that it may or may not download to <code>GOPATH</code> if <code>on</code>, and that declaring the version (per <code>path@version</code> syntax) is forbidden if <code>off</code>.</p>
+
+<h2><code>go get ...</code></h2>
+
+<p>Anywhere <strong>not</strong> @ PRJ directory</p>
+
+<pre><code class="language-bash"># Download the latest repo
+GO111MODULE=&quot;off&quot; go get -u 'github.com/sempernow/uqc'
+</code></pre>
+
+<ul>
+<li>Behavior of <code>go get</code> tool varies with that and other <code>go env</code> settings, the command's working directory, and <code>-u</code> .</li>
+</ul>
+
+<h2><code>git</code> : Versioning Workflow</h2>
+
+<p>@ PRJ root</p>
+
+<pre><code class="language-bash"># Init SSH session (ssh-agent; long-lived)
+. github ssh
+# Add origin (run once)
+git remote add origin $_USERNAME/$_REPONAME.git 
+</code></pre>
+
+<pre><code class="language-bash"># Status 
+gs
+# Logs 
+gl
+# Commit
+gc
+
+# Version (Tag) a commit
+git tag -a v0.1.2 $commit
+
+# Push the current commit 
+git push origin master
+# Push the version (info)
+git push origin v0.1.2
+
+# Delete a version
+git tag -d v0.1.1                  # Delete local
+git push origin --delete v0.1.1    # Delete remote
+
+# Branch : Checkout else Create
+gch [NAME] # defaults to new; NAME=MM:SS
+
+# Branch : Delete 
+git branch -d NAME             # Local
+git push origin --delete NAME  # Remote
+
+# Repo : Rebase
+_max_squash=$(( $( git rev-list --count HEAD ) - 1 ))
+git rebase -i HEAD~$_max_squash
+</code></pre>
+
+<ul>
+<li>The <code>git rebase ...</code> command <strong><em>automatically opens</em></strong> the meta file with editor declared @ <code>.gitconfig</code></li>
+</ul>
+
+<p>@ <code>vim</code></p>
+
+<pre><code class="language-bash">:2,7s/pick/s/g #... to squash commits 2-7
+#... then delete/add/edit the commit message
+ESC
+ZZ
+</code></pre>
+
+<p>Push to remote; must force because <code>origin</code> (remote) will be &quot;ahead&quot; after squashing commits.</p>
+
+<pre><code class="language-bash">git push --force-with-lease 
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

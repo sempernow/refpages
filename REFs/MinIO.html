@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>MinIO</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://github.com/minio/operator/" title="GitHub">MinIO Operator</a></h1>
+
+<p><a href="https://chatgpt.com/share/6724d4f3-c96c-8009-bef9-5d90921fc464" title="ChatGPT">MinIO on K8s v. Host</a></p>
+
+<h2>Install @ <a href="https://min.io/docs/minio/kubernetes/upstream/operations/installation.html">MinIO/Docs</a> | <a href="https://github.com/minio/operator/tree/master"><code>minio/operator</code></a></h2>
+
+<p>A labyrinth of methods are involved, and at least one adjacent project is required,
+to perform the basic installation.</p>
+
+<p>Pods failing to deploy are due, at least in part,
+to cluster being single-node and lacking StorageClass/Provisioner.</p>
+
+<h3><a href="docs/minio-operator-v6.0.4.yaml"><code>minio-operator</code></a></h3>
+
+<pre><code class="language-bash">ver=6.0.4
+app=minio-operator-v$ver.yaml
+
+# Step 1 : Method 1
+kubectl apply -k &quot;github.com/minio/operator?ref=v6.0.4&quot; --dry-run=client -o yaml \
+    |yq '.items | .[]' |sed '1!s/^apiVersion/---\napiVersion/' \
+    |tee $app
+
+# Step 1 : Method 2
+k kustomize github.com/minio/operator\?ref=v$ver |tee $app
+
+# Deploy the app
+k apply -f $app
+k -n minio-operator get all
+</code></pre>
+
+<pre><code class="language-plaintext">NAME                                  READY   STATUS    RESTARTS   AGE
+pod/minio-operator-5dc4f5748f-7p4cn   1/1     Running   0          55m
+pod/minio-operator-5dc4f5748f-99hp9   0/1     Pending   0          55m
+
+NAME               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/operator   ClusterIP   10.43.43.208   &lt;none&gt;        4221/TCP   55m
+service/sts        ClusterIP   10.43.35.79    &lt;none&gt;        4223/TCP   55m
+
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/minio-operator   1/2     2            1           55m
+
+NAME                                        DESIRED   CURRENT   READY   AGE
+replicaset.apps/minio-operator-5dc4f5748f   2         2         1       55m
+</code></pre>
+
+<h3><a href="docs/minio-operator-tenant.yaml"><code>minio-tenant</code></a></h3>
+
+<pre><code class="language-bash">☩ k -n minio-tenant get all
+</code></pre>
+
+<pre><code class="language-plaintext">NAME                   READY   STATUS    RESTARTS   AGE
+pod/myminio-pool-0-0   0/2     Pending   0          11m
+pod/myminio-pool-0-1   0/2     Pending   0          11m
+pod/myminio-pool-0-2   0/2     Pending   0          11m
+pod/myminio-pool-0-3   0/2     Pending   0          11m
+
+NAME                      TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+service/minio             ClusterIP   10.43.146.30   &lt;none&gt;        443/TCP    11m
+service/myminio-console   ClusterIP   10.43.89.165   &lt;none&gt;        9443/TCP   11m
+service/myminio-hl        ClusterIP   None           &lt;none&gt;        9000/TCP   11m
+
+NAME                              READY   AGE
+statefulset.apps/myminio-pool-0   0/4     11m
+</code></pre>
+
+<h2>Install @ <a href="https://operatorhub.io/operator/minio-operator">OperatorHub.io/OLM</a></h2>
+
+<p>Utilizes Operator Lifecycle Manager (OLM) project.</p>
+
+<p>Install fails regardless of the multiple methods provided.</p>
+
+<p>The installation script presented in its &quot;Install&quot; pop-up of
+&quot;How to install an Operator from OperatorHub.io&quot; page breaks by HTTP 404, even after finding and downloading the script itself, at all other resources tested.</p>
+
+<p>See <a href="olm/install.sh"><code>olm/install.sh</code></a></p>
+
+<p>The hand-crafted install script built by reverse engineering the install script and manually pulling those manifests (<a href="olm/install-minio.sh"><code>olm/install-minio.sh</code></a>)
+installs all assets of that script, yet the result of applying those manifests is a failure to deploy its pods due to some sort of security issue regarding its own declarations.</p>
+
+<h2>Project Meta</h2>
+
+<pre><code class="language-plaintext">    .
+    ├── docs
+    │   ├── minio-operator-tenant-dry-run.yaml
+    │   └── minio-operator-v6.0.4-dry-run.yaml
+    ├── olm
+    │   ├── crds.yaml
+    │   ├── install-minio.sh
+    │   ├── install.sh
+    │   ├── minio-operator.yaml
+    │   └── olm.yaml
+    ├── README.html
+    └── README.md
+
+    2 directories, 9 files
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

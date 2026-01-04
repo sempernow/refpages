@@ -1,0 +1,232 @@
+DynamoDB    
+========
+    Managed NoSQL database service; SERVERLESS; key-value data store; designed for Online TRANSACTION Processing (OLTP); supports BOTH document AND key:value DATA MODELS; JSON format; tables/items/attributes; data @ SSD storage @ '3 geographically distinct data centers'; CONDITIONAL WRITEs - multiple write requests, some of which may fail, are executed only once [idempotent]; ATOMIC COUNTERs [updates are NOT idempotent]; BATCH OPERATIONS per `BatchGetItem` API, one request retrieves up to 1 MB of data (max 100 items) from multiple tables; AWS SDK interfaces JSON docs to DynamoDB tables enabling nested JSON queries using a few lines of code;    
+
+    AWS CLI  https://docs.aws.amazon.com/cli/latest/reference/dynamodb/index.html
+        aws dynamodb [COMMAND]
+
+        Eventual Consistency Reads (DEFAULT)    
+            data consistency after ~ 1 second; if no new updates are made to a given data item, eventually all accesses to that item will return the last updated value.    
+
+        Strong Consistency Reads    
+            data is consistent; all access returns state reflecting all successful writes prior to the read.    
+
+    http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html    
+    
+    alt: MongoLab    https://mlab.com/    
+        
+    # Data Types    
+
+        Scalar:        Number, String, Binary, Boolen, Null    
+        Multi-valued:  String Set, Number Set, Binary Set    
+        Document:      List, Map    
+
+    # Primary Keys :: 2 Types    
+
+        BOTH include PARTITION KEY; DynamoDB internally hashes the partition key value; builds an UNORDERED HASH INDEX thereof, which determines the PHYSICAL LOCATION (the partition) whereof the item is stored.    
+
+        1. Single Attribute    
+            "Partition Key" ("Hash Key"); one attribute; hash (unique ID) attribute; most common; such a partition key can only occur ONCE per table.    
+
+        2. Composite    
+            "Partition Key & Sort Key" ("Hash & Range Key"); two attributes; hash (unique ID) attribute, and (date) range attribute; DynamoDB builds an additional SORTED RANGE INDEX per that range (sort) attribute; such a primary key allows MULTIPLE occurances of the hash (unique ID) per table, each having a DIFFERENT range (sort) key;    all items having the same partition key (hash key) are sorted together, in sort order per sort key value; e.g., one user (unique ID) having multiple time-distinguished (range) entries.    
+
+        I.e., LINGO is 'hash' <=> 'partition', and 'range' <=> 'sort'    
+
+    # Indexes    
+
+        Local Secondary Index (LSI)     
+            SAME Partition key; different Sort key; created only upon table creation;can NOT delete; max 5 per table    
+
+        Global Secondary Index (GSI)    
+            DIFFERENT Partition key; different Sort key; created EITHER upon table creation, OR added/deleted later; max 5 per table     
+
+        USE Query, Get, BatchGetItem APIs for efficient search    
+
+    # Query    
+        search table for items by PRIMARY KEY attribute value, i.e., by PARTITION [hash] KEY value, and optionally by SORT [range] KEY too; more efficient than Scan; searches only primary keys; filter results; "Eventually Consistent" by default, but can requrest "Strong Consistency" on READs;    
+
+        Returns 
+            by default, returns ALL data attributes for items matching the query; `ProjectionExpression` filters returned attributes to some subset thereof;
+
+            Sorted    
+                return is sorted by the sort key; ordered numerically, if that datatype, else ordered by ASCII char code value; ascending by default;reverse order per `ScanIndexForward` set to `false`.    
+
+    # Scan    
+        searches entire table; filter results; by default, returns ALL data attributes for items matching the query; `ProjectionExpression` filters the return;    
+
+    # Triggers    
+        associates with a Lambda function; automatically execute a custom function per item change per table.    
+
+    # Streams    
+        database images/snapshots; a time ordered sequence of table changes; if updated, 'before' & 'after' images; if deleted, a 'before' image; per item; organized into groups (chards); removed every 24 hrs (max); used to monitor; can trigger Lambda     
+
+    # DynamoDB Accelerator (DAX)    
+        a fully managed, highly available, IN-MEMORY CACHE; delivers 10x performance. 
+
+    https://aws.amazon.com/dynamodb/details/    
+
+    # Security Groups    
+
+        - DB Security Group   controls access to DB instance OUTSIDE a VPC    
+        - VPC Security Group  controls access to DB instance INSIDE a VPC    
+        - EC2 Security Group  controls access to EC2 instance; CAN use @ DB instance.    
+
+    # Provisioned Throughput Capacity
+
+        Units [CAPACITY]    
+
+            Read Capacity Unit  = 2 read/second   /4KB @ EVENTUALLY consistent    
+            Read Capacity Unit  = 1 read/second   /4KB @ STRONGLY consistent    
+            Write Capacity Unit = 1 write/second  /1KB    
+
+                Secondary Indexes require DOUBLE capacity units,    
+                i.e., one write to table and one to index    
+
+        Throughput REQUIREMENT Calculations    
+        
+            Read Throughput REQUIRED [Units]    
+                
+                roundUp(Size/4) * Items / 2  @ Eventual Consistency    
+                roundUp(Size/4) * Items      @ Strong Consistency    
+
+            Write Throughput REQUIRED [Units]    
+
+                roundUp(Size/1) * Items    
+
+        ERRor Code    
+
+            400 HTTP Status Code  ProvisionedThroughputExceededException    
+            - exceeded max provisioned throughput for EITHER     
+                a table or for one or more global secondary indexes.    
+
+        DynamoDB PRICING     
+            - Read  Throughput @ $0.0065/hr /50 units    
+            - Write Throughput @ $0.0065/hr /10 units    
+            - Storage; first 25 GB is free    
+                - $0.25/GB /month thereafter    
+
+            Example:    
+                If app needs 1M writes + 1M reads per 24 hrs, and stores 28 GB of data, then DynamoDB costs $7.50/mo    
+
+                WRITEs cost ...    
+
+                    1M writes/24hr = 11.6 writes/second => 12 units of Write Capacity    
+
+                    12 * 24 * ($0.0065/hr)/10 = $0.1872/day  [$5.62/mo]    
+
+                READs cost ...    
+
+                    12 * 24 * ($0.0065/hr)/50 = $0.0374/day  [$1.13/mo]     
+
+                STORAGE costs ...    
+
+                    $0.25/GB/mo * (28 - 5)GB = $0.75/mo    
+
+    # Authentication per Web Identity Providers    
+
+        App authentication per ROLE, per request/response to/from AWS "Security Token Service" (STS), per its `AssumeRoleWithWebIdentity` API, including a "Web Identity Token" from any "Open-ID Connect" compatible Identity Provider, e.g., Facebook, Google, Amazon;    
+
+            Process:    
+            1. User Authenticates with Identity Provider (ID Provider)    
+            2. Token sent/recieved from ID Provider    
+            3. STS called per `AssumeRoleWithWebIdentity` API    
+                passing Token and ARN for IAM Role     
+            4. App granted temporary access to DynamoDB    
+
+            Request contains:    
+                1. Web Identity Token    
+                2. App ID of provider    
+                3. ARN of Role    
+
+            AWS STS issues Temporary Security Credentials    
+
+            Response contains:    
+                1. AccessKeyID, SecretAccessKey, SessionToken    
+                2. Expiration time; 15 min - 1 hr (default)    
+                3. AssumeRoldID    
+                4. SubjectFromWebIdentity Token (unique ID)    
+
+        STS API    http://docs.aws.amazon.com/STS/latest/APIReference/Welcome.html    
+        programmatically, per SDKs, or AWS console [GUI]     
+
+        DynamoDB > Tables > select table > Access control [tab]    
+            Identity provider > Facebook/Google/...  [select]    
+            Actions > BatchGetItem/.../Query/...     [select]    
+            "Create policy"  [button] > creates JSON     
+            "Attach policy instructions"    > follow    
+            ... IAM > "Create New Role" >    
+                > Select Role Type > "Role for Identity Provider Access"    
+                > "Grant access to web identity providers" > Select [button]    
+                    > Identity Provider > [select]    
+                    > Application ID > enter it    
+                "Next Step"
+                "Verify Role Trust"; shows generated Policy Document [JSON]    
+                ... COPY/SAVE to clipboard         
+                "Next Step"
+                ...    skip "Attach Policy"; will use that generated above    
+                > Policies > Get Started [button] > Create Policy    
+                > Create Your Own Policy [select]    
+                    > Policy Document > paste policy doc [JSON] created above     
+                > Roles > select role created herein    
+                > Attach Policy    
+
+# LAB: DynamoDB @ [EC2] PHP SDK    
+===============================
+    Create Role @ IAM; Create EC2 instance and apply the Role; launch EC2 with bootstrap scripts that load PHP composer SDK; use to create DynamoDB environment and load some tables.    
+
+# LAB: DynamoDB @ GUI, or AWS CLI + SDK
+=======================================
+    # Create DynamoDB table @ GUI    
+
+        DynamoDB > "Create table"    
+            > Table name > name it    
+            # SINGLE-ATTRIBUTE PRIMARY KEY    
+            > Primary key > Id [type:Number] [Partition key]    
+            "Table settings" > "Use deault settings" [UNcheck]    
+            # GLOBAL SECONDARY INDEX    
+            "Add index" >    
+                > Primary key > 'ProductCategory' [type:String] [Partition key]    
+                > Add sort key > 'Price'          [type:Number] [Sort key]
+                > Index Name > 'ProductCategory-Price-Index' [auto-generated]    
+                "Add index" [button]
+            "Create" [button]    
+
+            Items [tab]    
+            > "Create item"    
+                Id    
+                ProductCategory    
+                Price    
+                Title    
+                ...    
+
+    # @ Chrome browser :: JSON Editor app    
+    
+    # @ AWS CLI :: import JSON per SDK [JS, Python, ...]    
+        $ aws dynamodb    ...    
+        # http://docs.aws.amazon.com/cli/latest/reference/dynamodb/index.html    
+
+LAB: DynamoDB with NodeJS SDK    
+=============================
+    Already created IAM Role with admin policy, so sans credentials; integrated SFTP + Git with Atom editor/IDE; launched + connected to EC2, so saves thereto per SSH; See "06 Lab Session - Setting up for NodeJS Development - AWS Certified Developer"; EC2 instance is t2.micro of 'Backspace Academy - NodeJS' AMI, which has NodeJS + Express installed.    
+
+    SDKs    https://aws.amazon.com/tools/
+
+    @ index.js    
+        // Load AWS SDK for NodeJS    
+        var AWS = require('aws-sdk');    
+        // Set Region    
+        AWS.config.region = 'us-east-1';    
+        var db = new AWS.DynamoDB();     
+        db.listTables(function(err, data) {    
+            console.log(data.TableNames);    
+        });    
+
+    # Import Data as Items    
+
+    # SSH into EC2    
+    # Navigate to application    
+    $ pushd node-js-samplejs    
+    # run node on it    
+    $ node index.js    
+    

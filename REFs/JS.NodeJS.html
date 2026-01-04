@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JS.NodeJS</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://nodejs.org/en/" title="nodejs.org">Node.js</a></h1>
+
+<h2>Muster all dependencies for air-gap builds</h2>
+
+<p>To capture <strong>all dependencies</strong> (including transitive ones recursively) of a Node.js application and archive them into individual <em>.tar.gz</em> (or <em>.tgz</em>) files for fully offline/air-gapped builds, use one of these reliable approaches. These methods ensure you have every exact package version needed, as npm resolves and fetches the full tree during installation.</p>
+
+<h3>Recommended Approach: Populate npm Cache and Extract Tarballs (Pure npm, No Extra Tools)</h3>
+
+<p>This is the most straightforward and official way using npm's built-in cache. It produces one <em>.tgz</em> per package (exactly what npm publishes).</p>
+
+<ol>
+<li><p>On a machine <strong>with internet access</strong>:</p>
+
+<ul>
+<li>Navigate to your project directory.</li>
+<li>Run <code>npm install</code> (or <code>npm ci</code> if you have a <code>package-lock.json</code> for exact versions). This downloads and resolves <strong>all dependencies recursively</strong> into <code>node_modules</code> and populates the npm cache (usually at <code>~/.npm/_cacache</code>).</li>
+<li>The cache now contains every <em>.tgz</em> file for all packages in the dependency tree.</li>
+</ul></li>
+
+<li><p>Locate and copy the tarballs:</p>
+
+<ul>
+<li>The tarballs are in your npm cache directory (run <code>npm config get cache</code> to confirm the path, e.g., <code>~/.npm</code>).</li>
+<li>Inside it, go to <code>_cacache/content-v2/sha512/</code> (or similar; the structure uses content-addressable storage based on SHA512 hashes).</li>
+
+<li><p>To extract them cleanly, run:</p>
+
+<pre><code>npm pack $(npm ls --all --parseable | tail -n +2) --dry-run
+</code></pre>
+
+<p>This lists all tarballs that would be packed without downloading anything new.</p>
+
+<ul>
+<li><p>Then, copy them to your working directory:</p>
+
+<pre><code>npm pack $(npm ls --all --parseable | tail -n +2)
+</code></pre>
+
+<p>This places one <code>&lt;package-name&gt;-&lt;version&gt;.tgz</code> file per dependency (including transitive ones) in the current directory.</p></li>
+</ul></li>
+
+<li><p>Alternatively, manually copy all files from the cache subfolders—each is a raw <em>.tgz</em>.</p></li>
+</ul></li>
+
+<li><p>Transfer the resulting set of <em>.tgz</em> files to the air-gapped machine.</p></li>
+
+<li><p>On the <strong>air-gapped machine</strong>:</p>
+
+<ul>
+<li><p>Add all tarballs to the npm cache:</p>
+
+<pre><code>npm cache add /path/to/*.tgz
+</code></pre>
+
+<p>(Do this for each, or use a loop: <code>for f in *.tgz; do npm cache add &quot;$f&quot;; done</code>)</p></li>
+
+<li><p>Now run <code>npm install</code> (or <code>npm ci</code>) in your project directory. npm will use only the cached tarballs—no network access needed.</p></li>
+</ul></li>
+</ol>
+
+<p>This ensures <strong>everything</strong> is included (including native modules that don't require compilation, or pre-built binaries). For packages with native code requiring build tools, ensure the air-gapped environment has compatible compilers (e.g., gcc, Python).</p>
+
+<h3>Alternative: Use a Dedicated Tool for Automated Tarball Bundling</h3>
+
+<p>If the manual cache extraction feels cumbersome, install and use the <code>package-bundle</code> tool (available on npm):</p>
+
+<ol>
+<li><p>On the internet-connected machine:</p>
+
+<pre><code>npm install -g package-bundle
+package-bundle
+</code></pre>
+
+<ul>
+<li>This reads your <code>package.json</code> (or specify packages manually) and downloads <strong>all recursive dependencies</strong> as original <em>.tgz</em> files.</li>
+<li>Options:
+
+<ul>
+<li><code>--no-dev</code>: Skip devDependencies.</li>
+<li><code>--flat</code>: Save in a flat structure (default is npm-like hierarchy).</li>
+</ul></li>
+<li>It outputs a folder full of <code>&lt;package-name&gt;-&lt;version&gt;.tgz</code> files.</li>
+</ul></li>
+
+<li><p>Transfer the <em>.tgz</em> files to the air-gapped machine.</p></li>
+
+<li><p>On the air-gapped machine: Same as above—<code>npm cache add</code> each tarball, then <code>npm install</code>.</p></li>
+</ol>
+
+<p>This tool is specifically designed for offline/air-gapped scenarios and handles recursion automatically.</p>
+
+<h3>Other Options (If You Prefer a Different Format)</h3>
+
+<ul>
+<li><p><strong>Single bundle with bundledDependencies</strong> (one big <em>.tgz</em> for the whole app):</p>
+
+<ul>
+<li>Temporarily edit your <code>package.json</code> to add <code>&quot;bundledDependencies&quot;: [...]</code> listing <strong>all</strong> direct dependencies (get the list via <code>npm ls --depth=0</code>).</li>
+<li>Run <code>npm pack</code>. This creates one <code>&lt;your-app&gt;-&lt;version&gt;.tgz</code> containing your code + all deps bundled inside <code>package/node_modules</code>.</li>
+<li>On air-gapped: <code>npm install /path/to/your-app.tgz</code>.</li>
+<li>Drawback: Less granular (not individual module tarballs), and manual list maintenance.</li>
+</ul></li>
+
+<li><p><strong>Archive the entire node_modules</strong> (simplest, but not tarballs per module):</p>
+
+<ul>
+<li>After <code>npm install</code>, zip/tar the <code>node_modules</code> folder + your source code + <code>package.json</code>/<code>package-lock.json</code>.</li>
+<li>On air-gapped: Unzip and run the app directly (no <code>npm install</code> needed).</li>
+<li>This works perfectly for runtime, but if you need to &quot;build&quot; (e.g., run scripts), it includes everything.</li>
+</ul></li>
+</ul>
+
+<p>The cache/tarball methods are best for true air-gapped reproducibility, as they mirror exactly how npm fetches packages from the registry. Always test the offline process on a isolated machine first.</p>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

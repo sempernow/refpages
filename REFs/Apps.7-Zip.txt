@@ -1,0 +1,25 @@
+Useful switches [See _7zip.bat]
+===============================
+
+	CREATE/ADD:  a -stl PWS ARCHIVE SOURCE       # ARCHIVE mtime set to that of newest @ SOURCE
+
+	    UPDATE:  u -stl -uq3 PWS ARCHIVE SOURCE  # delete file[s] @ ARCHIVE if not exist @ SOURCE @7z-only
+		
+	   EXTRACT:  x -aoa PWS ARCHIVE -oTARGET     # to TARGET folder; Overwrite TARGET
+	             x -so  PWS ARCHIVE              # to StdOut [not all formats supported] 
+				 
+	      TEST:  t -r PWS ARCHIVE                # all/recurse
+		  
+	      LIST:  l -r PWS ARCHIVE                # all/recurse
+		  
+	     BENCH:  b  [See cmdline options]        # LZMA [de]compress; rpt MIPS; 
+	                                               normalized to Intel Core 2 CPU
+
+	Where PWS is `-p"PASSWORD" -mhe`             # if applicable, else nul; for 7z only
+		
+		
+Cygwin version does NOT preserve attributes [h,s,...]
+=====================================================
+	Tested @ 
+		/bin/7z 
+		/bin/7za 

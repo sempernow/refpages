@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>REST.API</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.quora.com/What-is-a-REST-API" title="2017 Quora.com :: Ruben Verborgh, Professor of Semantic Web technology, MIT">What is a REST API</a></h1>
+
+<h2>4 Rules (<code>TL;DR</code>)</h2>
+
+<ol>
+<li>Offer access through resources
+
+<ul>
+<li>Things; addresses, not instructions per se.</li>
+</ul></li>
+<li>Represent resources by representations
+
+<ul>
+<li>One address per thing. (E.g., not per format.)</li>
+</ul></li>
+<li>Exchange self-descriptive messages
+
+<ul>
+<li>Stand-alone messages; xfr per standards only (E.g., HTTP methods.)</li>
+</ul></li>
+<li>Connect resources through links
+
+<ul>
+<li>All things are addressed, and only by their (unique) hyperlinks.</li>
+</ul></li>
+</ol>
+
+<h2><a href="https://en.wikipedia.org/wiki/Representational_state_transfer" title="Wikipedia">Representaional State Transfer (REST)</a></h2>
+
+<p>A REST API leverages HTTP request <em>types</em> to indicate the desired action. The characteristics of REST are the <strong>four rules</strong> of <strong>uniform interface</strong>:</p>
+
+<ol>
+<li>Offer access through resources</li>
+<li>Represent resources by representations</li>
+<li>Exchange self-descriptive messages</li>
+<li>Connect resources through links</li>
+</ol>
+
+<p>APIs that follow these rules are REST APIs.</p>
+
+<h2>1. Offer access through resources</h2>
+
+<h4>NOT REST</h4>
+
+<pre><code>/changeTodoList.php?item=35&amp;action=changeTitle&amp;title=new_title
+</code></pre>
+
+<p>Note how this is indeed <strong>an instruction</strong>: change something. But a “changeTodoList” is <strong>not a thing</strong>, it's <strong>not a resource</strong>.</p>
+
+<p><strong>In the REST architectural style, servers only offer resources</strong>. Resources are conceptual things about which clients and servers communicate.</p>
+
+<h4>REST</h4>
+
+<pre><code>/todolists/7/items/35/
+</code></pre>
+
+<p>This above thing is not a command, it is the <strong>address of a resource, a thing</strong>. You can then use this address to manipulate the to-do list using standard operations, instead of interface-specific commands.</p>
+
+<h2>2. Represent resources by representations</h2>
+
+<p>A resource is a thing —and we can describe those things in <em>different formats</em>. For instance, humans might want to see an HTML version, which your browser transforms into a readable layout. But sometimes, interfaces on the Web are used by machines, too. They need a different format, such as JSON.</p>
+
+<p>In a non-REST way, <strong>different formats have different addresses</strong>:</p>
+
+<h4>NOT REST</h4>
+
+<pre><code>browser:     /showTodoList.php?format=html
+application: /showTodoList.php?format=json
+</code></pre>
+
+<p>The problem is then that <strong>systems using different formats cannot communicate with each other</strong>, because they use different addresses for the same things!</p>
+
+<p><strong>In a REST system</strong>, addresses identify things, not formats, so all systems use <strong>the same address for the same thing</strong>. How can they get different formats then? They explicitly ask for it! The technique that enables this is called <strong><em>content negotiation</em></strong>; one URI for many formats, &quot;<em>negotiated</em>&quot; per <strong>HTTP Headers</strong> (<a href="p>
+
+<ul>
+<li><code>Accept: &lt;MIME_type&gt;/&lt;MIME_subtype&gt;</code></li>
+</ul>
+
+<h4>REST</h4>
+
+<pre><code>browser:     /todolists/7/  +Header: Accept: text/html
+application: /todolists/7/  +Header: Accept: Accept: application/json
+</code></pre>
+
+<h2>3. Exchange self-descriptive messages</h2>
+
+<p>In a REST system, we should be able to interpret any message without having seen the previous one. Imagine the following conversation:</p>
+
+<h4>NOT REST</h4>
+
+<pre><code>/search-results?q=todo
+/search-results?page=2
+/search-results?page=3
+</code></pre>
+
+<p>The first request gets search results for “todo”; the second request gets the second page of that. Now imagine that you only see the second request. How would you know as a server what to do? In REST, each message stands on its own:</p>
+
+<h4>REST</h4>
+
+<pre><code>/search-results?q=to-do
+/search-results?q=todo&amp;page=2
+/search-results?q=todo&amp;page=3
+</code></pre>
+
+<p>Note how <strong>each request can be interpreted by itself</strong>. Another aspect of this, is that REST clients and servers <strong>only use standard operations</strong>, which are defined in a specification. <em>For the Web, this specification is called HTTP</em>.</p>
+
+<h2>4. Connect resources through links</h2>
+
+<p>How can you navigate a website you've never seen before? You use links! You don't have to manually edit the address bar in your browser every time you go to a new page.</p>
+
+<p>In machine interfaces, this is not always the case. Suppose an application asks for your to-do list. It might receive the following representation:</p>
+
+<h4>NOT REST</h4>
+
+<pre><code>/todolists/7/
+
+{
+  &quot;name&quot;: &quot;My to-dos&quot;,
+  &quot;items&quot;: [35, 36]
+}
+</code></pre>
+
+<p>Now how can you get the items of the list? Good question! We'd have to read the documentation for that. In REST, <strong>resources connect to each other through hyperlinks</strong>:</p>
+
+<h4>REST</h4>
+
+<pre><code>/todolists/7/
+
+{
+  &quot;name&quot;: &quot;My to-dos&quot;,
+  &quot;items&quot;: [&quot;/todolists/7/items/35/&quot;, &quot;/todolists/7/items/36/&quot;]
+}
+</code></pre>
+
+<p>Note how you don't have to read the manual to know how you can retrieve the items of your list. You just follow the links.</p>
+
+<h2><a href="https://en.wikipedia.org/wiki/Hypermedia" title="Wikipedia">Hypermedia</a> APIs</h2>
+
+<p>Many interfaces that label themselves as “REST” are actually something else (“HTTP interfaces”), because they don't follow all of the rules.</p>
+
+<p><strong>Rules 2</strong> and <strong>4</strong> <strong>are often violated</strong>, but it's not entirely uncommon to see rule 1 being violated as well. For those developers, “REST” simple means “we didn't do the XML messages thing”.</p>
+
+<p>REST interfaces that follow all four rules are now often called “<strong>hypermedia APIs</strong>”, referring to the <strong>fourth rule</strong>.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>HTML5.Forms</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Forms" title="MDN">HTML <code>&lt;form&gt;</code></a></h1>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input" title="MDN">HTML Form <code>&lt;input&gt;</code> element</a> :: <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Form_%3Cinput%3E_types" title="MDN">Types</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Attributes" title="MDN">Attributes</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#Methods" title="MDN">Methods</a></h2>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/enctype" title="MDN">HTML Form <code>enctype</code></a></h2>
+
+<h4><code>&lt;form ... enctype=&quot;...&quot;&gt;</code></h4>
+
+<pre><code>application/x-www-form-urlencoded   Default type.
+multipart/form-data                 @ File uploads.
+text/plain                          @ HTML5.
+</code></pre>
+
+<ul>
+<li><p>@ <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Forms/Sending_and_retrieving_form_data#A_special_case_sending_files" title="MDN">File Uploads</a></p>
+
+<pre><code class="language-html">&lt;form 
+    method=&quot;post&quot; 
+    enctype=&quot;multipart/form-data&quot;
+&gt;
+  &lt;div&gt;
+    &lt;label for=&quot;file&quot;&gt;Choose a file&lt;/label&gt;
+    &lt;input type=&quot;file&quot; id=&quot;file&quot; name=&quot;myFile&quot;&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;button&gt;Send the file&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/form&gt;
+</code></pre></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Forms/Form_validation#Using_built-in_form_validation" title="MDN">Form Validation</a> :: HTML5 Built-in</h2>
+
+<h3>HTML :: <a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Forms/Form_validation#The_required_attribute" title="MDN"><code>&lt;input ... required&gt;</code></a></h3>
+
+<pre><code class="language-html">&lt;form&gt;
+    &lt;label for=&quot;choose&quot;&gt;Would you prefer a banana or a cherry?&lt;/label&gt;
+    &lt;input 
+        id=&quot;choose&quot; 
+        name=&quot;i_like&quot; 
+        required pattern=&quot;banana|cherry&quot;
+    &gt;
+    &lt;label for=&quot;pass&quot;&gt;PASSWORD&lt;/label&gt;
+    &lt;input 
+        type=&quot;password&quot; 
+        name=&quot;pass&quot;
+        minlength=&quot;12&quot; 
+        maxlength=&quot;99&quot; 
+        size=&quot;30&quot; 
+        required
+    &gt;
+    &lt;button type=&quot;submit&quot;&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+</code></pre>
+
+<h3>CSS :: <code>:valid</code> and <code>:invalid</code> pseudo-types</h3>
+
+<pre><code class="language-css">input:invalid {
+    border: 2px dashed red;
+}
+
+input:valid {
+    border: 2px solid black;
+}
+</code></pre>
+
+<ul>
+<li>However, the message popup of <code>&lt;input ... required&gt;</code> is <strong><em>hard coded</em></strong>  (UI/UX) into browsers; cannot be fixed using CSS alone; the <strong><em>fix requires javascript</em></strong>.</li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/API/Constraint_validation" title="MDN">Constraint Validation API</a> :: HTML5 + JS</h2>
+
+<h3><a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement/checkValidity" title="MDN"><code>checkValidity()</code></a></h3>
+
+<ul>
+<li><code>&lt;input type=&quot;number&quot; ... min=&quot;1&quot; max=&quot;10&quot;&gt;</code></li>
+<li><code>&lt;input ... required pattern=&quot;banana|cherry&quot;&gt;</code></li>
+<li><code>&lt;input ... required pattern=&quot;[A-Za-z]+&gt;</code></li>
+<li><code>&lt;input ... required minlength=&quot;6&quot;&gt;</code></li>
+</ul>
+
+<h4>HTML</h4>
+
+<pre><code class="language-html">&lt;form id=&quot;signUpForm&quot;&gt;
+    &lt;input type=&quot;email&quot; min=&quot;1&quot; id=&quot;emailField&quot; placeholder=&quot;Email Address&quot;&gt;
+    &lt;button id=&quot;okButton&quot; disabled&gt;OK&lt;/button&gt;
+&lt;/form&gt;
+&lt;p id=&quot;signUpForm-post&quot;&gt;&lt;/p&gt;
+</code></pre>
+
+<h4>JS</h4>
+
+<pre><code class="language-js">const signUpForm = document.getElementById('signUpForm')
+const emailField = document.getElementById('emailField')
+const okButton = document.getElementById('okButton')
+const msg = document.getElementById('signUpForm-post')
+
+msg.style.display = &quot;none&quot; 
+okButton.disabled = true
+
+emailField.addEventListener('keyup', function (event) {
+    isValidEmail = emailField.checkValidity();
+    console.log(&quot;status ::&quot;,isValidEmail,emailField.value)
+    if (isValidEmail &amp;&amp; emailField.value) {
+        okButton.disabled = false
+    } else {
+        okButton.disabled = true
+    }
+})
+
+okButton.addEventListener('click', function (event) {
+    console.log(&quot;value ::&quot;,emailField.value)
+    if (emailField.value) {
+        signUpForm.setAttribute('hidden', '')
+        signUpForm.style.display = &quot;none&quot; 
+        msg.innerHTML = 'Thanks!'
+        msg.style.display = &quot;block&quot; 
+    }
+    else {
+        msg.innerHTML = 'Must be valid.'
+        msg.style.display = &quot;block&quot; 
+    }
+     //signUpForm.submit()
+    event.preventDefault() // disable POST action; do nothing
+})
+</code></pre>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Learn/HTML/Forms/How_to_build_custom_form_widgets" title="MDN">Custom Form Widgets</a></h2>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

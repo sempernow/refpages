@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.gitlab-runner.RBAC</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>K8s <code>gitlab-runner</code> RBAC</h1>
+
+<h2>Q:</h2>
+
+<p>What is the appropriate K8s RBAC resources to configure a glr-manager in namespace &quot;<code>glr-manager</code>&quot; that allows for deploying and managing workloads (<code>pods</code>, <code>deployment</code>, <code>secrets</code>, ...) but only in namespace &quot;teams&quot;</p>
+
+<h2>A:</h2>
+
+<p>To allow a <code>glr-manager</code> (in namespace <code>glr-manager</code>) to deploy and manage workloads such as <code>Pods</code>, <code>Deployments</code>, <code>Secrets</code>, etc., but <strong>only within the <code>teams</code> namespace</strong>, you need to:</p>
+
+<hr>
+
+<h3>✅ 1. Use a <strong>ServiceAccount</strong> in Namespace <code>glr-manager</code></h3>
+
+<p>This is the identity your GitLab Runner pods use.</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: glr-manager
+  namespace: glr-manager
+</code></pre>
+
+<hr>
+
+<h3>✅ 2. Create a <strong>ClusterRole</strong> in Namespace <code>teams</code></h3>
+
+<p>This defines what actions are allowed within the <code>teams</code> namespace.</p>
+
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: glr-access
+rules:
+- apiGroups: [&quot;&quot;, &quot;apps&quot;, &quot;batch&quot;]
+  resources: [&quot;pods&quot;, &quot;pods/log&quot;, &quot;services&quot;, &quot;secrets&quot;, &quot;configmaps&quot;, &quot;deployments&quot;, &quot;replicasets&quot;, &quot;jobs&quot;, &quot;cronjobs&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;, &quot;create&quot;, &quot;update&quot;, &quot;patch&quot;, &quot;delete&quot;]
+</code></pre>
+
+<hr>
+
+<h3>✅ 3. Create a <strong>RoleBinding</strong> in the <code>teams</code> namespace</h3>
+
+<p>This binds the service account in the <code>glr-manager</code> namespace to the role in <code>teams</code>.</p>
+
+<pre><code class="language-yaml">apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: glr-access-binding
+  namespace: teams
+subjects:
+- kind: ServiceAccount
+  name: glr-manager
+  namespace: glr-manager
+roleRef:
+  kind: ClusterRole
+  name: glr-access
+  apiGroup: rbac.authorization.k8s.io
+</code></pre>
+
+<hr>
+
+<h3>Summary</h3>
+
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Namespace</th>
+<th>Purpose</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>ServiceAccount</td>
+<td><code>glr-manager</code></td>
+<td>Used by GitLab Runner</td>
+</tr>
+
+<tr>
+<td>ClusterRole</td>
+<td>N/A</td>
+<td>Grants workload management permissions</td>
+</tr>
+
+<tr>
+<td>RoleBinding</td>
+<td><code>teams</code></td>
+<td>Allows above ServiceAccount to use the Role</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>💡 This setup ensures <strong>namespace isolation</strong>: the runner can only manage workloads in <code>teams</code>, even though it's running in <code>glr-manager</code>.</p>
+</blockquote>
+
+<h2>Additionally,</h2>
+
+<p>The <code>glr-manager</code> must be allowed to create resources in its own namespaces, so</p>
+
+<pre><code class="language-yaml"># RoleBinding to bind that Role to the runner's ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: glr-manager-job-binding
+  namespace: glr-manager
+subjects:
+- kind: ServiceAccount
+  name: glr-manager
+  namespace: glr-manager
+roleRef:
+  kind: Role
+  name: glr-manager-job-manager
+  apiGroup: rbac.authorization.k8s.io
+</code></pre>
+
+<pre><code class="language-yaml"># Role for managing job pods and related resources in glr-manager namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: glr-manager-job-manager
+  namespace: glr-manager
+rules:
+- apiGroups: [&quot;&quot;, &quot;apps&quot;, &quot;batch&quot;]
+  resources:
+    - pods
+    - pods/log
+    - configmaps
+    - secrets
+    - services
+    - jobs
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;, &quot;create&quot;, &quot;update&quot;, &quot;patch&quot;, &quot;delete&quot;]
+
+</code></pre>
+
+<h2>How to protect the glr-manager then</h2>
+
+<p>That's an excellent and subtle insight — and here's the nuanced answer:</p>
+
+<blockquote>
+<p>✅ <strong>Yes, you <em>can</em> protect the GitLab Runner controller from teams</strong>, <strong>but only if you separate execution and deployment namespaces</strong> — <strong>and don’t run ephemeral CI jobs in <code>glr-manager</code></strong>.</p>
+</blockquote>
+
+<hr>
+
+<h2>🔄 Why You're Feeling Stuck</h2>
+
+<p>If:</p>
+
+<ul>
+<li>CI jobs (ephemeral runner pods) run in <code>glr-manager</code>, and</li>
+<li>Those pods run developer-supplied code (<code>script:</code> in <code>.gitlab-ci.yml</code>),</li>
+</ul>
+
+<p>Then:</p>
+
+<ul>
+<li>You're giving <strong>developer-controlled pods access to the same namespace</strong> that holds the GitLab Runner controller, config, and ServiceAccount.</li>
+
+<li><p>Those pods can, unless otherwise blocked:</p>
+
+<ul>
+<li>Mount the same <code>ServiceAccount</code> (if not using <code>automountServiceAccountToken: false</code>)</li>
+<li>Read or patch shared ConfigMaps, Secrets, or even disrupt the controller</li>
+</ul></li>
+</ul>
+
+<p>So <strong>yes — it's a real attack surface</strong>, and many don't realize this.</p>
+
+<hr>
+
+<h2>✅ Real Isolation Strategy</h2>
+
+<p>To <strong>truly isolate the GitLab Runner controller from developers</strong>, follow this model:</p>
+
+<h3>🧩 Runner controller in <code>glr-manager</code> namespace</h3>
+
+<ul>
+<li>Long-lived Deployment</li>
+<li>Uses a ServiceAccount: <code>glr-manager</code></li>
+<li>Only binds that SA with RBAC to target namespace(s), like <code>teams</code></li>
+</ul>
+
+<h3>🧩 CI job pods run in a separate namespace (<code>teams</code>)</h3>
+
+<ul>
+<li><p>You must configure the runner Helm chart to:</p>
+
+<pre><code class="language-yaml">runners:
+namespace: teams
+</code></pre></li>
+
+<li><p>This causes job pods to spawn <strong>in <code>teams</code></strong></p></li>
+
+<li><p>Developers control <code>teams</code>, but <strong>have no access to <code>glr-manager</code></strong></p></li>
+</ul>
+
+<h3>✅ Net result:</h3>
+
+<table>
+<thead>
+<tr>
+<th>Namespace</th>
+<th>What Happens There</th>
+<th>Who Has Access</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>glr-manager</code></td>
+<td>Runner controller pod</td>
+<td>Infra team only</td>
+</tr>
+
+<tr>
+<td><code>teams</code></td>
+<td>CI job pods, app workloads</td>
+<td>Developers + runner SA</td>
+</tr>
+</tbody>
+</table>
+
+<p>Developers can:</p>
+
+<ul>
+<li>Deploy and manage in <code>teams</code></li>
+<li>Write <code>.gitlab-ci.yml</code> that spawns jobs (in <code>teams</code>)</li>
+</ul>
+
+<p>But <strong>cannot touch</strong>:</p>
+
+<ul>
+<li>The GitLab Runner controller pod</li>
+<li>Its ConfigMaps, Secrets, logs</li>
+<li>The Helm release or its <code>ServiceAccount</code></li>
+</ul>
+
+<hr>
+
+<h2>🔥 Why Mixing Both in One Namespace is Dangerous</h2>
+
+<p>If ephemeral jobs run in the same namespace as the controller:</p>
+
+<ul>
+<li>Devs can <code>kubectl get secrets</code> or even <code>exec</code> into another pod, unless prevented</li>
+<li>You'd need complex policies to isolate <strong>pods from pods in the same namespace</strong></li>
+<li>Even PodSecurityPolicy / PodSecurityAdmission can’t fully enforce RBAC-like isolation within a namespace</li>
+</ul>
+
+<hr>
+
+<h2>🛡 Additional Hardening (if needed)</h2>
+
+<ul>
+<li>Set <code>automountServiceAccountToken: false</code> for CI jobs to prevent API access</li>
+<li>Use OPA/Gatekeeper to prevent pods in <code>glr-manager</code> from accessing runner resources</li>
+<li>Use Kubernetes <code>NetworkPolicy</code> to prevent job pods from talking to the controller pod</li>
+</ul>
+
+<hr>
+
+<h2>✅ TL;DR: You <em>Can</em> Isolate — but Only if:</h2>
+
+<ul>
+<li>CI job pods run in a <strong>different namespace</strong> (e.g., <code>teams</code>)</li>
+<li>You do <strong>not</strong> run any dev-controlled code in the <code>glr-manager</code> namespace</li>
+</ul>
+
+<h2><code>values.yaml</code></h2>
+
+<p>To implement the above:</p>
+
+<p>Here’s a <strong>secure and minimal <code>values.yaml</code></strong> for the official GitLab Runner Helm chart, designed to:</p>
+
+<h3>✅ Goals:</h3>
+
+<ul>
+<li>Deploy the GitLab Runner <strong>controller</strong> in namespace: <code>glr-manager</code></li>
+<li>Ensure <strong>ephemeral job pods</strong> run in namespace: <code>teams</code></li>
+<li>Use a <code>ServiceAccount</code> that only has RBAC permissions in <code>teams</code></li>
+<li>Prevent CI job pods from touching anything in <code>glr-manager</code></li>
+</ul>
+
+<hr>
+
+<h2>📄 <code>values.yaml</code> for GitLab Runner</h2>
+
+<pre><code class="language-yaml">## Runner registration
+gitlabUrl: https://gitlab.example.com/
+runnerRegistrationToken: &quot;__REPLACE_ME__&quot;
+
+## Optional labels
+runners:
+  tags: [&quot;k8s&quot;, &quot;secure&quot;]
+
+
+  kubernetes:
+    ## Don't automatically mount SA tokens in job pods (limit abuse)
+    automountServiceAccountToken: false # Prevents the downward API from injecting the token
+
+  ## Namespace where ephemeral CI job pods will run:
+  namespace: teams
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceAccountName: glr-manager
+
+  ## Optional: Add limits to CI job pods
+  resources:
+    limits:
+      memory: &quot;512Mi&quot;
+      cpu: &quot;500m&quot;
+    requests:
+      memory: &quot;256Mi&quot;
+      cpu: &quot;250m&quot;
+
+  ## Optional: Job pod cleanup
+  podAnnotations:
+    cleanup.after.success: &quot;true&quot;
+    cleanup.after.failure: &quot;true&quot;
+
+## Install ServiceAccount in glr-manager namespace
+serviceAccount:
+  create: true
+  name: glr-manager
+
+## Optional: Use RBAC just for the namespace it runs jobs in
+rbac:
+  create: false  # We'll define custom RBAC externally — more secure
+
+## Disable host-level mounts for security
+metrics:
+  enabled: false
+</code></pre>
+
+<hr>
+
+<h2>🚀 How to Deploy This Securely</h2>
+
+<h3>1. Create Namespace(s)</h3>
+
+<pre><code class="language-bash">kubectl create namespace glr-manager
+kubectl create namespace teams
+</code></pre>
+
+<h3>2. Install Helm Chart</h3>
+
+<pre><code class="language-bash">helm repo add gitlab https://charts.gitlab.io
+helm repo update
+
+helm upgrade --install glr-manager gitlab/gitlab-runner \
+  -n glr-manager \
+  -f values.yaml
+</code></pre>
+
+<h3>3. Create RBAC for ServiceAccount (<code>glr-manager</code>) in <code>teams</code></h3>
+
+<p>You <strong>must manually</strong> create the Role/RoleBinding to allow deployments in <code>teams</code>:</p>
+
+<pre><code class="language-yaml"># role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: teams
+  name: glr-access
+rules:
+- apiGroups: [&quot;&quot;, &quot;apps&quot;, &quot;batch&quot;]
+  resources: [&quot;pods&quot;, &quot;deployments&quot;, &quot;replicasets&quot;, &quot;services&quot;, &quot;jobs&quot;, &quot;cronjobs&quot;, &quot;secrets&quot;, &quot;configmaps&quot;, &quot;persistentvolumeclaims&quot;]
+  verbs: [&quot;get&quot;, &quot;list&quot;, &quot;watch&quot;, &quot;create&quot;, &quot;update&quot;, &quot;patch&quot;, &quot;delete&quot;]
+---
+# rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: teams
+  name: glr-access-binding
+subjects:
+- kind: ServiceAccount
+  name: glr-manager
+  namespace: glr-manager
+roleRef:
+  kind: Role
+  name: glr-access
+  apiGroup: rbac.authorization.k8s.io
+</code></pre>
+
+<p>Apply it:</p>
+
+<pre><code class="language-bash">kubectl apply -f role.yaml
+kubectl apply -f rolebinding.yaml
+</code></pre>
+
+<hr>
+
+<h2>✅ What This Achieves</h2>
+
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Namespace</th>
+<th>Access</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>GitLab Runner (control)</td>
+<td><code>glr-manager</code></td>
+<td>Has <strong>no rights</strong> there</td>
+</tr>
+
+<tr>
+<td>CI Job Pods</td>
+<td><code>teams</code></td>
+<td>Full access to workloads</td>
+</tr>
+
+<tr>
+<td>Developers</td>
+<td><code>teams</code></td>
+<td>Can deploy, but not modify runner</td>
+</tr>
+
+<tr>
+<td>Secrets in <code>glr-manager</code></td>
+<td><code>glr-manager</code></td>
+<td>Not readable by CI jobs</td>
+</tr>
+</tbody>
+</table>
+
+<p>This is the secure separation you're aiming for. Let me know if you'd like to also:</p>
+
+<ul>
+<li>Use an external secret manager (e.g., Vault),</li>
+<li>Use imagePullSecrets or affinity rules,</li>
+<li>Block specific container images or commands in CI jobs.</li>
+</ul>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# … ⋮ ︙ • “” ‘’ – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻  ⚐ ⚑
+# ☢  ☣  ☠  ¦ ¶ § † ‡ ß µ ø Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦  ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 𝐋𝐀𝐁
+# ⚠️ ✅ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🧳 🥇 ✨️ 🔚
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

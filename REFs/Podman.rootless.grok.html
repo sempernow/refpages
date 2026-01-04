@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Podman.rootless.grok</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Podman Rootless for AD users on RHEL</h1>
+
+<h1>Q:</h1>
+
+<p>Scalable solution for provisioning Podman rootless environments for unprivileged AD users on RHEL?</p>
+
+<h1>A:</h1>
+
+<p>Provisioning scalable, rootless Podman environments for unprivileged Active Directory (AD) users on Red Hat Enterprise Linux (RHEL) requires careful configuration to ensure each user has an isolated, secure, and functional container environment. Below is a detailed solution to achieve this, leveraging Podman’s rootless capabilities, RHEL’s integration with AD, and best practices for scalability. The solution assumes RHEL 8 or later, as rootless Podman support is more mature in these versions.</p>
+
+<hr>
+
+<h3>Solution: Scalable Rootless Podman Environments for AD Users on RHEL</h3>
+
+<h4>1. <strong>Prerequisites</strong></h4>
+
+<ul>
+<li><strong>RHEL System</strong>: Ensure you’re running RHEL 8 or 9 with Podman installed (<code>sudo dnf install podman</code>).</li>
+<li><strong>AD Integration</strong>: Configure the RHEL system to integrate with Active Directory using <code>realmd</code> or <code>sssd</code> for user authentication and management.</li>
+<li><strong>Rootless Podman Requirements</strong>:
+
+<ul>
+<li>Enable user namespaces in the kernel: <code>echo 'kernel.unprivileged_userns_clone=1' &gt; /etc/sysctl.d/userns.conf</code> and apply with <code>sudo sysctl -p /etc/sysctl.d/userns.conf</code>.[](<a href="https://medium.com/devops-dudes/how-to-setup-root-less-podman-containers-efd109fa4e0d">https://medium.com/devops-dudes/how-to-setup-root-less-podman-containers-efd109fa4e0d</a>)</li>
+<li>Install <code>slirp4netns</code> or <code>passt</code> for user-mode networking (<code>sudo dnf install slirp4netns</code> or <code>sudo dnf install passt</code>).[](<a href="https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md">https://github.com/containers/podman/blob/main/docs/tutorials/rootless_tutorial.md</a>)</li>
+<li>Ensure <code>cgroup v2</code> is enabled for resource management: Add <code>systemd.unified_cgroup_hierarchy=1</code> to <code>/etc/default/grub</code>, then rebuild GRUB config and reboot.[](<a href="https://medium.com/devops-dudes/how-to-setup-root-less-podman-containers-efd109fa4e0d">https://medium.com/devops-dudes/how-to-setup-root-less-podman-containers-efd109fa4e0d</a>)</li>
+</ul></li>
+<li><strong>Storage</strong>: Plan for user-specific container storage in home directories (<code>$HOME/.local/share/containers/storage</code>) or a centralized location for scalability.[](<a href="https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics">https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics</a>)</li>
+</ul>
+
+<h4>2. <strong>AD Integration for User Management</strong></h4>
+
+<p>To allow AD users to log in and use rootless Podman, configure RHEL to authenticate against AD:
+- Install required packages: <code>sudo dnf install realmd sssd oddjob oddjob-mkhomedir samba-common-tools</code>.
+- Join the AD domain using <code>realm join --user=&lt;AD-admin&gt; &lt;domain.example.com&gt;</code>.
+- Enable automatic home directory creation: <code>sudo authselect select sssd with-mkhomedir --force</code>.
+- Verify AD users can log in: <code>id &lt;ad-user@domain.example.com&gt;</code>.</p>
+
+<p>Ensure each AD user has a home directory created upon login, as Podman stores container data in <code>$HOME/.local/share/containers/storage</code> by default.[](<a href="https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics">https://developers.redhat.com/blog/2020/09/25/rootless-containers-with-podman-the-basics</a>)</p>
+
+<h4>3. <strong>Configure SubUID/SubGID for Rootless Podman</strong></h4>
+
+<p>Rootless Podman relies on user namespaces, requiring each user to have a range of subordinate UIDs and GIDs defined in <code>/etc/subuid</code> and <code>/etc/subgid</code>. For AD users, this is challenging because they are not local users. Use the following approach:</p>
+
+<ul>
+<li><p><strong>Centrally Manage SubUID/SubGID</strong>:</p>
+
+<ul>
+<li><p>For AD users, <code>sssd</code> can map AD user IDs to a range of sub-UIDs and sub-GIDs. Edit <code>/etc/sssd/sssd.conf</code> to include:</p>
+
+<pre><code class="language-ini">[sssd]
+domains = domain.example.com
+
+[domain/domain.example.com]
+id_provider = ad
+override_space = local
+subuid_range = 100000-165535
+subgid_range = 100000-165535
+</code></pre></li>
+</ul>
+
+<p>Restart <code>sssd</code>: <code>sudo systemctl restart sssd</code>.
+- This assigns a unique range of sub-UIDs and sub-GIDs to each AD user, ensuring no overlap. Verify with <code>podman unshare cat /proc/self/uid_map</code> after logging in as an AD user.[](<a href="https://access.redhat.com/solutions/6216591)[](https://blog.christophersmart.com/2021/01/26/user-ids-and-rootless-containers-with-podman/">https://access.redhat.com/solutions/6216591)[](https://blog.christophersmart.com/2021/01/26/user-ids-and-rootless-containers-with-podman/</a>)</p></li>
+
+<li><p><strong>Automate SubUID/SubGID Assignment</strong>:</p>
+
+<ul>
+<li><p>Use a script to dynamically assign ranges for new AD users. For example:</p>
+
+<pre><code class="language-bash">#!/bin/bash
+USER=$1
+START_UID=$((100000 + $(id -u $USER) * 65536))
+END_UID=$((START_UID + 65535))
+echo &quot;$USER:$START_UID:65536&quot; | sudo tee -a /etc/subuid
+echo &quot;$USER:$START_UID:65536&quot; | sudo tee -a /etc/subgid
+</code></pre>
+
+<p>Run this script for each AD user or integrate it with a user provisioning system. Ensure ranges do not overlap with existing users.</p></li>
+</ul></li>
+</ul>
+
+<h4>4. <strong>Storage Configuration for Scalability</strong></h4>
+
+<p>By default, Podman stores container images and data in <code>$HOME/.local/share/containers/storage</code>, which may not scale well for many users or large images. Consider these options:</p>
+
+<ul>
+<li><p><strong>Centralized Storage</strong>:</p>
+
+<ul>
+<li>Create a shared storage location (e.g., <code>/var/lib/containers/user/&lt;username&gt;</code>), mounted with appropriate permissions.</li>
+
+<li><p>Configure Podman to use this location by editing <code>$HOME/.config/containers/storage.conf</code> for each user:</p>
+
+<pre><code class="language-toml">[storage]
+driver = &quot;overlay&quot;
+rootless_storage_path = &quot;/var/lib/containers/user/&lt;username&gt;/storage&quot;
+</code></pre></li>
+
+<li><p>Ensure the storage directory is owned by the user: <code>sudo chown &lt;ad-user&gt;: /var/lib/containers/user/&lt;ad-user&gt;</code>.[](<a href="https://kcore.org/2023/12/13/adventures-with-rootless-containers/">https://kcore.org/2023/12/13/adventures-with-rootless-containers/</a>)</p></li>
+</ul></li>
+
+<li><p><strong>NFS Considerations</strong>:</p>
+
+<ul>
+<li>If home directories are on NFS, ensure Podman supports extended attributes (xattrs) for UID/GID mapping. Use <code>fuse-overlayfs</code> if native overlayfs is unsupported.[](<a href="https://www.redhat.com/ko/blog/podman-rootless-overlay">https://www.redhat.com/ko/blog/podman-rootless-overlay</a>)</li>
+<li>Alternatively, configure a dedicated storage volume for container data to avoid NFS limitations.</li>
+</ul></li>
+</ul>
+
+<h4>5. <strong>Networking for Rootless Containers</strong></h4>
+
+<p>Rootless Podman uses <code>slirp4netns</code> or <code>passt</code> for networking, as unprivileged users cannot configure network namespaces.[](<a href="https://documentation.suse.com/smart/container/html/rootless-podman/index.html">https://documentation.suse.com/smart/container/html/rootless-podman/index.html</a>)</p>
+
+<ul>
+<li><strong>Install Networking Tools</strong>:
+
+<ul>
+<li>For RHEL, install <code>passt</code> (preferred since Podman 5.0) or <code>slirp4netns</code>: <code>sudo dnf install passt</code>.</li>
+</ul></li>
+<li><strong>Port Binding</strong>:
+
+<ul>
+<li>Unprivileged users cannot bind to ports below 1024. To allow this (e.g., for HTTP on port 80), set: <code>sudo sysctl net.ipv4.ip_unprivileged_port_start=80</code>.[](<a href="https://kcore.org/2023/12/13/adventures-with-rootless-containers/">https://kcore.org/2023/12/13/adventures-with-rootless-containers/</a>)</li>
+<li>Map container ports to host ports above 1024: <code>podman run -p 8080:80 &lt;image&gt;</code>.</li>
+</ul></li>
+<li><strong>Inter-Container Communication</strong>:
+
+<ul>
+<li>Place containers in the same pod to share a network namespace: <code>podman pod create --name user-pod; podman run --pod user-pod &lt;image&gt;</code>.[](https://# &quot;___&quot;)</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

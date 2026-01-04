@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.kind</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><code>kind</code> : <a href="https://kind.sigs.k8s.io/" title="kind.sigs.k8s.io">Kubernetes in Docker</a> | <a href="https://github.com/kubernetes-sigs/kind/releases">Releases</a></h1>
+
+<h2>TL;DR</h2>
+
+<p><code>kind</code> is a tool for running local Kubernetes clusters
+using Docker container(s) as &quot;node(s)&quot;.
+The app was designed for testing Kubernetes itself,
+but is widely used <strong>for local development</strong> or CI.</p>
+
+<pre><code class="language-bash">bash kind-install.sh
+</code></pre>
+
+<ul>
+<li><a href="kind-install.sh"><code>kind-install.sh</code></a></li>
+</ul>
+
+<h2>Install</h2>
+
+<pre><code class="language-bash">unset arch
+[[ $(uname -m) == x86_64 ]]  &amp;&amp; arch=amd64
+[[ $(uname -m) == aarch64 ]] &amp;&amp; arch=arm64
+# https://github.com/kubernetes-sigs/kind/releases
+v=0.24.0
+to=/usr/local/bin/kind
+type -t kind &amp;&amp; kind --version |grep $v || {
+    [[ $arch ]] &amp;&amp; { 
+        sudo curl -sSLo $to https://kind.sigs.k8s.io/dl/v$v/kind-linux-$arch &amp;&amp; 
+        sudo chmod +x $to &amp;&amp; 
+        kind --version |grep $v || exit 1
+    }
+}
+
+</code></pre>
+
+<h2>Useage</h2>
+
+<pre><code class="language-bash"># Create K8s cluster 
+kind create cluster 
+kind create cluster --name kind-other
+kind create cluster --config custom-kind-config.yaml
+
+# Create K8s cluster of a declared version 
+img=kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8
+cat &lt;&lt;-EOH |kind create cluster --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  image: $img
+- role: worker
+  image: $img 
+EOH
+
+# Build kind from source (of declared version) and then create K8s cluster
+ver=0.23.0
+go install sigs.k8s.io/kind@v$ver &amp;&amp; kind create cluster
+
+</code></pre>
+
+<ul>
+<li><code>kind create cluster</code> also creates <code>~/.kube</code> file(s).</li>
+<li><code>kind delete cluster</code> also purges <code>~/.kube/config</code></li>
+<li><a href="#configuration">Configuration</a> section has more of that.</li>
+</ul>
+
+<p>&nbsp;</p>
+
+<pre><code class="language-bash"># Inspect
+kind get clusters
+
+# Use K8s-API client 
+kubectl cluster-info # --context kind-kind
+kubectl get ds,deploy,pod,cm,svc -A
+kubectl get node -o wide
+kubectl apply -f appx.yaml
+
+# Load image(s) into cluster &quot;node(s)&quot; 
+kind load docker-image $img_1 $img_2 --name kind-2
+# Load image archive(s) into cluster &quot;node(s)&quot; 
+kind load image-archive $img_1_tarball --name $cluster
+
+# List images of a &quot;node&quot;
+node=kind-control-plane
+docker exec -it $node crictl images
+
+# Teardown
+kind delete cluster 
+</code></pre>
+
+<h2><a href="https://kind.sigs.k8s.io/docs/user/configuration/">Configuration</a> (YAML) <a name="configuration"></a></h2>
+
+<p>Multi-node cluster</p>
+
+<pre><code class="language-yaml"># Multi-node : 1 control-plane nodes and 2 worker nodes
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: kind                      # Default
+networking:
+  podSubnet: &quot;10.244.0.0/16&quot;    # Default
+networking:
+  serviceSubnet: &quot;10.96.0.0/12&quot; # Default
+networking:
+  kubeProxyMode: &quot;ipvs&quot;         # iptables (default), nftables (v1.31+), or ipvs
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: &quot;my-label=true&quot;  
+  kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    apiServer:
+        extraArgs:
+          enable-admission-plugins: NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook 
+- role: worker
+- role: worker
+
+</code></pre>
+
+<p>Multi-node HA cluster</p>
+
+<pre><code class="language-yaml"># Multi-node HA : 3 control and 3 workers
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: control-plane
+- role: control-plane
+- role: worker
+- role: worker
+  labels:
+    tier: backend 
+  extraMounts:
+  - hostPath: /path/at/host
+    containerPath: /whereever
+- role: worker
+  labels:
+    tier: frontend
+</code></pre>
+
+<p>Map extra ports to host : <code>extraPortMappings</code></p>
+
+<pre><code class="language-yaml"># Map extra ports to host 
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    listenAddress: &quot;0.0.0.0&quot;    # Optional, defaults to &quot;0.0.0.0&quot;
+    protocol: udp               # Optional, defaults to tcp
+</code></pre>
+
+<p>Set the (K8s) <a href="https://github.com/kubernetes-sigs/kind/releases" title="github.com/kubernetes-sigs/kind/releases">version</a></p>
+
+<p>That versions page implies kind does not support all K8s versions.
+Also note that version numbers of kind and kubernetes do not match.
+For example, kind <code>v0.23.0</code> defaults to K8s <code>v1.30.0</code> (<code>kindest/node:v1.30.0</code>) .</p>
+
+<pre><code class="language-yaml">kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  image: kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8
+- role: worker
+  image: kindest/node:v1.29.4@sha256:3abb816a5b1061fb15c6e9e60856ec40d56b7b52bcea5f5f1350bc6e2320b6f8
+</code></pre>
+
+<ul>
+<li><code>kind</code> supports multi-node (including HA) clusters</li>
+<li><code>kind</code> supports building Kubernetes release builds from source
+
+<ul>
+<li>support for <code>make</code> / <code>bash</code> or <code>docker</code>, in addition to pre-published builds</li>
+</ul></li>
+<li><code>kind</code> supports Linux, macOS and Windows</li>
+<li><code>kind</code> is a CNCF certified conformant Kubernetes installer</li>
+</ul>
+
+<p><strong><code>kind</code> requires</strong> one of: <code>docker</code>, <code>podman</code>, <code>nerdctl</code>.</p>
+
+<p>If rootless (<code>podman</code>'s default configuration),
+then &quot;<code>kind create cluster</code>&quot; will fail.
+<a href="https://kind.sigs.k8s.io/docs/user/rootless/">The workaround for rootless-user environments</a>
+is known to cause system-performance issues.</p>
+
+<p>RHEL 8+ has <code>podman</code> already installed, and it (purposefully) conflicts with <code>docker</code>,
+so installing (switching to) the latter requires flags <code>--allowerasing</code> and (typically) <code>--nobest</code> :</p>
+
+<h3>How to install Docker @ RHEL 8+</h3>
+
+<p>(This does <em>not</em> install the unnecessary <a href="https://www.docker.com/" title="docker.com">Docker Desktop</a>.)</p>
+
+<pre><code class="language-bash"># Prep to install Docker
+sudo dnf install -y dnf-utils
+[[ -f /etc/yum.repos.d/docker-ce.repo ]] \
+    || sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+sudo dnf makecache 
+
+# Latest stable version
+pkgs='docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin'
+# Else a declared version 
+## 1. Find it
+yum list docker-ce --showduplicates |sort -r
+  # docker-ce.x86_64     3:27.0.3-1.el9     docker-ce-stable
+  # ...
+  # docker-ce.x86_64     3:26.1.4-1.el9     docker-ce-stable
+  # docker-ce.x86_64     3:26.1.3-1.el9     docker-ce-stable
+  # ...
+## 2. Select it
+arch=x86_64
+ver=27.0.3-1.el9
+pkgs=&quot;docker-ce-$ver.$arch docker-ce-cli-$ver.$arch containerd.io docker-buildx-plugin docker-compose-plugin&quot;
+
+# Install Docker Engine (the server), client apps, and all their dependencies
+sudo dnf install --allowerasing --nobest $pkgs
+</code></pre>
+
+<ul>
+<li>Docker v1.12+ has <code>containerd</code> as its default (CRI-compliant) container runtime, yet Docker is <em>not</em> CRI-compliant, so Kubernetes requires a shim (<code>dockershim</code>) to interface with Docker regardless. It is not advised to use Docker with Kubernetes in production.</li>
+</ul>
+
+<h2><a href="https://kind.sigs.k8s.io/docs/user/ingress/"><code>ingress-nginx</code> : Install / Configure</a> / Test</h2>
+
+<p>Ingress NGINX Controller</p>
+
+<p>Docs/Configs per context:</p>
+
+<ul>
+<li><a href="https://kubernetes.github.io/ingress-nginx/deploy/#bare-metal-clusters">K8s @ <code>kubernetes.github.io</code></a></li>
+<li><a href="https://kind.sigs.k8s.io/docs/user/ingress/">kind @ <code>kind.sigs.k8s.io</code></a></li>
+</ul>
+
+<p>Create a cluster configured for ingress (controller) at ports <code>80</code> (HTTP) and <code>443</code> (HTTPS)</p>
+
+<h3>@ <code>Ubuntu [14:20:12] [1] [#0] /s/DEV/devops/infra/kubernetes/kind</code></h3>
+
+<pre><code class="language-bash">kind create cluster --config kind-config-ingress-nginx.yaml
+</code></pre>
+
+<ul>
+<li>@ <a href="kind-config-ingress-nginx.yaml"><code>kind-config-ingress-nginx.yaml</code></a></li>
+</ul>
+
+<p>Deploy Ingress NGINX Controller (<code>ingress-nginx</code>) using manifest configured for kind</p>
+
+<pre><code class="language-bash"># kind-specific deployment manifest
+url=https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+# Install it
+kubectl apply -f $url
+# Verify it
+kubectl wait --namespace ingress-nginx \
+    --for=condition=ready pod \
+    --selector=app.kubernetes.io/component=controller \
+    --timeout=90s
+</code></pre>
+
+<p>Save the ingress-nginx controller installation manifest</p>
+
+<pre><code class="language-bash">curl -sSLo ingress-nginx-kind.yaml $url
+</code></pre>
+
+<ul>
+<li>@ <a href="ingress-nginx-kind.yaml"><code>ingress-nginx-kind.yaml</code></a></li>
+</ul>
+
+<p>Usage : Deploy a test app</p>
+
+<pre><code class="language-bash">☩ k apply -f https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+pod/foo-app created
+service/foo-service created
+pod/bar-app created
+service/bar-service created
+Warning: path /foo(/|$)(.*) cannot be used with pathType Prefix
+Warning: path /bar(/|$)(.*) cannot be used with pathType Prefix
+ingress.networking.k8s.io/example-ingress created
+
+☩ curl localhost/foo/hostname
+foo-app
+
+☩ curl localhost/bar/hostname
+bar-app
+</code></pre>
+
+<ul>
+<li>Despite warnings, it works.</li>
+
+<li><p>Docker config may require use <code>node</code>'s <code>INTERNAL-IP</code> (Docker bridge network) <strong>instead of <code>localhost</code></strong>.
+Obtain from either:</p>
+
+<ul>
+<li><code>ip=$(k get node kind-control-plane -o jsonpath='{.status.addresses[0].address}')</code></li>
+
+<li><p><code>ip=$(docker network inspect kind |jq -Mr .[].Containers[].IPv4Address)</code></p>
+
+<pre><code class="language-bash">☩ curl $ip/bar/hostname
+</code></pre></li>
+</ul></li>
+</ul>
+
+<p>Save the usage manifest</p>
+
+<pre><code class="language-bash">curl -sSLo ingress-nginx-kind-usage-oem.yaml https://kind.sigs.k8s.io/examples/ingress/usage.yaml
+</code></pre>
+
+<ul>
+<li>@ <a href="ingress-nginx-kind-usage-oem.yaml"><code>ingress-nginx-kind-usage-oem.yaml</code></a></li>
+<li>@ <a href="ingress-nginx-kind-usage.yaml"><code>ingress-nginx-kind-usage.yaml</code></a>
+
+<ul>
+<li>Modify <code>hostname</code>s, from <code>foo-app</code> to <code>foo</code> (similary for <code>bar</code>),
+and allow apply to <code>stack-test</code> namespace.</li>
+</ul></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

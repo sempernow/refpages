@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>db.Postgres.Deploy</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Postgres Deployment</h1>
+
+<pre><code class="language-bash">docker run -d --rm --name $ctnr -p 5432:5432 \
+    -v $(pwd):/home \
+    -e POSTGRES_DB=${DB_NAME:-dbp} \
+    -e POSTGRES_PASSWORD=${DB_PASSWORD:-postgres} \
+    -e POSTGRES_USER=${DB_USER:-postgres} \
+    'postgres:12.6-alpine'
+</code></pre>
+
+<ul>
+<li>persist: <code>-v $(pwd)/local_pg_data_dir:/var/lib/postgresql/data</code></li>
+</ul>
+
+<h2><a href="https://wiki.postgresql.org/wiki/Warm_Standby">Warm Standby</a></h2>
+
+<pre><code class="language-bash"># Limit addresses per 'postgresql.conf'
+psql -U 'uzr1' -d 'db1' -c 'show listen_addresses'
+</code></pre>
+
+<ul>
+<li>Cannot be <code>localhost</code> if @ Docker swarm cluster</li>
+</ul>
+
+<h2><a href="https://www.postgresql.org/docs/current/runtime-config.html">Server Config</a></h2>
+
+<ul>
+<li><code>/etc/postgresql/postgresql.conf</code></li>
+<li><code>/var/lib/postgresql/data/postgresql.conf</code>
+
+<ul>
+<li>@ Alpine variants</li>
+</ul></li>
+</ul>
+
+<h2>Data directory (default is config dir)</h2>
+
+<ul>
+<li><code>/var/lib/postgresql/data</code></li>
+</ul>
+
+<h4>Show Location:</h4>
+
+<pre><code class="language-bash">psql -h $host -U $user -c 'SHOW config_file;'
+</code></pre>
+
+<pre><code class="language-sql">SHOW config_file;
+</code></pre>
+
+<ul>
+<li>Sample config included @ <a href="https://hub.docker.com/_/postgres" title="hub.docker.com">PostgreSQL images</a>:
+
+<ul>
+<li><code>/usr/share/postgresql/postgresql.conf.sample</code></li>
+<li><code>/usr/local/share/postgresql/postgresql.conf.sample</code>
+
+<ul>
+<li>@ Alpine variants</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Reload @ running server:</h2>
+
+<ul>
+<li><p>@ <code>bash</code> :: <code>pg_ctl</code></p>
+
+<pre><code class="language-bash">pg_ctl reload
+</code></pre></li>
+
+<li><p>@ SQ: :: <code>psql</code></p>
+
+<pre><code class="language-sql">SELECT pg_reload_conf()
+</code></pre></li>
+</ul>
+
+<h2><a href="https://wiki.postgresql.org/wiki/Client_Authentication" title="https://wiki.postgresql.org/wiki/Client_Authentication">Authentication</a> | <a href="https://www.postgresql.org/docs/12/auth-pg-hba-conf.html"><code>pg_hba.conf</code></a></h2>
+
+<h3>Password reset; align with <code>bcrypt</code> method @ services (Golang)</h3>
+
+<pre><code class="language-sql">UPDATE users SET pass_hash = crypt('$DB_OPS_PASS', gen_salt('bf', 10))
+WHERE (handle = 'app') OR (handle = 'AdminTest') OR (handle = 'UserTest');
+</code></pre>
+
+<h2><a href="https://hub.docker.com/_/postgres" title="hub.docker.com :: postgres">@ Docker</a></h2>
+
+<pre><code class="language-plaintext">13.1, 13, latest
+13.1-alpine, 13-alpine, alpine
+12.5, 12
+12.5-alpine, 12-alpine
+11.10, 11
+11.10-alpine, 11-alpine
+10.15, 10
+10.15-alpine, 10-alpine
+9.6.20, 9.6, 9
+9.6.20-alpine, 9.6-alpine, 9-alpine
+9.5.24, 9.5
+9.5.24-alpine, 9.5-alpine
+</code></pre>
+
+<h2><a href="https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html">@ AWS RDS</a> :: <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html#PostgreSQL.Concepts">Managed RDBMS Engine per AMI Instance</a></h2>
+
+<pre><code class="language-bash"># Versions list
+aws rds describe-db-engine-versions \
+    --engine 'postgres' \
+    | jq -r '.DBEngineVersions[].EngineVersion'
+</code></pre>
+
+<ul>
+<li><code>9.5.2, ..., 9.6.8-20, 10.9-15, ..., 11.4-10, ..., 12.2-5</code> (2021-02-10)</li>
+</ul>
+
+<h2>Storage :: Persistence</h2>
+
+<ul>
+<li><p><a href="https://stackoverflow.com/questions/18496940/how-to-deal-with-persistent-storage-e-g-databases-in-docker">How to persistent storage in Docker</a></p>
+
+<pre><code class="language-bash">docker volume create --name vol1
+docker run -d -v vol1:/ctnr_path ctnr_image _some_cmd
+</code></pre></li>
+
+<li><p><a href="https://stackoverflow.com/questions/41637505/how-to-persist-data-in-a-dockerized-postgres-database-using-volumes">How to persist dockerized postgres database</a></p>
+
+<pre><code class="language-yaml">volumes:
+  - ./pg_local_data:/var/lib/postgresql/data
+</code></pre></li>
+
+<li><p><a href="https://stackoverflow.com/questions/42973347/how-to-copy-docker-volume-from-one-machine-to-another">How to copy docker volume from one machine to another?</a></p></li>
+</ul>
+
+<h3>@ AWS :: EC2/EBS</h3>
+
+<ol>
+<li>Attach EBS volume (disk) to EC2 instance
+
+<ul>
+<li><code>/dev/xvdh</code></li>
+</ul></li>
+<li>Make partition (optional)
+
+<ul>
+<li><code>/dev/xvdh1</code></li>
+</ul></li>
+<li>Make filesystem on the partition/disk</li>
+<li>Mount filesystem inside EC2 instance
+
+<ul>
+<li><code>/opt/ebs_data</code></li>
+</ul></li>
+<li>Start Docker container with volume
+
+<ul>
+<li><code>/opt/ebs_data:/var/lib/postgresql/data</code></li>
+</ul></li>
+</ol>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

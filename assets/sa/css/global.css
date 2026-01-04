@@ -1,0 +1,312 @@
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: default;
+    /*
+    DO NOT set globally; breaks certain other dynamics.
+    Set per, e.g., window.scrollTo({top: 0, left: 0, behavior: 'smooth'})
+    scroll-behavior: smooth;
+    */
+    
+}
+main {
+    min-height: 600px;
+}
+
+img {
+    width: 100%; /* responsive */
+}
+
+table,tr,td,th {
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+/*************************************************************************
+    SVG requires `display: block;` or `display: flex;` at its container, 
+    else PERSISTENT SPACE BELOW the SVG element (for descenders; inline).
+
+    https://stackoverflow.com/questions/24626908/how-to-get-rid-of-extra-space-below-svg-in-div-element
+**************************************************************************/
+svg {
+    display: block; 
+}
+
+ul {
+    list-style-type: none;
+}
+
+.margin-lr {
+    margin-left: 1.5em;
+    margin-right: 1.5em;
+}
+.footnote {
+    padding-left: .5em !important;
+    font-size: .75em;
+    border-left: 3px solid var(--title-bkgnd);
+}
+.token,
+.uqrate {
+    font-family: uqrate;
+}
+
+.button {
+    border-radius: 1em;
+}
+a.button,
+span.button {
+    padding: 0 .3em .1em .3em;
+}
+
+button.button {
+    font-size: 1rem;
+    color: #eee;
+    padding: .5em;
+    padding: .3em .7em .3em .65em;
+    border-radius: .5em;
+    background: var(--link-color-drk);
+}
+button.button:hover,
+button.button:focus {
+    background: var(--link-color);
+}
+button.button:active {
+    background: var(--link-color-drk);
+    opacity: .8;
+
+}
+button.download:before {
+    padding-right: 1vw;
+    content: url("/sa/media/svg/download-eee.svg");
+}
+button.copy:before {
+    padding-right: 1vw;
+    content: url("/sa/media/svg/clipboard-eee.svg");
+}
+
+.badges span {
+    filter: grayscale(85%);
+}
+.badges span:hover,
+.badges span:focus,
+.badges span:active {
+    filter: grayscale(0%);
+}
+/* title text on click FAIL : z-index is useless as usual : use dataset + JS. */
+/*
+.badges span[title]:active:after {
+    content:attr(title);
+    position: absolute;
+    left: 30px;
+    top: -60px;
+    min-width: 15rem;
+    color: var(--info-color);
+    border: 1px var(--info-bkgnd) solid;
+    border-radius: 1rem;
+    background-color: var(--info-bkgnd);
+    padding: .8rem;
+    font-size: .8rem;
+}
+*/
+
+.iframe-grayscale {
+    filter: grayscale(70%);
+}
+.iframe-guard {
+    text-align: center;
+    width: 100%;
+    margin: auto;
+    margin-top: calc(var(--header-site-height) +var(--header-page-height));
+    margin-bottom: 2em;
+    opacity: .9;
+}
+.iframe-guard h1,
+.iframe-guard span {
+    font-family: uqrate;
+}
+
+.iframe-guard h1 {
+    font-size: 4.5em;
+    color: var(--header-site-bkgnd);
+    width: 100%;
+}
+.iframe-guard p {
+    font-size: 1.8rem;
+    line-height: 3rem;
+    opacity: .8;
+}
+.iframe-guard p b,
+.iframe-guard span {
+    color: var(--header-site-bkgnd);
+}
+.iframe-guard svg {
+    width: 90%;
+    margin: auto;
+    /*
+    fill is hardcoded @ symbols : #def-uqrate-banner
+    fill: var(--logo-fill); 
+    fill: #442;
+    */
+    fill: #442;
+    background: transparent;
+}
+.iframe-guard svg:hover {
+    background:transparent;
+    /*
+    box-shadow: 0 .15em .2em .1em rgba(0, 0, 0, 0.1);
+    fill is hardcoded @ symbols : #def-uqrate-banner
+    */
+    fill: #990;
+}
+.iframe-guard a:hover {
+    opacity: .85;
+    /* 
+    filter: hue-rotate(-60deg); 
+    */
+}
+
+/* TODO : remove per-path fill @ banner so can target entirety on hover */
+/*
+#def-uqrate-banner:hover path {
+    fill: #990;
+}
+*/
+.iframe-guard .pre {
+    margin-top: 4rem;
+    font-size: .8rem;
+    opacity: .5;
+}
+.iframe-guard .pre pre {
+    margin-left: 20%;
+    text-align: left;
+}
+
+.inside {list-style: inside;}
+.outside {list-style: outside;}
+.big {font-size: 1.2em;}
+.small {font-size: .8em;}
+.italic {font-style: italic;}
+.sans {font-family: sans-serif;}
+.bold {font-weight: bold;}
+.center {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
+}
+.right {float: right;}
+.left {float: left;}
+.clear {clear: both;}
+
+.block {
+    display: block;
+}
+.hide {
+    display: none !important;
+}
+.spread-content {
+    display: flex;
+    justify-content: space-between;
+}
+.spread-content span>span {
+    font-family: uqrate;
+}
+
+.alpha50 {
+    opacity: .5;
+}
+.blur {
+    filter: blur(8px);
+    -webkit-filter: blur(8px);
+}
+
+.rotate {
+    animation: rotateCW 0.1s linear;
+    animation-iteration-count: 3;
+}
+@keyframes rotateCW {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.heart-beat {
+    animation-name: heartBeat;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-in-out;
+}
+@keyframes heartBeat {
+    0% {
+        transform: scale(1);
+    }
+    14% {
+        transform: scale(1.3);
+    }
+    28% {
+        transform: scale(1);
+    }
+    42% {
+        transform: scale(1.3);
+    }
+    70% {
+        transform: scale(1);
+    }
+}
+.heart-beat-small {
+    animation-name: heartBeatSmall;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-in-out;
+}
+@keyframes heartBeatSmall {
+    0% {
+        transform: scale(1);
+    }
+    14% {
+        transform: scale(1.05);
+    }
+    28% {
+        transform: scale(1);
+    }
+    42% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(1);
+    }
+}
+
+.fadeIn {
+    animation-name: fadeIn;
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fadeOut,
+.transient {
+    opacity: 0;
+    animation: fadeOut var(--net-transient-time) ease-in-out;
+}
+@keyframes fadeOut {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    0% {
+        opacity: 1;
+    }
+}

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hyper-V</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https:docs.microsoft.com/en-us/virtualization/hyper-v-on-windows" title="docs.microsoft.com, 2016">Hyper-V on Windows 10</a></h1>
+
+<h2>TL;DR</h2>
+
+<h3>HOWTO : Create a machine that runs <em>any Linux distro</em>:</h3>
+
+<ol>
+<li>@ GUI Menu &gt; New &gt;<br>
+Use defaults lest specified here,<br>
+and click &quot;Next&quot; button as apropos ...
+
+<ul>
+<li>&quot;Name:&quot;</li>
+<li>&quot;Store the virtual machine in a different location&quot;
+
+<ul>
+<li>&quot;Location:&quot; Select a machines-parent folder</li>
+</ul></li>
+<li>&quot;Generation 2&quot; (Select)</li>
+<li>&quot;Connection:&quot; External* (Whatever its name)</li>
+<li>&quot;Create a virtual hard disk&quot;
+
+<ul>
+<li>&quot;Name:&quot; h1.vdx</li>
+<li>&quot;Location:&quot; ...</li>
+<li>&quot;Size:&quot; 8GB okay</li>
+</ul></li>
+<li>&quot;Install an operating system later&quot; (Select)
+
+<ul>
+<li><strong><em>This is what allows us to opt out</em></strong> of Microsoft's OS restrictions.
+That (Secure Boot) opt-out is not available until <em>after</em> VM creation.</li>
+</ul></li>
+<li>&quot;Finish&quot;</li>
+</ul></li>
+<li>Right-click on the machine after it's created
+
+<ul>
+<li>&quot;Settings ...&quot;
+
+<ul>
+<li>&quot;Security&quot;
+
+<ul>
+<li>&quot;Enable Secure Boot&quot; (<strong><em>Deselect</em></strong>)
+
+<ul>
+<li>This is Microsoft's gatekeeper.
+If selected (checked),
+it prevents installation of any OS
+except a tiny Microsoft-restricted subset.</li>
+</ul></li>
+</ul></li>
+<li>&quot;SCSI Controller&quot;;<br>
+to add/mount the ISO file containing our target OS.
+
+<ul>
+<li>&quot;DVD Drive&quot; &gt; &quot;Add&quot;
+
+<ul>
+<li>&quot;SCSI Controller&quot;
+
+<ul>
+<li>&quot;Location:&quot; 2
+
+<ul>
+<li>Or whatever is NOT &quot;&hellip; (in use)&quot;</li>
+</ul></li>
+<li>&quot;Image file:&quot;
+
+<ul>
+<li>Browse to ISO path: <code>jammy-live-server-amd64.iso</code><br>
+See <a href="https://cdimage.ubuntu.com/jammy/daily-live/current/">Ubuntu 22.04.3 LTS (Jammy Jellyfish) Daily Build</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>&quot;Apply&quot;</li>
+</ul></li>
+</ul></li>
+<li>@ GUI &gt; Select the machine &gt; Right Click
+
+<ul>
+<li>&quot;Start&quot;</li>
+<li>&quot;Connect ...&quot;
+
+<ul>
+<li>Install the OS per CLI menu or whatever.</li>
+<li>Reboot</li>
+</ul></li>
+</ul></li>
+<li>@ GUI &gt; Select the machine &gt; Rigth Click
+
+<ul>
+<li>&quot;Settings ...&quot;
+
+<ul>
+<li>&quot;SCSI Controller&quot;
+
+<ul>
+<li>&quot;DVD Drive&quot;
+
+<ul>
+<li>&quot;Remove&quot;</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>&quot;Connect ...&quot;
+
+<ul>
+<li>Login  @ CLI
+
+<ul>
+<li>Get this guest-machine's IP address (for SSH access from WSL):
+from command &quot;<code>ip -4 route</code>&quot;. See <code>eth0 ... src ... &lt;THIS_IP_ADDRESS&gt;</code>.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ol>
+
+<h3>HOWTO : SSH into the VM</h3>
+
+<p>Working from a shell at your real machine:</p>
+
+<ol>
+<li><p>SSH PKI Setup (one time)</p>
+
+<pre><code class="language-bash"># IP acquired at host (VM) session : `ip -4 route`
+host='192.168.0.68'
+# Scan/Print fingerprint(s) (FPR) of host's key(s)
+ssh-keyscan $host 2&gt; /dev/null | ssh-keygen -lf -
+# Push user's public key to host per private-key reference; 
+ssh-copy-id -i ~/.ssh/vm_common $host #... and validate FPR; claimed vs. any scanned.
+vim ~/.ssh/config #... add this host's configuration 
+# Host h1
+#     HostName 192.168.0.68
+#     User x1
+#     IdentityFile ~/.ssh/vm_common
+</code></pre></li>
+
+<li><p>SSH Session (henceforth)</p>
+
+<pre><code class="language-bash">ssh h1
+</code></pre></li>
+</ol>
+
+<h3><a href="https://learn.microsoft.com/en-us/virtualization/hyper-v-on-windows/reference/integration-services">Integration Services</a></h3>
+
+<p>See @ GUI Menu &gt; Settings &gt; Integration Services</p>
+
+<blockquote>
+<p>&hellip; <em>services that allow the virtual machine to communicate with the Hyper-V host. Many of these services are conveniences while others can be quite important to the virtual machine's ability to function correctly.</em></p>
+</blockquote>
+
+<h2><a href="https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/enable-hyper-v#enable-hyper-v-using-powershell" title="docs.microsoft.com"><code>Enable/Disable</code> Hyper-V @ PowerShell</a> (Requires reboot.) <a name="ps-hyperv"></a></h2>
+
+<pre><code class="language-powershell">Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
+</code></pre>
+
+<p>Or by GUI menu/select method @ Windows &gt; &quot;Control Panel&quot; &gt; &quot;Programs and Features&quot; &gt; &quot;Turn Windows features on and off&quot;.</p>
+
+<h2>Virtual Switch (VS) :: <a href="https://docs.microsoft.com/en-us/windows-hardware/drivers/network/hyper-v-extensible-switch" title="docs.microsoft.com, 2017">Hyper-V Extensible Switch</a></h2>
+
+<ul>
+<li><p><code>Default Switch</code> is &quot;Internal&quot;, connecting Hyper-V VMs to OS network using NAT, though it may use WSL2 network instead, and may switch from WSL to host subnet subesquently. Its setting cannot be modified. It does <em>not</em> show up as an adapter.</p></li>
+
+<li><p><code>v&lt;PHYNAME&gt; (Default Switch)</code> is an adapter automatically created (upon reboot) by the Default Switch; an unmodifiable, undeletable, Internal VS. <code>&lt;PHYNAME&gt;</code> is the name of the physical adapter to which it binds.</p>
+
+<ul>
+<li>ISSUE: Whether Enabled or Disabled, a new adapter spawns with each reboot, with the old(er) one(s) &quot;Not connected&quot;. These can be deleted using Device Manager.
+
+<ul>
+<li>UPDATE: On Windows 11, this may or may not exist.</li>
+</ul></li>
+</ul></li>
+
+<li><p><code>v&lt;PHYNAME&gt; (External Switch)</code>, the External VS that we create (preferably by PowerShell). Binds to <strong><em>one physical adapter</em></strong>. It  <strong><em>completely takes over</em></strong> the <em>physical adapter</em>, (e.g., <code>Intel(R) Ethernet Connection I219-V</code>; named, e.g., <code>Eth2</code>), leaving the physical adapter with only two functions (nominally) which are visible under the adapter's &quot;Properties&quot; menu:</p>
+
+<ol>
+<li>&quot;Microsoft LLDP Protocol Driver&quot;</li>
+<li>&quot;Hyper-V Extensible Virtual Switch&quot;<br></li>
+</ol>
+
+<p>That's <em>nominally</em> because <strong><em>these functions change dynamically</em></strong>; they're controlled by this VS, which adds or removes functionality as necessary to manage the Hyper-V Virtual Machines (VMs).</p>
+
+<p>The VS attribute/option check-box of &quot;<em>Allow management operating system to share this network adapter</em>&quot;, even if unselected, will revert back as soon as any <code>-ManagementOS</code> type Network Adapter is created on it. The PowerShell VS option regarding this is <code>-AllowManagementOS $true</code> .</p>
+
+<p><strong>Gateway router</strong> sees the MAC of this (<code>External Switch</code>) adapter as that for its host machine (not that of the physical adapter it binds to), so adjust any &quot;Manually Assigned IP around the DHCP list&quot; there accordingly. At <strong>AsusWRT</strong>, that's under the <code>LAN - DHCP Server</code> menu.</p></li>
+</ul>
+
+<h3>Virtual Network Adapters :: Two Types</h3>
+
+<ol>
+<li>Attached to VM
+
+<ul>
+<li><code>-VMName &lt;NAME&gt;</code></li>
+</ul></li>
+<li>Attached to OS
+
+<ul>
+<li><code>-ManagementOS</code></li>
+</ul></li>
+</ol>
+
+<h2><a href="https://docs.microsoft.com/en-us/powershell/module/hyper-v/?view=win10-ps" title="powershell/hyper-v @ docs.microsoft.com">Hyper-V Switches/Adapters @ Powershell</a></h2>
+
+<pre><code class="language-powershell"># List of all Hyper-V commands 
+Get-Command -Module hyper-v
+# List all VS 
+Get-VMSwitch
+# Add Internal Virtual Switch (auto-installed by Docker for Windows)
+New-VMSwitch -Name &quot;vDockerNAT&quot; -SwitchType Internal  
+# Add Private Virtual Switch (no need)
+New-VMSwitch -Name &quot;vPrivateSwitch&quot; -SwitchType Private   
+# Add External Virtual Switch :: NOTE: 
+# - One per physical adapter
+# - Do NOT use `-SwitchType` option 
+# - Even if `-AllowManagementOS` set to false, reverts upon any such adapter addition 
+New-VMSwitch -Name &quot;External Switch&quot; -NetAdapterName &quot;vEth1&quot; -AllowManagementOS $true
+# Add Virtural Adapter to External Switch, attached to Windows OS (rather than a VM).
+Add-VMNetworkAdapter -Name 'External Switch' -ManagementOS -SwitchName 'External Switch'  
+# Rename Adapter
+Rename-NetAdapter -InterfaceAlias 'OldName' -NewName &quot;NewName&quot;
+# Remove Adapter
+Remove-VMNetworkAdapter -ManagementOS -VMNetworkAdapterName 'NAME'
+
+# Synonymous
+    -NetAdapterName &quot;Eth1&quot;
+    –InterfaceAlias 'Eth1'
+
+# Set Metric of Internet-(IP4)-enabled Interface LOWER than that of the others; Set Metric of TAP HIGHER.
+Get-NetIPInterface -InterfaceAlias 'vEthernet (External Switch)' | Set-NetIPInterface -InterfaceMetric   2 -PassThru
+Get-NetIPInterface -InterfaceAlias 'vEthernet (Default Switch)*' | Set-NetIPInterface -InterfaceMetric 500 -PassThru
+Get-NetIPInterface -InterfaceAlias 'vEthernet (Default Switch)*' | Set-NetIPInterface -InterfaceMetric 500 -PassThru
+
+# Alt; Select the Interface (Adapter) per its Index; Get per ...
+Get-NetIPInterface  #... then ...
+Set-NetIPInterface -InterfaceIndex 19 -InterfaceMetric 100
+
+# Create Adapther @ Default Switch after deleting its auto-generated one.
+Add-VMNetworkAdapter -ManagementOS -SwitchName 'Default Switch' -Name 'vRequired(Default Switch)' 
+# ... FAILs @ &quot;The automatic Internet Connection Sharing switch cannot be modified.&quot;
+
+Get-NetAdapter
+Get-VMNetworkAdapter -ManagementOS
+Get-VMNetworkAdapter -VMName *
+Get-NetRoute | Format-Table -AutoSize
+
+Get-NetIPInterface
+# Filter the list 
+Get-NetIPInterface -InterfaceAlias 'vEthernet (Default Switch)*'
+
+# Connect to VM 
+Connect-VMNetworkAdapter -VMName Test1,Test2 -Name Internet -SwitchName InternetAccess
+# Disable Adapter
+Disable-NetAdapter -Name 'NAME' -PassThru -Confirm:$false
+
+# DELETE a VS 
+Remove-VMSwitch -Name 'NAME'
+# Remove Adapter
+Remove-VMNetworkAdapter -ManagementOS -VMNetworkAdapterName 'NAME'
+
+# Get Adapter Alias Name 
+(Get-NetConnectionProfile -InterfaceAlias 'vEthernet (WHATEVS NAME)').Name
+# @ VM
+IF((get-vm XYZ).networkadapters.ipaddresses -eq $Null){Write-Host &quot;Problem Found&quot;}
+</code></pre>
+
+<p>Route from WSL to Eth1 or whatever to Gateway router is handled by Windows internally via NAT,
+and so is not visible here:</p>
+
+<pre><code class="language-powershell">Get-NetRoute | Where-Object { $_.InterfaceAlias -eq &quot;$ethWsl&quot;} | Select-Object DestinationPrefix,NextHop,RouteMetric
+</code></pre>
+
+<pre><code class="language-plaintext">DestinationPrefix             NextHop RouteMetric
+-----------------             ------- -----------
+255.255.255.255/32            0.0.0.0         256
+224.0.0.0/4                   0.0.0.0         256
+172.27.255.255/32             0.0.0.0         256
+172.27.240.1/32               0.0.0.0         256
+172.27.240.0/20               0.0.0.0         256
+ff00::/8                      ::              256
+fe80::17cc:f1e1:ece4:7f71/128 ::              256
+fe80::/64                     ::              256
+
+</code></pre>
+
+<pre><code class="language-bash">☩ ip -4 -brief addr show dev eth0
+eth0             UP             172.27.240.169/20
+</code></pre>
+
+<h3>DNS</h3>
+
+<p>WSL2 <a href="https://chatgpt.com/share/672e8f14-feec-8009-86c7-cd6bea539373" title="ChatGPT"><strong>DNS is handled through a &quot;stub&quot; DNS server</strong></a>, usually configured with an IP like <code>10.255.255.254</code>, which is non-standard for typical DNS servers. This stub server acts as an intermediary to forward DNS queries from WSL2 to the Windows host’s DNS resolver:</p>
+
+<pre><code class="language-bash">☩ cat /etc/resolv.conf
+# This file was automatically generated by WSL. To stop automatic generation of this file, add the following entry to /etc/wsl.conf:
+# [network]
+# generateResolvConf = false
+nameserver 10.255.255.254
+search SEMPERLAN hsd1.md.comcast.net
+</code></pre>
+
+<pre><code class="language-bash">☩ nslookup google.com
+Server:         10.255.255.254
+Address:        10.255.255.254#53
+
+Non-authoritative answer:
+Name:   google.com
+Address: 172.253.122.102
+...
+</code></pre>
+
+<p>Changes to <code>/etc/resolv.conf</code> do not persist, even disabling in <code>wsl.exe</code> by:</p>
+
+<pre><code class="language-ini">[network]
+generateResolvConf = false
+</code></pre>
+
+<p>Unless the link is removed:</p>
+
+<pre><code class="language-bash">☩ ls /etc/resolv.conf
+lrwxrwxrwx 1 root root 16 Nov  8 16:36 /etc/resolv.conf -&gt; /wsl/resolv.conf
+</code></pre>
+
+<p>So, remove that link, then recreate the file having the desired DNS nameservers:</p>
+
+<pre><code class="language-bash">dns1=192.168.28.1 # Gateway router
+dns2=8.8.8.8      # Google
+sudo unlink /etc/resolv.conf
+cat &lt;&lt;EOH |sudo tee /etc/resolv.conf
+nameserver $dns1
+nameserver $dns2 
+nameserver fec0:0:0:ffff::1
+nameserver fec0:0:0:ffff::2
+nameserver fec0:0:0:ffff::3
+EOH
+
+</code></pre>
+
+<ul>
+<li><p>Use the IPv6 DNS nameservers,
+which are automatically assigned by Windows for WSL,
+reported by PowerShell's <code>Get-DnsClientServerAddress</code> command:</p>
+
+<pre><code class="language-powershell">$ethWsl = (Get-NetAdapter -includehidden| Where-Object { $_.Name -like &quot;vEthernet (WSL*&quot; }).Name 
+Get-DnsClientServerAddress -InterfaceAlias &quot;$ethWsl&quot;
+</code></pre></li>
+
+<li><p>Windows 11 WSL2's default adapter name is &quot;<code>vEthernet (WSL (Hyper-V firewall))</code>&quot;.</p></li>
+</ul>
+
+<p>That method of resetting DNS is an override at the Linux distro,
+so PowerShell still reports the IPv6-only DNS settings.</p>
+
+<p>To reset DNS via PowerShell.</p>
+
+<pre><code class="language-powershell">$ethWsl = (Get-NetAdapter -includehidden| Where-Object { $_.Name -like &quot;vEthernet (WSL*&quot; }).Name # vEthernet (WSL (Hyper-V firewall))
+
+# Set DNS nameserver 
+$dns1 = 192.168.28.1 # Gateway router
+$dns2 = 8.8.8.8      # Google
+Set-DnsClientServerAddress -InterfaceAlias &quot;$ethWsl&quot; -ServerAddresses ($dns1, $dns2)
+</code></pre>
+
+<ul>
+<li>This alone may not work, as there are automated OS-level processes managing WSL2 networking.
+Our results have varied, even under the same OS installation.</li>
+</ul>
+
+<h3>How To Fix @ FUBAR (Virtual) Network Switches/Adapters</h3>
+
+<ol>
+<li>Uninstall all adapters @ Device Manager.</li>
+
+<li><p>Delete all adapter objects using <code>netcfg</code>:</p>
+
+<pre><code class="language-shell">:: Stop Hyper-V service
+net stop vmms 
+:: Delete all virtual adapters
+netcfg -d 
+:: Delete all physical adapters
+netcfg -x 
+</code></pre></li>
+
+<li><p>Reboot.</p></li>
+</ol>
+
+<p>Else, more drastically, toggle (<a href="#ps-hyperv"><code>Disable</code>/<code>Enable</code></a>) the entire Hyper-V feature of Windows.</p>
+
+<h2><a href="https://docs.microsoft.com/en-us/powershell/module/hyper-v/?view=win10-ps" title="powershell/hyper-v @ docs.microsoft.com">Hyper-V @ Powershell</a> | <a href="https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/quick-start/try-hyper-v-powershell" title="docs.microsoft.com/.../quick-start/... 2016">Quick Start</a></h2>
+
+<pre><code class="language-powershell"># List of all Hyper-V commands 
+Get-Command -Module hyper-v
+
+Get-VM -Name $VMname            # status
+Start-VM -Name $VMname          # start
+Suspend-VM -Name $VMname        # pause
+Stop-VM -Name $VMname           # stop; unsaved data is saved 
+Stop-VM -Name $VMname -Force    # stop; unsaved data may be lost
+Stop-VM -Name $VMname -TurnOff  # stop; unsaved data is lost
+
+# Create checkpoint (VM snapshot)
+Checkpoint-VM -Name  $VMname -SnapshotName &quot;PreUpdate&quot;
+# Apply checkpoint (not NOT same key:val as create)
+Restore-VMCheckpoint -Name &quot;PreUpdate&quot; -VMName  $VMname -Confirm:$false
+
+# Disable dynamic memory; set static size
+Set-VMMemory $VMname -DynamicMemoryEnabled $false -StartupBytes 2GB 
+# Get VM memory size (see Vmmem.exe @ TaskManager)
+Get-VMMemory $VMname
+
+# External Virtual Switch (One per physical adapter)
+New-VMSwitch -Name &quot;External-Eth&quot; -NetAdapterName &quot;Ethernet&quot; -AllowManagementOS $true  
+# Internal Virtual Switch (Required by Docker for Windows)
+New-VMSwitch -Name &quot;DockerNAT&quot; -SwitchType Internal  
+# Private Virtual Switch (no need)
+New-VMSwitch -Name &quot;PrivateSwitch&quot; -SwitchType Private  
+
+Get-NetRoute | Format-Table -AutoSize
+
+# Change metric on Default Switch, so the host OS prefers the physical adapter.
+Get-NetIPInterface -InterfaceAlias 'vEthernet (Default Switch)'
+Get-NetIPInterface -InterfaceAlias 'vEthernet (Default Switch)' | Set-NetIPInterface -InterfaceMetric 5000 -PassThru
+
+# Get IP of VM, from Hyper-V
+(( Hyper-V\Get-VM $VMname ).networkadapters[0]).ipaddresses[0]
+
+# Create/Delete VM
+New-VM -Name $VMName            # create VM
+Remove-VM -Name $VMname -Force  # delete VM
+</code></pre>
+
+<h2><code>docker-machine</code></h2>
+
+<p>See Docker <code>*</code> files</p>
+
+<p><code>docker-machine create</code> &hellip; installs TinyCore (<code>boot2docker.iso</code>); distro has package manager <code>tce-load</code>.</p>
+
+<pre><code class="language-bash">docker@h4:~$ tce-load -w -i tor.tcz
+</code></pre>
+
+<ul>
+<li>Download and install</li>
+<li><a href="http://distro.ibiblio.org/tinycorelinux/10.x/x86/tcz/">Index of available TinyCore packages</a></li>
+</ul>
+
+<h2><a href="file:///D:/1%20Data/IT/Container/Docker/Docker.sh" title="Docker.sh">Docker for Windows</a></h2>
+
+<ul>
+<li>Docker CLI Tools @ PowerShell or WSL (<a href="file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/WSL.md" title="WSL.md">MD</a> | <a href="file:///D:/1%20Data/IT/OS/Windows/Win10/WSL/WSL.html" title="If @ browser">HTML</a>):<br>
+<code>docker</code>, <code>docker-compose</code>, <code>docker-machine</code></li>
+<li>Automatically createsVM (<code>MobyLinuxVM</code>) @ Hyper-V<br></li>
+</ul>
+
+<h2>Minikube (Kubernetes) <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Kubernetes.Install.md" title="Kubernetes.Install.md">MD</a> | <a href="file:///D:/1%20Data/IT/Container/Kubernetes/Kubernetes.Install.html" title="If @ browser">HTML</a></h2>
+
+<ul>
+<li>Kubernetes CLI Tools @ PowerShell: <code>minikube</code> + <code>kubectl</code><br>
+(<code>minikube</code> @ <code>SystemDrive</code> only)<br></li>
+</ul>
+
+<h2>Vagrant <a href="h2>
+
+<h2>CentOS 7</h2>
+
+<ul>
+<li>Vagrant box <code>centos/7</code>  <a href="file:///D:/1%20Data/IT/Apps/Dev.Ops/CM/Vagrant/Vagrant.md" title="Vagrant.md">MD</a> | <a href="file:///D:/1%20Data/IT/Apps/Dev.Ops/CM/Vagrant/Vagrant.html" title="If @ browser">HTML</a></li>
+<li>Generic (distro ISO) <a href="file:///D:/1%20Data/IT/OS/Linux/Distros/CentOS/RHEL.Install.md" title="RHEL.Install.md">MD</a> | <a href="file:///D:/1%20Data/IT/OS/Linux/Distros/CentOS/RHEL.Install.html" title="If @ browser">HTML</a><br></li>
+</ul>
+
+<h2>Ubuntu 18.04.1 LTS</h2>
+
+<ul>
+<li>Generic (distro ISO) <a href="file:///D:/1%20Data/IT/OS/Linux/Distros/Ubuntu/Ubuntu.Install.md" title="Ubuntu.Install.md">MD</a> | <a href="file:///D:/1%20Data/IT/OS/Linux/Distros/Ubuntu/Ubuntu.Install.html" title="If @ browser">HTML</a><br></li>
+</ul>
+
+<h2>Nested Virtualization (<a href="Hyper-V.Nested-Virtualization.md" title="Nested-Virtualization.md">MD</a> | <a href="Hyper-V.Nested-Virtualization.html" title="@ browser">HTML</a>)</h2>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

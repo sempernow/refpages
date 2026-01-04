@@ -1,0 +1,138 @@
+
+
+# Media Filetype Handling
+
+## Thumbnail previews
+
+- UPDATE: Nothing needed beyond Windows 11 for most types.
+
+- SumatraPDF install option has checkbox for thumbnails of PDF files.
+Okay to re-install using that GUI install method 
+on top of a chocolatey install of that app.
+
+- Use "K-Lite Codec Pack" (A/V codecs)
+for thumbnails of every media filetype (MKV, PDF/CBR, ...)
+
+## Fonts
+
+  FontForge 
+
+## Transcode
+ 
+* HW/GPU Acceleration 
+
+- Intel Quick Synch Video (QSV) @ Skylake/Kaby-Lake
+  https://www.intel.com/content/www/us/en/architecture-and-technology/quick-sync-video/quick-sync-video-general.html
+  
+  https://en.wikipedia.org/wiki/Intel_Quick_Sync_Video
+	
+* DivX Converter 10.8.4 [H265] HEVC @ QSV * $$ *
+* Handbrake x64 1.0.7   [x265] HEVC @ QSV
+* Freemake [NO HEVC]    [H264] [Only CUDA/DVXA HW-accel]
+* FFmpeg                [x265] HEVC @ QSV; @ Win, x264 QSV only
+* TEncoder [FFmpeg GUI]; no HW accel option 
+
+- H.265 [HEVC] requires licensing
+- x265 [HEVC] is Open Source equivalent.
+- H.265 seems to code more vibrant color than x265; DivX vs. Handbrake
+- Transcode times for HEVC @ 720p on i7400T 
+ 
+  with Intel QSV: ~   7 min/GB
+  sans Intel QSV: ~ 120 min/GB
+ 
+* H.265 Tiers/Levels  [max-res @ max-frame-rate (MaxDPB)]
+
+- Main Profile [Ver.1], Level ...
+
+  720p   @ L3.1/4/4.1      
+  1080p  @ L4/4.1/5/5.1/5.2 
+
+  https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding#Tiers_and_levels
+
+
+## Optimize
+	
+- JPG 
+
+	* lossless rotate/crop/progressive/.../optimize
+	
+		jpegtran -optimize -progressive -copy none -perfect -v IN.jpg > OUT.jpg
+		
+- PNG 
+
+	* reduce color-depth to 2/4/8 bpp using lossy dithering 
+	  [Floyd-Steinberg] algo 
+		
+		PNGquant --force --verbose 256
+
+
+## Print  
+
+* print any file, from any app, to jpg/tif/pdf w/ 'Print...' to Zan Image Printer 
+
+* print any file, from any app, to pdf w/ 'Print...' to Zan Image Printer, Foxit Printer, doPDF, PDFCreator
+
+ 
+## Popular Paper Sizes
+
+  Letter [txt]; A4, A6 [comics]
+
+  
+## Convert/Extract/Edit
+
+* pdf/tif to jpg/png/tif w/ Zan Image Printer, from Foxit Reader etal
+
+- Zan Printer > "Paper Quality" > Advanced > Paper Size, Image Quality [DPI]
+- Zan Printer > "Image" > JPG/PNG/TIF/BMP/...
+
+* pdf/tif to jpg/png/tif w/ IrfanView > Options > Multipage images > Extract all pages
+
+Irfanview v. Printers: 
+
+- Printers render per DPI setting and selected [A4, A6, …] pg sizes. 
+- IrfanView renders per image meta. 
+
+* jpg to pdf w/ IrfanView > Optons > Multipage images ...[req. Ghostscript/plugin]
+or
+* jpg to pdf w/ Images2PDF [PDFCreator app] 
+
+* jpg/png/... process [resize,filter,...] w/ IrfanView > File > Batch Conversion/Rename [supports .bat scripts]
+
+# ANIMATED GIF/MPEG/MP4 from PNGs/JPGs [alpha-num-indexed-set]
+
+CREATE/EXTRACT using FFmpeg/ImageMagick/GraphicsMagic/Irfanview 
+
+  See "REF.Graphics..."
+
+  When working with GIF, ALWAYS use PNGs, not JPGs.
+
+* jpg/png image EDITor w/ pixlr.com @ http://pixlr.com/editor/
+
+* png/jpg to ico w/ IconFX > "Create Windows Icon from Image" [button] 
+
+* dll to ico w/ IconFX > Drag & Drop > Extract @ pop-up menu
+
+* dll to ico/png w/ BeCyIconGrabber > Drag & Drop > Extract @ menu
+
+* ico to png/jpg w/ IconFX > File > Export Image 
+
+* ico to png/bmp w/ BeCyIconGrabber > Drag & Drop > Extract @ menu
+
+* mp4/mkv/avi ... EDIT/CONVERT w/ Handbrake [Intel-QSV], Freemake
+
+* video to mp3 w/ Freemake
+
+* flac to mp3 w/ Freemake
+
+* mp3 edit w/ Audacity [PortableApps]
+
+* mp3 vol adjust w/ MP3Gain
+
+* mp3 tags w/ MP3tag
+
+* meta data read/write/strip w/ ExifTool cmd line utility [see Exif.bat] 
+
+## Play
+
+* BluRay/DVD w/ VLC media player [supposedly/untried]
+* BluRay/DVD w/ TotalMedia Theatre SW [replaces CyberLink PowerDVD]

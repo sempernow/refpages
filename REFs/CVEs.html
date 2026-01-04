@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CVEs</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>CVEs : SBOM Generation / CVE Detection</h1>
+
+<h2>Container Images</h2>
+
+<h3>Trivy</h3>
+
+<pre><code class="language-bash"># Generate SBOM of OCI image
+image=openeuler/openeuler:24.03-lts-sp2
+trivy image --scanners vuln --format spdx-json -o sbom.sdx.json $image
+# or
+trivy image --scanners vuln --format cyclonedx -o sbom.cdx.json $image 
+
+# Scan/Audit SBOM file for CVEs of declared severities
+sbom=sbom.cdx
+trivy sbom --severity CRITICAL,HIGH --format json -o $sbom.audit.json $sbom.json
+
+</code></pre>
+
+<p>See <strong><code>CVEs.Trivy</code></strong> (<a href="file:///D:/1%20Data/IT/Container/security/Trivy/CVEs.Trivy.md">MD</a>|<a href="file:///D:/1%20Data/IT/Container/security/Trivy/CVEs.Trivy.html">HTML</a>)</p>
+
+<h2>Syft / Grype</h2>
+
+<ul>
+<li><a href="https://github.com/anchore/syft" title="GitHub.com/Anchore/"><strong><code>syft</code></strong></a> (SBOM)</li>
+
+<li><p><a href="https://github.com/anchore/grype" title="GitHub.com/Anchore/"><strong><code>grype</code></strong></a> (CVEs)</p>
+
+<pre><code class="language-bash"># Install 
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh |
+sudo sh -s -- -b /usr/local/bin
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh |
+sudo sh -s -- -b /usr/local/bin
+</code></pre>
+
+<pre><code class="language-bash">syft $img -o json |grype --fail-on high
+</code></pre>
+
+<pre><code class="language-bash">img=openeuler/openeuler:24.03-lts-sp2
+sbom=&quot;${img////}&quot;
+name_tag=&quot;${sbom//:/_}&quot;
+sbom=&quot;$name_tag.sbom.json&quot;
+
+# Capture CycloneDX SBOM
+syft $img --output cyclonedx-json=&quot;$sbom&quot;
+
+# Scan the SBOM 
+grype $sbom --output cyclonedx-json --file $name_tag.cdx.json
+
+</code></pre></li>
+
+<li><p><code>--output</code>, <code>-o</code> : <code>json</code>, <code>cyclonedx-json</code>, <code>spdx-json</code></p></li>
+</ul>
+
+<h2>Filesystem Binaries</h2>
+
+<p>For binary files, use <a href="https://github.com/anchore/syft" title="GitHub.com/Anchore/"><strong><code>syft</code></strong></a> for SBOM generation,
+and <a href="https://github.com/anchore/grype" title="GitHub.com/Anchore/"><strong><code>grype</code></strong></a> for the final CVEs report,
+both in <a href="https://cyclonedx.org/" title="CycloneDX.org">CycloneDX</a> format.</p>
+
+<p>Example : <strong>Scan <code>kubectl</code> plugins</strong> of <strong><code>~/.krew/bin/</code></strong></p>
+
+<pre><code class="language-bash"># Install the tools
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh |
+    sudo sh -s -- -b /usr/local/bin
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh |
+    sudo sh -s -- -b /usr/local/bin
+
+# Generate TABLE of plugin CVEs from grype scan of syft SBOM
+plugin=tree
+syft scan file:~/.krew/bin/kubectl-$plugin -o cyclonedx-json |
+    grype
+
+# Same, but capture SBOM and CycloneDX files (JSON)
+syft scan file:~/.krew/bin/kubectl-$plugin --output cyclonedx-json=&quot;kubectl-$plugin.sbom.json&quot;
+grype sbom:kubectl-$plugin.sbom.json --output cyclonedx-json --file kubectl-$plugin.cdx.json
+
+# All plugins (pipe method fails at grype unless out to table and no options)
+for plugin in ~/.krew/bin/*; do 
+    bin=$(basename &quot;$plugin&quot;)
+    echo &quot;=== @ $bin&quot;
+    syft scan file:&quot;$plugin&quot; --output cyclonedx-json=&quot;$bin.sbom.json&quot;
+    grype sbom:&quot;$bin.sbom.json&quot; -o cyclonedx-json --file &quot;$bin.cdx.json&quot;
+    rm &quot;$bin.sbom.json&quot;
+done |&amp; tee krew-cves.log
+
+</code></pre>
+
+<p>Like other similar tools, <code>grype</code> has a flag to fail on any CVE finding
+that is equal to or greater than a declared severity, e.g., <code>HIGH</code>.</p>
+
+<p>This allows for implementing a CVEs policy on any or all containers of a K8s cluster,
+and doing so with a purpose-built admission controller.</p>
+
+<h3>OWASP <a href="https://owasp.org/www-project-dependency-check/">Dependency-Check</a></h3>
+
+<p>Dependency-Check is a Software Composition Analysis (SCA) tool that uses
+<a href="https://nvd.nist.gov/developers/start-here">National Vulnerability Database (<strong>NVD</strong>)</a>,
+which is best accessed using an API key (<a href="https://nvd.nist.gov/developers/request-an-api-key">Request API Key</a>).</p>
+
+<p><strong>We have not found a use case for this tool.</strong></p>
+
+<p>Example filesystem scan for CVEs that returns nothing whatsoever:</p>
+
+<pre><code class="language-bash">bash dependency-check.sh ... --nvdApiKey YOUR_API_KEY 
+
+bash dependency-check.sh -s ~/.krew/store/**/**/kubectl-*  --out krew-report.json --format JSON --project &quot;Krew Plugins Audit&quot;
+</code></pre>
+
+<hr>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

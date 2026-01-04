@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win10.Backup-Restore</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Windows 10 Sytem Partition Restore</h1>
+
+<pre><code>wimlib-imagex apply D:\Win10.XPC.wim 2 C:
+</code></pre>
+
+<h1>Windows 10 System Partition(s) Backup</h1>
+
+<h1>2018+</h1>
+
+<h2><a href="https://wimlib.net/"><code>wimlib</code> CLI tool</a></h2>
+
+<h3>Capture/Append the system partition as a <code>.WIM</code> file.</h3>
+
+<p>Supposedly, <code>wimlib</code> can capture Win10 while OS is online,<br>
+but <strong>best to do offline</strong>, such as <strong>from Windows PE OS</strong>.</p>
+
+<h4>Params</h4>
+
+<pre><code class="language-shell">set _WIMdir=%~dp0
+set _source=C:
+set _wim=Win10.RS4.XPC.M.2-NVMe.wim
+set _name=2019-05-05 @ 110GB NVMe SSD
+set _descr=[Win10-Pro-x64] [1803.17134.590] +nvm +Yarn +VScode-extensions
+set _config=--config=&quot;%~dp0wimlib.win10.conf&quot;
+</code></pre>
+
+<h4>Capture</h4>
+
+<pre><code class="language-shell">wimlib-imagex.exe capture &quot;%_source%&quot; &quot;%_WIMdir%%_wim%&quot; &quot;%_name%&quot; &quot;%_descr%&quot; %_config%
+</code></pre>
+
+<h4>Append</h4>
+
+<pre><code class="language-shell">wimlib-imagex.exe append &quot;%_source%&quot; &quot;%_WIMdir%%_wim%&quot; &quot;%_name%&quot; &quot;%_descr%&quot; %_config%
+</code></pre>
+
+<h4>Info</h4>
+
+<pre><code class="language-shell">wimlib-imagex.exe info &quot;%_WIMdir%%_wim%&quot; &gt; &quot;%_WIMdir%%_wim%.log&quot; 
+</code></pre>
+
+<h1>Older &hellip;</h1>
+
+<h2>per DISM (<code>.wim</code>) files</h2>
+
+<p>Use the DISM tool.</p>
+
+<h2>per Windows 7 method; <code>.vhdx</code> files</h2>
+
+<pre><code>Start Menu -&gt; Settings -&gt; Backup -&gt; &quot;More options&quot; -&gt; &quot;See advanced settings&quot; -&gt; &quot;System Image Backup&quot; -&gt; &quot;Create a system image&quot;
+</code></pre>
+
+<p>User selects the target drive and source partitions. The application first creates folders ...</p>
+
+<pre><code>`{DRIVE}:\WindowsImageBackup\%COMPUTERNAME%
+    \Backup YYYY-MM-DD NNNNNN
+</code></pre>
+
+<p>... and then generates the backup files (<code>.vhdx</code> and <code>.xml</code>) thereunder, for all selected partitions. By default, it selects all required partitions, including the boot (EFI) and system (Primary) partitions. Unlike the DISM (<code>.wim</code>) method, these (<code>.vhdx</code>) are <strong>uncompressed</strong> images.</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

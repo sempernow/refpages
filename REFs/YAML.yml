@@ -1,0 +1,156 @@
+# YAML is a data-representation (only) language.
+# Document begin : declared by line of 3 consecutive hyphens. 
+## Use it to combine multiple documents into a single stream.
+--- 
+# Document end (optional) : delcared by line of 3 consecutive dots
+...
+# Null is null or empty line
+null
+---
+# List (Array) : canonical : One member (element) per line
+## Hyphen (-) denotes a member (element) 
+- first member AKA element
+- 2nd_element
+--- 
+# List (AKA Array) : alternate syntax : JSON-like
+- [curl, -sSLIX, GET, http://yaml.org] 
+--- 
+# Dictionary (Map AKA Associative Array) : object/struct of k-v pairs 
+is_true: true         # Boolean (values of dictionary keys)
+is_true_too: True     # true
+is_true_too_2: Yes    # true
+is_true_too_3: FALSE  # false
+is_true_too_4: NO     # false
+not_bool: "true"      # String (literal)
+is_null: null         # null
+is_null_too: ~        # null
+--- 
+# YAML to JSON
+## Dictionary translates to JSON Object, {}.
+## List translates to JSON Array, [].
+--- 
+# Hierarchy 
+## Hyphen and/or indentation denotes hierarcy of the data structure.
+## Hyphen also denotes a member of a list.
+--- 
+# Dictionary containing a List
+REFerences: 
+- https://yaml.org/                       # The official YAML site
+- https://www.yamllint.com/               # YAML validator
+- https://jsonformatter.org/yaml-to-json  # YAML to JSON validate/convert
+- https://en.wikipedia.org/wiki/YAML      # Wikipedia entry
+## Key syntax includes rules allowing for just about any key name
+foo: 1
+"1": foo
+"[1]": foo
+?-1: foo
+--- 
+# Dictionary (Map AKA Associative Array AKA Object) containing List(s) of Dictionaries
+## Map of array of 1 map of 3 k-v pairs (indentaion optional)
+arr_of_1_map:
+  - a: 1 # This syntax oddity is masked by the use of 2-SPACE INDENTATION.
+    b: 2 # That is, if we use any (tab) indentation other than 2-space, 
+    c: 3 # then the keys must be manually aligned (SPACEBAR vs. TAB key). 
+    # Now you know why YAML docs always have 2-space indentation.
+    # Note that 2-space indentation is *not* a requirement of YAML's gargantuan spec.
+## Kubernetes format
+arr_of_1_map_equivalent: 
+- a: 1 # Indentation of the array-element character. "-", is OPTIONAL
+  b: 2
+  c: 3
+## Map of array of 3 maps, each of 1 k-v pair
+arr_of_3_maps: 
+  - a: 1
+  - b: 2
+  - c: 
+      x: foo
+      y: "bar"
+arr_of_3_maps_equivalent:
+- a: 1
+- b: 2
+- c: {x: foo, y: "bar"}
+## Map of 1 map of 3 k-v pairs
+map_of_1_map: 
+    a: 1
+    b: 2
+    c: 
+      x: foo
+      y: "bar" 
+## Alternate syntax is JSON-like.
+map_of_1_map_equivalent_1: {a: 1, b: 2, c: {x: foo, y: "bar"}} 
+map_of_1_map_equivalent_2: {a: 1, b: 2, c: {x: foo, y: "bar"},} 
+---
+## Placeholders
+a: [] # Indicates value of key "a" is an array (list)
+b: {} # Indicates value of key "b" is a map (dictionary)
+c: "" # Indicates value of key "c" is a string
+d: ~  # Indicates value of key "d" is null.
+--- 
+# YAML Scalar
+uquoted_scalar: Alphanum and certain others are safe sans single/double quotes.
+single_quotes_scalar: 'a: 1'
+double_quotes_scalar: "Allows for escapes: E.g., \t TAB and \n NEWLINE"
+path_win_okay: c:\foo
+path_posix_okay: /c/foo
+urls_okay: https://foo.ru/path
+literal_not_boolean: "true"
+literal_not_float: "1.00"
+a: 123                     # integer
+c: 123.0                   # float
+d: !!float 123.0           # float disambiguated by explicit data type
+b: "123"                   # string disambiguated by quotes
+e: !!str 123               # string disambiguated by explicit type
+f: !!str Yes               # string disambiguated by explicit type
+g: Yes                     # boolean True (yaml1.1), string "Yes" (yaml1.2)
+h: Yes we have No bananas  # string, "Yes" and "No" disambiguated by context.
+--- 
+# YAML Literal Block Scalar : Indentation of 1+ whitespace (relative to key) required. 
+## Preserve (|) : Preserves newlines
+preserve_newlines: |
+  These three lines
+  will appear exactly
+  as you see them here.
+same_but_remove_final_newline: |-
+  foo
+## Fold (>) : ALL lines of SAME INDENTATION are interpreted as ONE LINE.
+fold_newlines: >
+        These four lines
+        will appear as one.
+        Split here for legibility 
+        or whatever.
+reference_preserve: |
+  a b
+  c d
+    e
+  f
+## Using fold (>), a newline is forced by adding either indentation or empty line.
+equivalent_to_above_1: > 
+    a b
+
+    c
+    d
+      e
+    f
+equivalent_to_above_2: "a b\nc d\n  e\nf\n"
+## Binary data : Sequence of 0+ octets (8-bit values)
+### Serialized using Base64 encoding (RFC2045 Chapter 6.8)
+graphic: !!binary |
+  CF4SDGar3xxbJ9p
+  0qa7R0YxwzaFME
+  1IAADs=
+graphic_equivalent_to_above:
+  type: Buffer
+  data:
+    - 8
+    - 94
+    - 18
+    - #...
+--- 
+# YAML Anchor : Its LABEL is UNIQUE per document 
+- step:  &id003              # Define by &<label>
+    instrument:  Lasik 2000
+    pulseEnergy: 5.4
+    #...
+- Instrument1: *id003        # Reference by *<label>
+  #... 
+- Instrument7: *id003 

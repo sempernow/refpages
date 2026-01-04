@@ -1,0 +1,194 @@
+LAMBDA 
+======
+    Run code in response to events; VERY EFFICIENT; manages/scales the required compute resources/environment; LAMBDA FUNCTION, at AWS, is NOT merely some defined function within a program/script file, but rather refers to THE ENTIRE SET OF CODE, supporting libraries (e.g., ImageMagick), and config files; launched 2014; runs Alexa/Echo 
+
+    DevGuide  https://docs.aws.amazon.com/lambda/latest/dg/welcome.html  
+    API Ref   https://docs.aws.amazon.com/lambda/latest/dg/API_Reference.html  
+
+        Lambda@Edge
+            an extension of AWS Lambda, a compute service that lets you execute functions that customize the content that CloudFront delivers.  https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-at-the-edge.html  
+            
+            Static App + Lambda@Edge, per TerraForm  https://read.acloud.guru/supercharging-a-static-site-with-lambda-edge-da5a1314238b
+
+    - Fee per execution memory-time only
+    - 5 minute MAX   
+    - Debug w/ AWS X-ray
+    - Lambda functions run per EVENTs (TRIGGERs):  
+        Two types of TRIGGERs:
+            1. Event-driven COMPUTE SERVICE
+            - ALL triggers, @ Designer > "Add triggers" box (@ Function code page)
+
+                API Gateway, AWS IoT, Alexa Skills Kit, Alexa Smart Home, CloudFront, CloudWatch Events, CodeCommit, Cognito Sync Trigger, DynamoDB, Kinesis, S3, SNS, SQS
+
+            2. HTTP request RESPONSE SERVICE     
+            - Amazon API Gateway     
+              OR
+            - API calls using AWS SDKs   
+
+        Amazon API Gateway (APIG) adds a service layer in front of Lambda to extend security, manage input/ & output message transformations, and provide capabilities like throttling and auditing: 
+            - Ability to throttle individual users or requests.
+            - Protect against Distributed Denial of Service attacks.
+            - Provide a caching layer to cache response from your Lambda function.
+
+        SUPPORTED EVENT SOURCES  https://docs.aws.amazon.com/lambda/latest/dg/invoking-lambda-function.html
+
+            Sans API Gateway? :: Invoking a Lambda Function On Demand 
+            https://docs.aws.amazon.com/lambda/latest/dg/with-on-demand-https-example.html  
+
+    - Languages Supported:    
+        Node.js    
+        Java    
+        Python 2/3    
+        C#     
+        go
+
+    AWS SAM CLI [Serverless App Model] [GitHub]  
+        https://github.com/awslabs/aws-sam-cli  
+        CLI tool for managing Serverless applications written with AWS Serverless Application Model (SAM).
+
+        - Dev/test Lambda functions locally with `sam local` and Docker
+        - Invoke functions from known event sources; S3, DynamoDB, Kinesis Streams, ...
+        - Start local API Gateway from a SAM template; iterate functions with hot-reloading
+        - Validate SAM templates
+        - boilerplate Serverless Service in your node|go|... Lambda Runtime `sam init`
+
+    Price:    
+        1st MILLION requests are free; $0.20/Million requests thereafter    
+        + Duration [compute time], rounded up to nearest 100ms    
+            PER MEMORY ALLOCATION, @ $0.00001667/GB-second
+
+        First 1M requests / month   Free
+        First 400K GB-sec / month   Free
+        Requests / month            $ 0.20 per 1M
+        GB-sec / month              $16.67 per 1M   (GB of RAM per sec per month per million)
+
+Build A Serverless Webpage 
+==========================
+    User action (button-click) at index.html should trigger Lambda event, per API Gateway. Lambda funtion is Python 3, which returns JSON (incl "body": "Foo Bar"). Javascript @ index.html replaces innerHTML of a <span> element @ index.html, per `document.getElementById("lambda_button_demo").innerHTML`, by a function fired on button-click event, per XMLHttpRequest GET request of API Endpoint (URL). Model diagram:
+
+        client  <==>  S3  => Get => API Gateway <==> Lambda (Python 3.6)
+                       <============ |
+                   index.html  
+                   error.html 
+    
+    @ Lambda > Functions > "Create Function" > "Author from scratch"
+        Name: FaaS-1
+        Runtime: Python 3.6
+        Role: "Create new role from template(s)"
+        Role name: FaaSExecute
+        Policy Templates: "Simple Microservice permissions"
+
+        > Create Function (button)
+
+        @ FaaS-1 
+            Configuration [ | Monitoring ]
+            > Designer
+                > Add triggers > "API Gateway" 
+                    > Configure triggers
+                        API: ... ? ... 
+                        Security: AWS IAM 
+                        Additional settings
+                            API name: FaaS-1-API
+                            Deployment stage: default
+                        > Add (button)
+                        > Save (button)
+                            API Gateway  (created upon last "Save", after "Configure triggers")
+                                FaaS-1-API   <<<  ... a link to "Amazon API Gateway" console 
+                                arn:aws:execute-api:us-east-1:971733315851:gbd14unudf/*/*/FaaS-1
+                                Details
+                                    API: api-gateway/gbd14unudf/*/*/FaaS-1
+                                    API endpoint: https://gbd14unudf.execute-api.us-east-1.amazonaws.com/default/FaaS-1
+                                    API name: FaaS-1-API
+                                    Authorization: AWS_IAM
+                                    Method: ANY
+                                    Resource path: /FaaS-1
+                                    Security: AWS_IAM
+                                    Stage: default
+            > Function code @ AWS (Cloud-9) IDE  
+                - lambda_function.py
+                - Copy/Paste (CTRL-C/V) your modified code
+            > Save (button)
+            >  Environment variables
+            > Tags
+            >  Basic settings
+                Description: Trigger on button (client action) @ S3/index.html website
+                Memory: (default)
+                Timeout: (default)
+
+        @ "Amazon API Gateway" > APIs > FaaS-1-API (gbd14unudf) 
+            > Resources > /FaaS-1 (gtgml0) > ANY 
+            > Actions > Delete Method (delete "ANY" method)
+            > Actions > Create Method > GET (+check box)
+
+        @ "/FaaS-1 - GET - Setup"
+            Choose the integration point for your new method.
+                Integration type
+                   X    Lambda Function (check box)
+                        HTTP
+                        Mock
+                        AWS Service
+                        VPC Link
+                Use Lambda Proxy integration: X (check box)
+                    Lambda Region: us-east-1
+                    Lambda Function: FaaS-1
+                    Use Default Timeout: X (check box)
+            > Save (box)
+                "
+                Add Permission to Lambda Function
+                You are about to give API Gateway permission to invoke your Lambda function:
+                arn:aws:lambda:us-east-1:971733315851:function:FaaS-1
+                "
+            > Actions > Deploy API
+               
+                Stages > Default (link)
+                    Invoke URL: https://gbd14unudf.execute-api.us-east-1.amazonaws.com/default 
+                    Resp (Raw Data): {"message":"Missing Authentication Token"}
+
+                Stages > Default//FaaS-1/GET
+                    Invoke URL: https://gbd14unudf.execute-api.us-east-1.amazonaws.com/default/FaaS-1 
+                    Resp (Raw Data): Foo Bar 
+
+        @ S3 > ... create, upload, synch the associated bucket, as apropos ...
+            $ aws s3 sync . s3://sempernow-test-1 --delete  # @ /r/aws-lambda-sync/ (local dir)
+                delete: s3://sempernow-test-1/SA Assoc Exam - Concepts and Components.jpg
+                upload: .\index.html to s3://sempernow-test-1/index.html
+                upload: .\error.html to s3://sempernow-test-1/error.html
+                upload: .\chiplets.jpg to s3://sempernow-test-1/chiplets.jpg
+
+        @ API Gateway (need API Gateway link)
+           GET > Invoke URL link > (copy/paste @ index.html javascript) ...
+            `xhttp.open("GET", "YOUR-API-GATEWAY-LINK-HERE", true);`
+            `xhttp.open("GET", "https://gbd14un...zonaws.com/default/FaaS-1 ", true);`
+
+        @ S3 > sempernow-test-1 > index.html > Link 
+        > https://s3.amazonaws.com/sempernow-test-1/index.html  
+        Resp: page renders (text + jpg); text replaced with "Hello Foo Bar" on button-click 
+       
+        SUCCESS !!! 
+
+        @ Lambda > Actions > Export function  
+        
+            "Export your function ..."   (buttons)
+
+                 - "Download AWS SAM file"
+                    YAML file defining the function, its events sources, and permissions.   
+
+                 - "Download deployment package"
+                    code and libraries
+
+                CloudFormation can be used to deploy and manage a similar serverless application. 
+
+Polly App
+=========
+    See "REF.AWS.Lambda.Polly.Serverless.txt"
+
+Simple Microservice (CRUD)
+==========================
+    https://docs.aws.amazon.com/lambda/latest/dg/with-on-demand-https-example-configure-event-source_1.html
+    Lambda function + Amazon API Gateway endpoint (trigger); endpoint is callable with any method (GET, POST, PATCH, etc.); function action per endpoint call method:
+        DELETE: delete an item from a DynamoDB table
+        GET: scan table and return all items
+        POST: Create an item
+        PUT: Update an item
+
+   

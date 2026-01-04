@@ -1,0 +1,111 @@
+
+SYNCH 
+  xmarks/firefox [same] comm...box @ gmail
+
+# Command Line Options   https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options
+# The `about:` Protocol  https://developer.mozilla.org/en-US/Firefox/The_about_protocol
+
+# Find CSS selector names [id or class] for userChrome.css @ \Profiles\{profile}\xulstore.json
+
+# Modify Bookmarks Menu using CSS [userChrome.css]
+
+	- hide "...Pocket..." :: about:config > 
+	
+		> extensions.pocket.enabled
+				TOGGLE to 'false'
+
+	- hide "..." menu elements :: about:config > 
+
+		> browser.uiCustomization.state  [UNtested]
+		> browser.pageActions.persistedActions  [Tested;NO CHANGE]
+				{"version":1,"ids":["bookmark","bookmarkSeparator","copyURL","emailLink","sendToDevice","screenshots"],"idsInUrlbar":[]}
+		> extensions.webextensions.themes.icons.buttons  [Tested;NO CHANGE]
+				back,forward,reload,stop,bookmark_star,bookmark_menu,downloads,home,app_menu,cut,copy,paste,new_window,new_private_window,save_page,print,history,full_screen,find,options,addons,developer,synced_tabs,open_file,sidebars,share_page,subscribe,text_encoding,email_link,forget,pocket
+
+  - hide 'Mobile Bookmarks', 'Bookmarks Toolbar', back-button, forward-button
+
+		1. Create '\chrome' folder and 'userChrome.css' file under %AppData% ...
+		
+			@ \AppData\Roaming\Mozilla\Firefox\Profiles\j8wi2bi6.default\chrome\userChrome.css
+		
+		2. Add ...
+
+			@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+			#BMB_mobileBookmarks, 
+			#BMB_viewBookmarksToolbar, 
+			#menu_mobileBookmarks, 
+			#BMB_bookmarksToolbar, 
+			#menu_bookmarksToolbar,
+			#BMB_bookmarksToolbarFolderMenu,
+			#menu_bookmarksToolbarFolderMenu,
+			#back-button, #forward-button {
+				display: none !important;
+			} 
+            
+       3. ENABLE @ about:config 
+            
+            toolkit.legacyUserProfileCustomizations.stylesheets = TRUE
+
+
+# Disable 'Push Notifications' a.k.a. 'WebNotifications' PERSISTently.  
+  (The annoying pop-up @ left of URL bar upon visiting certain sites.)  
+
+  Update: NEITHER persist @ Firefox 57
+  
+  - Lowest level method 
+    @ URL bar, type 'about:config'  
+      @ 'Search:', type 'webnotifications'  
+        toggle [double-click] each of these 2 items to 'false' ...  
+          dom.webnnotifications.enabled              ... false   
+          dom.webnotifications.serviceworker.enabled ... false  
+          
+    Then close the 'about:config' tab/window; close Firefox.   
+
+  - Higher level method 
+    @ URL bar [left-end]; click 'i' [graphic]; click '>' [right-arrow];  
+      click 'More Information'  
+        @ pop-up window menu, click 'Permissions' tab  
+          scroll to 'Receive Notifications'  
+            uncheck 'Use Default'; select 'Block'  
+    Then close that window; close Firefox.  
+
+# Private Window [32/64-bit]
+
+  "%_ITS_CONTAINER_%\Mozilla Firefox\firefox.exe" -private-window
+
+# disable WebRTC, else hidden analytics js can leak IP even @ secure VPN connection ...
+
+	@ URL: about:config > media.peerconnection.enabled = FALSE 
+
+# profile/cache 
+
+	default location . . . 
+		%USERPROFILE%\AppData\Local\Mozilla\Firefox\Profiles\
+
+	TWO METHODS: symlink [junction-point], or about:config
+	
+		Method 1.
+
+		symlink.bat [JUNCTION]; link entire profile [xyz.profile] dir: 
+			
+			symlink.bat j PROFILE_PATH CACHE_PATH
+			e.g., 
+			
+			set _PROFILE_PATH=%USERPROFILE%\AppData\Local\Mozilla\Firefox\Profiles\DIRNAME_PER_INSTALL
+			symlink.bat j "%_PROFILE_PATH%" "C:\CACHE\Firefox"
+		
+		Natively ... 
+			
+			MKLINK /J "%_PROFILE_PATH%" "C:\CACHE\Firefox"
+
+		Method 2. 
+		
+			@ URL: about:config > 
+				browser.cache.disk.parent_directory
+				IF key doesn't exist, then right-click and create it.
+				
+				Set to, e.g., C:\\TEMP\\
+			
+		
+	Firefox will auto-create its dirs, as necessary, from there.
+		

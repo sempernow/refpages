@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>SVG</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>SVG</h1>
+
+<h2>Typography per SVG <a href="h2>
+
+<h2>Adobe Illustrator (Ai) @ <code>Adobe.Ai</code> (<a href="h2>
+
+<h2><a href="https://inkscape.org/learn/tutorials/" title="inkscape.org">InkScape</a> (PortableApps)</h2>
+
+<ul>
+<li><code>Save as ...</code> &gt; <code>Optimized SVG (*.svg)</code></li>
+</ul>
+
+<h2>Minify SVG file : <a href="https://github.com/svg/svgo" title="@ GitHub"><code>svgo</code></a></h2>
+
+<pre><code class="language-bash">npx svgo SOURCE.svg  # Overwrites source
+npx svgo SOURCE.svg -o OUT.svg
+</code></pre>
+
+<h2>HTML/CSS</h2>
+
+<h2>Self closing tags such as <code>path</code>, <code>polygon</code>, etc. do <strong><em>not validate</em></strong> as HTML5; <code>&lt;path ... /&gt;</code></h2>
+
+<p>Some modern browsers fix such invalid tags on-the-fly; some don't.</p>
+
+<blockquote>
+<p>Reading the HTML5 specification, which is <a href="https://html.spec.whatwg.org/multipage/syntax.html#void-elements">the typical IT hellscape of useless verbosity</a>, one would reasonably conclude that self-closing <code>path</code> tags are valid. It explicitly references the &quot;SVG Namespace&quot; tags as &quot;Foreign Elements&quot; and those listed here that don't validate are also &quot;Void Elements&quot;. And those are the two categories specified as valid if self-closing. But no, apparently.</p>
+
+<p>We'll have to wait another half-century before IT specs are formatted as key-value pairs, as engineers figured out centuries ago. (Actual engineers, not &quot;IT engineer&quot;s.)</p>
+</blockquote>
+
+<p>Convert to valid &hellip;</p>
+
+<pre><code class="language-html">&lt;path ...&gt;&lt;/path&gt;
+</code></pre>
+
+<h2><code>viewBox</code> : Modify Alignment/Position/Size</h2>
+
+<blockquote>
+<h3>tl;dr</h3>
+
+<p>Normalize to Zero-offest Viewbox (<code>viewBox=&quot;0 0 w h&quot;</code>), assuring dynamic <strong><em>resize without clipping</em></strong>.</p>
+</blockquote>
+
+<h3>Normalize @ Ai &hellip;</h3>
+
+<blockquote>
+<p><code>File &gt; Export &gt; Export for Screens</code><br>
+<code>&gt; Select: All</code></p>
+</blockquote>
+
+<p>SVG <code>viewBox</code> attribute sets the render boundary and placement therein.</p>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox" title="@ MDN">@ <code>viewBox=&quot;x-min y-min width height&quot;</code></a></li>
+</ul>
+
+<p>Adobe Illustrator (<strong>Ai</strong>) will add/modify it as needed per processing &hellip;</p>
+
+<ul>
+<li>Crop:<br>
+
+<ul>
+<li><code>Object &gt; Artboards &gt; Fit to Artwork Bounds</code><br></li>
+</ul></li>
+<li>Transform:<br>
+
+<ul>
+<li><code>Object &gt; Transform &gt;</code> <code>Move</code>, <code>Rotate</code>, <code>Scale</code>, &hellip;
+
+<ul>
+<li>Operates on selected object(s) only; use mouse.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p>While sizing and placement are overridden per CSS, it is useful to scale an SVG to, say, <code>1000px</code> or more, for fine-grained control/manipulation (coordinates), and so that any subsequent bitmap image rendering (e.g., PNG) will be of high quality. Though Ai also offers <a href="#scaled_png">scaled bitmap image conversion/export</a> too.</p>
+
+<p>Style per CSS. For image attributes per se (<code>fill</code>, <code>height</code>, <code>width</code>, &hellip;) style <em>the</em> &quot;<code>&lt;svg&gt;</code>&quot; <em>element itself</em>; perhaps even inlining the dimensions, if static and otherwise apropos, just to be safe. Conversely, style its <em>container</em> regarding CSS positioning, <code>display</code>, and such <em>box-model</em> properties.</p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/viewBox" title="@ MDN">@ <code>viewBox=&quot;x-min y-min width height&quot;</code></a></h2>
+
+<blockquote>
+<p>Note that <code>viewBox</code> parameters do <strong>not</strong> change the graphic (size or proportions) itself, but only that (and positioning) <em>relative to the view</em>; to the bounds (box) of the view.</p>
+</blockquote>
+
+<ol>
+<li>Open in <strong>Ai</strong>
+
+<ul>
+<li>Scale (set its native size; <code>~ 1000px</code>):<br>
+
+<ul>
+<li><code>Objects &gt; Transform &gt; Scale</code> (<code>%</code> is the only option).<br></li>
+</ul></li>
+<li>Reset <code>viewBox</code>:
+
+<ul>
+<li><code>Objects &gt; Artboards &gt; Fit to Artwork bounds</code>.<br></li>
+</ul></li>
+<li>Export as SVG:
+
+<ul>
+<li><code>File &gt; Export &gt; Export for Screens</code>.
+
+<ul>
+<li>If  <code>Select: Full Document</code>, then any <em>relative positioning information is lost</em>. It saves as original filename, or as &quot;<code>Untitled-1.svg</code>&quot; if new.</li>
+<li>If <code>Select: All</code>, then positioning and size <em>relative to <code>viewBox</code></em> is <em>preserved and normalized</em>. It saves as &quot;<code>Artboard 1.svg</code>&quot;.<br></li>
+<li>At this point in the process, either selection is okay since we just reset the <code>viewBox</code>, so there is no relative positioning information to preserve.</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Open in text editor, and manually adjust <code>viewBox</code> parameters <strong>to modify the location and size</strong> of the graphic <em>relative to the view box</em>, adjust <code>width</code> and <code>height</code>. Adjust the offsets (<code>x-min</code>, <code>y-min</code>) to re-center it.<br>
+
+<ul>
+<li>E.g., if the graphic fills the viewbox &quot;<code>0 0 500 500</code>&quot; edge to edge, then &quot;<code>-15 -15 530 530</code>&quot; inserts <code>15px</code> of emptiness around it, keeping it centered.</li>
+<li>Do not modify the Artboard (@ Ai) after doing so, else (all changes to) <em>relative positioning will be lost</em>.</li>
+</ul></li>
+<li>Open in Ai, and again save:
+
+<ul>
+<li><code>File &gt; Export &gt; Export for Screens &gt; Select: All</code>. (<strong>Not</strong> <code>Full Document</code>.)</li>
+<li>Saving the Artboard in this manner is a <em>powerful option/tool</em> in that it <strong><em>normalizes all paths</em></strong> such that <code>viewBox</code> <strong><em>offsets are reset to zero</em></strong>, while <strong><em>preserving relative scale(s) and position(s) of all object(s)</em></strong> within the <code>viewBox</code>.</li>
+</ul></li>
+<li>Delete all cruft from the SVG file. It's okay to delete grouping elements (<code>g</code>), and the <code>id</code> and <code>class</code> attributes/values too.</li>
+</ol>
+
+<h2>SVG-Font Glyph to SVG</h2>
+
+<p>SVG-font glyphs do not render in browsers if used directly in an HTML <code>svg</code> element. They must first be <a href="https://helpfulsheep.com/2015-03-25-converting-svg-fonts-to-svg/" title="'Converting SVG fonts to... SVG' 2015 @ helpfulsheep.com">converted</a> from <code>glyph</code> to <code>path</code>, and then normalized, all per SVG specs:</p>
+
+<ol>
+<li>Manually, <a href="https://helpfulsheep.com/2015-03-25-converting-svg-fonts-to-svg/" title="'Converting SVG fonts to... SVG' 2015 @ helpfulsheep.com">or by script</a>, map the SVG-font <code>glyph</code> to <code>path</code>, which is as simple as stripping out everything but for the <code>d=...</code> element, and swapping tags; &quot;<code>&lt;glyph&gt;</code>&quot; to &quot;<code>&lt;path&gt;</code>&quot;. The &quot;<code>d=...</code>&quot; values-string is preserved (unchanged). See the example below.</li>
+<li>Crop @ Ai:
+
+<ul>
+<li><code>Object &gt; Artboards &gt; Fit to Artwork Bounds</code></li>
+</ul></li>
+<li>Transform @ Ai:
+
+<ul>
+<li><code>Object &gt; Transform &gt; Move</code>, <code>Rotate</code>, <code>Scale</code>, &hellip;
+
+<ul>
+<li>Operates on selected object(s) only; use mouse.</li>
+</ul></li>
+</ul></li>
+<li><a name="scaled_png"></a>Export @ Ai:
+
+<ul>
+<li><code>File &gt; Export &gt; Export for Screens &gt; Full Document</code>
+
+<ul>
+<li>Optionally, additional exports of various (scaled) bitmap image file(s), e.g., PNG, are available here.</li>
+</ul></li>
+</ul></li>
+<li>Manually normalize by adding <code>transform</code> to path; <code>scale</code> (vertical flip) and <code>translate</code> (to re-center). This is because an SVG-font <code>glyph</code> is <em>upside down</em> relative to an SVG <code>path</code>.</li>
+<li>Manually delete unnecessary <code>svg</code> attributes/values (<code>id</code>, <code>title</code>, &hellip;).</li>
+</ol>
+
+<h3>Example: &quot;<code>웃</code>&quot;</h3>
+
+<p>Unicode glyph <code>'HANGUL SYLLABLE US'</code> (<code>U+C6C3</code>) is plucked from <a href="https://en.wikipedia.org/wiki/Malgun_Gothic" title="@ Wikipedia">Malgun Gothic</a> (<code>malgun.ttf</code>), which is a Hangul Symbol font. The TTF is first converted (online) to SVG font (<code>glyph</code>), and then (per Ai) to SVG (<code>path</code>).</p>
+
+<p>@ SVG font (<code>glyph</code>)</p>
+
+<pre><code class="language-xml">&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; version=&quot;1.1&quot;&gt;
+    &lt;glyph
+         glyph-name=&quot;uniC6C3&quot;
+         unicode=&quot;웃&quot;
+         vert-adv-y=&quot;2176&quot;
+         d=&quot;M1024 1063q-298 0 -456 92.5t-158 ... -295.5t475.5 -158.5z&quot; /&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<p>@ SVG (<code>path</code>)</p>
+
+<pre><code class="language-xml">&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 1500 1500&quot;&gt;
+    &lt;path 
+        d=&quot;M1024 1063q-298 0 -456 92.5t-158 ... -295.5t475.5 -158.5z&quot; /&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<p>@ Transformed SVG (<code>path</code>), after cropped to artboard and exported per Ai.</p>
+
+<pre><code class="language-xml">&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 1790 1886&quot;&gt;
+    &lt;path 
+        transform=&quot;scale(1, -1) translate(0, -1886)&quot; 
+        d=&quot;M895,1200q-298,0-456... ,206.5-295.5T1651,127Z&quot;/&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<h2>PNG to SVG</h2>
+
+<h4>@ Adobe Illustrator (Ai)</h4>
+
+<ul>
+<li><p>Convert from bitmap to vector graphic:</p>
+
+<ul>
+<li><code>Window &gt; Image Trace</code></li>
+</ul></li>
+
+<li><p>Crop background (<code>Artboard</code>) to image (<code>Object</code>):</p>
+
+<ul>
+<li><code>Object &gt; Artboards &gt; Fit to Selected Art</code></li>
+</ul></li>
+
+<li><p>Save as SVG file:</p>
+
+<ul>
+<li><code>File &gt; Export &gt; Export for Screens</code></li>
+</ul></li>
+</ul>
+
+<h2>Unicode Glyph per SVG file</h2>
+
+<p><a href="https://www.fileformat.info/info/unicode/char/2715/index.htm" title="'MULTIPLICATION X' U+2715">&#x2715;</a> | <a href="http://www.fileformat.info/info/unicode/char/002630/index.htm" title="'TRIGRAM FOR HEAVEN' U+2630">&#x2630;</a></p>
+
+<h3><a href="https://www.fileformat.info/info/unicode/char/a.htm" title="A to Z Index of Unicode Characters">@ <code>fileformat.info</code></a></h3>
+
+<ul>
+<li>Find and select the Unicode glyph</li>
+<li>Save the Unicode glyph as SVG file<br>
+
+<ul>
+<li>The hypertext link @ &quot;Outline (as SVG file)&quot;.</li>
+</ul></li>
+</ul>
+
+<h4>@ Adobe Illustrator (Ai)</h4>
+
+<ul>
+<li><p>@ Ai Menu</p>
+
+<ul>
+<li><p>Crop &amp; add <code>viewport</code> @ <code>Object</code> menu:<br>
+<code>&gt; Artboards</code><br>
+<code>&gt; Fit to Artwork Bounds</code></p></li>
+
+<li><p>Save as SVG @ <code>File</code> menu:<br>
+<code>&gt; Export &gt; Export for Screens...</code><br>
+<code>&gt; Full Document</code><br>
+<code>&gt; Export Artboard</code></p></li>
+</ul></li>
+</ul>
+
+<p>Note on save as <code>Select: Full Document</code> vs <code>Select: All</code>; the latter (<code>All</code>) preserves positioning information relative to <code>viewBox</code>, and saves as <code>Artboard 1.svg</code>.</p>
+
+<h4>@ Text Editor, open the SVG file:</h4>
+
+<ul>
+<li>Remove all the cruft; <code>id</code>, <code>data-name</code>, <code>defs</code>, <code>style</code>, <code>title</code>, <code>class</code> .<br></li>
+<li>Keep only <code>xmlns</code>, <code>viewbox</code> and <code>path</code> .</li>
+</ul>
+
+<p>Original</p>
+
+<pre><code class="language-xml">&lt;svg 
+    id=&quot;Layer_1&quot; 
+    data-name=&quot;Layer 1&quot; 
+    xmlns=&quot;http://www.w3.org/2000/svg&quot; 
+    viewBox=&quot;0 0 220 185.1&quot;
+&gt;
+    &lt;defs&gt;
+        &lt;style&gt;
+            .cls-1{stroke:#000;}
+        &lt;/style&gt;
+    &lt;/defs&gt;
+    &lt;title&gt;FNAME&lt;/title&gt;
+    &lt;path class=&quot;cls-1&quot; d=&quot;...&quot;/&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<p>Final</p>
+
+<pre><code class="language-xml">&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 220 185.1&quot;&gt;
+    &lt;path d=&quot;...&quot;/&gt;
+&lt;/svg&gt;
+</code></pre>
+
+<h4>@ HTML</h4>
+
+<ul>
+<li><p>Supported @ <code>img</code> and <code>svg</code> tags.</p>
+
+<pre><code class="language-html">&lt;svg class=&quot;svgtest&quot;&gt;...&lt;/svg&gt;
+
+&lt;img class=&quot;svgtest&quot; src=&quot;images/svg/tfh.svg&quot; alt=&quot;TRIGRAM FOR HEAVEN&quot;&gt;
+</code></pre></li>
+</ul>
+
+<h4>@ CSS</h4>
+
+<ul>
+<li><p>SVG file path is <em>relative to css file</em>.</p>
+
+<pre><code class="language-css">svg, 
+.svgtest svg {
+    background-image: url(../images/svg/tfh.svg);   
+    width: 48px;
+    height: 48px; 
+}
+</code></pre></li>
+
+<li><p>Use <code>currentColor</code>, a CSS keyword, to <strong>inherit color</strong> from parent.</p>
+
+<pre><code class="language-css">button svg {
+    fill: currentColor;
+}
+</code></pre></li>
+
+<li><p>Useable @ CSS pseudo-class(es)</p>
+
+<pre><code class="language-css">button svg:hover {
+    fill: var(--color-anchor-link);
+}
+</code></pre></li>
+</ul>
+
+<h2>Add Dropshadow (properly)</h2>
+
+<blockquote>
+<p>A common method for adding dropshadow to an SVG graphic
+is by embedding a graphics file of the desired effect, and applying it as an overlay.
+However, the resulting SVG file is huge (100x).</p>
+</blockquote>
+
+<p>Instead, <strong>embed CSS in the SVG</strong> to add the effect<br>
+as just another vector-graphics object:</p>
+
+<pre><code class="language-svg">&lt;svg version=&quot;1.1&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;&gt;
+    &lt;defs&gt;
+        &lt;style&gt;
+        .dropshadow-1 {
+            filter: drop-shadow(7px 7px 6px rgb(0 0 0 / 0.3));
+        }
+        &lt;/style&gt;
+    &lt;/defs&gt;
+    &lt;g class=&quot;dropshadow-1&quot;&gt;
+         ...
+    &lt;/g&gt;
+&lt;/svg&gt;
+
+</code></pre>
+
+<ul>
+<li>See <a href="svg-dropshadow-css.svg">svg-dropshadow-css.svg</a></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

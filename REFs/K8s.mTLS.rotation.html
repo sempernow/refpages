@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.mTLS.rotation</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>K8s mTLS : How to rotate control-plane certificates</h1>
+
+<blockquote>
+<p>~~By default, a vanilla cluster automatically updates its (mTLS) control-plane certificates. ~~ Certificates are not updated automatically.</p>
+</blockquote>
+
+<p><del>In case it fails to do so (not unheard of), this is the recovery procedure.</del></p>
+
+<h2>New : <code>v1.29+</code></h2>
+
+<p>Simple, nuclear option</p>
+
+<pre><code class="language-bash"># 1. Cordon and drain all but one control plane node
+kubectl cordon control-plane-2
+kubectl cordon control-plane-3
+kubectl drain control-plane-2 control-plane-3 --delete-emptydir-data --ignore-daemonsets
+
+# 2. Remove extra control plane nodes
+kubectl delete node control-plane-2 control-plane-3
+
+# 3. On remaining control plane node, renew certificates
+sudo kubeadm certs renew all
+sudo kubeadm certs check-expiration
+sudo systemctl restart kubelet
+
+# 4. Join others
+# On the surviving good node — generate a fresh certificate key (valid 2h by default)
+sudo kubeadm init phase upload-certs --upload-certs
+# This prints a certificate-key at the end, e.g.:
+# --certificate-key 7e2b3c4d5e6f...
+
+# Create a join token
+sudo kubeadm token create --print-join-command
+# This prints something like:
+# kubeadm join 10.0.0.10:6443 --token abcdef.1234567890abcdef \
+#     --discovery-token-ca-cert-hash sha256:...
+
+# To add a new control plane node, combine them:
+sudo kubeadm join 10.0.0.10:6443 --token abcdef.1234567890abcdef \
+    --discovery-token-ca-cert-hash sha256:... \
+    --control-plane --certificate-key 7e2b3c4d5e6f...
+</code></pre>
+
+<p>Complicated and conflicting advice regarding other control nodes</p>
+
+<pre><code class="language-bash"># 1st control node
+sudo kubeadm certs renew all
+sudo systemctl restart kubelet
+
+# Copy pki ????
+
+# All control plane nodes:
+echo &quot;Updating local kubeconfig files...&quot;
+sudo kubeadm init phase kubeconfig all
+
+echo &quot;Restarting control plane components...&quot;
+sudo systemctl restart kube-apiserver kube-controller-manager kube-scheduler kubelet
+
+echo &quot;Done on $HOSTNAME&quot;
+</code></pre>
+
+<h2>Prior : <code>v1.28-</code></h2>
+
+<ol>
+<li>Backup existing configuration
+
+<ul>
+<li>Process is cluster/distro dependent.</li>
+</ul></li>
+
+<li><p><strong>Renew certificates</strong> on <strong><em>one</em></strong> control node</p>
+
+<pre><code class="language-bash">kubeadm certs renew all --config $clusterconfig
+</code></pre>
+
+<ul>
+<li>If control plane is multi-node, <del>then distribute new certs.</del></li>
+</ul></li>
+
+<li><p><strong>Update the manifest of all Static Pods</strong> with the new TLS certificates.
+This <strong>requires the <code>ClusterConfiguration</code> manifest</strong> (<code>$clusterconfig</code>).</p>
+
+<pre><code class="language-bash">kubeadm init phase kubeconfig all --config $clusterconfig
+</code></pre>
+
+<ul>
+<li><p>The <code>ClusterConfiguration</code> manifest may exist<br>
+at <code>/etc/kuberntes/kubeadm-config.yaml</code>.<br>
+If not, capture it from its ConfigMap key:</p>
+
+<pre><code class="language-bash">kubectl get cm -n kube-system kubeadm-config -o jsonpath='{.data.ClusterConfiguration}'
+</code></pre></li>
+</ul></li>
+
+<li><p><strong>Delete all the old</strong> (existing) <strong>Static Pods</strong> by temporarily
+emptying the folder in which <code>kubelet</code> expects to find them.</p>
+
+<pre><code class="language-bash">k8s=/etc/kubernetes/manifests
+tmp=/tmp/k8s-$(date '+%F')
+mkdir -p $tmp &amp;&amp;
+    mv $k8s/*.yaml $tmp/ &amp;&amp;
+        sleep 100 &amp;&amp;
+            mv $tmp/*.yaml $k8s/
+</code></pre></li>
+
+<li><p>Recreate the kubeconfig</p>
+
+<pre><code class="language-bash">sudo kubeadm init phase kubeconfig all
+sudo kubeadm init phase kubeconfig super-admin
+sudo systemctl restart kubelet
+</code></pre></li>
+
+<li><p>Check all X.509</p>
+
+<pre><code class="language-bash"># Check all kubeconfigs use current certificates
+for conf in admin kubelet controller-manager scheduler; do
+echo &quot;=== $conf.conf ===&quot;
+kubectl --kubeconfig=/etc/kubernetes/${conf}.config config view --raw \
+    -o jsonpath='{.users[0].user.client-certificate-data}' | \
+    base64 -d | openssl x509 -noout -subject -dates | head -2
+echo
+done
+</code></pre>
+
+<ul>
+<li>Want: <code>rotateCertificates: true</code></li>
+</ul></li>
+</ol>
+
+<p>Set to auto rotate</p>
+
+<pre><code class="language-yaml">apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+rotateCertificates: true
+serverTLSBootstrap: true  # This enables automatic serving cert rotation
+
+</code></pre>
+
+<p>Check if the cluster is configured to automatically rotate its mTLS certificates:</p>
+
+<pre><code class="language-bash">sudo grep rotate /var/lib/kubelet/config.yaml
+</code></pre>
+
+<h2>Example using Kind cluster</h2>
+
+<p>Backup the existing cluster; snapshot the kind cluster's &quot;node&quot; (container):</p>
+
+<pre><code class="language-bash"># Commit container to new image (Imperative method of image creation)
+☩ docker commit kind-control-plane kind-control-plane:$(date '+%F')
+# Verify image 
+☩ docker image ls --format &quot;table {{.ID}}\t{{.Repository}}:{{.Tag}}\t{{.Size}}&quot; |grep kind-control
+cc3dbd9204e6   kind-control-plane:2024-11-01                  1.04GB
+</code></pre>
+
+<p>Renew certificates</p>
+
+<pre><code class="language-bash">☩ docker exec -it kind-control-plane bash
+root@kind-control-plane:/# kubeadm certs renew all
+</code></pre>
+
+<p>Distribute to all control-plane nodes @ <code>/etc/kubernetes/pki/</code></p>
+
+<p>Update manifests of all Static Pods with new kubeconfig (TLS certificates).</p>
+
+<p>This requires the <code>ClusterConfiguration</code>, so first verify that we have that.</p>
+
+<p>If it exists, e.g., <code>/etc/kubernetes/kubeadm-config.yaml</code>, use that.
+Else extract it from the relevant ConfigMap
+working from the node (container) to capture it:</p>
+
+<pre><code class="language-bash">☩ docker exec -it kind-control-plane bash
+root@kind-control-plane:/# kubectl get cm -n kube-system kubeadm-config \
+    -o jsonpath='{.data.ClusterConfiguration}' \
+    |tee /etc/kubernetes/kubeadm-config.yaml
+</code></pre>
+
+<p>Having the <code>ClusterConfiguration</code> (YAML),
+we now update the Static Pod manifests:</p>
+
+<pre><code class="language-bash">☩ docker exec -it kind-control-plane bash
+root@kind-control-plane:/# [[ -f /etc/kubernetes/kube-config.yaml ]] &amp;&amp;
+    kubeadm init phase kubeconfig all --config /etc/kubernetes/kubeadm-config.yaml
+</code></pre>
+
+<p>Kind's <code>ClusterConfiguration</code> (example)
+@ <code>/etc/kubernetes/kubeadm-config.yaml</code></p>
+
+<pre><code class="language-yaml">apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+apiServer:
+  certSANs:
+  - localhost
+  - 127.0.0.1
+  extraArgs:
+  - name: runtime-config
+    value: &quot;&quot;
+caCertificateValidityPeriod: 87600h0m0s
+certificateValidityPeriod: 8760h0m0s
+certificatesDir: /etc/kubernetes/pki
+clusterName: kind
+controlPlaneEndpoint: kind-control-plane:6443
+controllerManager:
+  extraArgs:
+  - name: enable-hostpath-provisioner
+    value: &quot;true&quot;
+encryptionAlgorithm: RSA-2048
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: registry.k8s.io
+kubernetesVersion: v1.31.0
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/16
+
+</code></pre>
+
+<ul>
+<li>Keys order of K8s objects (Golang maps) is irrelevant.<br>
+These are reordered for clarity,
+but expect inconsistent order on capture/extract from K8s API.</li>
+</ul>
+
+<p>Update the running Static Pods. These are controlled by <code>kubelet.service</code>, not the K8s API.
+Simply removing them (temporarily) from their home triggers the kubelet to terminate their Pods.
+After a time (seconds, or upon verification using <code>crictl</code>),
+restore these Static Pod manifests to their home:</p>
+
+<pre><code class="language-bash">k8s=/etc/kubernetes/manifests
+tmp=/tmp/k8s-$(date '+%F')
+mkdir -p $tmp &amp;&amp;
+    mv $k8s/*.yaml $tmp/ &amp;&amp;
+        sleep 10 &amp;&amp;
+            mv $tmp/*.yaml $k8s/
+</code></pre>
+
+<p>Update client kubeconfig</p>
+
+<p>The usual method is to use <code>/etc/kubernetes/admin.conf</code></p>
+
+<pre><code class="language-bash">☩ docker exec -it kind-control-plane cat /etc/kubernetes/admin.conf \
+    |yq '.users[] |select(.name == &quot;kubernetes-admin&quot;) | .user[&quot;client-certificate-data&quot;]' \
+    |tee ~/.kube/kind
+</code></pre>
+
+<p>But this fails at Kind cluster lest modify several keys,
+so rather <strong>use &quot;<code>kind export kubeconfig</code>&quot; method</strong>.</p>
+
+<pre><code class="language-bash"># Export the updated client kubeconfig
+kind export kubeconfig --kubeconfig ~/.kube/kind
+
+# Merge with K3s
+export KUBECONFIG=~/.kube/k3s:~/.kube/kind
+kubectl config view --flatten |tee ~/.kube/config
+# Set context to kind
+kubectl config use-context kind-kind
+
+</code></pre>
+
+<p>Verify</p>
+
+<pre><code class="language-bash">☩ date
+Fri Nov  1 18:00:22 EDT 2024
+
+# Verify mTLS rotated at host by kubeadm
+☩ docker exec -it kind-control-plane \
+    openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout \
+        | grep &quot;Not After&quot;
+
+            Not After : Nov  1 20:29:28 2025 GMT
+
+# Verify mTLS rotation at /etc/kubernetes/admin.conf
+☩ docker exec -it kind-control-plane cat /etc/kubernetes/admin.conf |yq '.users[] |select(.name == &quot;kubernetes-admin&quot;) | .user[&quot;client-certificate-data&quot;]' |base64 -d |openssl x509 -n
+oout -subject -enddate
+subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+notAfter=Nov  1 20:29:28 2025 GMT
+
+# Verify mTLS rotation at client kubeconfig
+☩ k config view --raw -o json \
+    |jq -Mr '.users[] |select(.name == &quot;kind-kind&quot;) | .user[&quot;client-certificate-data&quot;]' \
+    |base64 -d \
+    |openssl x509 -noout -subject -enddate
+
+subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+notAfter=Nov  1 20:29:28 2025 GMT
+
+# Verify client-side kubeconfig
+☩ k get node
+NAME                 STATUS   ROLES           AGE   VERSION
+kind-control-plane   Ready    control-plane   61d   v1.31.0
+</code></pre>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

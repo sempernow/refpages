@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>CVEs.trivy-operator</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Trivy : CVEs Scanner | <a href="https://aquasecurity.github.io/trivy/v0.52/docs/">Docs</a> | <a href="https://hub.docker.com/r/aquasec/trivy" title="hub.docker.com">Trivy image</a></h1>
+
+<h2><a href="https://aquasecurity.github.io/trivy-operator/latest/">K8s : <code>trivy-operator</code></a></h2>
+
+<p>The Trivy Operator automatically discovers and scans all images running in a K8s cluster, including images of application pods and system pods. Scan reports are summarized and saved as <code>VulnerabilityReport</code> (CRD) resources, which are owned by a Kubernetes controller.</p>
+
+<h3>Install by Helm</h3>
+
+<p><a href="trivy-operator-install.sh"><strong><code>trivy-operator-install.sh</code></strong></a></p>
+
+<pre><code class="language-bash">bash trivy-operator-install.sh
+
+kubectl patch cm trivy-operator-trivy-config -n trivy-system \
+  --type merge \
+  -p &quot;$(cat &lt;&lt;EOF
+{
+  &quot;data&quot;: {
+    &quot;trivy.severity&quot;: &quot;HIGH,CRITICAL&quot;
+  }
+}
+EOF
+)&quot;
+</code></pre>
+
+<ul>
+<li><p>Images :</p>
+
+<pre><code class="language-plaintext">ghcr.io/aquasecurity/trivy
+ghcr.io/aquasecurity/trivy-operator
+ghcr.io/aquasecurity/node-collector
+ghcr.io/aquasecurity/trivy-db
+ghcr.io/aquasecurity/trivy-java-db
+</code></pre></li>
+</ul>
+
+<h3><code>VulnerabilityReport</code></h3>
+
+<p>Scan reports saved to CRD: <code>kind: VulnerabilityReport</code></p>
+
+<pre><code class="language-bash">k get vulnerabilityreports -n kube-system -o yaml \
+    |yq .items[].metadata.name
+</code></pre>
+
+<pre><code class="language-plaintext">daemonset-kube-router-kube-router
+pod-etcd-a1-etcd
+pod-kube-apiserver-a1-kube-apiserver
+...
+</code></pre>
+
+<pre><code class="language-bash">kn kube-system
+vr=pod-kube-apiserver-a1-kube-apiserver
+k get VulnerabilityReport $vr -o json \
+    |jq -Mr '.report.vulnerabilities | .[]? |select(.severity == &quot;CRITICAL&quot; or .severity == &quot;HIGH&quot;)' \
+    |jq . --slurp
+
+</code></pre>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

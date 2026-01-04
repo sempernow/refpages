@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Docker</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://www.docker.com" title="docker.com">Docker</a> | <a href="https://docs.docker.com/reference/" title="docs.docker.com/reference">Docs</a> | <a href="https://hub.docker.com/explore/" title="hub.docker.com">Hub</a> | <a href="https://en.wikipedia.org/wiki/Docker_(software)" title="en.wikipedia.org">Wikipedia</a></h1>
+
+<p>Docker (Linux)<br>
+Docker for Windows (DFW)<br>
+Docker for Mac (DFM)</p>
+
+<ul>
+<li>Runs as <strong>Server</strong> (daemon) and <strong>Client</strong> (<code>docker</code> CLI and others) ...<br></li>
+<li>Docker Client (Docker Engine) talks to the server<br></li>
+<li>Docker Server (Docker Daemon) talks to Image Cache (local) then Docker Hub (Image Store)<br></li>
+</ul>
+
+<h2>Install (<a href="h2>
+
+<h2><code>PRJ.Docker.Get-Started</code> (<a href="h2>
+
+<h2><a href="Docker.sh"><code>Docker.sh</code></a></h2>
+
+<h2>Background</h2>
+
+<p>Docker predecessor was <a href="https://www.crunchbase.com/organization/dotcloud" title="CrunchBase.com">dotCloud</a>, a Linux container technology startup.</p>
+
+<p>Docker accesses the Linux kernel's virtualization features, either directly using the <code>runC</code>/<code>libcontainer</code> library, or indirectly using <code>libvirt</code>, <a href="https://en.wikipedia.org/wiki/LXC" title="Wikipedia :: Linux Containers">LXC</a> or <code>systemd-nspawn</code>.</p>
+
+<ul>
+<li><a href="https://github.com/containerd/containerd" title="GitHub/containerd"><code>containerd</code> (GitHub)</a><br>
+An open-source <a href="https://containerd.io/" title="containerd.io">industry-standard container runtime</a>. <strong>The core container runtime</strong> of the Docker Engine daemon (<code>dockerd</code>). Uses <code>runC</code> (and <a href="https://grpc.io/" title="grpc.io"><code>grpc</code> for comms</a>) <a href="https://stackoverflow.com/questions/41645665/how-containerd-compares-to-runc" title="StackOverflow 2017">for spawning and running containers</a> per OCI spec.
+
+<ul>
+<li><a href="https://github.com/opencontainers/runc" title="GitHub/OCI/runC"><code>runC</code>/<code>libcontainer</code> (GitHub)</a><br>
+A specification and runtime code; begot <a href="https://github.com/opencontainers" title="GitHub/opencontainers">Open Container Initiative</a> (OCI). A CLI tool for spawning and running containers per OCI specifications.
+
+<ul>
+<li><code>libcontainer</code><br>
+The original virtualization spec/runtime; <em>merged</em> with <code>runC</code>. In effect, this is Docker's fork of LXC.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Architecture</h2>
+
+<ul>
+<li><strong>Container</strong><br>
+Virtualized OS; an isolated area of an operating system (OS) with resource limitations applied. Leverages <strong>Linux kernel primitives</strong> (<strong>Namespaces</strong> &amp; <strong>Control Groups</strong>);  <a href="https://en.wikipedia.org/wiki/Linux_namespaces" title="Wikipedia :: Linux Namespaces">Namespaces</a> for isolation; Control Groups (<a href="https://en.wikipedia.org/wiki/Cgroups" title="Wikipedia">Cgroups</a>) for resource limits. The Docker Engine (&quot;The Daemon&quot;) handles those low-level primitives.<br></li>
+</ul>
+
+<p><a name="unionfs"></a></p>
+
+<ul>
+<li><p><a href="https://en.wikipedia.org/wiki/Union_mount" title="Wikipedia"><strong>Union</strong> FS/Mount</a><br>
+Combines multiple directories into one that appears to contain their combined contents; allows immutable image layers to form a useful, mutable container during both build and operational runs. Though images (and each comprising layer thereof) are immutable, containers are modifiable by the <strong>Copy-on-Write</strong> (<a href="https://en.wikipedia.org/wiki/Copy-on-write" title="Wikipedia">CoW</a>) mechanism. The <strong>container stores changes on a R/W layer</strong> on top of the underlying (RO) image layers. Docker currently implements Union FS/Mount <a href="https://docs.docker.com/v17.12/storage/storagedriver/select-storage-driver/">using various storage drivers</a> (e.g., <code>overlay2</code>), supporting <code>xfs</code>, the underlying filesystem.</p></li>
+
+<li><p><a href="https://en.wikipedia.org/wiki/Linux_namespaces" title="Wikipedia :: Linux Namespaces"><strong>Namespaces</strong></a><br>
+Carves up the OS into multiple <em>virtual</em> OS (on which the desired app runs). Unlike VMs, all Virtual OS (containers of a node) share the same, single host (node) OS. <strong>Linux Namespaces</strong> (per container):</p>
+
+<ul>
+<li>Process IS (<code>pid</code>)</li>
+<li>Network (<code>net</code>)</li>
+<li>Filesystem/mount (<code>mnt</code>); root FS</li>
+<li>Inter-proc comms (<code>ipc</code>); shared memory</li>
+<li>UTS (<code>uts</code>); hostname</li>
+<li>User (<code>user</code>); new; map host:container users</li>
+</ul></li>
+
+<li><p><strong>Docker Engine</strong><br>
+Was a monolith; refactored per OCI standards/specs for both Image &amp; Runtime. Is now entirely separate; modular design; can upgrade Engine while its containers are running.</p></li>
+</ul>
+
+<h2>Software</h2>
+
+<ul>
+<li><p><strong>Server</strong> <a href="https://docs.docker.com/engine/reference/commandline/dockerd/" title="@ docs.Docker.com">(<code>dockerd</code>)</a>  a.k.a. <strong>Docker Engine</strong> a.k.a. The <strong>Daemon</strong>.  The persistent <strong>host</strong> process (daemon) that manages  containers and handles container objects; listens for requests sent via the <strong>Docker Engine API</strong>. Interaces with Linux kernel. &quot;<em>A self-sefficient runtime for containers.</em>&quot;</p></li>
+
+<li><p><strong>Client</strong> <a href="https://docs.docker.com/engine/reference/commandline/docker/" title="@ docs.Docker.com">(<code>docker</code>)</a> a.k.a. <strong>Docker Engine (CLI/Tool)</strong>. The main CLI for Docker Engine; allows users to interact with Docker daemons.</p></li>
+</ul>
+
+<h2>Editions</h2>
+
+<ul>
+<li><strong>Docker CE</strong><br>
+Docker Engine (CE)<br>
+
+<ul>
+<li>Community Edition (Free)<br></li>
+</ul></li>
+<li><strong>Docker EE</strong><br>
+
+<ul>
+<li>Enterprise Edition (Pay)<br>
+RBAC, scanning, Image promos, ...</li>
+<li>Docker Engine (EE)<br>
+
+<ul>
+<li>Docker Certified Infra</li>
+</ul></li>
+<li>Ops UI (Web GUI)<br>
+
+<ul>
+<li>&quot;Universal Control Plane&quot; (UCP)<br>
+It's a Docker app (Swarm Cluster)</li>
+</ul></li>
+<li>Secure Registry<br>
+
+<ul>
+<li>Docker Trusted Registry (DTR)<br>
+An on-prem registry.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2>Objects</h2>
+
+<ul>
+<li><p><strong>Image</strong><br>
+An image is a combination of a JSON <a href="https://docs.docker.com/registry/spec/manifest-v2-2/">Image Manifest</a> file and individual layer files. A layer is a <a href="https://cameronlonsdale.com/2018/11/26/whats-in-a-docker-image/" title="'What's in a Docker image?' - Nov 2018 @ CamperonLonsdale.com"><strong>tarball</strong> of files</a> <strong>built</strong> from (<code>rootfs</code>) <strong>filesystem views</strong>; loosely coupled layers; includes the app, its dependencies, and a JSON manifest, all for the Docker runtime. A stack of <a href="#unionfs">Union fs</a> layers, unified by a storage driver, per manifest instructions. <code>Storage Driver: Overlay2</code>  (@ <code>docker system info</code>)</p>
+
+<ul>
+<li><strong>Stateless</strong> and <strong>immutable</strong>; A read-only template. &quot;<code>IMAGE ID</code>&quot; references the <a href="https://docs.docker.com/engine/reference/commandline/images/#list-image-digests" title="@ docs.Docker.com"><code>SHA256</code> hash of the image</a> the globally unique <strong>content-addressable identifier</strong>. This ID is <a href="https://docs.docker.com/engine/security/trust/content_trust/" title="'Docker Content Trust' @ docs.Docker.com">an attack vector necessitating countermeasures</a>.<br></li>
+<li>The container host provides the (Linux) kernel, so the image (tarball) <strong><em>can be a single file</em></strong> (binary), such as <a href="https://www.admintome.com/blog/deploying-go-applications-using-docker-containers/" title="'Deploying Go applications using Docker containers' - Nov 2018 @ AdminToMe.com">a carefully compiled Golang app</a>; megabytes. At the other extreme, it can be a fully loaded Ubuntu distro, including an assortment of packages installed therein; gigabytes.<br></li>
+</ul></li>
+
+<li><p><strong>Container</strong><br>
+A runtime instance of a Docker image; a process of the Docker runtime (daemon: <code>dockerd</code>); <strong>created</strong> of the image, its execution environment, and a standardized set of instructions. A <a href="https://docs.docker.com/storage/storagedriver/#images-and-layers">writable layer</a> on top of the image.</p>
+
+<ul>
+<li>Designed to isolate and run a single userland process in a virutalized OS.<br></li>
+<li>The Docker runtime (daemon) handles the container's system calls to the host kernel.
+<br></li>
+</ul></li>
+
+<li><p><a href="https://docs.docker.com/engine/swarm/" title="docs.docker.com/engine/swarm"><strong>Swarm</strong></a><br>
+A cluster of one or more Docker Engines (nodes) running in swarm mode. A set of cooperating Docker Engine daemons that communicate through their API. A service allowing containers to be managed across multiple Docker Engine daemons. Docker tool commands (<code>node</code> and <code>swarm</code>) providing native <strong>clustering</strong> functionality; turns a group of Docker Engines into <strong>a single <em>virtual</em> Docker engine</strong>. Docker manages swarms using the <a href="https://en.wikipedia.org/wiki/Raft_(computer_science)" title="Wikipedia"><em>Raft Consensus Algorithm</em></a>.</p>
+
+<ul>
+<li><a href="https://docs.docker.com/engine/swarm/key-concepts/"><strong>Swarm Mode</strong></a><br>
+Can start/stop services, and modify them, while they remain online. A <strong>Swarm Manager</strong> (node) is specified (or elected thereafter) as the <strong>Leader</strong> of all <strong>Swarm Managers</strong> (<em>Followers</em>). The Swarm (consensus algorithm) <a href="https://docs.docker.com/engine/swarm/raft/">requires a Quorum</a> (N/2 +1) of managers agreeing on the state of the swarm. So, for example, having two managers instead of one doubles the chance of losing quorum; always keep an <strong><em>odd number</em></strong> of Swarm Managers.</li>
+<li><strong>Activation</strong>, &quot;<code>docker swarm init</code>&quot;, <strong>enables</strong> additional <code>docker</code> tool commands: <code>docker node</code> | <code>service</code> | <code>stack</code> | <code>secret</code><br>
+
+<ul>
+<li>Swarm Data @ <code>UDP/4789</code></li>
+<li>Swarm Commands @ <code>TCP/2377</code></li>
+<li>Swarm Control Plane @ <code>TCP/2376</code> (<em>Never use this.</em>)
+
+<ul>
+<li>All communication between Docker Engines of the swarm occurs thereof. Nodes of a swarm may be scattered across Cloud vendors. <strong><em>Vendorless!</em></strong></li>
+</ul></li>
+</ul></li>
+<li>Orchestration and its security is handled internally by Swarm Manager(s). There is no external database or authority involved in any of it.
+
+<ul>
+<li>Each Manager posesses the complete Swarm state, for greater reliability and speed.<br></li>
+<li>Worker/Manager nodes can switch roles, per API.</li>
+<li>Node-to-Node Communication Protocols; presuming multi-node swarm, not single-node swarm mode.</li>
+<li>Swarm Managers communicate with each other securely using <strong>Raft</strong> protocol, which is <strong>strongly consistent</strong>, forming a self-sufficient <strong>Quorum</strong>;  no external dependencies.</li>
+<li>Workers communicate with each other using <strong>Gossip</strong> protocol, which is <strong>eventually consistent</strong>, but very fast.</li>
+<li>Manager to Worker communication is across the control plane (<code>TCP/2376</code>) per <a href="https://en.wikipedia.org/wiki/GRPC" title="Wikipedia"><strong>gRPC</strong> protocol</a>; binary data; uses HTTP/2 for transport; Protocol Buffers as its <dfn title="Interface Definition Language">IDL</dfn>.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://docs.docker.com/v17.09/engine/userguide/networking/" title="docs.docker.com/...UserGuide/Networking">Networking</a> | <a href="https://docs.docker.com/network/" title="docs.docker.com/network">Configure</a> | <a href="https://success.docker.com/article/networking">Reference Architecture</a> | <a href="https://docs.docker.com/engine/tutorials/networkingcontainers/">Tutorials</a></h2>
+
+<p><em>Batteries included, but removable.</em><br>
+<code>docker network ls</code><br>
+<code>ip addr show</code></p>
+
+<h3>Container Network Drivers/Options</h3>
+
+<ol>
+<li><strong>Bridge Networking</strong> a.k.a. Single-host Networks<br>
+<code>docker0</code>; original/default; <code>Driver: bridge</code> Layer 2 network; isolated, even if on same host; routes through NAT firewall on host IP; external comms only by port mapping, host IP-to-IP. Containers connect to Docker <strong>bridge</strong> (<code>docker0</code>) network by <strong><em>default</em></strong>.<br>
+<code>docker run --name web -p 1234:80 nginx</code><br>
+<code>docker port web</code></li>
+<li><strong>Overlay Networking</strong> a.k.a. Multi-host Networks<br>
+Layer 2 network spanning multiple hosts, e.g., connects all containers across all nodes of the swarm.<br>
+<code>docker network create ...</code><br>
+
+<ul>
+<li>Control Plane encrypted by default.<br></li>
+<li>Data Plane encrypted per cmdline option<br>
+<code>docker network create --opt encrypted ...</code></li>
+</ul></li>
+<li>MACVLAN<br>
+Each container (MAC) given its own IP Address on an existing VLAN. Requires promiscuous mode on host NIC; typically not available @ cloud providers.</li>
+<li>IPVLAN<br></li>
+<li>Experimental; does not require promiscous mode.<br></li>
+<li>Containers on the same network communicate <strong>with each other</strong> sans port mapping (<code>-p</code>). External ports closed by default; put frontend/backend on same network for inter-container comms. Best practice is to create a new virtual network for each app.  E.g.,<br>
+
+<ul>
+<li>Network <code>web_app_1</code> for <code>mysql</code> and <code>php</code>/<code>apache</code> containers.<br></li>
+<li>Network <code>api_1</code> for <code>mongo</code> and <code>nodejs</code> containers.<br></li>
+</ul></li>
+<li>Containers can attach to more than one virtual network (or <code>none</code>).<br></li>
+<li>Network is selectable and configurable:<br>
+
+<ul>
+<li>&quot;<code>--network none</code>&quot;  adds container to a container-specific network stack.</li>
+<li>&quot;<code>--network host</code>&quot; adds container to host’s network stack; to use host IP instead of virtual networks'.</li>
+</ul></li>
+</ol>
+
+<p>List selected keys of &quot;<code>docker inspect ...</code>&quot; across all networks,
+refactored into another <em>valid</em> JSON object:</p>
+
+<pre><code class="language-bash">docker network ls -q |xargs docker network inspect $1 \
+    |jq -Mr '.[] | select(.Name != &quot;none&quot;) | {Name: .Name, Driver: .Driver, Address: .IPAM.Config}' \
+    |jq --slurp .
+
+</code></pre>
+
+<ul>
+<li><a href="docker.network.ls.inspect_jq.filtered.json">`docker.network.ls.inspect_jq.filtered.json</a></li>
+</ul>
+
+<h3>Network Services</h3>
+
+<ul>
+<li><strong>DNS Server</strong> &mdash; Containers are ephemeral, making their IP addresses unstable/unreliable, so containers are identified by DNS name, not IP addresses. That  is, <strong><em>container names are host names</em></strong>.  <em>Docker uses embedded DNS to provide service discovery for containers running on a single Docker Engine and tasks running in a Docker Swarm. <a href="https://success.mirantis.com/article/networking#dockernetworkcontrolplane">Docker Engine has an internal DNS server</a> that</em> <strong><em>provides name resolution to all of the containers on the host</em></strong> <em>in user-defined bridge, overlay, and MACVLAN networks. Each Docker container (or task in Swarm mode) has a DNS resolver that forwards DNS queries to Docker Engine, which acts as a DNS server. Docker Engine then checks if the DNS query belongs to a container or service on network(s) that the requesting container belongs to. If it does, then Docker Engine looks up the IP address that matches a container, task, or service's name in its key-value store and returns that IP or service Virtual IP (VIP) back to the requester.</em> NOTE:
+
+<ul>
+<li><strong><em>Only non-default networks automatically run a DNS serer.</em></strong> The default network (<code>bridge</code>) does not, unless declared. For that, use <code>docker run ... --link ...</code> to add container-to-container link, but it is easier and <em>better to simply create a new network</em> and use that.<br></li>
+</ul></li>
+<li><strong>Service Discovery</strong>  &mdash; Every service is named, and registered with Swarm DNS, so every service task (container) gets a DNS resolver that forwards lookups to that Swarm-based DNS service. Services of a swarm are reachable from any swarm node, even if node is not running the service.</li>
+
+<li><p><strong>Load Balancing</strong> &mdash; A benefit of Service Discovery is that every node in the Swarm knows about every service therein; any exposed port (-p <code>HOST:CNTNR</code>) on any node of a service is replicated on all nodes in the Swarm, and so Swarm does load balancing of incomming traffic (Ingress load balancing), and DNS-based load balancing on internal traffic.</p>
+
+<ul>
+<li><p><a href="https://success.mirantis.com/article/networking#dockernetworkcontrolplane" title="mirantis.com">UCP Internal Load Balancing</a> &mdash; Internal load balancing is instantiated automatically when Docker services are created. When services are created in a Docker Swarm cluster, they are automatically assigned a Virtual IP (VIP) that is part of the service's network. The VIP is returned when resolving the service's name. Traffic to that VIP is automatically sent to all healthy tasks of that service across the overlay network. This approach avoids any application-level load balancing because only a single IP is returned to the client. Docker takes care of routing and equally distributing the traffic across the healthy service tasks. To see the VIP:</p>
+
+<pre><code class="language-bash"># Create an overlay network called mynet
+$ docker network create -d overlay mynet
+a59umzkdj2r0ua7x8jxd84dhr
+
+# Create myservice with 2 replicas as part of that network
+$ docker service create --network mynet --name myservice --replicas 2 busybox ping localhost
+8t5r8cr0f0h6k2c3k7ih4l6f5
+
+# See the VIP that was created for that service
+$ docker service inspect myservice
+...
+
+&quot;VirtualIPs&quot;: [
+                {
+                    &quot;NetworkID&quot;: &quot;a59umzkdj2r0ua7x8jxd84dhr&quot;,
+                    &quot;Addr&quot;: &quot;10.0.0.3/24&quot;
+                },
+]
+</code></pre></li>
+
+<li><p>DNS Round Robin (RR) mode @ <code>--endpoint-mode dnsrr</code></p>
+
+<ul>
+<li><p>Test; RR is a kind of cheap load balancing; multiple hosts responding to same DNS name, per aliasing.</p>
+
+<pre><code class="language-bash"># run two aliased RR-test servers 
+docker run -d --net 'net1' --net-alias 'foo' elasticsearch:2
+docker run -d --net 'net1' --net-alias 'foo' elasticsearch:2
+# Get IP &amp; DNS of the two per nslookup; delete cntnr upon exit (--rm)
+docker run --rm --net net1 alpine nslookup 'foo'      # Alpine image contains nslookup
+Name:      foo
+Address 1: 172.20.0.2 foo.net1
+Address 2: 172.20.0.3 foo.net1
+# curl, repeatedly, to see random host select/response per Docker's RR scheme
+docker run --rm --net 'net1' centos curl -s foo:9200    
+# CentOS image contains curl
+</code></pre>
+
+<ul>
+<li><code>elasticsearch:2</code> image chosen because it generates random host name for itself</li>
+<li><code>alpine</code> image chosen because it contains <code>nslookup</code></li>
+<li><code>centos</code> image chosen because it contains <code>curl</code></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h4>@ Swarm Mode | <a href="https://success.mirantis.com/article/networking#dockernetworkcontrolplane" title="Mirantis.com">Control Plane</a></h4>
+
+<p><em>Docker supports</em> <strong><em>IPSec encryption</em></strong> <em>for overlay networks between Linux hosts out-of-the-box. The Swarm &amp; UCP managed IPSec tunnels encrypt network traffic as it leaves the source container and decrypts it as it enters the destination container. This ensures that your application traffic is highly secure when it's in transit regardless of the underlying networks.</em></p>
+
+<ul>
+<li><strong>Overlay</strong>; <code>--driver overlay</code><br>
+
+<ul>
+<li>Supports multi-host networks; container-to-container <strong>comms across all nodes of the swarm</strong>. All Tasks (containers) forming all Services running across all nodes (VMs) can access each other; uses a combination of local Linux bridges and VXLAN to overlay container-to-container comms over physical network infra.</li>
+</ul></li>
+<li><strong>Docker Routing Mesh</strong>  :: @ <strong>Docker CE</strong>  (<a href="https://success.mirantis.com/article/networking#dockernetworkcontrolplane" title="mirantis.com">Swarm External L4 Load Balancing</a>)
+
+<ul>
+<li>Transport Layer (L4) <strong>Load Balancer</strong> (Stateless) Assigns Virtual IP addresses (VIPs) to swarm services, mapped to their DNS (name), and so handles the physical node routing. Load balances per Swarm Service, across their Tasks (containers).</li>
+</ul></li>
+<li><strong>HTTP Routing Mesh</strong> (<strong>HRM</strong>)  :: @ <strong>Docker EE</strong> only  (<a href="https://success.mirantis.com/article/networking#dockernetworkcontrolplane" title="mirantis.com">UCP External L7 Load Balancing</a>)
+
+<ul>
+<li>Application Layer (L7) <strong>Load Balancer</strong> (Stateful) Load balances across services; all services can share same port..<br></li>
+</ul></li>
+</ul>
+
+<h4>@ Swarm Mode | <a href="https://success.mirantis.com/article/networking#dockernetworkcontrolplane" title="Mirantis.com">Data Plane</a></h4>
+
+<p>Extend Docker's <strong><em>IPSec encryption</em></strong> to the data plane. (The control plane is automatically encrypted on overlay networks.)  <em>In a hybrid, multi-tenant, or multi-cloud environment, it is crucial to ensure data is secure as it traverses networks you might not have control over.</em></p>
+
+<ul>
+<li><p>Enable data-plane encryption:</p>
+
+<pre><code class="language-bash">docker network create -d overlay --opt encrypted=true $_NTWK_NAME
+</code></pre></li>
+</ul>
+
+<p><em>At services thereunder, when two tasks are created on two different hosts, an IPsec tunnel is created between them and traffic gets encrypted as it leaves the source host and decrypted as it enters the destination host. The Swarm leader periodically regenerates a symmetrical key and distributes it securely to all cluster nodes. This key is used by IPsec to encrypt and decrypt data plane traffic. The encryption is implemented via IPSec in host-to-host transport mode using AES-GCM.</em></p>
+
+<h2>Tools</h2>
+
+<ul>
+<li><p><a href="https://docs.docker.com/engine/reference/commandline/cli/" title="docs.docker.com/engine"><code>docker</code> (Ref)</a>; <strong>Docker Engine CLI</strong>. The main tool; handles image builds and container creations. Two modes: Single-host and <code>swarm</code>.</p></li>
+
+<li><p><a href="https://docs.docker.com/machine/reference/" title="docs.docker.com/machine"><code>docker-machine</code> (Ref)</a> is a tool to create and manage VMs for multi-node Swarm(s). Creates Docker hosts (nodes) anywhere; local/cloud; OS/distro <a href="https://docs.docker.com/machine/drivers/">per driver</a>; installs Docker thereon, and configures <code>docker</code> CLI (per VM, per shell).</p></li>
+
+<li><p><a href="https://docs.docker.com/compose/reference/overview/" title="docs.docker.com/compose"><code>docker-compose</code> (Ref)</a> is a combination of (dev) tool and YAML config file for defining and running multi-container Docker applications. <code>docker-compose.yml</code> is the <strong>default filename</strong>, but can be any name.</p>
+
+<pre><code class="language-bash">docker-compose up
+docker-compose down
+docker-compose -f 'foo-manifest.yml'
+</code></pre>
+
+<ul>
+<li>Manage all containers with one command</li>
+<li>Configure relationships between containers<br></li>
+<li>Run commands on multiple containers at once</li>
+<li>Set/save &quot;<code>docker run</code>&quot; settings in YAML<br></li>
+<li>Create one-liner startup command for a development environment.</li>
+<li>The tool itself (<code>docker-compose</code>) is <em>used mainly for local test and development</em>. In production, in <strong>Swarm</strong> mode (<code>v1.13+</code>), the Docker Engine CLI tool (<code>docker</code>) uses the YAML file (<code>docker-compose.yml</code>) directly.</li>
+</ul></li>
+</ul>
+
+<h2>Images :: <a href="https://hub.docker.com/explore/" title="hub.docker.com">Docker Hub</a></h2>
+
+<p>The <a href="https://hub.docker.com/explore/">Explore</a> tab lists all Official images <a href="https://github.com/docker-library/official-images/tree/master/library" title="GitHub">(<code>docker-library</code>)</a></p>
+
+<ol>
+<li><code>[ACCTNAME/]REPONAME</code><br></li>
+<li><code>REPONAME</code>
+
+<ul>
+<li><p>The &quot;<code>official</code>&quot; images are further distinguished by their <code>REPONAME</code> sans  &quot;<code>ACCTNAME/</code>&quot; prefix. These are high quality images;  well documented, versioned (per <code>:TAG</code>), and widely adopted. E.g., &hellip;</p>
+
+<pre><code class="language-bash"># The official Nginx image; &quot;1.11.9&quot; is the Tag (version).
+docker pull nginx:1.11.9  
+</code></pre></li>
+</ul></li>
+</ol>
+
+<p>The ubiquitous &quot;<code>latest</code>&quot; <strong>Tag</strong> specifies a <em>latest</em> (stable) published version of a repo; not necessarily the latest commit. E.g., &hellip;</p>
+
+<pre><code class="language-bash">docker pull nginx:latest
+# ... equivalent ...
+docker pull nginx         
+</code></pre>
+
+<h3>Tags / Tagging</h3>
+
+<p><code>ACCTNAME/REPONAME:TAG</code></p>
+
+<p>The entirety, &quot;<code>USER/NAME:TAG</code>&quot;, <em>is often referred to as &quot;tag&quot;.</em></p>
+
+<p>One image may have many tags. To change the image tag, and optionally rename an image, &hellip;</p>
+
+<pre><code class="language-bash">docker image tag SRC_IMG[:TAG-old] TGT_IMG[:TAG-new]
+</code></pre>
+
+<ul>
+<li>Absent TAG, the Docker daemon defaults to search for &quot;<code>latest</code>&quot;.</li>
+</ul>
+
+<h4>The <code>TAG</code> of <code>&lt;none&gt;</code></h4>
+
+<pre><code class="language-bash">☩ di
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+gd9h/prj3.api-amd64   dev                 ce6b736c74c1        2 hours ago         31.2MB
+gd9h/prj3.pwa-amd64   dev                 414f405cee2c        19 hours ago        21.7MB
+gd9h/prj3.rds-amd64   dev                 b1350eefb9b9        2 days ago          31.3MB
+gd9h/prj3.exv-amd64   dev                 96594cfee5fa        2 days ago          17.5MB
+postgres              &lt;none&gt;              baf3b665e5d3        4 days ago          158MB
+postgres              12.6-alpine         c88a384583bb        3 weeks ago         158MB
+golang                1.15.8              7185d074e387        4 weeks ago         839MB
+nginx                 1.19.3-alpine       4efb29ff172a        5 months ago        21.8MB
+</code></pre>
+
+<ul>
+<li>The <code>&lt;none&gt;</code> tag (and image) is a Docker daemon pull per YAML declaration. Here, though the YAML declares <code>image:</code>&nbsp;<code>postgres:12.6-alpine</code>, a newer image <strong><em>of the same tag</em></strong> exists at Docker Hub repo, and so the Docker engine pulls that, tagging it <code>&lt;none&gt;</code>, and builds the container therefrom. This is common at Swarm nodes, whereof we update images yet maintain the same tag (<code>dev</code>).
+
+<ul>
+<li><a href="https://hub.docker.com/_/postgres" title="Docker Hub">@ Postgres repo</a>, the most recent three-dot version is <code>9.6.21-alpine</code> (<code>13.2-alpine</code> is newest as of 2021-04-05). It is not known if they changed their versioning or if all newer are simply too immature (update too often).</li>
+</ul></li>
+</ul>
+
+<h3>Image Layers / Cache</h3>
+
+<p>Images are built of filesystem changes and metadata. The image build process implements the <strong>Union FS/Mount</strong> concept (<a href="https://en.wikipedia.org/wiki/OverlayFS">per <code>OverlayFS</code></a>); files and directories of <strong>separate file systems</strong> are <strong><em>transparently overlaid</em></strong>, forming a single coherent file system.</p>
+
+<p><strong>Each image layer</strong> is <strong>hashed</strong> and <strong>cached</strong>, and so can be incorporated into multiple images; <em>successive layers are nothing but changes (diff) from the prior layer</em>. This strategy accounts for the radically lighter weight of images relaitve to virtual machines (VMs). Changes to a container are recorded per <strong>Copy on Write</strong> (CoW) process.</p>
+
+<p><strong>Local</strong> image <strong>cache</strong> @ Docker Engine host:</p>
+
+<ul>
+<li><code>/var/lib/docker/STRG_DRVR/DIGEST/{merged,diff,work}</code><br>
+
+<ul>
+<li>E.g., <code>/var/lib/docker/overlay2/5adcbf...01a016/{merged,diff,work}</code><br></li>
+</ul></li>
+</ul>
+
+<p>Docker references each layer, and each image containing them, by <strong>multiple</strong> unique identifiers (digests and other IDs), per Docker tool and context.   Additionally, the image manifest file (JSON) itself is hashed, and that too is an image reference.</p>
+
+<p><strong><em>This is the source of much confusion</em></strong>, since the image digests reported on <code>pull</code> or <code>run</code> don't match those reported elsewhere; while &quot;<code>IMAGE ID</code>&quot; at &quot;<code>docker image ls</code>&quot; is something else entirely. And there is no easy way to match a cached layer (folders &amp; files) to its Registry (layer digest).</p>
+
+<h5>Example: <code>docker image inspect 'alpine'</code></h5>
+
+<ul>
+<li><code>Id</code> (The local reference)<br>
+
+<ul>
+<li>@ <code>[{Id:...}]</code><br>
+
+<ul>
+<li><code>&quot;Id&quot;: &quot;sha256:196d12...84d321&quot;</code><br></li>
+</ul></li>
+</ul></li>
+<li><code>RepoDigests</code><br>
+
+<ul>
+<li>@ <code>[{&quot;RepoDigests&quot;:&quot;...&quot;}]</code><br>
+
+<ul>
+<li><code>&quot;alpine@sha256:621c2f...af5528&quot;</code></li>
+</ul></li>
+</ul></li>
+<li><code>Config</code> digest<br>
+
+<ul>
+<li>@ <code>[{&quot;Config&quot;:{&quot;Image&quot;:&quot;...&quot;}}]</code><br>
+
+<ul>
+<li><code>&quot;Image&quot;: &quot;sha256:836dc9...0e59b7&quot;</code></li>
+</ul></li>
+</ul></li>
+<li>Local image <strong>cache</strong> dir(s):<br>
+
+<ul>
+<li>@ <code>[{&quot;GraphDriver&quot;:{&quot;Data&quot;:{&quot;MergedDir&quot;:&quot;...&quot;,&quot;UpperDir&quot;:&quot;...&quot;,&quot;WorkDir&quot;:&quot;...&quot;}}}]</code><br>
+
+<ul>
+<li><code>/var/lib/docker/overlay2/5adcbf...01a016/{merged,diff,work}</code><br></li>
+<li>The directories (digests) <strong>change</strong> per cache (<code>pull</code>)</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3>Publishing</h3>
+
+<p><code>docker login</code><br>
+Stores auth key @ <code>~/.docker/config.json</code>,  <strong><em>until</em></strong> &hellip;<br>
+<code>docker logout</code></p>
+
+<p><code>docker push ACCTNAME/REPONAME:TAG</code></p>
+
+<h2>Image Registry (v2)</h2>
+
+<p>The image resistry is integral to Docker's tools and its entire container ecosystem. Docker's <a href="https://github.com/docker/distribution" title="GitHub">Distribution</a> toolset handles this; <em>&quot;&hellip; pack, ship, store, and deliver content.&quot;</em></p>
+
+<ul>
+<li>The storage system is based on <a href="https://en.wikipedia.org/wiki/Content-addressable_storage">Content-addressable Storage</a> (CAS)<br></li>
+<li><strong>Image reference</strong> format: <code>REGISTRY/REPO/IMAGE</code><br>
+
+<ul>
+<li>But this is actually an <a href="https://docs.docker.com/registry/spec/manifest-v2-2/">Image Manifest</a> reference.<br>
+An &quot;<em>image</em>&quot; is but a sum of immutable Union filesystem (FS) <strong><em>layers</em></strong>, any one of which may be in many images; a one-to-many mapping.</li>
+</ul></li>
+<li>Each <strong>Docker image</strong> has <strong>two Registry references</strong>, necessarily. Both are unique identifiers (<code>sha256</code>, so <code>hex64</code>):
+
+<ol>
+<li><a href="https://docs.docker.com/registry/spec/api/#content-digests"><strong>Content</strong> digest</a><br>
+The <strong>hash of the <a href="https://docs.docker.com/registry/spec/manifest-v2-2/">Image Manifest</a></strong>; a JSON file containing the hash of each layer. These are <strong>not</strong> the &quot;<code>IMAGE ID</code>&quot; shown per &quot;<code>docker image ls</code>&quot;, nor such <strong><em>local</em></strong>/<strong><em>cache</em></strong> references.</li>
+<li><strong>Distribution</strong> digest<br>
+The <strong>hash of a compressed image layer</strong> (<em>tarball</em> of its Union FS/Mount; folders and files). These are <strong>not</strong> the &quot;<em>image</em>&quot; references shown per &quot;<code>docker pull ...</code>&quot;, nor such <strong><em>Resistry</em></strong> references.
+
+<ul>
+<li>No easy way to match layer ID with its location at host dir; digests which change per pull, &hellip; @ <code>/var/lib/docker/STRG_DRVR/DIGEST/{merged,diff,work}</code><br></li>
+</ul></li>
+</ol></li>
+<li><strong>Pull</strong> image per URL request:<br>
+<code>GET /v2/NAME/manifests/{TAG|DIGEST}</code><br></li>
+<li><def title="HTTP 200|404"><strong>Test</strong></def> for existence of <strong>image</strong>:<br>
+<code>HEAD /v2/NAME/manifests/{TAG|DIGEST}</code><br></li>
+<li><def title="HTTP 200|404"><strong>Test</strong></def> for existence of a <strong>layer</strong>:<br>
+<code>HEAD /v2/NAME/blobs/DIGEST</code></li>
+<li>Two Docker Registries (Docker-maintained):<br>
+
+<ol>
+<li><a href="https://hub.docker.com/">Docker Hub</a></li>
+<li><a href="https://docs.docker.com/ee/dtr/">Docker Trust Registry</a> (DTR), on-prem, requiring Docker EE<br></li>
+</ol></li>
+</ul>
+
+<h3><a href="#registries" title="Cloud or Local">Docker Registry</a></h3>
+
+<h2>Build Process</h2>
+
+<p><code>image =&gt; container =&gt; image =&gt; container =&gt; ...</code></p>
+
+<p>Images are <strong>immutable</strong>; containers are modified <em>while running</em>; new images are built of prior images and changes thereto while running. This is iterated as necessary &hellip;</p>
+
+<ul>
+<li><em>Declaratively</em>, <a href="https://docs.docker.com/engine/reference/builder/">per <code>Dockerfile</code></a>.<br></li>
+
+<li><p><em>Imperatively</em>, <a href="https://docs.docker.com/engine/reference/commandline/commit/">per <code>docker</code></a> CLI commands.</p>
+
+<pre><code class="language-bash"># Imperatively                        Dockerfile equivalent
+docker run [OPTIONS] IMAGE            # FROM (base image/layer)
+docker exec [OPTIONS] CONTAINER CMD   # CMD  (add pkg, etc)
+docker commit [OPTIONS] CONTAINER     # FROM (this new layer)
+</code></pre>
+
+<ul>
+<li>It can be argued that &quot;<em>imperatively</em>&quot; / &quot;<em>declaratively</em>&quot; is more lingo than actual; regardless, there's a mapping between <code>docker</code> CLI commands/flags and <code>Dockerfile</code> statements.</li>
+</ul></li>
+</ul>
+
+<h2><a href="https://docs.docker.com/engine/reference/builder/" title="@ docs.docker.com"><code>Dockerfile</code></a> | <a href="https://blog.docker.com/2019/07/intro-guide-to-dockerfile-best-practices/" title="2019 @ blog.docker.com">Best Practices</a></h2>
+
+<p>A Dockerfile is the <em>recipe</em> for an image build; the instruction set; has its own language/syntax/format. Each <em>&quot;stanza&quot;</em>, <code>FROM</code>, <code>ENV</code>, <code>RUN</code>, &hellip; is an image layer; each layer is downloaded, hashed, and <strong><em>cached</em></strong>, so future builds (per mod) are fast, especially so if layered judiciously; <strong>order</strong> is <strong>important</strong>; frequently modified layers placed below (after) those infrequently modified; any content change (e.g., per <code>COPY</code>) breaks the cache at that layer, and affects subsequent layers.</p>
+
+<pre><code class="language-dockerfile"># Base; every image must have ... 
+FROM alpine:3.8
+ENV NGINX_VERSION 1.13.6-1~stretch 
+
+# Chain places all at one cacheable layer; 
+# Remove unncecssary dependencies &amp; pkg-mgr cache
+RUN apt-get update \
+    &amp;&amp; apt-get -y install --no-install-recommends ... \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# Docker handles logging; need only map output ...
+RUN ln -sf /dev/stdout /var/log/nginx/access.log \
+	&amp;&amp; ln -sf /dev/stderr /var/log/nginx/error.log
+
+# open ports 80 &amp; 443 (to other containers @ bridge network) 
+EXPOSE 80 443  
+# ... map to host port(s) per run option ... -p|-P 
+
+# Change working directories; use instead of RUN cd ...
+WORKDIR /usr/share/nginx/html
+# Copy from host to container 
+COPY . .
+# Copy dir to dir (from host to container)
+# Any changes to the files being copied will break the cache, 
+# so copy ONLY WHAT IS NEEDED.
+COPY index.html index.html
+
+# Volume; outlives container; must manually delete; UNNAMED ONLY !
+VOLUME /the/volume/path/at/container
+
+# Must run command/script @ cntnr launch 
+# (may be embedded in FROM stmnt)
+ENTRYPOINT [&quot;entrypoint.sh&quot;]        
+# then this; overridden on any arg @ `docker run ... IMAGE`
+CMD [&quot;command&quot;,&quot;param1&quot;,&quot;param2&quot;]  
+# or default param(s) for ENTRYPOINT command or script
+CMD [&quot;param1&quot;,&quot;param2&quot;]   
+# ... JSON Array syntax    
+</code></pre>
+
+<h2><a href="https://docs.docker.com/storage/storagedriver/#images-and-layers">Storage  &mdash; Data in containers</a></h2>
+
+<p>Such data is destroyed upon container deletion (<code>rm</code>); survives  <code>stop</code>/<code>start</code> only. Files created inside a container are stored on a <em>thin</em> <strong>writable container layer</strong> <em>on top of</em> its read-only image layers.<br>
+- Difficult to access from outside the container.
+- Requires a (kernel process) driver to manage the Union filesystem.</p>
+
+<h4><a href="https://docs.docker.com/storage/storagedriver/select-storage-driver/">Storage Driver</a> a.k.a. Graph Driver (older) a.k.a. Snapshotter (newer)</h4>
+
+<ul>
+<li>A container driver that (unpacks and) maps the (pulled) Image layers to local host storage, handles the container's writable (<a href="https://docs.docker.com/storage/storagedriver/#the-copy-on-write-cow-strategy">CoW</a>) layer. The R/W performance of these drivers is poor across all host (backing) filesystems and block storage devices. (Containers are best stateless.)
+
+<ul>
+<li><code>overlay2</code> <a href="https://docs.docker.com/storage/storagedriver/overlayfs-driver/#prerequisites">for <code>xfs</code></a> or <code>ext4</code> host FS; an <a href="https://en.wikipedia.org/wiki/OverlayFS">OverlayFS</a> driver;<br>
+Docker's <strong>default</strong> container storage driver.<br></li>
+<li><code>devicemapper</code> for <code>direct-lvm</code> host block-storage device; depricated. is POSIX compliant and supports SELinux, but is slower.</li>
+<li><code>btrfs</code> and <code>zfs</code> for such host FS.</li>
+<li><code>aufs</code> for Ubuntu 14.04 and older, and Docker 18.06 and older.<br></li>
+<li><code>vfs</code> is experimental</li>
+</ul></li>
+</ul>
+
+<h2><a href="https://docs.docker.com/storage/" title="docs.docker.com/storage">Storage &mdash; Data Volumes</a></h2>
+
+<p><strong>Separation of Concerns</strong><br>
+Immutable design patterns treat containers as ephemeral, if not entirely stateless,  and so <em>persistent</em> a.k.a. <em>unique</em> data best resides <strong>outside the container</strong>.</p>
+
+<p><strong>Data Volumes</strong> a.k.a. Volumes<br>
+Docker offers 3 options for <strong>persistent container storage</strong>, which is to say storage <strong>outside the container</strong>. All mount some kind of host (or remote) storage <strong>as a path at the container</strong>. <a href="https://docs.docker.com/storage/#good-use-cases-for-volumes" title="docs.docker.com">Each has use cases.</a>.</p>
+
+<ul>
+<li><p><a href="https://docs.docker.com/storage/volumes/">Volumes</a><br>
+A <strong>Docker-managed object</strong>; storage at the host mounted as a path at the container; <code>/var/lib/docker/volumes/NAME/_data</code> . At <a href="#" title="Docker for Windows / Docker for Mac">DfW/DfM</a>, volumes are created at the Docker VM, not at the host. (<a href="https://www.bretfisher.com/getting-a-shell-in-the-docker-for-windows-vm/">SSH into Docker VM</a>); can specify a volume declaratively, in <code>Dockerfile</code>, or per <code>docker</code> CLI, as a runtime parameter.</p>
+
+<pre><code class="language-bash">docker volume create $NAME 
+
+docker run ... -v $NAME:$CNTNR_PATH  
+           ... -v foo:/app
+           ... --mount source=foo,target=/app
+           # ... creates new volume if NAME (foo) not exist
+    
+# Volume location @ host ...
+ls /var/lib/docker/volumes/$NAME/_data
+</code></pre></li>
+
+<li><p>@ DfW host, all volumes are within <code>%ProgramData%\DockerDesktop\vm-data\DockerDesktop.vhdx</code> (~<code>5 GB</code>)</p></li>
+
+<li><p><strong>New volume created</strong> if <code>NAME</code> not exist, even on <code>run</code>, so <strong>no warning</strong> if typo.</p></li>
+
+<li><p>Multiple containers can share the same volume.</p></li>
+
+<li><p>Pre-populate; if new (empty) volume, then any pre-exising files @ container path (mount) are copied to the volume,and so can be made available to any other container.</p></li>
+
+<li><p>Decouples host configuration from container runtime.</p></li>
+
+<li><p>Host can be remote; cloud provider.</p></li>
+
+<li><p>Custom drivers and labels available if prior to <code>run</code> ...<br>
+<code>docker volume create --driver $_DRVR --label $_LABEL</code></p></li>
+
+<li><p><a href="https://docs.docker.com/storage/bind-mounts/">Bind Mounts</a><br>
+<strong>Host filesystem</strong> directory or file mounted as a path at the container; The original Docker mechanism for handling persistent data;</p>
+
+<pre><code class="language-bash">docker run ... -v $HOST_PATH:$CNTNR_PATH  
+           ... -v $(pwd):/app 
+           ... -v //c/path:/app   # @ Windows
+           --- -v ./relpath:/app  # relative paths okay
+           ... --mount type=bind,source=&quot;$(pwd)&quot;,target=/app
+</code></pre>
+
+<ul>
+<li>Share configuration files between host and container. DNS resolution for Docker containers is per mount of  host <code>/etc/resolv.conf</code> into each container.</li>
+</ul></li>
+
+<li><p><a href="https://docs.docker.com/storage/tmpfs/"><strong><code>tmpfs</code></strong> mounts</a><br>
+<strong>Host system-memory</strong> (Linux only) mounted as a path at the container; never written to host filesystem.</p>
+
+<pre><code class="language-bash">docker run ... --tmpfs $CNTNR_PATH
+           ... --tmpfs /app
+           ... --mount type=tmpfs,destination=/app
+</code></pre>
+
+<ul>
+<li>Store non-persistent, in-memory-only data.<br></li>
+<li>Useful to deal with security or performance issues.<br></li>
+</ul></li>
+</ul>
+
+<h3>Named volumes</h3>
+
+<p><code>docker container run ... -v NAME:/cntnr_path</code><br>
+Volumes survive container deletion,yet contain no meta regarding whence the volume came; <code>docker volume ls</code> ... merely lists per ID; no other info, even @ <code>inspect</code>.  Hence <strong>Named Volumes</strong>.</p>
+
+<h2><a href="https://docs.docker.com/engine/swarm/" title="docs.docker.com/engine/swarm">Swarm Mode</a> <a href="https://github.com/docker/swarmkit" title="GitHub">(<code>SwarmKit</code>)</a></h2>
+
+<p>Container orchestration; Docker's clustering solution; a secure Control Plane; all handled internally. Swarm Managers use Raft (algo+protocol+database).</p>
+
+<ul>
+<li>v1.12+ (2016) SwarmKit<br></li>
+<li>v1.13+ (2017) Secrets and Stacks</li>
+<li>Orthogonal to existing docker tools</li>
+<li>Not enabled by default; enabled by command:<br>
+<code>docker swarm init</code><br>
+
+<ul>
+<li>Launches PKI and security automation</li>
+<li>Root Signing Certificate created</li>
+<li>Cert issued for 1st Manager node</li>
+<li>Join Tokens are created</li>
+<li>Raft Concensus database created</li>
+<li>Replicates logs amongst Managers via TLS</li>
+</ul></li>
+<li>New <code>docker</code> CLI commands upon Swarm Mode enable:<br>
+
+<ul>
+<li><code>docker swarm|node|service|stack|secret</code></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://docs.docker.com/engine/swarm/services/">Services</a></h2>
+
+<p>In Swarm Mode, application components are replicated, and distributed  across the nodes,  which communcate through the <a href="https://docs.docker.com/network/overlay/#operations-for-all-overlay-networks">overlay network</a>. Each instance of the replicated component is a Task. The sum of all identical tasks are a Service. So, applications are deployed, per component, as Services.</p>
+
+<h3><code>docker service create [OPTIONS] IMAGE [COMMAND] [ARG...]</code></h3>
+
+<h3><code>docker service update [OPTIONS] SERVICE</code></h3>
+
+<h2><a href="https://docs.docker.com/docker-cloud/apps/stacks/">Stacks</a></h2>
+
+<p>Production-grade Compose.</p>
+
+<h3><code>docker stack deploy -c &quot;app1.yml&quot; &quot;app1&quot;</code></h3>
+
+<h3><code>docker stack ls</code></h3>
+
+<h3><code>docker stack ps &quot;app1&quot;</code></h3>
+
+<h3><code>docker stack services &quot;app1&quot;</code></h3>
+
+<h2><a href="https://docs.docker.com/engine/swarm/configs/">Configs</a></h2>
+
+<pre><code class="language-bash">echo &quot;This is a config&quot; |docker config create foo-bar -
+</code></pre>
+
+<p><strong>Stored as file @ container: <code>/</code></strong></p>
+
+<pre><code class="language-bash">cat /foo-bar
+</code></pre>
+
+<ul>
+<li><a href="https://docs.docker.com/engine/swarm/configs/#advanced-example-use-configs-with-a-nginx-service">Nginx/TLS</a> example</li>
+</ul>
+
+<h2><a href="https://docs.docker.com/engine/swarm/secrets/">Secrets</a></h2>
+
+<pre><code class="language-bash">echo &quot;This is a secret&quot; |docker secret create foo-bar -
+</code></pre>
+
+<p><strong>Stored as file @ container: <code>/run/secrets/</code></strong></p>
+
+<pre><code class="language-bash">cat /run/secrets/foo-bar
+</code></pre>
+
+<ul>
+<li>Swarm mode only.</li>
+<li>Stored encrypted outside container.</li>
+<li>Is <em>unencrypted</em> inside the container.</li>
+<li>Generic string or binary &lt; 500 KB<br>
+
+<ul>
+<li><code>KEY:VAL</code> pair per file or string
+
+<ul>
+<li><code>docker secret create KEY FILE</code><br>
+(stored @ host drive)<br></li>
+<li><code>echo VAL | docker secret create KEY -</code><br>
+(stored @ bash history)<br>
+<code>docker service create ... --secret KEY -e VAL_FILE=PATH ...</code><br>
+Note that &quot;<code>*_FILE</code>&quot; is keyword to trigger file-method (versus treating it as a string).</li>
+</ul></li>
+</ul></li>
+<li>@ Swarms, not containers.</li>
+<li>@ Windows containers, clear text stored @ container’s root disk.</li>
+<li>Docker 1.13+, Swarm Raft db is encrypted on disk on Manager nodes. Control Plane is TLS encrypted + Mutual PKI Auth.</li>
+<li>Secrets are stored in the Swarm and assigned to Services; only assigned their Services have access.</li>
+<li>App sees as file on disk, but exist only as in-memory filesystem.<br>
+
+<ul>
+<li><code>/run/secrets/SECRET1_NAME</code><br></li>
+</ul></li>
+<li><code>docker-compose</code> has workaround to use secrets sans Swarm; not really secure, but facilitates local development.</li>
+<li><a href="https://docs.docker.com/engine/swarm/secrets/#use-secrets-in-compose">@ <code>docker-compose.yml</code> (YAML)</a><br></li>
+</ul>
+
+<h2>CI/CD :: Dev &#x21d4; Test &#x21d4; Prod</h2>
+
+<ul>
+<li><p>DevOps on an app (Swarm Cluster) per <strong>set of Compose files</strong>.</p>
+
+<ul>
+<li>Dev environment (Local)<br>
+<code>docker-compose up</code><br></li>
+<li>CI environment (Remote)<br>
+<code>docker-compose up</code><br>
+
+<ul>
+<li><code>docker-compose.override.yml</code> &hellip; is <strong>automatically added</strong> per <code>docker-compose up</code> .</li>
+</ul></li>
+
+<li><p>Procution (Remote)<br>
+<code>docker stack deploy</code></p>
+
+<pre><code>$ tree -L 1 ./swarm-stack-3
+.
+├── Dockerfile
+├── docker-compose.override.yml 
+├── docker-compose.prod.yml
+├── docker-compose.test.yml
+├── docker-compose.yml
+├── psql-fake-password.txt
+├── sample-data
+└── themes
+</code></pre></li>
+</ul></li>
+
+<li><p>@ Test (<code>up</code>)</p>
+
+<pre><code class="language-bash">docker-compose -f docker-compose.yml \
+    -f docker-compose.test.yml up -d  
+</code></pre></li>
+
+<li><p>@ Prod (<code>config</code>)</p>
+
+<pre><code class="language-bash">docker-compose -f docker-compose.yml \
+    -f docker-compose.prod.yml config &gt; &quot;out.yml&quot; 
+</code></pre>
+
+<ul>
+<li>Combines the files.<br></li>
+<li>The &quot;<code>extends:</code>&quot; option is another method; not yet stable; all this is new.<br></li>
+</ul></li>
+</ul>
+
+<p><a name="registries"></a></p>
+
+<h2><a href="https://hub.docker.com/">Docker Hub</a></h2>
+
+<ul>
+<li>One free public acct; one free <strong>private</strong> registry (repo)</li>
+<li>Webhooks to automate; CI/CD, where Docker Hub notifies downstream per repo change.</li>
+<li>Organizations; like github</li>
+<li>Automated Builds<br>
+Use &quot;Create Automated Build&quot; (Menu select) if automating/integrating with GitHub;do NOT use the big &quot;Create Repository&quot; button.
+
+<ul>
+<li>Creates CI path for automatic builds per code commit. A kind of reverse Webhook.</li>
+</ul></li>
+</ul>
+
+<h3>CVE :: Security Vulnerabilities @ <a href="https://www.cvedetails.com/google-search-results.php?q=postgres&amp;sa=Search">CVEdetails.com</a></h3>
+
+<h2><a href="https://store.docker.com">Docker Store</a> ($)</h2>
+
+<ol>
+<li>Docker SW.<br></li>
+<li>Quality 3rd party images.</li>
+</ol>
+
+<h2><a href="https://cloud.docker.com">Docker Cloud</a> ($)</h2>
+
+<ul>
+<li>CI/CD and Server Ops<br></li>
+<li>Web-based Swarm Orchestration GUI; integrates with popular cloud providers<br></li>
+<li>Automate image build/test/deploy<br></li>
+<li>Security scanning for known vulnerabilities<br>
+
+<ul>
+<li>US Government (DHS); US Cert Program <code>CVE</code> (Common Vulnerability and Exposures). Tracks vulnerabilities.<br></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://github.com/veggiemonk/awesome-docker#registry" title="List @ Awesome Docker [GitHub]">SaaS Registries</a> (3rd Party)</h2>
+
+<h2><a href="https://hub.docker.com/_/registry/">Docker Registry 2.0</a>  (<a href="https://github.com/docker/distribution">GitHub</a>)</h2>
+
+<p>The code, an HTTP server, that runs Docker Hub; <em>&quot;The Docker toolset to pack, ship, store, and deliver content.&quot;</em> A <strong>web API and storage system</strong> for storing and distributing Docker images.</p>
+
+<p>The de facto standard for running a <strong>local (private) container registry</strong>. Not as full-featured as Docker Hub; no web GUI; basic auth only. Storage drivers support local, S3, Azure, Alibaba, GCP, and OpenStack Swift.</p>
+
+<ul>
+<li><p><a href="https://training.play-with-docker.com/" title="Training">Docker Classroom</a></p></li>
+
+<li><p>Private/Local <a href="https://training.play-with-docker.com/linux-registry-part1/" title="Docker registry for Linux Part 1">Registry Setup</a> Topics</p>
+
+<ul>
+<li><a href="https://training.play-with-docker.com/linux-registry-part2/" title="Training :: Tutorial/Assignment">Secure the Registry with TLS</a></li>
+<li>Maintain via <a href="https://docs.docker.com/registry/garbage-collection/">Garbage Collection</a> (The Docker document there is utterly useless.)</li>
+<li>Enable Hub caching via &quot;<code>--registry-mirror</code>&quot; to conserve bandwidth on large-scale clusters/builds</li>
+</ul></li>
+</ul>
+
+<h2>Run a Private <a href="https://distribution.github.io/distribution/about/deploying/">Registry Server</a></h2>
+
+<ul>
+<li>Run the Distribution <a href="https://hub.docker.com/_/registry/" title="@ Docker Hub :: Docker Registry :: Official repo">registry</a> image on <strong>default port 5000</strong><br></li>
+<li>Sans HTTPS, it allows only <code>localhost</code> (<code>127.0.0.0/8</code>) traffic.<br></li>
+<li>For <em>remote</em> self-signed TLS, enable &quot;insecure-registry&quot; engine.<br></li>
+</ul>
+
+<h4>Build it with persistent storage (<code>-v</code>) at host.</h4>
+
+<pre><code class="language-bash">docker container run -d -p 5000:5000 --name 'registry' \
+    -v $(pwd)/registry-data:/var/lib/registry 'registry' 
+    # Bind Mount
+</code></pre>
+
+<h4>Set Registry Domain</h4>
+
+<pre><code class="language-bash">_REPO='127.0.0.1:5000'  # localhost:5000
+</code></pre>
+
+<h4>Test it</h4>
+
+<pre><code class="language-bash"># Pull/Tag/Push   
+docker pull hello-world
+docker tag hello-world ${_REPO}/hello-world
+docker push ${_REPO}/hello-world
+# Delete cached container &amp; image
+docker image remove hello-world
+docker container rm $_CONTAINER
+docker image remove ${_REPO}/hello-world
+docker image ls  # verify it's gone (from cache) 
+# Pull it from local registry 
+docker pull ${_REPO}/hello-world
+# View the image @ cache
+docker image ls
+# Run it (delete cntnr on exit)
+docker run --rm ${_REPO}/hello-world
+</code></pre>
+
+<h4>Query it</h4>
+
+<pre><code class="language-bash"># List per name, in JSON
+curl -X GET $_REPO/v2/_catalog
+# or (same)
+curl $_REPO/v2/_content 
+# List tags of an image
+curl $_REPO/v2/$_IMG/tags/list
+# inspect (full info)
+docker inspect $_REPO/ubuntu:18.04
+</code></pre>
+
+<h4>Delete Image(s)/Repo(s)</h4>
+
+<ul>
+<li>Nope. Docker doesn't like people running their own repos, apparently. There are a few articles on how to delete repos/images, but it's ridiculously complex and tedious. Docker's <a href="https://docs.docker.com/registry/garbage-collection/">Garbage Collection</a> page is utterly useless.</li>
+</ul>
+
+<h3>Private Docker Registry with Swarm</h3>
+
+<ul>
+<li>Works the same due to Routing Mesh; all nodes can see <code>127.0.0.1:5000</code><br></li>
+<li>All nodes pull from repo, not from each other, hence Docker Registry is integral to Docker workflow.<br></li>
+</ul>
+
+<p>Run a Registry @ <a href="https://labs.play-with-docker.com/">Play with Docker</a></p>
+
+<p>Templates &gt; &quot;5 Managers and no workers&quot;.</p>
+
+<pre><code class="language-bash">docker node ls
+docker service create --name registry --publish 5000:5000 registry
+docker service ps registry
+</code></pre>
+
+<p>Pull/Tag (<code>127.0.0.1:5000</code>)/Push the <code>hello-world</code> image again, then view the Registry catalog @ &quot;<code>5000</code>&quot; URL (endpoint); root is empty, but root<code>/v2/_catalog</code> shows Registry content per JSON.</p>
+
+<h2>Advance Configs</h2>
+
+<pre><code class="language-bash"># @ TLS
+$ docker run -d \
+    --restart=always \
+    --name registry \
+    -v &quot;$(pwd)&quot;/certs:/certs \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    -p 443:443 \
+    registry:2
+
+# @ TLS +Basic Auth
+$ docker run -d \
+    -p 5000:5000 \
+    --restart=always \
+    --name registry \
+    -v &quot;$(pwd)&quot;/auth:/auth \
+    -e &quot;REGISTRY_AUTH=htpasswd&quot; \
+    -e &quot;REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm&quot; \
+    -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+    -v &quot;$(pwd)&quot;/certs:/certs \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+    registry:2
+
+# @ Swarm Service +TLS
+$ docker node update --label-add registry=true node1
+$ docker secret create domain.crt certs/domain.crt
+$ docker secret create domain.key certs/domain.key
+$ docker service create \
+    --name registry \
+    --secret domain.crt \
+    --secret domain.key \
+    --constraint 'node.labels.registry==true' \
+    --mount type=bind,src=/mnt/registry,dst=/var/lib/registry \
+    -e REGISTRY_HTTP_ADDR=0.0.0.0:443 \
+    -e REGISTRY_HTTP_TLS_CERTIFICATE=/run/secrets/domain.crt \
+    -e REGISTRY_HTTP_TLS_KEY=/run/secrets/domain.key \
+    --publish published=443,target=443 \
+    --replicas 1 \
+    registry:2
+
+
+</code></pre>
+
+<h3>Load-Balancer Considerations</h3>
+
+<ul>
+<li><p>Required Headers</p>
+
+<pre><code class="language-ini">Docker-Distribution-API-Version: registry/2.0
+X-Forwarded-Proto 
+X-Forwarded-For
+</code></pre></li>
+</ul>
+
+<h4>Distribution Recipes : <a href="https://distribution.github.io/distribution/recipes/nginx/">NGINX</a></h4>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

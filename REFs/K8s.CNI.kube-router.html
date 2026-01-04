@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.CNI.kube-router</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://github.com/cloudnativelabs/kube-router/"><code>kube-proxy</code></a></h1>
+
+<p>Kube-router uses IPVS/LVS technology built in Linux to provide L4 load balancing.
+Each ClusterIP, NodePort, and LoadBalancer Kubernetes Service type
+is configured as an IPVS virtual service.
+Each Service Endpoint is configured as real server to the virtual service.
+The standard <code>ipvsadm</code> tool can be used to verify the configuration and monitor the active connections.</p>
+
+<h2><a href="https://github.com/cloudnativelabs/kube-router/tree/master/docs">Docs</a></h2>
+
+<ul>
+<li><a href="https://github.com/cloudnativelabs/kube-router/blob/master/docs/how-it-works.md">How it works</a></li>
+<li><a href="https://github.com/cloudnativelabs/kube-router/blob/master/docs/kubeadm.md">Deploying kube-router with kubeadm</a></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

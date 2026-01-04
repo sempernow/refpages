@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Podman</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Podman : Rootless Containers | <a href="https://chatgpt.com/share/673a11b8-165c-8009-8412-2dec016a61b7" title="ChatGPT.com">Chat 2</a> | <a href="https://chatgpt.com/share/6700711a-5b14-8009-82f9-decd11ce4f0c" title="ChatGPT.com">Chat 3</a> | <a href="https://chatgpt.com/share/6817bc76-62bc-8009-8003-baf013ec9781">Chat 4</a></h1>
+
+<blockquote>
+<p>In rootless Podman, the container’s root user is actually a non-root user on the host, mapped via user namespaces.</p>
+</blockquote>
+
+<h3>Namespace and UID</h3>
+
+<p>Mappings in Rootless Podman:</p>
+
+<ul>
+<li>Automatic Namespace Setup: When you run a rootless container with Podman, it automatically sets up the user namespace for that container. Podman uses entries in__ <code>/etc/subuid</code> and <code>/etc/subgid</code> <strong>to map UIDs and GIDs from the container to the host.</strong> This means that the <strong>root user inside the container</strong> (UID <code>0</code>) is <strong>mapped to a non-root user on the host</strong> (typically starting at a high UID, like <code>100000</code>, <strong>from host user’s <code>subuid</code>/<code>subgid</code> range</strong>).
+
+<ul>
+<li><code>myuser:100000:65536</code> : the root user (UID 0) in the container is mapped to UID 100000 on the host, and this mapping extends for <code>65536</code> UIDs (so UID <code>1</code> inside the container maps to <code>100001</code> on the host, and so on).</li>
+</ul></li>
+</ul>
+
+<p><strong>Create</strong> <code>subuid</code>/<code>subgid</code> range <strong>per user</strong></p>
+
+<pre><code class="language-bash">sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 auser
+</code></pre>
+
+<ul>
+<li>This allocates <code>65536</code> subordinate UIDs and GIDs to <code>auser</code>, starting from <code>100000</code>.
+
+<ul>
+<li>A more sophisticated method is required if multiple users are to run podman rootless,
+because each user must have their own unique range of <code>subuid</code>/<code>subgid</code>.</li>
+</ul></li>
+</ul>
+
+<h3><code>Dockerfile</code> mods</h3>
+
+<pre><code class="language-dockerfile">RUN useradd -m auser
+USER auser
+RUN chown -R auser /path/to/app
+</code></pre>
+
+<h3>Host : User Namespaces</h3>
+
+<p>In Podman rootless mode, a <strong>container runs in a separate user namespace</strong>, which isolates the user and group IDs inside the container from the ones on the host. Even though a process may run as <strong><code>UID 0</code> (<code>root</code>) inside the container</strong>, it is actually <strong>mapped to a non-root user ID on the host</strong>.</p>
+
+<h3>Customizing UID/GID Mappings</h3>
+
+<p>You can modify the default UID/GID mappings by editing <code>/etc/subuid</code> and <code>/etc/subgid</code>. You can also specify custom mappings when running a container using the <code>--uidmap</code> and <code>--gidmap</code> options in podman run.</p>
+
+<pre><code class="language-bash">
+podman run --uidmap 0:100000:1000 --gidmap 0:100000:1000 my-image
+</code></pre>
+
+<h4>Issues</h4>
+
+<ul>
+<li>Mounts: When mounting directories from the host into the container, you may run into permission issues if the UIDs/GIDs inside the container don’t map cleanly to the host.</li>
+<li>Ports: Containers in rootless mode can’t bind to privileged ports (ports &lt; 1024) because the user on the host is not root.</li>
+</ul>
+
+<h2><a href="https://chatgpt.com/share/673d366e-0384-8009-a6d3-d7a0c96c41f2" title="ChatGPT.com">Persist a Rootless Container</a></h2>
+
+<h3>Q:</h3>
+
+<p>Rootless podman containers stop when user logs out?</p>
+
+<h3>A:</h3>
+
+<p>Yes, rootless Podman containers will stop when the user logs out by default. This is because <strong>they are tied to the user's session</strong> and their processes terminate when the session ends.</p>
+
+<p><strong>To prevent rootless Podman containers from stopping upon logout</strong>,
+you can use the Podman service or systemd integration:</p>
+
+<pre><code class="language-bash">app=bbox
+
+# Configure to always restart
+podman run -d --restart=always --name $app busybox sleep 1d
+
+# Generate user-scoped systemd service file : DEPRICATED : use Quadlets
+podman generate systemd --new --name $app --files
+
+# Move the systemd service file:
+mkdir -p ~/.config/systemd/user 
+mv container-$app.service ~/.config/systemd/user/
+
+# Enable/Start the service on user login
+systemctl --user enable --now container-$app.service
+
+# Enable lingering
+loginctl enable-linger $(whoami)
+
+# Teardown
+podman container stop $app
+podman container rm $app 
+</code></pre>
+
+<ul>
+<li>The <code>loginctl enable-linger</code> command allows user-specific services (including systemd units managed by the <code>--user</code> flag) to keep running even when the user is not logged in. <strong>Without enabling lingering, systemd will stop all user services when you log out</strong>, which includes your Podman containers.</li>
+</ul>
+
+<p>This approach ensures that your rootless Podman containers
+remain running even when you log out.</p>
+
+<h2>Quadlets</h2>
+
+<p><strong>Quadlets are essentially a systemd unit generator specifically for containers</strong>. Instead of manually writing complex <code>.service</code> files, you can use <code>.container</code> files (a simplified format) to define container behaviors, such as the image to use, environment variables, volumes, and restart policies.</p>
+
+<p>These <code>.container</code> files are easier to write and maintain compared to traditional <code>.service</code> files that might call podman run commands. <strong>Systemd then reads these Quadlet <code>.container</code> files and generates the appropriate <code>.service</code> units behind the scenes.</strong></p>
+
+<p>Setup:</p>
+
+<pre><code class="language-bash">app=bbox
+
+# Create the systemd .container file
+mkdir -p ~/.config/systemd/user 
+cat &lt;&lt;-EOH |tee ~/.config/systemd/user/$app.container
+[Container]
+Image=docker.io/library/busybox:latest
+Name=$app
+Command=/usr/bin/start-app --flag
+Volume=/host/data:/data:rw
+Volume=/host/config:/config:ro
+Network=host
+Port=8080:80
+Environment=ENV_VAR=value
+Environment=TLS_CERT=/config/cert.pem
+Environment=TLS_KEY=/config/key.pem
+WorkDir=/app
+Restart=always
+EOH
+
+# Enable/Start the service on user login
+systemctl --user enable --now $app.container
+
+# Enable lingering
+loginctl enable-linger $(whoami)
+
+</code></pre>
+
+<p>This approach is cleaner and recommended if you are seeing warnings about Quadlets. Quadlets simplify the management of containers using systemd while retaining the flexibility of systemd service management.</p>
+
+<h2><code>podman play kube</code></h2>
+
+<p>Define the pod and its containers declaratively using <strong>Podman's <code>podman play kube</code></strong> feature.
+This allows you to describe the entire pod (including its containers, volumes, and networking)
+in a <strong>K8s-compatible YAML file</strong>. The systemd service can then use this YAML file
+to start and manage the pod without requiring out-of-band <code>podman</code> commands.</p>
+
+<p>Here’s how to do it:</p>
+
+<hr>
+
+<h3>1. <strong>Create a K8s-Compatible YAML File</strong></h3>
+
+<p>Define the pod and its containers in a YAML file. Save it as <code>/path/to/registry-pod.yaml</code>:</p>
+
+<pre><code class="language-yaml">apiVersion: v1
+kind: Pod
+metadata:
+  name: registry-pod
+spec:
+  containers:
+    - name: registry
+      image: docker.io/library/registry:2
+      volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+      ports:
+        - containerPort: 5000
+
+    - name: nginx
+      image: docker.io/library/nginx:alpine
+      volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: nginx-ssl
+          mountPath: /etc/nginx/ssl
+      ports:
+        - containerPort: 443
+
+  volumes:
+    - name: registry-data
+      hostPath:
+        path: /path/to/registry/data
+        type: Directory
+    - name: nginx-config
+      hostPath:
+        path: /path/to/nginx/conf.d
+        type: Directory
+    - name: nginx-ssl
+      hostPath:
+        path: /path/to/nginx/ssl
+        type: Directory
+</code></pre>
+
+<ul>
+<li>Replace <code>/path/to/registry/data</code> with the directory for the registry data.</li>
+<li>Replace <code>/path/to/nginx/conf.d</code> and <code>/path/to/nginx/ssl</code> with the paths to your NGINX configuration and TLS certificates.</li>
+</ul>
+
+<hr>
+
+<h3>2. <strong>Create the NGINX Configuration</strong></h3>
+
+<p>Create the NGINX configuration file for the registry at <code>/path/to/nginx/conf.d/registry.conf</code>:</p>
+
+<pre><code class="language-nginx">server {
+    listen 443 ssl;
+    server_name registry.example.com;
+
+    ssl_certificate /etc/nginx/ssl/registry.crt;
+    ssl_certificate_key /etc/nginx/ssl/registry.key;
+
+    client_max_body_size 0; # Disable body size check for large uploads
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+</code></pre>
+
+<ul>
+<li>Replace <code>registry.example.com</code> with your domain.</li>
+<li>Place your TLS certificate and key in <code>/path/to/nginx/ssl/registry.crt</code> and <code>/path/to/nginx/ssl/registry.key</code>.</li>
+</ul>
+
+<hr>
+
+<h3>3. <strong>Create a Systemd Service</strong></h3>
+
+<p>Create a systemd service file to manage the pod using the YAML file. Save it as <code>/etc/systemd/system/registry-pod.service</code>:</p>
+
+<pre><code class="language-ini">[Unit]
+Description=CNCF Distribution Registry Pod (Podman)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/podman play kube /path/to/registry-pod.yaml
+ExecStop=/usr/bin/podman pod stop -t 10 registry-pod
+ExecStopPost=/usr/bin/podman pod rm -f registry-pod
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+</code></pre>
+
+<ul>
+<li>Replace <code>/path/to/registry-pod.yaml</code> with the path to your YAML file.</li>
+</ul>
+
+<p>Reload systemd and start the service:</p>
+
+<pre><code class="language-bash">sudo systemctl daemon-reload
+sudo systemctl start registry-pod
+sudo systemctl enable registry-pod
+</code></pre>
+
+<hr>
+
+<h3>4. <strong>Verify the Setup</strong></h3>
+
+<ul>
+<li><p>Test the registry by pushing/pulling an image using the NGINX proxy:</p>
+
+<pre><code class="language-bash">docker pull alpine
+docker tag alpine registry.example.com/alpine
+docker push registry.example.com/alpine
+</code></pre></li>
+
+<li><p>Check the status of the pod and containers:</p>
+
+<pre><code class="language-bash">podman pod ps
+podman ps
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3>5. <strong>Optional: Secure the Registry</strong></h3>
+
+<ul>
+<li>Add authentication to the registry by configuring HTTP basic auth or integrating with an external authentication service.</li>
+<li>Use Podman's secrets management for secure handling of credentials.</li>
+</ul>
+
+<hr>
+
+<h3>Summary</h3>
+
+<p>This approach uses a <strong>declarative YAML file</strong> to define the pod and its containers, which is then managed by a <strong>systemd service</strong>. The <code>podman play kube</code> command reads the YAML file and creates the pod, ensuring that the entire setup is self-contained and reproducible without requiring out-of-band <code>podman</code> commands.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (HTML | MD)
+
+([HTML](___.md "___"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

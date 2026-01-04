@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.KAS.v.ArgoCD</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>GitLab <a href="https://docs.gitlab.com/user/clusters/agent/" title="docs.gitlab.com">KAS</a> (Kubernetes Agent Server)</h1>
+
+<p>Install by <a href="https://docs.gitlab.com/charts/installation/cloud/" title="docs.gitlab.com"><strong>Helm</strong></a> (GitLab v18.1 + K8s v1.33) or <strong>Operator</strong></p>
+
+<ul>
+<li><p><a href="https://gitlab.com/gitlab-org/cluster-integration/gitlab-agent/-/blob/master/doc/architecture.md" title="GitLab.com"><strong>Architecture</strong></a></p></li>
+
+<li><p><a href="https://gitlab.com/gitlab-org/cluster-integration/gitlab-agent" title="GitLab.com"><strong><code>gitlab-agent</code></strong></a></p></li>
+</ul>
+
+<h2>Q:</h2>
+
+<p>GitLab runners on K8s require a token from GitLab.
+Other than that there seems nothing else is needed.
+So, what purpose is KAS and its container(s) and such?</p>
+
+<h2>A:</h2>
+
+<p>GitLab Runners on Kubernetes only need a <strong>registration token</strong> to connect to GitLab and execute jobs.
+The <strong>GitLab Agent for Kubernetes (KAS)</strong> is for a <strong>completely different purpose</strong> than GitLab Runners:</p>
+
+<hr>
+
+<h3>✅ <strong>GitLab Runner</strong>:</h3>
+
+<ul>
+<li>Purpose: Executes CI/CD pipelines.</li>
+<li>Auth: Needs a registration token (or access token if using GitLab API).</li>
+<li>Operation: Pulls job definitions from GitLab, executes them in pods (if on K8s), and reports results back.</li>
+<li>Use case: <strong>Build, test, deploy</strong> workflows triggered by GitLab pipelines.</li>
+</ul>
+
+<hr>
+
+<h3>🧠 <strong>GitLab Kubernetes Agent (KAS)</strong>:</h3>
+
+<ul>
+<li>Purpose: Enables <strong>real-time, bidirectional communication</strong> between GitLab and a Kubernetes cluster.</li>
+
+<li><p>Components:</p>
+
+<ul>
+<li><code>kas</code>: A server component running in GitLab’s infrastructure.</li>
+<li><code>gitlab-agent</code>: A <strong>pod running in your Kubernetes cluster</strong> that connects outward to <code>kas</code>.</li>
+</ul></li>
+
+<li><p>Auth: Uses <strong>agent tokens</strong> (not the same as runner tokens).</p></li>
+
+<li><p>Operation: Uses gRPC tunnels for secure, persistent connections to GitLab.</p></li>
+
+<li><p>Use cases:</p>
+
+<ol>
+<li><strong>GitOps-style deployments</strong> using <strong>pull-based sync</strong> (agent pulls config from GitLab projects and applies them).</li>
+<li><strong>Real-time K8s observability</strong> (via GitLab UI).</li>
+<li><strong>Cluster management</strong> (e.g., viewing workloads, scanning vulnerabilities).</li>
+<li><strong>Network-isolated clusters</strong> (agent initiates outbound connection — no GitLab-to-cluster inbound access needed).</li>
+</ol></li>
+</ul>
+
+<hr>
+
+<h3>⚖️ Summary Comparison</h3>
+
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>GitLab Runner</th>
+<th>GitLab Agent for K8s (KAS)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Purpose</td>
+<td>Run CI/CD jobs</td>
+<td>GitOps, real-time sync, observability</td>
+</tr>
+
+<tr>
+<td>Needs GitLab token</td>
+<td>✅ Registration token</td>
+<td>✅ Agent token</td>
+</tr>
+
+<tr>
+<td>Deploys workloads</td>
+<td>✅ via CI pipeline</td>
+<td>✅ via GitOps (pull)</td>
+</tr>
+
+<tr>
+<td>Talks to GitLab</td>
+<td>✅ via GitLab API</td>
+<td>✅ via gRPC tunnel</td>
+</tr>
+
+<tr>
+<td>Useful without GitLab.com?</td>
+<td>Yes</td>
+<td>Yes, with self-managed GitLab</td>
+</tr>
+
+<tr>
+<td>KAS required?</td>
+<td>❌ No</td>
+<td>✅ Yes (for GitOps + observability)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>✅ Use KAS when:</h3>
+
+<ul>
+<li>You want <strong>GitOps pull-based deployment</strong> (cluster pulls from GitLab).</li>
+<li>You need <strong>observability or RBAC control</strong> through GitLab UI.</li>
+<li>Your cluster is <strong>behind a firewall</strong> and can't be reached directly from GitLab.</li>
+</ul>
+
+<hr>
+
+<h2>Q:</h2>
+
+<p>Is KAS a viable replacement for ArgoCD, or does it work in tandem, or some kind of optional arrangement?</p>
+
+<h2>A:</h2>
+
+<p>Great question — and one that many teams ask when comparing <strong>GitLab Agent for Kubernetes (KAS)</strong> and <strong>Argo CD</strong>.</p>
+
+<h3>🧭 Short Answer:</h3>
+
+<p><strong>Yes</strong>, GitLab Agent for Kubernetes can <strong>replace Argo CD</strong> for some GitOps use cases — especially in environments <strong>already centered around GitLab</strong>.
+But it is <strong>not yet a full feature-for-feature replacement</strong> for teams using advanced Argo CD features.</p>
+
+<hr>
+
+<h3>🔍 Detailed Comparison: GitLab Agent (KAS) vs Argo CD</h3>
+
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>GitLab Agent (KAS)</th>
+<th>Argo CD</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>GitOps model</strong></td>
+<td>Pull-based</td>
+<td>Pull-based</td>
+</tr>
+
+<tr>
+<td><strong>Multi-repo support</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+
+<tr>
+<td><strong>Multi-cluster support</strong></td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+
+<tr>
+<td><strong>Sync methods</strong></td>
+<td>Agent pulls manifests from GitLab projects</td>
+<td>Argo pulls from Git repos</td>
+</tr>
+
+<tr>
+<td><strong>Declarative app management</strong></td>
+<td>Limited (no full UI for managing app-of-apps or nesting)</td>
+<td>Full declarative + app-of-apps support</td>
+</tr>
+
+<tr>
+<td><strong>UI for app state</strong></td>
+<td>Minimal (only shows workloads + logs)</td>
+<td>Rich UI: health, history, sync, drift detection</td>
+</tr>
+
+<tr>
+<td><strong>RBAC / SSO</strong></td>
+<td>Inherits GitLab project/group permissions</td>
+<td>Built-in RBAC, integrates with SSO</td>
+</tr>
+
+<tr>
+<td><strong>Drift detection</strong></td>
+<td>Limited</td>
+<td>Yes (diffs live vs desired)</td>
+</tr>
+
+<tr>
+<td><strong>Automated sync/reconciliation</strong></td>
+<td>Yes (with manifest projects)</td>
+<td>Yes (fully configurable)</td>
+</tr>
+
+<tr>
+<td><strong>Templates/overlays (e.g., Kustomize, Helm)</strong></td>
+<td>Yes (if stored in GitLab project)</td>
+<td>Yes (built-in Helm, Kustomize, Jsonnet, etc.)</td>
+</tr>
+
+<tr>
+<td><strong>Notifications/Webhooks</strong></td>
+<td>No native alerting</td>
+<td>Yes</td>
+</tr>
+
+<tr>
+<td><strong>Progressive delivery (e.g., blue-green, canary)</strong></td>
+<td>No</td>
+<td>Yes (via Argo Rollouts integration)</td>
+</tr>
+
+<tr>
+<td><strong>Third-party integration</strong></td>
+<td>GitLab-native</td>
+<td>Kubernetes-native (open ecosystem)</td>
+</tr>
+
+<tr>
+<td><strong>CLI</strong></td>
+<td><code>kubectl gitlab-agent</code> (limited)</td>
+<td><code>argocd</code> CLI</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>🔄 Works <strong>in tandem</strong>?</h3>
+
+<p>Yes — some teams do this:</p>
+
+<ul>
+<li><strong>Use Argo CD</strong> for complex GitOps flows, app templating, progressive delivery.</li>
+
+<li><p><strong>Use GitLab Agent (KAS)</strong> to:</p>
+
+<ul>
+<li>Automate config sync for shared infrastructure or secrets.</li>
+<li>Provide observability of workloads in GitLab UI.</li>
+<li>Centralize authentication (cluster management tied to GitLab groups/projects).</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h3>✅ Use GitLab Agent (KAS) when:</h3>
+
+<ul>
+<li>You're already all-in on GitLab and prefer <strong>fewer moving parts</strong>.</li>
+<li>You want to <strong>avoid opening inbound ports</strong> on the cluster (KAS uses outbound gRPC tunnel).</li>
+<li>Your team is fine with <strong>basic GitOps</strong> (simple apps, infra-as-code sync).</li>
+</ul>
+
+<h3>✅ Use Argo CD when:</h3>
+
+<ul>
+<li>You need <strong>rich GitOps workflows</strong>, drift detection, multiple environments.</li>
+<li>You want <strong>templating support</strong>, progressive delivery, or UI-driven sync controls.</li>
+<li>You're operating clusters independent of GitLab, or using multiple Git providers.</li>
+</ul>
+
+<hr>
+
+<h3>🧪 Final Take:</h3>
+
+<p>KAS is <strong>viable for many production GitOps workflows</strong>, especially if you want <strong>tight GitLab integration</strong>, but it's not as full-featured or mature as Argo CD for advanced deployment orchestration.</p>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# … ⋮ ︙ • “” ‘’ – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻  ⚐ ⚑
+# ☢  ☣  ☠  ¦ ¶ § † ‡ ß µ ø Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦  ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 𝐋𝐀𝐁
+# ⚠️ ✅ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🧳 🥇 ✨️ 🔚
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

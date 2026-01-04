@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JS.HTML.DOM</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model" title="@ MDN">HTML DOM</a> ::  <a href="https://developer.mozilla.org/en-US/docs/Web/API/Node" title="@ MDN">Node</a> :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document" title="@ MDN">Document</a>  | <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element" title="@ MDN">Element</a> :: <a href="https://caniuse.com/"><code>CanIUse.com</code></a></h1>
+
+<p><strong>Document Object</strong> has both <strong>Model</strong> (DOM) and <strong>Interfaces</strong>.</p>
+
+<p>Interface hierarchy: Node &gt; (Document|Element)</p>
+
+<p>Both have properties and methods, with the descendents inheriting from Node.</p>
+
+<h2>Examples</h2>
+
+<ul>
+<li><a href="https://www.w3schools.com/jsref/dom_obj_document.asp" title="Reference @ w3schools.com">Document</a></li>
+<li><a href="https://www.w3schools.com/jsref/dom_obj_all.asp" title="Reference @ w3schools.com">Element</a></li>
+</ul>
+
+<h2>Libraries</h2>
+
+<h3>UPDATE: Use <code>base.js</code> library</h3>
+
+<pre><code class="language-js">o.toDOM = (parent, child, at) =&gt; {
+    /** Insert into DOM
+     * @param {Element}   parent
+     * @param {DOMString} child   gets parsed
+     * @param {any}       at      optional; prepend on any, else append
+     * 
+     * USAGE: toDOM(css('#foo .bar'), '&lt;h3&gt;Foo&lt;/h3&gt; &lt;p&gt;bar baz&lt;/p&gt;', 1)
+     */
+    //o.profStart('toDOM')
+    // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML 
+    at = at ? 'afterbegin' : 'beforeend' 
+    // ... &quot;? Prepend : Append&quot; (amongst siblings; children of parent node).
+    if (parent &amp;&amp; child) {
+        parent.insertAdjacentHTML(at, child)
+        return true
+    }
+    return false
+}
+o.purge = (target) =&gt; { // Remove all child nodes
+    if (!target) return false
+    while (target.firstChild) {
+        target.removeChild(target.firstChild)
+    }
+}
+o.replaceContent = (node, html) =&gt; node.textContent = html
+
+o.create = (name) =&gt; {
+    return document.createElement(name)
+}
+o.id = (id) =&gt; {
+    return document.getElementById(id)
+}
+
+/* root is context node */
+
+o.css = (selector, root) =&gt; {
+    root = root ? root : document 
+    return root.querySelector(selector)
+}
+o.cssAll = (selector, root) =&gt; {
+    root = root ? root : document 
+    return root.querySelectorAll(selector)
+}
+o.class = (name, root) =&gt; {
+    root = root ? root : document 
+    return root.getElementsByClassName(name)
+}
+o.tags = (tag, root) =&gt; {
+    root = root ? root : document 
+    return root.getElementsByTagName(tag)
+}
+</code></pre>
+
+<h3>Others</h3>
+
+<ul>
+<li><a href="https://github.com/utilise/utilise#api-reference" title="pemrouz @ GitHub"><code>utilise</code></a></li>
+<li><a href="w3-framework.js"><code>w3-framework.js</code></a></li>
+<li><a href="https://github.com/adtac/commento/tree/master/frontend/js" title="adtac/commento/... @ GitHub"><code>commento.js</code></a></li>
+</ul>
+
+<h2><a href="https://www.w3schools.com/jsref/obj_location.asp" title="Reference @ w3schools.com">DOM Location</a></h2>
+
+<pre><code class="language-js">console.log(&quot;origin&quot;,window.location.origin)    // origin http://127.0.0.1:5500
+console.log(&quot;window&quot;,window.location.pathname)  // /sub/
+console.log(&quot;top&quot;,top.location.pathname)        // /sub/
+console.log(&quot;parent&quot;,parent.location.pathname)  // /sub/
+// `top` and `parent` useful @ iframe
+</code></pre>
+
+<h2>DOM Position : <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect"><code>el.getBoundingClientRect()</code></a> | CanIUse @ <code>99.5%</code></h2>
+
+<pre><code class="language-css">div {
+    width: 400px;
+    height: 200px;
+    padding: 20px;
+    margin: 50px auto;
+    background: #990;
+}
+</code></pre>
+
+<pre><code class="language-html">&lt;div&gt;&amp;nbsp;&lt;/div&gt;
+</code></pre>
+
+<pre><code class="language-js">const 
+    getRect = el =&gt; { 
+        /*************************************************************
+         * Convert the unusable return of getBoundingClientRect(),
+         * which is the morphodite DOMRect, into a USEFUL object.
+         * 
+         * USEAGE: [...Object.keys(getRect(el))].map(perKey)
+         ************************************************************/
+        const {
+            top, right, bottom, left, width, height, x, y
+        } = el.getBoundingClientRect()
+        return {top, right, bottom, left, width, height, x, y} 
+    },
+    src = document.querySelector('DIV'),
+    got = getRect(src),
+    put = (key) =&gt; {
+        const tgt = document.createElement('PRE')
+        tgt.textContent  = `${ key } : ${ got[key] }`
+        document.body.appendChild(tgt)
+    }
+
+;[...Object.keys(got)].map(put)
+</code></pre>
+
+<h2>HTML DOM :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element" title="Class @ MDN">Element</a> &gt; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Node" title="EventTarget Interface @ MDN">Node</a> &lt; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document" title="Interface @ MDN">Document</a></h2>
+
+<h3>Test per CSS</h3>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/matches"><code>Element.matches()</code></a> (<a href="https://caniuse.com/#search=matches">CanIUse.com</a>)</h4>
+
+<p>Test if the CSS <code>selectorString</code> matches the element; checks if <code>el</code> <em>is</em> the selector.</p>
+
+<pre><code class="language-js">var result = el.matches(selectorString) // true | false
+</code></pre>
+
+<h3>Find per CSS</h3>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/closest"><code>Element.closest()</code></a> (<a href="https://caniuse.com/#search=closest">CanIUse.com</a>)</h4>
+
+<p>Walk up the DOM, from <code>targetEl</code>, to find the closest element (closestEl) matching the CSS <code>selectors</code>.</p>
+
+<pre><code class="language-js">var closestEl = targetEl.closest(selectors) // HTMLElement | null
+</code></pre>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector" title="@ MDN"><code>document.querySelector(CSS-selector)</code></a></h4>
+
+<p>Examples</p>
+
+<pre><code class="language-js">document.querySelector('main.group-1') 
+document.querySelector('#logo&gt;svg') 
+document.querySelector('div.user-panel.main input[name=&quot;login&quot;]') 
+</code></pre>
+
+<p>Returns <em>first</em> element matched, else null.</p>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll" title="@ MDN"><code>parentNode.querySelectorAll(CSS-selector)</code></a></h4>
+
+<p>Returns a <code>NodeList</code> representing a <em>list</em> of matching elements.</p>
+
+<pre><code class="language-js">contextNode.querySelectorAll(selector)
+</code></pre>
+
+<h3>Insert | Replace :: HTML as String (parsed as HTML and inserted as nodes)</h3>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML" title="@ MDN"><code>insertAdjacentHTML()</code></a></h4>
+
+<pre><code class="language-js">el.insertAdjacentHTML(position, STRING)
+</code></pre>
+
+<ul>
+<li><p>Append (next <em>sibling under parent</em>)</p>
+
+<pre><code class="language-js">function appendNextSibling(parent, child) {
+    !!(parent) &amp;&amp; parent.insertAdjacentHTML('beforeend', child)
+}
+
+var h = {parent: aContainerEl, child: nextSiblingEl}
+</code></pre>
+
+<p>Better, parameterize the choice of append/prepend:</p>
+
+<pre><code class="language-js">function toDOM(parent, child, at) {
+    at = at ? 'afterbegin' : 'beforeend' // default appends
+    if (parent &amp;&amp; child) parent.insertAdjacentHTML(at, child)
+}
+</code></pre>
+
+<pre><code>@ HTML ... 
+aContainerEl
+    existingSiblingEl
+    nextSiblingEl  &lt;== inserts this.
+    ...
+</code></pre></li>
+</ul>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent" title="MDN"><code>node.textContent</code></a></h4>
+
+<ul>
+<li><p>Replace (text of a node)</p>
+
+<pre><code class="language-js">const
+    node = document.querySelector('main.group-1') 
+    ,txt = 'Foo'
+
+node.textContent = txt
+</code></pre></li>
+</ul>
+
+<h4>Comparisons:</h4>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML" title="MDN"><code>el.insertAdjacentHTML(position, STRING)</code></a>
+
+<ul>
+<li>This method of the Element interface <strong><em>parses the string as HTML</em></strong> or XML  <strong><em>and inserts the resulting nodes</em></strong> into the DOM tree at a specified position. It <em>does not reparse the element</em> it is being used on, and thus it <em>does not corrupt the existing elements</em> inside that element. This avoids the extra step of serialization, making it <strong>much faster</strong> than direct <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML" title="MDN"><code>innerHTML</code></a> manipulation, <strong><em>usually</em></strong>. (For counter-example, where <code>innerHTML</code> is faster, see dbmon challenge <code>map</code> case.)</li>
+</ul></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML" title="MDN"><code>el.innerHTML</code></a><br>
+
+<ul>
+<li>Parses the string into HTML</li>
+</ul></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent" title="MDN"><code>node.textContent</code></a>
+
+<ul>
+<li>Sans parsing; faster than either (3x <code>innerHTML</code>), since it does not parse, <strong><em>though</em></strong> it's therefore <strong><em>limited to text</em></strong> (not even html entities).</li>
+</ul></li>
+<li><code>el.innerText</code>
+
+<ul>
+<li>Do <strong>not</strong> use <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/innerText" title="MDN"><code>innerText</code></a>. It triggers <a href="#LT"><em>Layout Thrashing</em></a>.</li>
+</ul></li>
+</ul>
+
+<h3>Insert | Replace :: HTML as Node</h3>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/append" title="MDN"><code>append()</code></a>  (<a href="https://caniuse.com/#search=append">CanIUse.com</a>)</h4>
+
+<pre><code class="language-js">parentNode.append(...nodesToAppend)
+</code></pre>
+
+<p><code>append()</code>/<code>prepend()</code> do so <strong><em>relative to sibling node(s)</em></strong> of <code>parentNode</code>; not <code>parentNode</code> itself. Inserts one or more nodes (<code>nodesToAppend</code>/<code>nodesToPrepend</code>) after/before <em>the collection of siblings</em> under <code>parentNode</code>.</p>
+
+<ul>
+<li><p>JS</p>
+
+<pre><code class="language-js">var el = document.getElementById(&quot;target&quot;)
+var pre = document.createElement('PRE')
+el.append(pre)
+pre.textContent = `Here is AJAX Response: ${xhr.response}`
+</code></pre></li>
+
+<li><p>HTML</p>
+
+<pre><code class="language-html">&lt;div id=&quot;target&quot;&gt;
+    &lt;div&gt; 
+    &lt;!-- ... Pre-existing ... --&gt;
+    &lt;/div&gt;
+    &lt;pre&gt;Here is ...&lt;/pre&gt;
+&lt;/div&gt;
+</code></pre></li>
+</ul>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/prepend"><code>prepend()</code></a> (<a href="https://caniuse.com/#search=prepend">CanIUse.com</a>)</h4>
+
+<ul>
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/API/ParentNode/prepend"><code>prepend()</code></a></p>
+
+<pre><code class="language-js">parentNode.prepend(...nodesToPrepend)
+</code></pre></li>
+
+<li><p>JS</p>
+
+<pre><code class="language-js">el = document.createElement('UL')
+html = '&lt;li&gt;bar&lt;/li&gt;'  
+el.insertAdjacentHTML('afterbegin', html) 
+document.getElementById('target').prepend(el)
+</code></pre></li>
+
+<li><p>HTML</p>
+
+<pre><code class="language-html">&lt;section id=target&gt;
+    &lt;ul&gt;
+        &lt;li&gt;bar&lt;/li&gt;  &lt;!-- inserts this li node. --&gt;
+        &lt;li&gt;foo&lt;/li&gt;
+        ...
+    &lt;/ul&gt;
+    ...
+</code></pre></li>
+
+<li><p>JS</p>
+
+<pre><code class="language-js">parent = document.createElement('DIV')
+p = document.createElement('P')
+parent.prepend(&quot;Some text&quot;, p)
+
+console.log(parent.childNodes)  // NodeList [ #text &quot;Some text&quot;, &lt;p&gt; ]
+</code></pre></li>
+</ul>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild" title="MDN"><code>appendChild()</code></a> / <a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/insertBefore" title="MDN"><code>insertBefore()</code></a>  are Older APIs (IE compatible) of <code>append()</code>/<code>prepend()</code></h4>
+
+<pre><code class="language-js">parentNode.appendChild(aChild);
+parentNode.insertBefore(newNode, referenceNode)
+</code></pre>
+
+<p>E.g.,</p>
+
+<pre><code class="language-js">li = document.createElement('LI')       // Create &lt;li&gt; node
+txtNode = document.createTextNode(str)  // Create text node
+li.appendChild(txtNode)                 // Append it to &lt;li&gt;
+
+ul = document.getElementById('target') 
+ul.insertBefore(li, ul.childNodes[0])   // prepend this li to siblings under ul
+</code></pre>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/childNodes" title="MDN"><code>node.childNodes[0]</code></a> &amp; <a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/nodeValue" title="MDN"><code>node.nodeValue</code></a></h4>
+
+<p>Use to <strong><em>replace TEXT at one of many siblings</em></strong>; leaves all else unaffected.</p>
+
+<pre><code class="language-js">node.childNodes[0]
+</code></pre>
+
+<ul>
+<li><p>JS</p>
+
+<pre><code class="language-js">var el = document.getElementById(&quot;target&quot;).childNodes[0]
+el.nodeValue = &quot;SUCCESS&quot;  // &quot;Target&quot; replaced with &quot;SUCCESS&quot;
+</code></pre>
+
+<ul>
+<li>Unlike <code>nodeValue</code>, using either <code>innerHTML</code> or <code>textContent</code>  methods replaces <strong>all</strong> the content of <code>target</code> (all its child nodes; html &amp; text).</li>
+</ul></li>
+
+<li><p>HTML</p>
+
+<pre><code class="language-html">&lt;div id=&quot;target&quot;&gt;
+    Target
+    &lt;pre&gt;Save&lt;/pre&gt;
+&lt;/div&gt;
+</code></pre></li>
+</ul>
+
+<h3>Insert MANY :: <a href="https://developer.mozilla.org/en-US/docs/Web/API/DocumentFragment" title="MDN"><code>DocumentFragment</code></a> |   <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/createDocumentFragment" title="MDN"><code>create​Document​Fragment()</code></a></h3>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild" title="MDN"><code>Node​.append​Child()</code></a></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/insertBefore" title="MDN"><code>Node​.insert​Before()</code></a></p>
+
+<pre><code class="language-js">const messages = document.querySelectorAll('#messages div.msg') || [ghost]
+
+// Iterate over a node list 
+;[...messages].map(msg =&gt; {
+const ageEl = messages.querySelector('div.date&gt;span', msg) || ghost
+ageEl.replaceContent(ageNow(ageEl.dataset.utcTime))
+})
+</code></pre>
+
+<pre><code class="language-js">const node = document.getElementById('target')
+,frag = document.createDocumentFragment()
+
+var i = 0
+
+while (i &lt; app.ITEMS) {
+// Not yet in DOM
+var li = document.createElement('li') 
+li.textContent = 'Item number ' + i
+frag.appendChild(li)
+i++
+}
+
+// Insert into DOM.
+node.appendChild(frag) 
+</code></pre></li>
+</ul>
+
+<h3>Remove child elements</h3>
+
+<h4><a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/removeChild" title="MDN"><code>node.removeChild(child)</code></a></h4>
+
+<ul>
+<li><a href="https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript" title="2015 @ StackOverflow.com">Purportedly <strong><em>much faster</em></strong></a> than &quot;<code>innerHTML = ''</code>&quot;.</li>
+</ul>
+
+<p>Referencing only the target node:</p>
+
+<pre><code class="language-js">let node = document.getElementById('target')
+if (node.parentNode) {
+    node.parentNode.removeChild(node)
+}
+</code></pre>
+
+<p>Referencing only the parent node:</p>
+
+<pre><code class="language-js">let parent = document.getElementById('parent')
+while (parent.firstChild) {
+    parent.removeChild(parent.firstChild)
+}
+</code></pre>
+
+<p>Or</p>
+
+<pre><code class="language-js">let parent = document.getElementById('parent')
+while (parent.firstChild) {
+    parent.firstChild.remove()
+}
+</code></pre>
+
+<p><a href="https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript" title="2019 @ StackOverflow.com">Other suggested &hellip;</a></p>
+
+<pre><code class="language-js">var cNode = node.cloneNode(false)
+node.parentNode.replaceChild(cNode, node)
+</code></pre>
+
+<h2><span id="LT"></span>Layout Thrashing :: <a href="https://gist.github.com/paulirish/5d52fb081b3570c81e3a" title="gist.github.com">Layout Reflow Culprits</a></h2>
+
+<blockquote>
+<p>... properties or methods that <strong>trigger the browser</strong> to <strong>synchronously calculate</strong> the style and layout; ... a common performance bottleneck.</p>
+</blockquote>
+
+<ul>
+<li>Box metrics; <code>.clientXXX</code>, <code>.offsetXXX</code>, ...</li>
+<li>Scroll; <code>.scrollXXX</code></li>
+
+<li><p>Focus; <code>.focus()</code></p></li>
+
+<li><p><code>.innerText</code></p>
+
+<ul>
+<li>&quot;<a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent" title="MDN">&hellip; triggers a reflow to ensure up-to-date computed styles.</a>. Use <code>textContent</code> instead.</li>
+</ul>
+
+<p>&vellip;</p></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

@@ -1,0 +1,745 @@
+ABNF (Augmented BNF)  
+    A modified version of Backus-Naur Form (BNF); a set of rewriting rules; notations for context-free grammar; used to define syntax. 
+    RFC5234     https://tools.ietf.org/html/rfc5234
+    BNF         https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form
+
+BCNF a.k.a. 3.5NF (Boyce–Codd Normal Form)
+    A database normalization form that's a bit stronger than 3NF (the Third Normal Form).
+    https://en.wikipedia.org/wiki/Boyce%E2%80%93Codd_normal_form
+
+REST API Authentication   https://dzone.com/refcardz/rest-api-security-1?chapter=3  
+
+    API Key(s)
+        gives full access to every operation an API can perform
+
+    SAML (Security Assertion Markup Language
+        an XML-based framework for authentication and authorization between two entities: 
+        A Service Provider and an Identity Provider.
+            The Service Provider agrees to trust the Identity Provider to authenticate users. 
+            In return, the Identity Provider generates an authentication assertion, 
+            which indicates that a user has been authenticated.
+
+        SAML is a standard single sign-on (SSO) format. 
+        Authentication info exchanged through digitally signed XML documents;
+        a complex single sign-on (SSO) implementation that enables seamless authentication, 
+        mostly between businesses and enterprises.
+
+    OAuth.2 (2006)  
+        Open Authentication Protocol; provides AUTHORIZATION WORKFLOW over HTTP;
+        ACCESS TOKENs, instead of credentials, to AUTHORIZE devices, servers, apps, and APIs;
+        a kind of scoped API key allowing ACCESS TO SPECIFIC RESOURCES of one party (client OR server node) 
+        by third-party apps or websites;
+        Facebook, Google, Microsoft, and Twitter adopted and thereby popularized.
+
+        Most Common Implementations: 
+            Access Token: sent like an API key; allows app to access a user’s data; access tokens can expire.
+            Refresh Token: optional; retrieve a new access token if Access Token expired.
+
+            HTTP Header for Access Token;  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+                Authorization: Bearer <TOKEN>
+
+        https://oauth.net/2/
+
+        OpenID Connect, e.g,. "Login with Google"
+            Authentication Protocol; built on a profile of OAuth; provides additional capabilities;
+            conveys identity of the user, not just the application itself; 
+            client private key + SERVERs PUBLIC KEY, so can be passed to 3rd parties;
+            SSO (Single Sign-on) 
+            https://openid.net/specs/openid-connect-discovery-1_0.html
+            https://en.wikipedia.org/wiki/OpenID
+
+    JWT (JSON Web Token)  a.k.a. "JOT" (archaic)
+        A JSON object that is SIGNED BY its AUTHOR. Thus ensuring:
+
+            1. The author was in possession of the signing secret.
+            2. The data has not been modified since it was signed.
+
+        The data is however visible; NOT encrypted. (For encrypted JWT, see JWE.) 
+        
+        JWT is used as STATELESS (APIs) AUTHENTICATION mechanism; compact, self-contained means of REPRESENTING CLAIMS by value, not by reference as with session cookies (holding only a session id); send per `Authorization: Bearer ...` request header with each client request to server AFTER client authenticated (logged in); an extension of OAuth2; server validates the (signed) JWT of the AUTHENTICATED CLIENT; Used in combination with OAuth.
+        
+        Sent per REQUEST HEADER
+        
+            `Authorization: Bearer <TOKEN>`
+        
+        JWT has three segments: 
+        
+            <HEADER>.<PAYLOAD>.<SIGNATURE>  
+            
+            Each segment is Base64URL encoded, separately.
+        
+        Signing is per:
+        
+            - HMAC Signature; simplest, but secret sent to all parties, so NOT for 3rd party access. 
+            - Asymmetric Signature; public/private key pair; 
+                - Used by client or 3rd party to retrieve the key 
+                  from JWT generator/provider to VERIFY the signature.
+
+            Header: 
+                Symmetric: {"typ":"JWT","alg":"HS256"}  
+                Asymmetric: {"kid": <KEYID>, "typ":"JWT","alg":"HS256"} 
+ 
+
+            Payload contains the CLAIMs :: names per IANA JSON Web Token Registry  
+                Registered          https://tools.ietf.org/html/rfc7519#section-4.1
+                Standard Fields     https://en.wikipedia.org/wiki/JSON_Web_Token#Standard_fields
+
+                    "exp"   EXPIRATION; critical, because IS ONLY WAY token expires
+                    "iss"   Issuer; domain name (foo.com)
+                    "iat"   IssuedAt; Creation Time; UNIX Timestamp
+                    "sub"   Subject 
+                    "aud"   Audience 
+
+                https://www.iana.org/assignments/jwt/jwt.xhtml  
+                https://dzone.com/refcardz/rest-api-security-1?chapter=9
+
+                Public 
+                    claims defined at will by those using JWTs; 
+                    best practice is to use a URI or an IANA JSON Web Token Registry name  
+
+                Private 
+                    custom claims created to share information between parties 
+
+            Signature 
+                    HMAC(data, secret)
+                    Where `data` is <header>.<payload>, the first two Base64URL-encoded parts, 
+                    and `secret` is either the key. If asymmetric, then the private key of the pair
+                    is used to create, and the public key of the pair if to verify.
+
+        USEs
+            Authorization
+                the most common scenario. AFTER user is validated (logged in), 
+                each subsequent request will include the JWT (token), permitting access to server resources, routes, etc. 
+                E.g., for Single Sign On; access across serveral domains/services
+
+            Information Exchange
+                securely transmitting information between parties. 
+                Because JWTs can be signed —for example, using public/private key pairs —you can be sure the senders are who they say they are. Additionally, as the signature is calculated using the header and the payload, you can also verify that the content hasn't been tampered with.
+
+            HTTP Header for Access Token;  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+                Authorization: Bearer Header.Payload.Signature
+
+        How-to:     https://www.sohamkamani.com/golang/2019-01-01-jwt-authentication/
+                    https://www.pingidentity.com/en/company/blog/posts/2019/jwt-security-nobody-talks-about.html
+                    
+        Wikipedia   https://en.wikipedia.org/wiki/JSON_Web_Token 
+        RFC 7519    https://tools.ietf.org/html/rfc7519
+        JWT.io      https://jwt.io/introduction/  
+        DZone.com   https://dzone.com/refcardz/rest-api-security-1?chapter=9  
+                    https://dzone.com/refcardz/rest-api-security-1?chapter=11
+
+
+REST API Best Practices  https://dzone.com/refcardz/rest-api-security-1?chapter=12  
+    - Rate Limiting per API Key
+    - Protect HTTP Methods
+    - Whitelist allowable methods
+    - Utilize HTTP Status Codes
+    - Headers:
+        X-Content-Type-Options: nosniff 
+        X-Frame-Options: deny
+
+AUTOMATION DEPLOYMENT/INFRASTRUCTURE TOOLS 
+    # CM vs. Orchestration Tools  https://blog.gruntwork.io/why-we-use-terraform-and-not-chef-puppet-ansible-saltstack-or-cloudformation-7989dad2865c
+
+    Configuration Management (CM) Tools  
+        - designed to install and manage software on existing servers;
+            MUTABLE infrastructure paradigm; Configuration Drift issue 
+        - Chef, Puppet, Ansible, and SaltStack
+
+    ORCHESTRATION Tools  
+        - designed to provision the infrastructure,  
+            leaving CM to other tools (Docker, Packer).  
+        - CloudFormation, TerraForm  (declarative)
+
+    Declarative (end-state; better)
+        CloudFormation, SaltStack, Puppet
+    Procedural (how-to)
+        Chef, Ansible
+        Client-only (no server install required)
+        CloudFormation, Ansible, and Terraform
+
+SERVERLESS (FaaS)
+    2018 Platforms
+        Amazon AWS 'Lambda'
+        Microsoft 'Azure Functions'
+        Google 'Cloud Functions'
+        IBM 'Cloud Functions'
+
+STREAM/EVENT PROCESSING 
+    Message queues (asynch comms protocol)
+
+    Apache 
+
+        Kafka (Linkedin)
+            EVENT LEDGER; a kind of DISTRIBUTED COMMIT LOG (append only); Stream processing platform (Java/Scala); message queue + pub/sub + scaling (partitions) + message relaying; allows reactive pub/sub architecture (unlike message queues); high-throughput, low-latency platform for handling real-time data feeds; storage layer is essentially a "massively scalable pub/sub message queue architected as a distributed transaction log"; https://kafka.apache.org/  https://en.wikipedia.org/wiki/Apache_Kafka
+            
+            Broker: a Kafka node (in a cluster of such)
+            Producer: writes records to Broker
+            Consumer: reads records from Broker 
+
+                Kafka does NOT do PUSH; Consumer requests record(s)
+            
+            Topic:     Logical Name of Partition 
+            Partition: a unit of Kafka's Ledger; replicated; order (timed sequence) is guaranteed ONLY per partition.
+            Offset:    sequential ID assigned per write; reference point for Consumer; 
+                       consumer works with Broker and tracks offsets.
+            
+            Zookeeper 
+                Manages Kafka clusters 
+                
+            Heroku 
+                Manages Zookeeper 
+                
+            CLIENTS
+                JVM 
+                
+                AKKA STREAMS
+                    wrapper around Kafka client; 
+                    implements Reactive Stream (spec); source/sink paradigm; 
+                    Consumer can put BACKPRESSURE on Producer; handles load spikes much better.
+                    
+            DEMO 
+                koober (Kafka-Uber) app
+                https://github.com/jamesward/koober
+                https://www.youtube.com/watch?v=UEg40Te8pnE
+            
+            Overview  https://hackernoon.com/a-super-quick-comparison-between-kafka-and-message-queues-e69742d855a8
+                Kafka Connect: data import/export
+                Kafka Streams: Java stream processing library.
+
+        Storm 
+            Event Processor framework (Clojure); distributed stream processing; integrates with any queueing system and any database system (RabittMQ, Kafka,...); processes 1M tuples per sec. per node   https://en.wikipedia.org/wiki/Storm_(event_processor)
+        
+    Apache Message Queue libraries 
+    
+        RabbitMQ 
+            AMQP message broker (middleware) (Erlang) (Advanced Message Queuing Protocol); built on the Open Telecom Platform (OTP) framework for clustering and failover; Client libraries to interface with the broker are available for all major programming languages. https://en.wikipedia.org/wiki/RabbitMQ  https://www.rabbitmq.com/
+        
+        ZeroMQ (ØMQ/0MQ/ZMQ) 
+            messaging library; unlike message-oriented middleware, a ZeroMQ system can run without a dedicated message broker; API resembles Berkeley Sockets. https://en.wikipedia.org/wiki/ZeroMQ
+
+    
+MESSAGE QUEUE (Middleware)
+    Overview of Why MQ?  https://stackify.com/message-queues-12-reasons/
+        tl;dr: Redundancy-by-Persistence, Spike Handling, db processes per accumulated batch, asynch messaging, Decouple by Using Data Contracts
+    https://en.wikipedia.org/wiki/Message_queue
+    Message queuing service
+    https://en.wikipedia.org/wiki/Message_queuing_service
+    Amazon Simple Queue Service
+    https://en.wikipedia.org/wiki/Amazon_Simple_Queue_Service
+    https://www.sitepoint.com/message-queues-comparing-beanstalkd-ironmq-amazon-sqs/
+    http://nanomsg.org/documentation-zeromq.html
+    https://en.wikipedia.org/wiki/ZeroMQ
+
+    http://bravenewgeek.com/a-look-at-nanomsg-and-scalability-protocols/
+        
+
+STACKs
+    MEAN 
+        MongoDB        - NoSQL, JSON-like, for MVC
+        Express        - Node.js framwork, for MVC
+        Angular.js     - SPA framework; data-binding
+        Node.js        - server-side javascript; npm (package manager)
+        
+        + Bower (Python 2.7), Jade, kerberos, git, Handlebars, ... 
+        HowTo INSTALL: https://www.youtube.com/watch?v=Avv-Y_ePYA0
+    
+LANGUAGES 
+
+    Java https://en.wikipedia.org/wiki/Java_Platform,_Enterprise_Edition
+        Groovy     (Grails/Gradle) 
+            http://groovy-lang.org/ 
+            https://tinyurl.com/c6vavoe
+
+        Scala 
+            OO + Func Java 
+            http://www.scala-lang.org/
+            https://en.wikipedia.org/wiki/Scala_(programming_language)
+
+    Clojure    
+        lisp for client/server apps; JavaVM- & Javascript- hosted (Clojure & ClojureScript); Dynamic types + Immutability ; compiles to JVM, CLR (.NET) (ClojureCLR), and JavaScript (ClojureScript); REPL dev env; immutable (persistent) data structures
+        https://en.wikipedia.org/wiki/Clojure 
+        http://clojure.org/ 
+        
+        HTTP-kit
+            minimalist, efficient, Ring-compatible HTTP client/server for Clojure. It uses a event-driven architecture to support highly concurrent a/synchronous web applications. Feature a unified API for WebSocket and HTTP long polling/streaming; interface to React (Om)
+                
+        Kotlin     (JetBrains) (IntelliJ IDE)
+        
+        Java Micro-Frameworks
+            http://blog.takipi.com/java-micro-frameworks-the-new-trend-you-cant-ignore/
+            Spark
+            Jodd
+            Ninja Framework
+            
+    Javascript    
+        concurrent/event driven
+        ClojureScript ; interface to React (Om)
+        https://github.com/clojure/clojurescript/wiki
+            
+        TypeScript 
+        MicroSoft; https://en.wikipedia.org/wiki/TypeScript
+        typed superset of JS; framework; most popular (2%) https://www.typescriptlang.org/
+        
+        Dart    
+            Google; OO; compiles to javascript; folded jQuery-like libraries into it
+
+        Elm 
+            a functional language that compiles to JavaScript; competes with React as a tool for creating websites and web apps
+    
+        Node.JS
+            Server-side js; spawned new gen of "isomorphic single page applications";  https://en.wikipedia.org/wiki/Node.js
+            
+            Socket.io
+                Real-time apps library; WebSockets API wrapper (bi-directional comms/bindings); 
+                client AND server-side (Node.js module) 
+                https://socket.io/  
+                https://en.wikipedia.org/wiki/Socket.IO
+                
+                µWebSockets (C++) https://github.com/uNetworking/uWebSockets
+
+        JSX -  an HTML-like syntax that compiles down to JavaScript.
+
+    Haskell
+    ML
+    Ocaml
+        concurrent/event driven; fast as C; can compile to javascript
+        https://en.wikipedia.org/wiki/OCaml
+        http://ocaml.org/ MirageOS written in Ocaml
+        
+    Erlang     
+        concurrent/event driven; fast; message-passing only; nothing shared; runs on Erlang VM  http://en.wikipedia.org/wiki/Erlang_%28programming_language%29 
+        https://sameroom.io/blog/why-erlang-matters/
+        "Making Reliable Distributed Systems in the Presence of Software Errors" (2003)  http://erlang.org/download/armstrong_thesis_2003.pdf
+        - Erlang/OTP (Open Telecom Platform)
+        - Ephemeral P2P app (Elixir/Phoenix)
+        
+        Elixir  
+            built on top of Erlang; runs on the Erlang VM (BEAM); http://elixir-lang.org/
+            https://en.wikipedia.org/wiki/Elixir_%28programming_language%29
+    
+    Julia         
+        high-performance numerical and scientific computing
+        Python syntax; fast/compiled; C code is callable. 
+                
+    Lua         
+        Fast, lightweight, simple; C-based/compiled; C functions interface; first-class functions
+        ONE data-structure, tables, generates all; a Lua table is set of data-key pairs
+        https://en.wikipedia.org/wiki/Lua_%28programming_language%29
+        https://www.distelli.com/blog/using-lua-for-our-most-critical-production-code
+    
+    C (C99)    
+        low-level; fast  
+    C++
+        OO C ; zero-cost abstractions
+            U++
+                a C++ library-framework for Windows apps 
+                http://www.ultimatepp.org/index.html
+                
+    C#
+        Microsoft
+    
+    Objective-C    Apple
+        Swift    
+            Apple; newer Objective-C; system prog; Cocoa & Cocoa Touch frameworks
+            
+    Go (Golang)    
+        Google; mimic C, better syntax; interfaces; 
+        a systems programming language
+        built-in concurrency primitives
+        https://golang.org/doc/
+        https://godoc.org/
+        https://en.wikipedia.org/wiki/Go_%28programming_language%29
+        http://dave.cheney.net/2015/11/15/the-legacy-of-go
+                
+    Rust    
+        Mozilla; a systems programming language that is fast, 
+        memory safe and multithreaded; actors, concurrent
+        http://www.rust-lang.org/
+        https://github.com/rust-lang/rust
+
+    Pony         
+        OO, actor-model, capabilities-secure, high performance programming language
+    
+APPLICATION FRAMEWORKS 
+    https://en.wikipedia.org/wiki/Web_framework
+    https://hackernoon.com/5-best-javascript-frameworks-in-2017-7a63b3870282  
+        
+SPA (Single-Page App)
+    ISSUES: 
+        SEO - unless rendered server-side, SPA is invisible; unranked by Google SEO 
+        Google Analytics - relies heavily upon entire new pages loading in the browser
+        https://en.wikipedia.org/wiki/Single-page_application  
+
+    Polymer / App Engine
+        Web Standards/Protocols; based on Web Components; 
+        Integrates with Google App Engine (PaaS; Google platform / Dev Env) 
+        NEW; Work-in-Progress (WIP);
+
+    Angular 
+        Google; Apache Cordova complement; the most popular javascript (client-side) MVC framework; bidirectional UI data binding; updating the view/model whenever the one changes model changes; HTML template is compiled/(re-)rendered in the browser; repeated for subsequent page views. In traditional server-side HTML programming, concepts such as controller and model interact within a server process to produce new HTML views;  controller and model state are maintained within the client browser.  https://softwareengineering.stackexchange.com/questions/225400/pros-and-cons-of-facebooks-react-vs-web-components-polymer#237762 
+
+        Aurelia  
+            Hostile fork of Angular 2; https://aurelia.io/
+
+    Vue  
+        Reactive UI library; core library is view only; progressively builds upon that with added libraries; best parts of Ember, React and Angular; faster and leaner than React and Angular 2.0; two-way data binding; server-side rendering (like in Angular2 and ReactJS); Vue-cli (scaffolding tool for quick start); JSX support.  
+
+            85KB `vue.min.js` 
+
+        https://vuejs.org/v2/guide/
+        https://github.com/vuejs
+        
+    React
+        Facebook; UI framework (JS) (build-tools: Rum, Om, Reagent); Virtual DOM (state machine) emits the resulting UI to browser, per setInterval(render,1000) ms; handles DOM Events (onclick etal) inherently; needn't hard-code any native HTML/CSS/JS separately, since they're all handled per React (JS) framework; ONE-WAY data-binding (functional programming model); debug (99%) per `grep setState`; can render server-side per `/staticPage` URL appendage (an SEO tactic), whereof the delivered markup is synched with the delivered React-js per an inserted `data-react-checksum` markup element  https://www.youtube.com/watch?v=e7A6EUe3XGM 
+
+        JSX
+            An HTML to React Preprocessor; an HTML-like syntax that compiles down to JavaScript; optional @ React.
+            https://reactjs.org/docs/introducing-jsx.html  
+
+        React Native
+            Hybrid mobile app framework; universally native (web/iOS/Android) apps (UI), but written in javascript; application logic is written/runs in JavaScript (per Node.js), but app UI is fully native (@ web/iOS/Android); uses Node.js to build, but app does NOT run server-side, so can't use Node.js packages; a Facebook kludge  http://ruoyusun.com/2015/11/01/things-i-wish-i-were-told-about-react-native.html
+    
+        Redux 
+            Manages state (for React-built UI)
+            a simply library to help apply a few common sense functional programming principles - state is immutable, functions apply predictable transformations to data to produce new data.
+            http://www.dwmkerr.com/moving-from-react-redux-to-angular-2/
+
+        React Boilerplate 
+            DevOps tool; quick setup for React.js apps; 
+            CLI environment; offline–first, performant, scalable
+            Dev build @ `npm start`; Production build @ `npm run start:production`
+                Production:   `main.a2...837ea9343......js` ~ 700 KB ('Hello World' app) 
+                Development:  `reactBoilerplateDeps.dll.js` ~ 2.9 MB 
+
+            GitHub  https://github.com/react-boilerplate/react-boilerplate
+            Guide   https://github.com/react-boilerplate/react-boilerplate/blob/master/docs/general/introduction.md
+
+        Next.js 
+            React wrapper for SSR +Streaming apps; handles pkg mgmt (Webpack); https://github.com/zeit/next.js
+
+        Preact 
+            Tiny version of React; 3KB gzipped; "React alternative"; https://preactjs.com/
+
+        Om
+            ClojureScript interface to Facebook's React
+
+        Inferno
+            Performant; React-compatible; isomorphic (server-side AND client-side rendering use same code); 8KB-gzipped
+            https://infernojs.org/
+
+        Reason / ReasonML / Reason React  https://reasonml.github.io/ 
+            JS & OCaml; syntax on top of OCaml lang; compiles to JavaScript (BuckleScript project) AND assembly; caters to NPM/Yarn workflow;
+            https://reasonml.github.io/reason-react/
+
+    Backbone (+Underscore.js +jQuery)
+        MV* JS framework; lightweight 
+        http://backbonejs.org/
+        https://github.com/jashkenas/backbone/
+
+    Knockout 
+            - Declarative bindings
+            - Automatic UI refresh
+            - Dependency tracking
+            - Templating (native or other, e.g., jquery.tmpl)
+
+        MVVM :: Model + View + ViewModel  (a.k.a. Model-View-Binder)
+
+            Model <==> ViewModel <== DataBinding ==> View 
+
+            - Event-driven programming pattern developed at Microsoft for .NET and Silverlight; ZK @ Java
+            - A real-time form of MVC with declarative syntax. 
+            - A general way to make UIs for editing JSON data.
+                * Separates Data from UI for cleaner development/upgrade/maintenance
+
+            1. Model: server-side code; stored data; business-logic and data
+
+            2. ViewModel: client-side JS objects; display-logic; no knowledge of HTML; a pure-code representation of data and ops on a UI; not a persisted data model; holds the current data the user is working with.
+
+            3. View: the HTML document with declarative bindings linking to the ViewModel; a visible, interactive UI representing the state of the ViewModel; sends commands to the ViewModel (e.g., when the user clicks buttons), and updates whenever the state of the view model changes.
+            Alternatively, KO templates can generate HTML using data from the ViewModel.
+
+        "One of the biggest GOTCHAS... Knockout re-evaluates every binding on an element whenever any binding on the element changes."  https://stackoverflow.com/questions/9927213/performance-tuning-a-knockout-application-guidelines-for-improving-response-ti#9937297
+
+        https://en.wikipedia.org/wiki/Knockout_(web_framework)
+        http://knockoutjs.com/documentation/introduction.html
+        http://knockoutjs.com/documentation/observables.html 
+
+        ZK (Java web-framwork) https://en.wikipedia.org/wiki/ZK_(framework)
+
+    Ember  
+        client-side MVC framework; rich object model, declarative two-way data binding, computed properties, automatically-updating templates powered by Handlebars.js, and a router for managing application state. https://github.com/emberjs/ember.js
+
+    Phoenix (Elixir)
+        runs low-latency, distributed and fault-tolerant systems; used in web dev. & embedded; 
+
+    Svelte 
+        Performant; "The magical disappearing UI framework" https://svelte.technology
+        "... app is converted into ideal JavaScript at build time. That means you don't pay the performance cost of the framework's abstractions, or incur a penalty when your app first loads."
+
+        Sapper (Svelte app maker)
+            https://sapper.svelte.technology/
+            - Declarative routing, hot-module replacement, scoped styles
+            - compiles to tiny, blazing fast JavaScript modules
+            - Code-splitting, server-side rendering, offline support
+
+
+TEMPLATE (ENGINEs)
+    Velocity (Apache)
+        Java-based template engine that provides a template language to reference objects defined in Java code. It aims to ensure clean separation between the presentation tier and business tiers in a Web application (@ MVC pattern).  Used by AWS Lambda & API Gateway
+
+    Handlebars
+    Mustache
+        logic-less template languages; for server-side rendering (for SEO)
+
+
+PLATFORMs & SERVER-SIDE FRAMEWORKS
+
+    Express  
+        Node.js HTTP server library; MVC framework for Node.js; fast, unopinionated, minimalist
+        StrongLoop/LoopBack  
+            Node.js API framework http://loopback.io/ 
+            http://blog.jeffdouglas.com/2015/07/09/building-the-topblogger-api-with-loopback/  
+
+    Cordova
+        Mobile apps with HTML, CSS & JS; cross-platform; Angular (Google) complement
+        https://cordova.apache.org/
+
+    Meteor.js
+        PaaS; JS app platform; full-stack JavaScript framework designed exclusively for SPAs.
+        Data-only over the wire; no HTML; simple data binding; Distributed Data Protocol and a pub–sub pattern to automatically propagate data changes to clients in real-time without requiring the developer to write any synchronization code. Full stack reactivity ensures that all layers, from the database to the templates, update themselves automatically when necessary. Ecosystem packages such as Server Side Rendering address the problem of SEO.
+        Ethereum Apps/Network uses it. 
+        Meteor.com       https://www.meteor.com/tutorials
+        Meteor @ GitHub  https://github.com/meteor/meteor
+        Hosting Options  https://wsvincent.com/meteor-hosting-options/
+            Galaxy/NodeChef/DigitalOcean/Heroku
+            
+            Galaxy
+                Meteor.com platform-as-a-service for Meteor apps;
+                Docker + AWS
+
+    Google App Engine 
+        Polymer integrates with it.
+
+    Electron
+        DESKTOP cross-platform app framework in JS/HTML/CSS; Chromium + Node.js  http://electron.atom.io  
+        
+DATABASE MANAGERs
+
+    Redis
+         in-memory data structure (key/val) store, used as a database, cache AND MESSAGE QUEUE/BROKER; Redis queries support data structures of strings, hashes, lists, sets, sorted sets with range queries, bitmaps, hyperloglogs and geospatial indexes; built-in replication; Lua scripting/eviction, transactions, on-disk persistence, high availability (Redis Sentinel), automatic partitioning (Redis Cluster); offered by AWS; used by twitter.com; open-source project of Redis Labs.  https://en.wikipedia.org/wiki/Redis https://redis.io/  
+
+    Postgres (PostgreSQL) <= ('Post' + 'Ingres') (1986)
+        An object-relational database management system (ORDBMS) with an emphasis on extensibility and standards-compliance; TRANSACTIONAL, ACID; Multiversion concurrency control (MVCC)  https://en.wikipedia.org/wiki/PostgreSQL
+        https://www.postgresql.org/
+
+    MongoDB    
+        NoSQL; JSON-like (BSON); dynamic schema; allows diverse groupings; fast queries; scales; popular @ 2015
+        https://en.wikipedia.org/wiki/MongoDB
+             
+BUILD TOOLS    (Task Runners)
+    Automate the minutiae; install, muster, minify, ...; 
+    A build is just a production-ready version of the app.
+    https://medium.freecodecamp.com/making-sense-of-front-end-build-tools-3a1b3a87043b
+    
+    Install Tools 
+        Node/npm   - handle almost everything; install all othe tools where needed
+        Bower
+        Yeoman
+        
+    Dev-Process Tools 
+        Node/npm   - handle almost everything; install all other tools where needed
+        Grunt      - handle everything
+        Gulp       - handle everything; newer
+        Webpack    - Module bundler; takes modules with dependencies and emits static assets
+        Brunch  
+        Browserify - handle js dependencies
+        Require.js - handle js dependencies
+    
+    Boot, Lein
+        Clojure build tooling / build environment
+        
+    Rum, Om, Reagent
+        React, React Native wrappers
+        
+    Grunt (plugins)
+        Grunt(Broccoli)
+        Grunt(Gulp) http://gulpjs.com/
+
+TESTING TOOLS 
+    Mocha
+    Casper
+    Karma         
+
+STANDARDS BODIES
+    W3C
+    Ecma
+        
+WEB SPECs / APIs
+    WebSocket 
+        Protocol; full-duplex comms (TCP)   http://en.wikipedia.org/wiki/WebSocket 
+        Web Workers can utilize it
+    WebRTC     
+        API; P2P; Web (Real-Time Comms)  http://en.wikipedia.org/wiki/WebRTC  
+        WebTorrent    P2P client; streaming .torrent   https://github.com/feross/webtorrent
+
+PACKAGE MANAGERs  
+    spurred an ecosystem of 3rd party, open source, single-purpose tools; solve the all-in-one (big) issue of jQuery library.  
+
+    NPM    - Node Package Manager  
+    Bower  - client-side package manager; dep. Node.js, npm, python  
+    Lodash - A modern JavaScript utility library delivering modularity, performance, & extras.  
+
+HYPERVISOR    https://en.wikipedia.org/wiki/Hypervisor
+
+    Type-1 - native or bare-metal hypervisors
+    Type-2 - hosted hypervisors
+
+        However, the distinction between these two types is not necessarily clear. Linux's Kernel-based Virtual Machine (KVM) and FreeBSD's bhyve are kernel modules(3) that effectively convert the host operating system to a type-1 hypervisor.(4) At the same time, since Linux distributions and FreeBSD are still general-purpose operating systems, with other applications competing for VM resources, KVM and bhyve can also be categorized as type-2 hypervisors.(5)
+
+    Type-1 - native or bare-metal hypervisors
+    
+        VMware ESX/ESXi  
+        Hyper-V (Microsoft)
+        
+        Xen Server
+            Unikernal-based; can run in VirtualBox http://www.xenproject.org/
+            http://www.xenproject.org/component/allvideoshare/video/look-ma-no-os.html
+
+            MiniOS    
+                a tiny OS kernel distributed with the Xen Project Hypervisor sources. It is mainly used as operating system for stub domains that are used for Dom0 Disaggregation. But it is also used as a basis for development of Unikernels, having been instrumental in the formation of multiple examples including ClickOS and Rump kernels. http://wiki.xen.org/wiki/Mini-OS
+
+    Type-2 - hosted hypervisors
+    
+        VirtualBox
+        VMware Workstation
+            
+            
+PLATFORM VIRTUALIZATION
+    https://en.wikipedia.org/wiki/Comparison_of_platform_virtualization_software
+
+    CONTAINERs 
+        Isolation per:
+            Namespaces - limit what a process can see; created with syscalls
+            Chroot - change in root
+            Cgroup - control groups
+
+        A running instance of an image
+        Image
+            OS + Software + App; code, runtimes, settings, ... 
+            a file; a template for creating a desired system;
+            a snapshot of a system at a particular time
+
+        Image ==( RUN )==> Container
+        
+        Dockerefile
+
+            a description of an image; a text file 
+            a list of steps to perform to create a particular image
+            Docker images (descriptions) layer upon each other, like CSS.
+
+        Dockerfile ==( BUILD )==> image ==( RUN )==> container
+
+        $ docker run <image> <cmd> <params>
+        E.g. 
+        $ docker run --rm -it ubuntu /bin/bash
+        root@2970de9e2fa9:/# hostname
+        2970de9e2fa9
+        root@2970de9e2fa9:/#
+
+    IllumOS        
+        Free & Open Source Unix OS (2010); derived from OpenSolaris, which was derived from SVR4-UNIX and BSD; originally dependent on OpenSolaris OS/Net, but a fork was made after Oracle killed the OpenSolaris project.
+            - ZFS, a combined file system and logical volume manager providing a high data integrity for very large storage capacities.
+            - DTrace, a comprehensive dynamic tracing framework for troubleshooting kernel and application problems on production systems in real time
+            - Zones (Solaris Containers) a low overhead implementation of operating-system-level virtualization technology for x86 and SPARC systems.
+            - KVM (Kernel-based Virtual Machine) a virtualization infrastructure. KVM supports native virtualization on processors with hardware virtualization extensions.
+            OpenSolaris Network Virtualization and Resource Control, (or Crossbow)    
+            
+        Distros
+            OmniOS - traditional server
+            SmartOS (Joyent); ZFS + DTrace + Zones + KVM; Kernel-based Virtual Machine integration
+            OpenIndiana
+
+        https://en.wikipedia.org/wiki/Illumos    
+        http://wiki.illumos.org/display/illumos/Distributions        
+        
+    CoreOS
+        Linux OS for container managing,running, clustering 
+        https://en.wikipedia.org/wiki/CoreOS
+        https://github.com/coreos
+        https://coreos.com/
+        
+     
+UNIKERNAL 
+    sans OS; "library operating system"; run on (Xen) hypervisor
+        https://en.wikipedia.org/wiki/Unikernel
+
+    Mirage OS     
+        library operating system that constructs unikernels for secure, high-performance network applications across a variety of cloud computing and mobile platforms. Code can be developed on a normal OS such as Linux or MacOS X, and then compiled into a fully-standalone, specialised unikernel that runs under the Xen hypervisor. 
+            http://openmirage.org/  (Ocaml based    http://ocaml.org/ )  http://amirchaudhry.com/
+    
+    ClickOS     
+        modular router toolkit. https://github.com/cnplab/clickos
+        speed; for network "middlebox"; Tiny, Agile Virtual Machines for Network Processing. Written in C. NEC, inc http://cnp.neclab.eu/clickos/
+
+    LING
+        Erlang VM on Xen; BEAM successor https://github.com/cloudozer/ling
+    
+    HaLVM        
+        The Haskell Lightweight Virtual Machine (HaLVM); clean-slate; for network appliances. https://github.com/galoisinc/halvm
+
+    Clive
+        For distributed/cloud comp ; Modified Go compiler (Plan9,Nix)
+
+    Rumprun
+        software stack which enables running existing unmodified POSIX software as a unikernel. Rumprun supports multiple platforms, including bare hardware and hypervisors such as Xen and KVM. It is based on rump kernels which provide free, portable, componentized, kernel quality drivers such as file systems, POSIX system call handlers, PCI device drivers, a SCSI protocol stack, virtio and a TCP/IP stack.(19)
+    
+        RumpKernels compatible w/ legacy
+    
+    Runtime.js
+        library operating system for the clouds that runs on JavaScript VM, could be bundled up with an application and deployed as a lightweight and immutable VM image. Runtime.js built on the V8 Javascript engine and currently supports QEMU/KVM hypervisor.
+
+    OSv
+        compatible w/ legacy
+    
+
+2016 NOTES
+    SEO is designed for pre-Ajax era.; Single-page Apps do NOT SEO well unless rendered (Static); 
+    ref Pinterest et al; for behind-paywall stuff 
+
+    Benchmarks http://www.techempower.com/benchmarks/#section=data-r12&hw=peak&test=query
+
+        Round 12 (2016-02-25)
+    
+        JSON serialization  Plt    Jav    Rap    Non    Lin    Rea
+        Single query        Plt    Go       Go       Non    Lin    Pg    Lin    Raw    Rea
+        Multiple queries    Mcr    Dar    Dar    ngx    Lin    Mo    Lin    Raw    Rea
+        Fortunes            Ful    Ur       Ur/    Non    Lin    Pg    Lin    Mcr    Rea
+        Data updates        Plt    Go       Go       Non    Lin    Pg    Lin    Raw    Rea
+        Plaintext           Plt    Go       Go       Non    Lin    Rea
+
+    OO hell:
+    Problem:  The concept of 'a message' has been morphed into 'a method'. 
+    Solution: Objects are meant to work separately, yet together, unified by their messages. https://bythehilt.com/articles/dialogues-guiding-principles-or-a-healthy-hatred-of-oop
+
+
+PRE 2016
+========
+    YUI
+        Yahoo Interface Library :: Terminated Aug 2014;
+        http://yahooeng.tumblr.com/post/96098168666/important-announcement-regarding-yui
+        WHY: Industry headed in new direction
+
+    REFs
+
+        The Lazy Programmer's Guide to Secure Computing (Marc Stiegler)
+        https://www.youtube.com/watch?v=eL5o4PFuxTY
+
+        Rewriters/Verifiers - enforces OO best practices, esp. for security
+            Caja   (javascript)
+            AdSafe (javascript)
+            Joe-E (java)
+            Emily (Ocaml) (high-performance; C++ speed)
+            Backwater (Pict)
+            
+        

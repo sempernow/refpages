@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>12.Twelve-Factor</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://12factor.net/">The Twelve Factors</a></h1>
+
+<ul>
+<li> <a href="https://immutablewebapps.org/">Immutable Web Apps</a></li>
+</ul>
+
+<h2>I. <a href="https://12factor.net/codebase">Codebase</a></h2>
+
+<p>One codebase per app and its many deploys (running instances).<br>
+Versioned (<em>repo</em>); Dev, Test, Staging, Prod, ... <em>all share a root commit</em>.</p>
+
+<h2>II. <a href="https://12factor.net/dependencies">Dependencies</a></h2>
+
+<p>Explicitly <strong>declare</strong> and <strong>isolate</strong> dependencies per <em>dependency declaration manifest</em>;<br>
+dependencies <em>scoped per app</em> (vendoring/bundling), not system-wide pkgs.<br>
+Any required system (<code>bash</code>) tools (e.g., <code>curl</code>) are vendored into the app.</p>
+
+<h2>III. <a href="https://12factor.net/config">Config</a></h2>
+
+<p>Store (per deploy) configuration @ Env. Vars. (<code>env</code>);<br>
+mutually orthogonal, language/OS agnostic.</p>
+
+<h2>IV. <a href="https://12factor.net/backing-services">Backing services</a></h2>
+
+<p>Loose coupling; treat backing services as attached resources;<br>
+swappable sans app code change, only config change;<br>
+accessed per URL or other locator/credentials stored in the config;<br>
+app makes no distinction between local and third party services</p>
+
+<h2>V. <a href="https://12factor.net/build-release-run">Stages: Build, Release, Run</a></h2>
+
+<p>Strict separation between build and release stages.</p>
+
+<ul>
+<li>Build: transforms code repo into an executable bundle; a <em>build</em>.</li>
+<li>Release: <code>ID = Build + Config</code>; immutable<br>
+executable @ execution environment<br></li>
+<li>Run (runtime): runs app @ execution environment; leanest stage;<br>
+runs specified app process(es) against a selected app release.</li>
+</ul>
+
+<h2>VI. <a href="https://12factor.net/processes">Processes</a></h2>
+
+<p>Execute the app as one or more stateless processes;<br>
+each process is stateless and shares nothing.<br>
+Stateful backing service(es) handle persistence.<br>
+Process may utilize single-transaction cache.<br>
+No sticky sessions; use time-expiration datastore (Memcached/Redis).<br>
+Package assets during the build stage.</p>
+
+<h2>VII. <a href="https://12factor.net/port-binding">Port binding</a></h2>
+
+<p>Export services via port binding</p>
+
+<p>App is completely self-contained; no runtime injection of a webserver;<br>
+exports HTTP as a service by binding to a port,<br>
+and listening to requests coming in on that port;<br>
+one app can become the backing service for another app,<br>
+whereof the backing app URL is declared in the config of consuming app.</p>
+
+<h2>VIII. <a href="https://12factor.net/concurrency">Concurrency</a></h2>
+
+<p>Scale out via the Unix process model (service daemons)</p>
+
+<p>The share-nothing, horizontally partitionable nature of twelve-factor app processes<br>
+means that adding more concurrency is a simple and reliable operation.</p>
+
+<h2>IX. <a href="https://12factor.net/disposability">Disposability</a></h2>
+
+<p>Maximize robustness with fast startup and graceful shutdown;<br>
+easier to move processes to new physical machines when warranted.</p>
+
+<p>Processes shut down gracefully when they receive a SIGTERM signal from the process manager.</p>
+
+<p>Processes should also be robust against sudden death, in the case of a failure in the underlying hardware.<br>
+A recommended approach is use of a robust queueing backend;<br>
+return jobs to the queue when clients disconnect or time out.</p>
+
+<h2>X. <a href="https://12factor.net/dev-prod-parity">Dev/Prod Parity</a></h2>
+
+<p>Keep development, staging, and production as similar as possible.<br>
+Design for <a href="https://avc.com/2011/02/continuous-deployment/">Continuous Deployment</a>.</p>
+
+<h2>XI. <a href="https://12factor.net/logs">Logs</a></h2>
+
+<p>Treat logs as event streams</p>
+
+<p>Logs provide visibility into the behavior of a running app; the stream of aggregated,<br>
+time-ordered events collected from the output streams of all running processes and backing services;<br>
+flow continuously as long as the app is operating.</p>
+
+<p>Each running process writes its event stream, unbuffered, to stdout.</p>
+
+<ul>
+<li><p>@ development, can observe the app’s behavior.</p></li>
+
+<li><p>@ staging or production deploys, each process’ stream is managed by the execution environment.<br>
+Open-source log routers (Logplex/Fluentd) are available for this purpose.<br>
+The event stream for an app can be routed to a file, or watched via realtime tail in a terminal.<br>
+The stream can be sent to a log indexing and analysis system (Splunk), or warehoused (Hadoop/Hive).<br>
+Allows for powerful/flexible introspecting an app’s behavior:</p></li>
+</ul>
+
+<h2>XII. <a href="https://12factor.net/admin-processes">Admin processes</a></h2>
+
+<p>Run admin/management tasks as one-off processes</p>
+
+<p>Languages which provide a REPL shell out of the box make this easy.</p>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+([MD](___.html "@ browser"))   
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

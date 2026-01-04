@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.Interview.Questions</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>K8s Interview Questions</h1>
+
+<h3><strong>Basic Questions:</strong></h3>
+
+<ol>
+<li><p><strong>Main components of a Kubernetes cluster?</strong></p>
+
+<ul>
+<li>Master Node (API Server, Controller Manager, Scheduler, etcd)<br></li>
+<li>Worker Nodes (Kubelet, Kube Proxy, Container Runtime)<br></li>
+</ul></li>
+
+<li><p><strong>What is a Pod?</strong></p>
+
+<ul>
+<li>The smallest deployable unit in Kubernetes, encapsulating one or more containers.<br></li>
+</ul></li>
+
+<li><p><strong>How does Kubernetes handle service discovery?</strong></p>
+
+<ul>
+<li>Through Services (<code>ClusterIP</code>, <code>NodePort</code>, <code>LoadBalancer</code>) and DNS resolution via <code>kube-dns</code> or CoreDNS.<br></li>
+</ul></li>
+
+<li><p><strong>Deployment vs. DaemonSet vs. StatefulSet?</strong></p>
+
+<ul>
+<li><strong>Deployment</strong>: Manages stateless applications.<br></li>
+<li><strong>DaemonSet</strong>: Ensures one Pod per node.<br></li>
+<li><strong>StatefulSet</strong>: Manages stateful applications with persistent identity.<br></li>
+</ul></li>
+
+<li><p><strong>Role of etcd?</strong></p>
+
+<ul>
+<li>A distributed key-value store for cluster state and configuration.<br></li>
+</ul></li>
+
+<li><p><strong>Namespaces in Kubernetes?</strong></p>
+
+<ul>
+<li>Logical partitions for resource isolation within a cluster.<br></li>
+</ul></li>
+
+<li><p><strong>Service vs. Ingress?</strong></p>
+
+<ul>
+<li><strong>Service</strong>: Exposes Pods internally or externally.<br></li>
+<li><strong>Ingress</strong>: Manages HTTP/S traffic via rules.<br></li>
+</ul></li>
+
+<li><p><strong>ConfigMaps vs. Secrets?</strong></p>
+
+<ul>
+<li><strong>ConfigMap</strong>: Stores non-sensitive config data.<br></li>
+<li><strong>Secret</strong>: Stores sensitive data, encoded in Base64.<br></li>
+</ul></li>
+</ol>
+
+<h3><strong>Intermediate Questions:</strong></h3>
+
+<ol>
+<li><p><strong>What happens when a node fails?</strong></p>
+
+<ul>
+<li>Pods are rescheduled on other nodes; <code>node-controller</code> detects failure.<br></li>
+</ul></li>
+
+<li><p><strong>Rolling updates and rollbacks?</strong></p>
+
+<ul>
+<li>Deployments update Pods gradually; rollbacks restore previous versions.<br></li>
+</ul></li>
+
+<li><p><strong>How does HPA work?</strong></p>
+
+<ul>
+<li>Adjusts replica count based on CPU, memory, or custom metrics.<br></li>
+</ul></li>
+
+<li><p><strong>ClusterIP vs. NodePort vs. LoadBalancer?</strong></p>
+
+<ul>
+<li><strong>ClusterIP</strong>: Internal access.<br></li>
+<li><strong>NodePort</strong>: Exposes service on node IPs.<br></li>
+<li><strong>LoadBalancer</strong>: Uses cloud provider’s LB.<br></li>
+</ul></li>
+
+<li><p><strong>Persistent Volumes (PVs) and Persistent Volume Claims (PVCs)?</strong></p>
+
+<ul>
+<li>PV: A provisioned storage resource.<br></li>
+<li>PVC: A request for storage by a Pod.<br></li>
+</ul></li>
+
+<li><p><strong>Readiness vs. Liveness probe?</strong></p>
+
+<ul>
+<li><strong>Readiness</strong>: Checks if Pod is ready to accept traffic.<br></li>
+<li><strong>Liveness</strong>: Checks if Pod is alive and should restart.<br></li>
+</ul></li>
+
+<li><p><strong>kubectl exec vs. kubectl logs?</strong></p>
+
+<ul>
+<li><code>kubectl exec</code>: Run a command in a Pod.<br></li>
+<li><code>kubectl logs</code>: Fetch container logs.<br></li>
+</ul></li>
+
+<li><p><strong>How does RBAC work?</strong></p>
+
+<ul>
+<li>Defines access control using <code>Roles</code>, <code>ClusterRoles</code>, <code>RoleBindings</code>, <code>ClusterRoleBindings</code>.<br></li>
+</ul></li>
+</ol>
+
+<h3><strong>Advanced Questions:</strong></h3>
+
+<ol>
+<li><p><strong>How does Kubernetes schedule Pods?</strong></p>
+
+<ul>
+<li>Uses Scheduler based on node availability, resource requests, affinity rules.<br></li>
+</ul></li>
+
+<li><p><strong>How to troubleshoot a failing Pod?</strong></p>
+
+<ul>
+<li>Check logs (<code>kubectl logs</code>), events (<code>kubectl describe</code>), and probe failures.<br></li>
+</ul></li>
+
+<li><p><strong>How do Network Policies work?</strong></p>
+
+<ul>
+<li>Control Pod-to-Pod and Pod-to-external traffic using rules.<br></li>
+</ul></li>
+
+<li><p><strong>What is a sidecar pattern?</strong></p>
+
+<ul>
+<li>A helper container (e.g., logging, proxy) running alongside the main app in a Pod.<br></li>
+</ul></li>
+
+<li><p><strong>How does Kubernetes implement multi-tenancy?</strong></p>
+
+<ul>
+<li>Via Namespaces, RBAC, Network Policies, and Resource Quotas.<br></li>
+</ul></li>
+
+<li><p><strong>How to secure a Kubernetes cluster?</strong></p>
+
+<ul>
+<li>RBAC, Network Policies, TLS, Secrets encryption, Pod Security Policies.<br></li>
+</ul></li>
+
+<li><p><strong>How does Istio enhance networking?</strong></p>
+
+<ul>
+<li>Provides service mesh capabilities (traffic management, security, observability).<br></li>
+</ul></li>
+
+<li><p><strong>Challenges with Kubernetes in production?</strong></p>
+
+<ul>
+<li>Security, networking, monitoring, resource limits, auto-scaling complexities.<br></li>
+</ul></li>
+
+<li><p><strong>TLS in an air-gapped Kubernetes cluster?</strong></p>
+
+<ul>
+<li>Use cert-manager, custom CA, Vault, or manual certificate management.<br></li>
+</ul></li>
+</ol>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

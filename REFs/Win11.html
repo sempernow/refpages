@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Win11</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Window 11</h1>
+
+<h2>RDC hijacks keyboard</h2>
+
+<p><strong>Recover host keyboard</strong> when Remote Desktop Connect (RDC) hijacks it:</p>
+
+<p>Try <strong>one of</strong> these two key combinations:</p>
+
+<ul>
+<li><strong>FN+CTRL+ENTER</strong></li>
+<li><strong>CTRL+ALT+BREAK</strong></li>
+</ul>
+
+<h2>Network Adapters</h2>
+
+<p>@ &quot;Control Panel\Network and Internet\Network Connections&quot;</p>
+
+<ul>
+<li>Properties : UNCHECK (Disable) IPv6
+
+<ul>
+<li>At adapter(s) bound to gateway,
+else DNS latency is some 10x greater.</li>
+</ul></li>
+</ul>
+
+<h2>Install</h2>
+
+<p>Use a utility to create a bootable USB device.</p>
+
+<ul>
+<li><a href="https://rufus.ie/en/"><strong>Rufus</strong></a> : Write ISO to USB</li>
+<li><a href="https://www.ventoy.net/en/index.html"><strong>Ventoy</strong></a> : Write <em>multiple</em> ISO to USB; multi-boot menu.</li>
+</ul>
+
+<h3>Machine Prep</h3>
+
+<p>Gather information for bootable USB creation</p>
+
+<pre><code class="language-powershell"># Partition Style
+(Get-Disk -Number (Get-Partition -DriveLetter $env:SystemDrive.Substring(0, 1)).DiskNumber).PartitionStyle
+
+# EUFI Secure Boot status
+Confirm-SecureBootUEFI
+
+</code></pre>
+
+<h3>Disable Requirement for MS Online Account Sign-in</h3>
+
+<p>Install a <strong>local-only account</strong> on installation,
+<a href="https://www.tomshardware.com/how-to/install-windows-11-without-microsoft-account">bypassing <em>requirement</em> of online Microsoft account</a>;
+otherwise, whenever you want to use your cocmputer, you must first authenticate as a Microsoft customer.</p>
+
+<p><strong>Rufus</strong> <del>has option that handle this when burning to a USB drive.</del> No longer works.
+Microsoft corporation is locking their peasants in evermore frantically as the exodus accelerates.</p>
+
+<p>Other methods &hellip;</p>
+
+<h4>Build 24H2</h4>
+
+<ul>
+<li><p><strong>Method 1</strong></p>
+
+<ul>
+<li>Follow the install menus <em>until</em> <strong>User page</strong></li>
+<li>Add user name
+
+<ul>
+<li>Click Next (button)</li>
+</ul></li>
+<li>Do <em>not</em> enter password at <strong>Password page</strong>.
+
+<ul>
+<li>Click Next (button)</li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Method 2</strong></p>
+
+<ul>
+<li>Follow install menus until &quot;Select Country&quot; page</li>
+<li>Shift + F10, which launches a <strong>CMD window</strong>.
+
+<ul>
+<li><strong><code>OOBE\BYPASSNRO</code></strong> (at the command prompt),
+which causes computer to reboot.</li>
+</ul></li>
+<li>Shift + F10 again
+
+<ul>
+<li><strong><code>ipconfig /release</code></strong> (at the command prompt).</li>
+</ul></li>
+<li>Close CMD window</li>
+<li>Resume install.</li>
+<li>At screen: &quot;<strong>Let's connect you to a network</strong>&quot;,
+click &quot;<strong>I don't have Internet</strong>&quot; to continue.
+
+<ul>
+<li>&quot;<strong>Continue with limited setup</strong>&quot;</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h5>Method if <strong>After</strong> Installation</h5>
+
+<p>The default OS install has a &quot;Welcome&quot; login
+sequence requiring a Microsoft account.
+It blocks user from login until user signs up for MS account,
+enters creds of existing account,
+or selects a button that is effectively a
+&quot;Repeatedly block and bother me again later&quot;.</p>
+
+<p>This statement cures that:</p>
+
+<pre><code class="language-powershell">Set-ExecutionPolicy Unrestricted
+
+Set-ItemProperty -Path &quot;HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System&quot; -Name &quot;NoConnectedUser&quot; -Value 3 -Type DWord
+
+</code></pre>
+
+<h4>Builds 26120 and beyond</h4>
+
+<p>The OOBE/BYPASSNRO command has been erased and no longer works.
+Instead, there's a new command called <strong><code>start ms-chx:localonly</code></strong> that does something similar. Here's how you use it.</p>
+
+<ul>
+<li>Follow the Windows 11 install process until you get to the Sign in screen.</li>
+<li>Shift + F10, which launches a <strong>CMD window</strong>.
+
+<ul>
+<li><strong><code>start ms-cxh:localonly</code></strong></li>
+</ul></li>
+</ul>
+
+<h3><strong>Activate</strong> @ &quot;Not Activated&quot;</h3>
+
+<p>How to <strong>Activate via KMS</strong> using <a href="https://github.com/massgravel/Microsoft-Activation-Scripts" title="GitHub.com">Microsoft Activation Scripts (MAS)</a> method at a PowerShell terminal:</p>
+
+<pre><code class="language-powershell">Install-WindowsFeature -Name VolumeActivation -IncludeManagementTools
+
+# Run this statement and select the &quot;KMS&quot; option at its menu
+irm https://get.activated.win | iex
+</code></pre>
+
+<ul>
+<li><a href="iac/get.activated.win"><strong><code>get.activated.win</code></strong></a></li>
+</ul>
+
+<h3>OS/Boot Utilities</h3>
+
+<pre><code class="language-powershell"># Add drivers to mounted WIM  
+dism /mount-wim /wimfile:D:\sources\install.wim /index:1 /mountdir:C:\Mount
+dism /Image:S:\Mount /Add-Driver /Driver:C:\drivers\ /Recurse
+dism /unmount-wim /mountdir:C:\Mount /commit
+oscdimg -m -o -u2 -udfver102 -bootdata:2#p0,e,bD:\boot\etfsboot.com#pEF,e,bD:\efi\microsoft\boot\efisys.bin D:\ C:\Win11-custom.iso
+
+# Fix boot record
+bcdboot S:\Windows /s Z: /f UEFI # Z: is (small ~ 100MB) EFI partition
+shutdown /r /t 1 /o
+
+# Fix OS
+sfc /scannow
+DISM /Online /Cleanup-Image /RestoreHealth
+</code></pre>
+
+<ul>
+<li><p>Typically, EFI partition is not assigned a letter (<code>Z:</code>); use <code>DISKPART</code> to assign:</p>
+
+<pre><code class="language-powershell">diskpart
+</code></pre>
+
+<pre><code class="language-powershell">list disk
+list volume
+list partition
+select disk ...
+list volume
+select volume ...
+select partition ...
+assign letter z
+exit
+</code></pre></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

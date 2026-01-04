@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Network.HTTP.Headers</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers" title="MDN">HTTP Headers</a> | <a href="https://www.twilio.com/blog/a-http-headers-for-the-responsible-developer" title="'HTTP headers for the responsible developer' @ twillio.com 2019">Article</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/API/Headers/Headers" title="MDN :: Fetch API Headers">Headers API</a> | <a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields" title="Wikipedia">Fields (list)</a> | <a href="https://httpstatuses.com/" title="httpstatuses.com">HTTP Status Codes</a></h1>
+
+<blockquote>
+<p>The standard imposes no limit on size, but servers impose limits. E.g., @ Apache 2.3 server, the defaults are <strong>8,190 bytes/field</strong>, and max <strong>100 header fields/request</strong>.  That's over <code>800KB</code> of data!</p>
+</blockquote>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#request_context">Context</a> request</h2>
+
+<ul>
+<li><code>From</code> &mdash; Contains an Internet email address for a human user who controls the requesting user agent.</li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host"><code>Host</code></a> &mdash; Specifies the host (and perhaps port number) of the server to which the request is being sent. Sans port, default per service requested (e.g., <code>443</code> if per HTTPS <code>80</code> if per HTTP). A Host header field <strong>must be sent with all HTTP/1.1 requests</strong>. A 400 (Bad Request) status code may be sent to any HTTP/1.1 request message that lacks a Host header field or that contains more than one.</p>
+
+<pre><code class="language-plaintext">Host: &lt;host&gt;[:&lt;port&gt;]
+</code></pre>
+
+<pre><code class="language-plaintext">Host: developer.cdn.mozilla.net
+</code></pre></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer"><code>Referer</code></a> <a name="referer"></a> &mdash; the address of the page making the request, and so not always present; may be that of the previous web page from which a link to the currently requested page was followed. Sent with requests for page links, <code>&lt;link ...&gt;</code>. When making AJAX requests to another domain, this is the url of the active page running the script; allows servers to identify clients for analytics, logging, optimized caching, etc. Notorious for being utilized (manipulated) by malicous attackers, e.g., Cross-Site Request Forgery. See <code>CSRF.XSRF</code>  (<a href="p>
+
+<pre><code class="language-plaintext">Referer: &lt;url&gt;
+</code></pre>
+
+<pre><code class="language-plaintext">Referer: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+</code></pre>
+
+<ul>
+<li>The full URL sans fragments (<code>#foo</code>) and userinfo (<code>username:password</code>).</li>
+</ul></li>
+
+<li><p><code>Referrer-Policy</code> &mdash; Governs which referrer information sent in the Referer header should be included with requests made.</p></li>
+
+<li><p><code>User-Agent</code> &mdash; Characteristic string to identify the application type, operating system,  vendor/version of the client (user agent) performing the request.</p>
+
+<pre><code class="language-plaintext">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0
+</code></pre></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#cors">CORS</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">Docs/CORS</a> | <code>Network.HTTP.CORS+Fetch</code> (<a href="h2>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin"><code>Access-Control-Allow-Origin</code></a>  &mdash; Sent by the <em>server of the requested resource</em>.  See <code>PRJ.HTTP.CORS</code> (<a href="li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin"><code>Origin</code></a> &mdash; Indicates the server <em>requesting the resource</em>; sent with CORS requests and <code>POST</code> requests. It is similar to the <a href="#referer"><code>Referer</code></a> header, but, unlike this header, it doesn't disclose the whole path.</p>
+
+<pre><code class="language-plaintext">Origin: &lt;scheme&gt; &quot;://&quot; &lt;hostname&gt; [ &quot;:&quot; &lt;port&gt; ]
+</code></pre></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#proxies">Proxies</a></h2>
+
+<ul>
+<li><code>Forwarded</code> &mdash; Contains information from the client-facing side of proxy servers that is altered or lost when a proxy is involved in the path of the request. Less common than <code>X-Forwarded-For</code></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For"><code>X-Forwarded-For</code></a> (XFF) &mdash; Client IP Address. The de-facto standard <em>request header</em> for identifying the <em>originating IP address of a client</em> connecting to a web server through an HTTP proxy or a load balancer.</p>
+
+<pre><code class="language-plaintext">X-Forwarded-For: &lt;clientIP&gt;, &lt;proxy1_IP&gt;, &lt;proxy2_IP&gt;
+</code></pre>
+
+<ul>
+<li>Right-most is most recent proxy IP address; left-most is client IP address.
+
+<ul>
+<li>May be IPv6 address(es).</li>
+</ul></li>
+</ul></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-Host"><code>X-Forwarded-Host</code></a> (XFH) &mdash; Server domain name. The de-facto standard <em>request header</em> for identifying the <em>original host requested by the client</em> (in the <code>Host</code> HTTP request header) behind a proxy or load balancer.</p>
+
+<pre><code class="language-plaintext">X-Forwarded-Host: &lt;domain-name-of-forwarded-server&gt;
+</code></pre>
+
+<pre><code class="language-plaintext">X-Forwarded-Host: id42.example-cdn.com
+</code></pre></li>
+
+<li><p><code>X-Forwarded-Proto</code> &mdash; Identifies the protocol (HTTP or HTTPS) that a client used to connect to your proxy or load balancer.</p></li>
+
+<li><p><code>Via</code> &mdash; Added by proxies, both forward and reverse proxies, and can appear in the request headers and the response headers.</p></li>
+</ul>
+
+<h2><a href="https://www.w3.org/TR/fetch-metadata/#framework" title="2019 @ www.w3.org"><code>Sec-Fetch-{Dest|Mode|Site|User}</code></a> request</h2>
+
+<p>A new (2019) security mechanism for user agents (Fetch API) to add specific context to outgoing requests, thereby aiding server-side decision making. By delivering metadata to a server in <em>a set of fetch metadata headers</em>, applications may quickly <strong><em>reject requests based on testing a set of preconditions</em></strong>. That work can even be lifted up above the application layer (to reverse proxies, CDNs, etc) if desired.</p>
+
+<p>Fetch API <strong>Metadata Headers</strong></p>
+
+<h3><a href="https://www.w3.org/TR/fetch-metadata/#sec-fetch-mode-header" title="2019 @ www.w3.org"><code>Sec-Fetch-Mode = sh-token</code></a></h3>
+
+<h3><a href="https://www.w3.org/TR/fetch-metadata/#sec-fetch-site-header" title="2019 @ www.w3.org"><code>Sec-Fetch-Site = sh-token</code></a></h3>
+
+<h3><a href="https://www.w3.org/TR/fetch-metadata/#sec-fetch-user-header" title="2019 @ www.w3.org"><code>Sec-Fetch-User = sh-boolean</code></a></h3>
+
+<p>(<code>sh-token</code> &mdash; <a href="https://tools.ietf.org/html/draft-ietf-httpbis-header-structure-13" title="tools.ietf.org">Structured Headers</a> Token.)</p>
+
+<pre><code>Sec-Fetch-Dest: (N/A)
+Sec-Fetch-Mode: cors|navigate|nested-navigate|no-cors|same-origin|websocket
+Sec-Fetch-Site: same-origin|cross-site
+Sec-Fetch-User: ?F|?T  
+</code></pre>
+
+<ul>
+<li>@ Brave browser, <code>Sec-Fetch-User: ?1|!0</code>; odd notation <a href="https://github.com/w3c/webappsec-fetch-metadata/issues/8" title="2018 @ github.com/w3c/...">to avoid collision with other types</a>.</li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Location" title="MDN"><code>Location</code></a>  response</h2>
+
+<p>Indicates redirect destination URL. For use with  <code>3xx</code> (redirection) or <code>201</code> (created) only.</p>
+
+<p><code>Location</code> and <a href="#content-location"><code>Content-Location</code></a> are different.</p>
+
+<h3><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections" title="MDN">HTTP Redirects</a> (<code>3xx</code>)</h3>
+
+<p><a name="content-location"></a></p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Location"><code>Content-Location</code></a> response</h2>
+
+<p>Indicates an alternate location; principal use is @ <strong><em>content&nbsp;negotiation</em></strong>.</p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cookie#Syntax" title="MDN"><code>Cookie</code></a> request</h2>
+
+<p>Browsers automatically send <code>Cookie</code> header with each request, if any exist of its domain. The value thereof is a semicolon-delimited set of <code>name=value</code> pairs, each a stored HTTP cookie previously sent by the server per <code>Set-Cookie</code> header.</p>
+
+<pre><code class="language-http">Cookie: &lt;cookie-list&gt;
+Cookie: name=value
+Cookie: name=value; name2=value2; name3=value3
+</code></pre>
+
+<ul>
+<li>Pairs in the list are separated by a semicolon and a space, &quot;<code>;</code>&nbsp;&quot;.</li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie" title="MDN"><code>Set-Cookie</code></a> response</h2>
+
+<p>To send cookies from the server to the User Agent, e.g., a session cookie, which may be the result of a successful login.</p>
+
+<pre><code class="language-http">Set-Cookie: &lt;cookie-name&gt;=&lt;cookie-value&gt; 
+Set-Cookie: &lt;cookie-name&gt;=&lt;cookie-value&gt;; Domain=&lt;domain-value&gt;; Secure; HttpOnly
+</code></pre>
+
+<p>For example, at <code>twitter.com</code> (the server sent both) &hellip;</p>
+
+<pre><code class="language-http">set-cookie: fm=0; Max-Age=0; Expires=Wed, 11 Sep 2019 14:57:57 GMT; Path=/; Domain=.twitter.com; Secure; HTTPOnly
+set-cookie: _twitter_sess=BAh...NyZl9p%250...jQ1%250...xNg%253D%253D--690...c351; Path=/; Domain=.twitter.com; Secure; HTTPOnly
+</code></pre>
+
+<p>Delete cookie by expiring it:</p>
+
+<pre><code class="language-bash">☩ curl -Is localhost:3030/app/logout
+HTTP/1.1 200 OK
+Set-Cookie: __Host-ia=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; Secure; SameSite=Strict
+Set-Cookie: __Host-rr=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; HttpOnly; Secure; SameSite=Strict
+Date: Sun, 04 Apr 2021 13:18:11 GMT
+Content-Length: 11
+Content-Type: text/plain; charset=utf-8
+</code></pre>
+
+<ul>
+<li>See <code>PRJ.Headers.Req+Resp</code> (<a href="li>
+</ul>
+
+<p><a name="etag"></a></p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag" title="MDN"><code>ETag</code></a> response</h2>
+
+<p>An <strong>ETag</strong> is an <strong>identifier</strong> (validator) for a <strong>version</strong> of a <strong>resource</strong>.</p>
+
+<pre><code class="language-http">ETag: &quot;&lt;etag_value&gt;&quot;
+ETag: W/&quot;&lt;etag_value&gt;&quot;
+</code></pre>
+
+<ul>
+<li>The <code>&lt;etag_value&gt;</code> should be unique.</li>
+
+<li><p>The server's ETag response header <strong><em>triggers</em></strong> the client-side mechanism; the Etag value is cached and returned with all subsequent requests, per <strong><em>request header</em></strong>:</p>
+
+<pre><code>If-None-Match: &lt;etag_value&gt;, &lt;etag_value&gt;, …
+</code></pre>
+
+<ul>
+<li>Such is a <a href="#conditional">Conditional Request</a>.
+<br></li>
+</ul></li>
+</ul>
+
+<h3>Use cases:</h3>
+
+<ul>
+<li>For <a href="https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/http-caching#validating-cached-responses-with-etags" title="@ developers.google.com">HTTP caching</a>. If the resource changes, a new <code>&lt;etag_value&gt;</code> must be generated.</li>
+<li><a href="#range">Range requests</a>.</li>
+<li>As an immutable ID for <strong>tracking</strong> per <a href="https://en.wikipedia.org/wiki/User_agent" title="@ Wikipedia"><em>User&nbsp;Agent</em></a>, similar to <a href="https://en.wikipedia.org/wiki/Fingerprint_%28computing%29" title="@ Wikipedia">fingerprint schemes</a>.</li>
+</ul>
+
+<blockquote>
+<p>By default, ETag validation is a (costlier) hashsum check, assuring a bit-for-bit identical resource, so is used for <code>Range</code> requests. If used for caching, use the <code>W/</code> prefix (<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests#Weak_validation">weak validation</a>), which does not perform the hashsum check, rather testing only for <em>semantic equivalence</em>. The <code>W/</code> method is faster, and so is commonly used for serving static resources (cache). E.g.,</p>
+</blockquote>
+
+<pre><code>Etag: W/&quot;581c5-xArf/LgZfhahmbgqOii1auQ2lkQ&quot;
+</code></pre>
+
+<p><a name="conditional"></a></p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests#Conditional_headers" title="MDN">Conditional (Request) Headers</a> / <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests" title="MDN">Requests</a></h2>
+
+<p>For a server response that varies per <strong><em>precondition(s)</em></strong> that <strong><em>match or not</em></strong>; the header-stipulated condition <strong><em>validates</em></strong> or doesn't.</p>
+
+<h3><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests#Use_cases" title="MDN">Use Cases</a></h3>
+
+<ul>
+<li>Cache update</li>
+<li>Integrity of a partial download, e.g., can be used in combination with a <code>Range</code> header to guarantee <em>all parts of multipart doc</em> come from the same resource.</li>
+<li>Optimistic locking @ multiple clients modifying same document; the first returned wins.
+
+<ul>
+<li>First upload (Creation) of a resource</li>
+</ul></li>
+</ul>
+
+<h3><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests#Validators" title="MDN">Validators</a> :: Headers</h3>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified" title="MDN"><code>Last-Modified</code></a> &mdash; not as accurate as <code>Etag</code>.</li>
+<li><code>Etag</code></li>
+</ul>
+
+<h3><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Conditional_requests#Conditional_headers" title="MDN">Conditional Header(s)</a></h3>
+
+<p><strong>Conditional request</strong>; for caching resources at the client; the server sends back the requested resource  ___only on validation, e.g.,  <code>&lt;etag_value&gt;</code> match @ <code>If-Match: &lt;etag_value&gt;</code> header, or none so @ <code>If-None-Match: &lt;etag_value&gt;</code>.</p>
+
+<ul>
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match" title="MDN"><code>If-None-Match</code></a> request<br>
+<strong>Conditional request</strong>; for caching resources; the server sends back the requested resource  <strong><em>only if no <code>&lt;etag_value&gt;</code> matches its</em></strong>; <em>takes precedence</em> over <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since"><code>If-Modified-Since</code> (date/time)</a> request header (if both headers are sent).</p>
+
+<pre><code>If-None-Match: &lt;etag_value&gt;, &lt;etag_value&gt;, …
+</code></pre></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match" title="MDN"><code>If-Match</code></a> request</p>
+
+<pre><code>If-Match: &lt;etag_value&gt;
+If-Match: &lt;etag_value&gt;, &lt;etag_value&gt;, …
+If-Match: *
+</code></pre></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since" title="MDN"><code>If-Modified-Since</code></a> request</p>
+
+<pre><code>If-Modified-Since: &lt;day-name&gt;, &lt;day&gt; &lt;month&gt; &lt;year&gt; &lt;hour&gt;:&lt;minute&gt;:&lt;second&gt; GMT
+</code></pre></li>
+
+<li><p><code>If-Unmodified-Since</code> request</p></li>
+
+<li><p><code>If-Range</code> request</p></li>
+</ul>
+
+<p><a name="range"></a></p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Range"><code>Range</code></a>  request</h2>
+
+<p>Indicates the part(s) of a document, in a <strong>multipart document</strong>, the server should return; uses the <code>206</code> (<code>Partial Content</code>) for the response. If ranges are invalid, the server returns the <code>416</code> (<code>Range Not Satisfiable</code>) error. The <em>server can also ignore the Range header</em> and return the whole document with a <code>200</code> status code.</p>
+
+<pre><code>Range: &lt;unit&gt;=&lt;range-start&gt;-&lt;range-end&gt;, &lt;range-start&gt;-&lt;range-end&gt;
+</code></pre>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control"><code>Cache-Control</code></a>   request or response</h2>
+
+<p>Avoid requests for unchanged resources.  Caching <strong>directives are unidirectional</strong>; a given directive in a request does not imply the same directive in the response.</p>
+
+<pre><code>Cache-Control: &lt;directive-1&gt;, &lt;directive-2&gt;, ...
+</code></pre>
+
+<ul>
+<li><p>Request <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#Directives" title="MDN :: Cache-Control Directives">Directives</a></p>
+
+<pre><code>Cache-Control: max-age=&lt;seconds&gt;
+Cache-Control: max-stale[=&lt;seconds&gt;]
+Cache-Control: min-fresh=&lt;seconds&gt;
+Cache-Control: no-cache 
+Cache-Control: no-store
+Cache-Control: no-transform
+Cache-Control: only-if-cached
+</code></pre></li>
+
+<li><p>Response  <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#Directives" title="MDN :: Cache-Control Directives">Directives</a></p>
+
+<pre><code>Cache-Control: must-revalidate
+Cache-Control: no-cache
+Cache-Control: no-store
+Cache-Control: no-transform
+Cache-Control: public
+Cache-Control: private
+Cache-Control: proxy-revalidate
+Cache-Control: max-age=&lt;seconds&gt;
+Cache-Control: s-maxage=&lt;seconds&gt;
+</code></pre>
+
+<ul>
+<li><p>To cache <strong>static assets</strong>, have server send:<br>
+<code>Cache-Control: public, max-age=31536000</code></p></li>
+
+<li><p>To <strong>prevent caching</strong>, have server send:<br>
+<code>Cache-Control: no-store</code></p>
+
+<ul>
+<li>Else can use an <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires" title="MDN :: Expires - Response Header"><code>Expires</code> header</a>; an HTTP-date timestamp:<br>
+<code>Expires: Wed, 21 Oct 2015 07:28:00 GMT</code><br>
+(Ignored if with <code>Cache-Control</code> header having <code>max-age</code> or <code>s-maxage</code> directive.)</li>
+</ul></li>
+</ul></li>
+
+<li><p>Extension  <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#Directives" title="MDN :: Cache-Control Directives">Directives</a>  (<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#Browser_compatibility" title="MDN :: Browser Compatibility">not as supported</a>)</p>
+
+<pre><code>Cache-Control: immutable 
+Cache-Control: stale-while-revalidate=&lt;seconds&gt;
+Cache-Control: stale-if-error=&lt;seconds&gt;
+</code></pre></li>
+</ul>
+
+<h3>&quot;<a href="https://devcenter.heroku.com/articles/increasing-application-performance-with-http-cache-headers#conditional-requests" title="Heroku.com">Increasing Application Performance with HTTP Cache Headers</a>&quot;</h3>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Alt-Svc" title="MDN"><code>Alt-Svc</code></a> response</h2>
+
+<p>Alternate Services; used to list alternate ways (host, protocol and port) to reach the server (website), e.g., per <a href="https://en.wikipedia.org/wiki/QUIC" title="'Quick UDP Internet Connections' - Google 2012 @ Wikipedia">QUIC</a> (vs HTTP). About half of all Google responses to <strong><em>Chrome browsers</em></strong> are per QUIC.</p>
+
+<pre><code>Alt-Svc: &lt;service-list&gt;; ma=&lt;max-age&gt;; persist=1
+</code></pre>
+
+<ul>
+<li><code>&lt;service-list&gt;</code> is a comma-separated list of <strong><em>service definitions</em></strong>:
+
+<ul>
+<li><code>&lt;service-name&gt;=​&quot;&lt;host-name&gt;:&lt;port-number&gt;&quot;</code><br>
+
+<ul>
+<li><code>&lt;service-name&gt;</code> is a valid <abbr title="Application-Layer Protocol Negotiation">ALPN</abbr> identifier, e.g., &quot;<code>quic</code>&quot;.</li>
+</ul></li>
+</ul></li>
+</ul>
+
+<p>@ Google Search &hellip;</p>
+
+<pre><code>Alt-Svc: quic=&quot;:443&quot;; ma=2592000; v=&quot;46,43,39&quot;
+</code></pre>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"><code>Strict-Transport-Security</code> (HSTS)</a> response</h2>
+
+<p>HTTP Strict Transport Security (HSTS) <strong><em>policy</em></strong> ensures <em>user agents</em> (browsers) forbid access to the web app if it is not served per HTTPS. Receiving such from the server, browser will <code>preload</code> (<strong>internally redirect</strong>), to HTTPS, all subsequent HTTP requests to same origin. Spec per <a href="https://tools.ietf.org/html/rfc6797" title="HTTP Strict Transport Security">RFC 6797</a>.</p>
+
+<p>More info @ <a href="https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html">OWASP.org</a></p>
+
+<pre><code>Strict-Transport-Security: max-age=1000; includeSubDomains; preload
+</code></pre>
+
+<ul>
+<li><code>max-age</code> directive is in seconds.</li>
+<li>Same action for subdomain requests per optional <code>includeSubDomains</code> directive.<br></li>
+</ul>
+
+<p>Can also submit site to list at <a href="https://hstspreload.org/">hstspreload.org</a>, which is adopted by most browsers.</p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy" title="MDN"><code>Content-Security-Policy</code> (CSP)</a> response</h2>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP" title="MDN :: Examples">Control resources</a> the <em>user agent</em> is allowed to load for a given page. Most policies specify server origins and script endpoints. This helps guard against cross-site scripting attacks (XSS).</p>
+
+<pre><code>Content-Security-Policy: &lt;policy-directive&gt;; &lt;policy-directive&gt;
+Content-Security-Policy: upgrade-insecure-requests
+</code></pre>
+
+<ul>
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#Fetch_directives" title="MDN :: CSP Fetch Directives">Fetch Directives</a></p>
+
+<ul>
+<li><code>default-src https://theoneandonly.trusted.com</code><br>
+Allow only SSL and only from a single specified origin; all content.</li>
+<li><code>default-src 'self' *.trusted.com</code><br>
+Allow content from a trusted domain and all its subdomains.</li>
+<li><code>default-src 'self'; img-src *; media-src media1.com media2.com; script-src js.trusted.com</code><br>
+Allow images from any origin, but audio/video from only the 2 specified providers, and all scripts only from one specific server.<br></li>
+<li><code>frame-src</code><br>
+Allow for nested browsing contexts that load using elements such as <code>&lt;frame&gt;</code> and <code>&lt;iframe&gt;</code>.</li>
+<li><code>worker-src</code><br>
+Specifies valid (allowable) sources for <code>Worker</code>, <code>SharedWorker</code>, or <code>ServiceWorker</code> scripts.</li>
+</ul></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#Document_directives" title="MDN :: CSP Document Directives">Document Directives</a></p></li>
+
+<li><p>Navigation Directives</p></li>
+
+<li><p>Reporting Directives</p></li>
+
+<li><p>Other Directives</p>
+
+<ul>
+<li><code>upgrade-insecure-requests</code><br>
+Instructs user agents to treat all of a site's insecure URLs (those served over HTTP) as though they have been replaced with secure URLs (those served over HTTPS); intended for web sites with large numbers of insecure legacy URLs.</li>
+</ul></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP#Testing_your_policy" title="MDN :: Testing the CSP [Policy]">Testing the CSP (Policy)</a></p>
+
+<pre><code>Content-Security-Policy-Report-Only: policy 
+</code></pre></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP#Enabling_reporting">Enable Reporting (back to server)</a></p></li>
+</ul>
+
+<h3>Examples</h3>
+
+<h4>Lockdown with &quot;<code>default-src 'none';</code>&quot;</h4>
+
+<pre><code class="language-golang">w.Header().Set(&quot;Content-Security-Policy&quot;,
+    &quot;default-src 'none';&quot;+ // Forbid everything not explicitly declared.
+        &quot;script-src https://cdn.hard.net;&quot;+
+        &quot;style-src https://cdn.hard.net;&quot;+
+        &quot;img-src https://cdn.hard.net;&quot;+
+        &quot;connect-src https://api.hard.com;&quot;+ // Restrict API-loaded URLs
+        &quot;child-src 'self'&quot;, // 'self' is origin server
+)
+</code></pre>
+
+<ul>
+<li>The <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/connect-src" title="MDN"><code>connect-src</code></a> directive restricts URLs loaded per Web APIs: <code>Fetch</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code>, &hellip;</li>
+</ul>
+
+<blockquote>
+<p>Note that CSP header(s) are not listed @ development tools of browsers (Chrome, Firefox).</p>
+</blockquote>
+
+<h4>SSL only</h4>
+
+<pre><code class="language-golang">w.Header().Set(&quot;Content-Security-Policy&quot;,
+    &quot;default-src https:;&quot;+      // SSL @ those not explicitly declared
+        &quot;object-src https://foo.com;&quot;+          // specific host
+        &quot;script-src 'self' 'unsafe-inline';&quot;+   // Forbid inline scripts
+        &quot;worker-src 'self'&quot;,
+)
+</code></pre>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity" title="MDN">Subresource Integrity (SRI)</a></h2>
+
+<ul>
+<li><p>Require <strong><em>match</em></strong> <code>integrity=...</code> value against the asset's <strong><em>cryptographic hash</em></strong>.</p>
+
+<pre><code class="language-html">&lt;script src=&quot;https://foo.com/bundle.js&quot;
+integrity=&quot;sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC&quot;
+crossorigin=&quot;anonymous&quot;&gt;&lt;/script&gt;
+</code></pre></li>
+</ul>
+
+<p>The SRI (above) triggers CORS test at browser, so <strong><em>must include</em></strong> the access-control header &hellip;</p>
+
+<pre><code>Access-Control-Allow-Origin:  *
+</code></pre>
+
+<h4>Generate SRI of the asset (<code>$@</code>)</h4>
+
+<pre><code class="language-bash">#!/usr/bin/env bash
+
+[[ $(type -t openssl) ]] &amp;&amp; { 
+    printf &quot;sha384-$(cat &quot;$@&quot; | openssl dgst -sha384 -binary | openssl base64 -A)&quot; 
+} || {
+    [[ $(type -t shasum) ]] &amp;&amp; {
+        printf &quot;sha384-$(shasum -b -a 384 &quot;$@&quot; | awk '{ print $1 }' | xxd -r -p | base64)&quot;
+    }
+}
+</code></pre>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding" title="MDN"><code>Accept-Encoding</code></a>  request</h2>
+
+<p>Advertises acceptable <strong>content compression</strong> schemes. Server selects one of the proposals, uses it and informs the client of its choice with the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding" title="MDN :: Content-Encoding"><code>Content-Encoding</code> response</a> header. (The server may choose not to compress the body of a response.)</p>
+
+<pre><code>Accept-Encoding: deflate, gzip;q=1.0, br, *;q=0.5
+</code></pre>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Encoding#Directives" title="MDN :: Accept-Encoding Directives">Directives</a><br>
+
+<ul>
+<li><a href="https://developer.mozilla.org/en-US/docs/Glossary/Quality_values" title="MDN :: Quality Values">Quality values (<code>q=&lt;#&gt;</code>)</a>, or <code>q-values</code> and <code>q-factors</code>;<br>
+describing the <strong>order of priority</strong>.<br></li>
+</ul></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept"><code>Accept</code></a> request</h2>
+
+<p><a name="content-negotiation"></a></p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation" title="MDN"><strong>Content Negotiation</strong></a>: The client <strong><em>advertises</em></strong> (requests) acceptable <strong><em>media types</em></strong> (content types), expressed as <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr> type(s). The server selects one (if more than one) and informs client per <a href="#content-type"><code>Content-Type</code> response</a> header attached to the resource.</p>
+
+<ul>
+<li><p><code>Accept: &lt;MIME_type&gt;/&lt;MIME_subtype&gt;</code></p>
+
+<pre><code>Accept: &lt;MIME_type&gt;/&lt;MIME_subtype&gt;
+Accept: &lt;MIME_type&gt;/*
+Accept: */*
+</code></pre>
+
+<pre><code>Accept: text/html, application/xhtml+xml, application/xml;q=0.9, image/webp, */*;q=0.8
+</code></pre></li>
+</ul>
+
+<p><a id="mime-types"></a></p>
+
+<ul>
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types" title="MDN">MIME Types</a> List</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>.html</code></td>
+<td>HTML</td>
+<td><code>text/html</code></td>
+</tr>
+
+<tr>
+<td><code>.css</code></td>
+<td>CSS</td>
+<td><code>text/css</code></td>
+</tr>
+
+<tr>
+<td><code>.js</code></td>
+<td>JavaScript</td>
+<td><code>text/javascript</code></td>
+</tr>
+
+<tr>
+<td><code>.json</code></td>
+<td>JSON</td>
+<td><code>application/json</code></td>
+</tr>
+
+<tr>
+<td><code>.jsonld</code></td>
+<td><a href="https://en.wikipedia.org/wiki/JSON-LD" title="@ Wikipedia">JSON-LD</a></td>
+<td><code>application/ld+json</code></td>
+</tr>
+
+<tr>
+<td><code>.jsonp</code></td>
+<td><a href="https://en.wikipedia.org/wiki/JSONP" title="@ Wikipedia">JSONP</a></td>
+<td><code>application/javascript</code></td>
+</tr>
+
+<tr>
+<td><code>.jpg</code></td>
+<td>JPEG</td>
+<td><code>image/jpeg</code></td>
+</tr>
+
+<tr>
+<td><code>.png</code></td>
+<td>PNG</td>
+<td><code>image/png</code></td>
+</tr>
+
+<tr>
+<td><code>.svg</code></td>
+<td>SVG</td>
+<td><code>image/svg+xml</code></td>
+</tr>
+
+<tr>
+<td><code>.ico</code></td>
+<td>Win icons</td>
+<td><code>image/x-icon</code></td>
+</tr>
+
+<tr>
+<td>Form</td>
+<td>POST</td>
+<td><code>multipart/form-data</code></td>
+</tr>
+
+<tr>
+<td>Binary</td>
+<td>POST (upload)</td>
+<td><code>application/octet-stream</code></td>
+</tr>
+
+<tr>
+<td>Range</td>
+<td><code>206</code> (Partial Content)</td>
+<td><code>multipart/byteranges</code></td>
+</tr>
+</tbody>
+</table></li>
+
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type#Examples" title="MDN :: Content-Type Examples">Example</a> <code>POST</code>:</p>
+
+<ul>
+<li><p>Request</p>
+
+<pre><code class="language-html">&lt;form action=&quot;/&quot; method=&quot;post&quot; enctype=&quot;multipart/form-data&quot;&gt;
+  ...
+&lt;/form&gt;
+</code></pre></li>
+
+<li><p>Response (<a href="#content-type">See <code>Content-Type</code></a>.)</p></li>
+</ul></li>
+</ul>
+
+<p><a name="content-type"></a></p>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type"><code>Content-Type</code></a> response</h2>
+
+<p>A header declaring the <abbr title="Multipurpose Internet Mail Extensions">MIME</abbr> type; <strong><em>media type</em></strong>. <a href="#content-negotiation">See&nbsp;<code>Content</code>&nbsp;<code>Negotiation</code></a>.</p>
+
+<p>The most common one:</p>
+
+<pre><code>Content-Type: text/html; charset=UTF-8
+</code></pre>
+
+<p>@ <code>HTTP POST</code></p>
+
+<pre><code>POST /foo HTTP/1.1
+Content-Length: 68137
+Content-Type: multipart/form-data; boundary=---...---974...
+...
+X-Content-Type-Options: nosniff
+</code></pre>
+
+<pre><code class="language-bash"># If sending binary (non-alphanumeric) data, or significantly sized payload:
+'Content-Type: multipart/form-data'
+# Else send per URL-encoded string&quot;
+'Content-Type: application/x-www-form-urlencoded'
+# Body is one giant query-string equivalent; 
+k1=v1&amp;k2=v2
+</code></pre>
+
+<ul>
+<li>Can send binary by URL-encoding, but is INEFFICIENT;
+one byte encodes to (<code>base64url</code>) three 7-bit bytes</li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition" title="MDN"><code>Content-Disposition</code></a> response</h2>
+
+<p>What to do with the resource; treat as part of a web page (<code>inline</code>), or as an attachment to save locally as a file. Also used @ multipart body &hellip;</p>
+
+<pre><code class="language-http">200 OK
+Content-Type: text/html; charset=utf-8
+Content-Disposition: attachment; filename=&quot;cool.html&quot;
+Content-Length: 21
+
+&lt;HTML&gt;Save me!&lt;/HTML&gt;
+</code></pre>
+
+<ul>
+<li><em>&quot;This simple HTML file will be saved as a regular download rather than displayed in the browser. Most browsers will propose to save it under the <code>cool.html</code> filename (by default).&quot;</em></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers#Client_hints" title="MDN :: Client Hints"><code>Accept-CH</code></a> (request header <em>or</em> meta tag)</h2>
+
+<p><strong>Client Hint</strong> for <a href="https://developers.google.com/web/updates/2015/09/automating-resource-selection-with-client-hints" title="developers.google.com">automating resource selection</a>. The user agent advertises <strong>device specifications</strong>; <code>DPR</code> (Device Pixel Ratio) , <code>Viewport-Width</code>, and <code>Width</code>. This scheme is <em>experimental</em>; a work-in-progress (WIP).</p>
+
+<ul>
+<li><p>@ <code>meta</code> tag (HTML)<br>
+<code>&lt;meta http-equiv=&quot;Accept-CH&quot; content=&quot;DPR, Viewport-Width, Width&quot;&gt;</code></p>
+
+<pre><code>&lt;meta http-equiv=&quot;Accept-CH&quot; content=&quot;Viewport-Width, Downlink&quot;&gt;
+&lt;meta http-equiv=&quot;Accept-CH-Lifetime&quot; content=&quot;86400&quot;&gt;
+</code></pre></li>
+
+<li><p>@ <code>Accept-CH</code> and <code>Accept-CH-Lifetime</code> (HTTP headers)</p>
+
+<pre><code>Accept-CH: Width, Viewport-Width
+Accept-CH-Lifetime: 100
+</code></pre></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Link_prefetching_FAQ" title="MDN :: Link prefetching FAQ">Link Prefetching</a> | <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Preloading_content#The_basics" title="MDN :: Preloading content">Preload content</a> (<a href="https://caniuse.com/#search=preload" title="Browser compatibility @ caniuse.com">support</a>)</h2>
+
+<ul>
+<li><p>@ <code>rel=&quot;preload&quot;</code> (HTML)</p>
+
+<pre><code class="language-html">&lt;head&gt;
+    &lt;link rel=&quot;preload&quot; href=&quot;style.css&quot; as=&quot;style&quot;&gt;
+    &lt;link rel=&quot;preload&quot; href=&quot;main.js&quot; as=&quot;script&quot;&gt;
+    &lt;link rel=&quot;preload&quot; href=&quot;foo.mp4&quot; as=&quot;video&quot; type=&quot;video/mp4&quot;&gt;
+
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;style.css&quot;&gt;
+...
+&lt;body&gt;
+    &lt;video controls&gt;
+        &lt;source src=&quot;foo.mp4&quot; type=&quot;video/mp4&quot;&gt;
+        ...
+    &lt;script src=&quot;main.js&quot; defer&gt;&lt;/script&gt;
+...
+</code></pre></li>
+
+<li><p>@  <a href="https://www.w3.org/wiki/LinkHeader" title="w3.org"><code>Link</code> request <em>or</em> response</a> (HTTP header)</p>
+
+<pre><code>Link: &lt;http://www.example.com/white-paper.html&amp;gt;; rel=”canonical”
+Link: &lt;/feed&gt;; rel=”alternate”
+Link: &lt;/images/big.jpg&gt;; rel=prefetch
+</code></pre></li>
+</ul>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Feature-Policy" title="MDN :: Feature-Policy"><code>Feature-Policy</code></a> (<a href="https://caniuse.com/#search=feature-policy" title="Browser compatibility @ caniuse.com">support</a>) response</h2>
+
+<p>Define what features are allowed; limit <strong>pop-up permission dialogs</strong>.</p>
+
+<pre><code>Feature-Policy: &lt;directive&gt; &lt;allowlist&gt;
+Feature-Policy: vibrate 'none'; geolocation 'none'
+</code></pre>
+
+<p>Can be sent with <strong>request</strong> using HTML &hellip;</p>
+
+<pre><code class="language-html">&lt;iframe allow=&quot;camera 'none'; microphone 'none'&quot;&gt;
+</code></pre>
+
+<h2><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Ranges" title="MDN"><code>Accept-Ranges</code></a> response</h2>
+
+<p>A marker used by the server to advertise its support of <strong>partial requests</strong>. The value of this field indicates the unit that can be used to define a range; browser may try to <strong><em>resume</em></strong> <em>an interrupted download, rather than begin again</em>.</p>
+
+<pre><code>Accept-Ranges: bytes
+</code></pre>
+
+<h3>@ <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Range_requests" title="MDN">HTTP Range Requests</a></h3>
+
+<p>&hellip; for a server to send the requested resource in portions; useful <strong>for large media</strong> files; for those whose handler has <strong>pause/resume</strong> functions.</p>
+
+<p><strong>Test for server support</strong>:</p>
+
+<p>If the <code>Accept-Ranges</code> is present in HTTP responses (and its value isn't &quot;none&quot;), then the server supports range requests:</p>
+
+<pre><code class="language-bash">curl -I 'http://i.imgur.com/z4d4kWk.jpg'
+
+HTTP/1.1 200 OK
+...
+Accept-Ranges: bytes
+Content-Length: 146515
+</code></pre>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

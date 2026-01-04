@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Git.v.CICD.decoupled</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>🚀 <strong>Trend: Decoupling the Git host from CI/CD engines and pipeline definitions</strong></h1>
+
+<p>Many teams are <strong>intentionally separating</strong> the concerns of:</p>
+
+<ol>
+<li><strong>Git hosting</strong> (source code and history)</li>
+<li><strong>Pipeline definition</strong> (the &quot;what to do&quot;)</li>
+<li><strong>Pipeline execution</strong> (the &quot;where/how to run it&quot;)</li>
+</ol>
+
+<p>This <strong>decoupling</strong> improves:</p>
+
+<ul>
+<li>Portability across environments (local vs. CI/CD)</li>
+<li>Vendor independence</li>
+<li>Stability of developer workflows</li>
+<li>Security and compliance boundaries</li>
+</ul>
+
+<hr>
+
+<h2>🔍 Why decouple?</h2>
+
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Benefit of Decoupling</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Environment drift</strong></td>
+<td>Same pipeline YAMLs run locally and in CI</td>
+</tr>
+
+<tr>
+<td><strong>CI lock-in</strong> (e.g. GitLab CI, GitHub Actions)</td>
+<td>Use any runner engine (e.g. Tekton, Argo, Drone)</td>
+</tr>
+
+<tr>
+<td><strong>Air-gapped or multi-vendor infra</strong></td>
+<td>Run pipelines in Kubernetes or offline</td>
+</tr>
+
+<tr>
+<td><strong>Security/Separation of concerns</strong></td>
+<td>Git hosting doesn’t need CI/CD access rights</td>
+</tr>
+
+<tr>
+<td><strong>Developer velocity</strong></td>
+<td>Devs can test locally or in ephemeral clusters</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>✅ Tools/Practices That Reflect This Trend</h2>
+
+<h3>🧱 1. <strong>GitOps with Git as the source of truth</strong></h3>
+
+<ul>
+<li>Tools: Argo CD, Flux</li>
+<li>CI/CD pipelines watch Git, not vice versa</li>
+<li>Promotes Git repo as passive declarative state, not active executor</li>
+</ul>
+
+<h3>🧪 2. <strong>Portable pipeline definitions</strong></h3>
+
+<ul>
+<li>Format: <code>.yaml</code> or <code>.cue</code> or <code>cue + bash + kustomize</code></li>
+<li>Runners: Drone, Tekton, GitHub Actions, GitLab CI, Dagger.io</li>
+<li>Goals: write once, run anywhere (like Terraform for pipelines)</li>
+</ul>
+
+<h3>🧰 3. <strong>Dedicated pipeline engines</strong></h3>
+
+<ul>
+<li>e.g., use GitHub only for source, but Argo Workflows or Jenkins X for running pipelines</li>
+<li>In GitLab: use <strong>external runners</strong> on K8s that don’t require pipeline definitions to live in <code>.gitlab-ci.yml</code> (fully decoupled)</li>
+</ul>
+
+<h3>🖥️ 4. <strong>Run pipelines locally</strong></h3>
+
+<ul>
+<li><p>With tools like:</p>
+
+<ul>
+<li><code>act</code> (for GitHub Actions)</li>
+<li><code>gitlab-runner exec</code> (for GitLab)</li>
+<li><code>dagger</code> or <code>earthly</code> (cross-platform build runners)</li>
+<li><code>devbox</code>, <code>nix</code>, or container-based reproducibility</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h2>🌐 What this enables</h2>
+
+<table>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>How Decoupling Helps</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Devs test pipelines locally</td>
+<td>Same definition, same runner engine</td>
+</tr>
+
+<tr>
+<td>CI runs in air-gapped K8s</td>
+<td>Git repo stays unchanged, K8s runs jobs</td>
+</tr>
+
+<tr>
+<td>Teams migrate from GitHub to GitLab</td>
+<td>Reuse of pipeline logic without rewrite</td>
+</tr>
+
+<tr>
+<td>Multi-vendor redundancy</td>
+<td>Git + declarative YAML portable across Git providers</td>
+</tr>
+
+<tr>
+<td>Separation of SDLC roles</td>
+<td>SecOps can manage runners, Dev can own Git</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>⚖️ Summary</h2>
+
+<p>Yes — there's a <strong>clear and growing trend</strong> toward:</p>
+
+<p>✅ <strong>Portable</strong>, declarative pipeline definitions
+✅ <strong>Git-agnostic</strong> pipeline engines (CI is not bound to Git host)
+✅ <strong>K8s-native</strong> pipeline runtimes (e.g., Tekton, Argo Workflows)
+✅ <strong>Local-to-cloud parity</strong> for reproducible dev/test builds</p>
+
+<blockquote>
+<p>In this model, Git is the source of truth — not the execution engine.</p>
+</blockquote>
+
+<hr>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# … ⋮ ︙ • “” ‘’ – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻  ⚐ ⚑
+# ☢  ☣  ☠  ¦ ¶ § † ‡ ß µ ø Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦  ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 𝐋𝐀𝐁
+# ⚠️ ✅ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🧳 🥇 ✨️ 🔚
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

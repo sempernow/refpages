@@ -1,0 +1,105 @@
+# https://docs.docker.com/compose/compose-file
+version: '3.8'  # @ Docker Engine 19.03.0+
+
+x-logopts:  # https://docs.docker.com/compose/compose-file/compose-file-v3/#extension-fields 
+    &common-logopts  # https://docs.docker.com/compose/compose-file/compose-file-v3/#logging 
+    options:
+        max-size: '12m'
+        max-file: '5'
+    driver: json-file
+
+volumes:
+    vol_1:
+
+networks:
+    web1:
+        driver: overlay  
+        # driver_opts:
+        #     # Encrypt the data plane (taxes data rate)
+        #     encrypted: ""
+        external: true
+    pvt1:
+        driver: overlay
+        external: true
+
+configs:
+    config_1:
+        file: ${PATH_ABS_HOST_ASSETS}/conf/test.configs
+
+    # conf_1_extnl:
+    #     external: true
+
+secrets:
+    secret_1:
+        file: ${PATH_ABS_HOST_ASSETS}/keys/test.secrets
+    # secret_1_extnl:
+    #     external: true
+    pg_pw_app_user:
+        external: true
+    site.key:
+        #file: ${PATH_ABS_HOST_ASSETS}/keys/tls/acme.sh/acme.out/${DOMAIN}_ecc/${DOMAIN}.key
+        external: true
+    site.crt:
+        #file: ${PATH_ABS_HOST_ASSETS}/keys/tls/acme.sh/acme.out/${DOMAIN}_ecc/${DOMAIN}.cer
+        external: true
+    site.fullchain.crt:
+        #file: ${PATH_ABS_HOST_ASSETS}/keys/tls/acme.sh/acme.out/${DOMAIN}_ecc/fullchain.cer
+        external: true
+    private.pem:
+        #file: ${PATH_ABS_HOST_ASSETS}/keys/private.pem
+        external: true
+
+x-svc: &common-svc
+    dns: 
+        # Google Public DNS
+        - 8.8.8.8
+        - 8.8.4.4
+    volumes:
+        - ${PATH_ABS_VM_ASSETS}:/mnt/assets
+    networks:
+        - web1
+        - pvt1
+    environment:
+        # Override .env param(s)
+        - APP_AUTH_PRIVATE_KEY_FILE=/run/secrets/private.pem
+        - PATH_ABS_VM_ASSETS
+        - TEST_SECRETS=/run/secrets/secret_1
+        - TEST_CONFIGS=/config_1
+    #command: ["sleep", "1d"]
+    logging: *common-logopts
+
+services:
+
+    box: 
+        image: "${TEST_IMAGE}"
+        user: "${CTNR_USER}:${CTNR_GROUP}"
+        <<: *common-svc
+        ports:
+            - 3333:3333
+            - 5555:5555
+        configs:
+            - source: config_1
+              target: /app/config_1
+              uid: "$CTNR_USER"
+              gid: "${CTNR_GROUP}"
+              mode: 0440
+        secrets:
+            - source: secret_1
+              target: secret_1
+              uid: "$CTNR_USER"
+              gid: "${CTNR_GROUP}"
+              mode: 0440
+            - source: private.pem
+              target: private.pem
+              uid: "${CTNR_USER}"
+              gid: "${CTNR_GROUP}"
+              mode: 0440
+        env_file:
+            - ${PATH_ABS_HOST_ASSETS}/.env/app.env
+            - ${PATH_ABS_HOST_ASSETS}/.env/${APP_SERVICE_MODE}/aoa.env
+            - ${PATH_ABS_HOST_ASSETS}/.env/${APP_SERVICE_MODE}/api.env
+            - ${PATH_ABS_HOST_ASSETS}/.env/pgha.env
+        deploy:
+            replicas: 1
+            restart_policy:
+                condition: any

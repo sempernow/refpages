@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Tech.Stacks</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Tech Stacks</h1>
+
+<h3><a href="https://www.dacast.com/blog/blog-top-7-cdn-providers-for-html5-live-video-streaming/" title="'CDN Providers for HTML5 Live Video Streaming' 2019 @ dacast.com">Live Streaming CDN</a> | <code>PRJ.LiveStreaming</code> (<a href="h3>
+
+<ul>
+<li><a href="https://aws.amazon.com/blogs/media/frequently-asked-questions-about-the-cost-of-live-streaming/">AWS Live Streaming</a> (cost/hr)<br>
+
+<ul>
+<li>$151/hr/1,000 viewers, calculated from &hellip;<br>
+$753/hr/5,000 viewers &hellip;
+
+<ul>
+<li>AWS Elemental MediaLive (<strong>transcoding</strong>)<br>
+$4.87 + $1.176 = $6.046/hr</li>
+<li>CloudFront CDN (<strong>distribution</strong>)<br>
+$747.07/hr  (<strong>99% of the cost</strong>)<br></li>
+</ul></li>
+</ul></li>
+<li><a href="https://www.wowza.com/">Wowza OVP</a><br>
+
+<ul>
+<li>$96.00/hr/1000 viewers &hellip;
+
+<ul>
+<li>3 TB @ $200/mo for 3 TB   15GB/$1 ($0.067/GB)<br>
+@ 1 hr @ 400 KB/s = 1.44 GB<br>
+x 1,000 viewers =  1.44 TB<br>
+$96.00/hr (of the $200/mo alottment)</li>
+</ul></li>
+<li><a href="https://www.uscreen.tv">uscreen.tv</a> (<em>Now Unauthorized.TV ?</em>)</li>
+<li>$400/mo for 2,500 viewers (1,000 concurrent)</li>
+</ul></li>
+</ul>
+
+<h3><a href="https://www.youtube.com">YouTube</a></h3>
+
+<ul>
+<li>Bitrate @ <code>720p</code> playback
+<code>230 KB/s</code> (<code>1.8 Mbps</code>)</li>
+<li>Bitrate @ <code>720p</code> playback
+<code>325 KB/s</code> (<code>2.6 Mbps</code>)</li>
+</ul>
+
+<h3><a href="https://www.unauthorized.tv">Unauthorized.tv</a></h3>
+
+<ul>
+<li>Bitrate @ <code>720p</code> playback
+<code>460 KB/s</code> (<code>3.7 Mbps</code>)</li>
+<li>DevTools &gt; Network &gt; Req/Resp while playing video (<a href="li>
+<li>Using uscreen.tv white-box VOD service.</li>
+
+<li><p>Using Stripe.com; player within 2 nested <code>iframes</code></p>
+
+<pre><code class="language-html">&lt;iframe  
+    src=&quot;https://js.stripe.com/v2/m/outer.html#url=https://www.unauthorized.TV ...&quot; ...&gt;
+&lt;/iframe&gt;
+    ...
+    &lt;iframe
+        src=&quot;https://m.stripe.network/inner.html#url=https://www.unauthorized.TV ...&quot; ...&gt;
+    &lt;/iframe&gt;
+</code></pre></li>
+</ul>
+
+<h3><a href="https://api.slack.com/start/overview" title="api.slack.com">Slack</a> | <a href="https://en.wikipedia.org/wiki/Slack_%28software%29">@Wikipedia</a></h3>
+
+<p><em>Searchable Log of All Conversation and Knowledge</em> (SLACK)</p>
+
+<ul>
+<li>Group/team messaging/voice/video. Searchable record.</li>
+<li><a href="https://www.quora.com/What-is-the-tech-stack-behind-Slack" title="Slack CTO @ Quora">Tech Stack</a>; custom protocol; originally IRC;<br>
+public API; 3rd-party integrations.<br>
+
+<ul>
+<li>Backend
+
+<ul>
+<li>AWS servers @ <strong>Kubernetes</strong>;  <strong>Terraform</strong>, <strong>Chef</strong>.</li>
+<li>Chat (msgs) @ <strong>Java</strong>+<strong>Go</strong>; <strong>WebSockets</strong></li>
+<li>Voice + video @ <strong>Elixr</strong>; some <strong>Node.js</strong></li>
+<li><strong>gRPC</strong>, <strong>Thrift</strong>, JSON-over-HTTP<br></li>
+<li><strong>PHP</strong>/Hacklang @ HHVM</li>
+<li><strong>Kafka</strong> and <strong>Redis</strong> async queue system.<br></li>
+<li><strong>MySQL</strong>/Vitess/Memcached+MCRouter<br></li>
+<li><strong>SolrCloud</strong> search</li>
+<li><strong>HAproxy</strong> LB; <strong>Consul</strong> for config + service discovery.<br></li>
+<li>Data warehouse @ <strong>Presto</strong>, <strong>Spark</strong>, Airflow, <strong>Hadoop</strong> and <strong>Kafka</strong>.<br></li>
+<li>Metrics @ <strong>Prometheus</strong>; logging @ <strong>ELK</strong>.</li>
+</ul></li>
+<li>Frontend (Web; Desktop; Android; iOS)
+
+<ul>
+<li><strong>React</strong>/ES6; <strong>Electron</strong>; <strong>Java</strong>/<strong>Kotlin</strong>; <strong>C</strong>/<strong>Swift</strong><br></li>
+</ul></li>
+</ul></li>
+<li>Freemium Model<br>
+
+<ul>
+<li>Free to search up to 10,000 archived messages.<br></li>
+<li>Paid for unlimited, and add unlimited apps and integrations.</li>
+</ul></li>
+<li>Biz Growth<br>
+
+<ul>
+<li>2013: 8,000 signups in 24 hrs of launch.<br>
+2015: 10,000 new DAU/wk; 135,000 paying customers; 60,000 teams.<br>
+2015: 200,000 paid subs; 750,000 DAU.<br>
+2018: 8M active users; 3M paid accounts.<br>
+2019: 10M DAU; 600,000 orgs; 150 countries.</li>
+</ul></li>
+</ul>
+
+<h3><a href="https://www.whatsapp.com/">WhatsApp</a> | <a href="https://en.wikipedia.org/wiki/WhatsApp#Technical">@Wikipedia</a> | <a href="https://www.quora.com/What-technology-is-used-in-WhatsApp" title="What technology is used in WhatsApp? [2017]">@quora.com</a> | <a href="http://highscalability.com/blog/2014/2/26/the-whatsapp-architecture-facebook-bought-for-19-billion.html" title="The WhatsApp Architecture Facebook Bought For $19B [2014]">@highscalability.com</a></h3>
+
+<ul>
+<li>Messaging and VoIP service
+
+<ul>
+<li><strong>IM</strong> originally; +<strong>voice</strong> @ 2015; +<strong>video</strong> @ 2016; IM-delete(@&lt;7min) @ 2017<br></li>
+<li><strong>Multimedia img/audio/vid messages</strong> are uploaded to HTTP server; server sends <strong>content link</strong> (incl. Base64-encoded thumbnail if img|vid) to app.<br></li>
+<li>End-to-end Encryption<br></li>
+<li>WhatsApp Payments (P2P)<br>
+
+<ul>
+<li>@ India only; in-app payments and money transfers using Unified Payments Interface (UPI); enables account-to-account transfers from a mobile app without having any details of the beneficiary's bank.</li>
+</ul></li>
+<li>Cryptocurrency project @ 2019.<br></li>
+</ul></li>
+<li>Erlang @ FreeBSD; XMPP (customized version); <a href="https://en.wikipedia.org/wiki/Mnesia" title="Wikipedia">Mnesia DB</a>.<br>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Ejabberd" title="Wikipedia">Ejabberg</a> server; Jabber/<a href="https://blog.contus.com/how-whatsapp-works-technically-and-how-to-build-an-app-similar-to-it/" title="blog.contus.com 2019">XMPP + HTML5 WebSockets</a>.<br>
+
+<ul>
+<li>@ 2019, 1.5B users; @ 2014, 10 billion messages a day @ 500M Active Users</li>
+<li><strong>Message queue length</strong> is primary gauge of system health.<br></li>
+<li>Hot-loading means updates/fixes can be pushed without restarts or traffic shifting; loosely-coupled; easy to roll changes out incrementally.<br>
+
+<ul>
+<li>SSL socket to the WhatsApp <strong>server pools</strong>.<br></li>
+<li>All messages are queued on server until client reconnects/retrieves.<br></li>
+<li>Messages are wiped from the server memory on client receipt.<br>
+
+<ul>
+<li>Retrieval notice sent back to server; forwards this status back to sender. (Sender sees &quot;checkmark&quot; icon next to message).<br></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>Registering Users (Sign-up)<br>
+User ID = <a href="https://en.wikipedia.org/wiki/Jabber.org" title="Jabber.org :: The original IM service [1999]; used XMPP.">Jabber</a> ID = <code>{phone-number}@s.whatsapp.net</code> . Originally, created a user/pass based on user's phone <strong>IMEI number</strong>; changed recently. Now uses client request to send <em>temporary</em> <strong>5 digit PIN</strong> via SMS to client phone. Using the PIN, client app requests/recieves/stores a unique key (password), used thereafter to validate.<br>
+
+<ul>
+<li>Newer method, PIN per SMS, allows registering a client app on a different device.<br></li>
+<li>The key is stored in the app/device; registering new device invalidates old key.</li>
+</ul></li>
+</ul>
+
+<p><a name="wechat"></a></p>
+
+<h3><a href="https://en.wikipedia.org/wiki/WeChat" title="Wikipedia">WeChat</a>/Tencent QQ (IM) <a href="https://weixin.qq.com/" title="weixin.qq.com">China</a> | <a href="https://www.wechat.com/en/" title="wechat.com/en/">US</a></h3>
+
+<ul>
+<li>Erlang @ <a href="https://www.openstack.org/" title="OpenStack.org">OpenStack</a>; <a href="https://thenewstack.io/tencent-serving-billion-users-openstack/" title="thenewstack.io [2017]">Tencent Cloud (TStack)</a>.<br>
+
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Ejabberd" title="Wikipedia">Ejabberg</a> server; XMPP + HTML5 WebSockets.<br></li>
+<li>Client-side storage <a href="https://guardianproject.info/2013/12/10/sqlcipher-has-300-million-mobile-users-thanks-to-wechat/" title="'SQLcipher has 300M Mobile Users ... WeChat' @ GuardianProject.info">(<code>EnMicroMsg.db</code>)</a> is an encrypted SQLite database (<a href="https://www.zetetic.net/sqlcipher/open-source/" title="@ Zetetic.net">SQLcipher</a>).<br></li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/WeChat#WeChat_Mini_Program" title="Wikipedia">Mini-Program</a> (3rd-party) Devs | <a href="https://developers.weixin.qq.com/miniprogram/en/dev/index.html?t=19051021" title="MINA :: WeChat native framework @ developers.weixin.qq.com"><code>MINA</code> API</a>/framework | <a href="https://medium.com/le-wagon/wechat-mini-programs-which-development-framework-choose-in-2018-6ae493d6fea0" title="'WeChat Mini-Programs ...frameworks in 2018' [medium.com]">other frameworks</a> | <a href="https://github.com/apelegri/wechat-mini-program-wiki" title="apelegri/wechat-mini-program-wiki">GitHub user Wiki</a> | <a href="https://www.google.com/search?q=wechat+mini+program&amp;source=lnt&amp;tbs=qdr:y&amp;sa=X" title="&lt; 1yr">Search</a><br>
+
+<ul>
+<li><strong>MP</strong> (app) embeds in WeChat app; <strong>Javascript + WeChat API</strong>.<br></li>
+<li>An MP can <strong>sell direct to consumers</strong> per WeChat payment services.<br></li>
+<li><a href="https://medium.com/le-wagon/entrepreneurs-how-to-make-your-own-wechat-mini-program-903997156f24" title="'...make your own WeChat Mini-Program' @ medium.com"><em>Open and use! No download, no install.</em></a><br></li>
+<li><a href="https://uxplanet.org/wechat-mini-program-design-15-best-practices-to-create-an-awesome-user-experience-6c298cb634ba" title="MP Best Practices">1M apps (MPs) @ 2019</a>; already half that of Apple Store;<br>
+
+<ul>
+<li>35% of MP traffic is <strong>sharing via chat</strong> (sends a sharing card).<br></li>
+</ul></li>
+</ul></li>
+<li><a href="https://en.wikipedia.org/wiki/WeChat#WeChat_Pay_payment_services">WeChat Pay</a><br>
+
+<ul>
+<li>Funds transfer is not immediate;<br>
+bank account linked; Visa, MasterCard &amp; JCB (Discover/UnionPay/RuPay)<br></li>
+<li>Digital Wallet; money transfers between contacts, and to 3rd parties;<br></li>
+<li><em>Virtual Red Envelope</em>; send money as gift; <strong>very popular</strong><br></li>
+<li><a href="https://en.wikipedia.org/wiki/Alipay">Alipay</a>/Alibaba  (Ant Financial) <strong>is competitor</strong>.<br>
+
+<ul>
+<li>Funds transfer is not immediate;<br>
+settlement time depends on the payment method;<br>
+<strong>unlike</strong> <em>Instant Pay</em> systems, e.g., <a href="https://en.wikipedia.org/wiki/Venmo">Venmo</a> (PayPal Mobile), <a href="https://en.wikipedia.org/wiki/Zelle_%28payment_service%29">Zelle</a>.<br></li>
+<li>USA affiliate <a href="https://en.wikipedia.org/wiki/First_Data">First Data</a><br></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h3><a href="https://en.wikipedia.org/wiki/Viber">Viper</a>/Rakuten</h3>
+
+<ul>
+<li>IM/VoIP/video; developed in Israel.<br></li>
+<li>Users are registered and identified through a cellular telephone number.<br></li>
+<li>1B registered users @ 2018<br>
+Japan &amp; Russia are its big markets.</li>
+</ul>
+
+<h2>Comments as a Service</h2>
+
+<h3><a href="https://commento.io/">Commento</a> commenting platform | <a href="https://github.com/adtac/commento" title="adtac/commento">@GitHub</a></h3>
+
+<ul>
+<li>Golang; &quot;<em>A fast, bloat-free, privacy-focused commenting platform</em>&quot;<br></li>
+<li>Commento, Inc. 2016, Delaware, #6797473<br>
+adtac:  Adhityaa Chandrasekar<br></li>
+<li><a href="https://news.ycombinator.com/item?id=19210697">Show HN: Commento</a>:<br>
+&quot;<em>a fast, privacy-focused alternative to Disqus</em>&quot; (commento.io)<br></li>
+</ul>
+
+<h3><a href="https://disqus.com/">DISQUS</a> | <a href="http://highscalability.com/blog/2014/4/28/how-disqus-went-realtime-with-165k-messages-per-second-and-l.html">Disqus tech [2014]</a></h3>
+
+<ul>
+<li>Python/Django (DISQUS) =&gt; Golang (Realtime) =&gt; 5x NGINX (Push Stream)<br>
+
+<ul>
+<li>New Posts -&gt; Disqus -&gt; redis queue<br>
+-&gt;  “python glue” Gevent formatting server (2 servers)<br>
+-&gt; http post -&gt; nginx pub endpoint<br>
+-&gt; nginx + push stream module (5 servers)<br>
+&lt;- clients<br>
+
+<ul>
+<li>1M connections concurrently; 500M users @ 2014<br></li>
+<li>3,200 connections/sec<br></li>
+<li>150K/130K (TX/RX) packets<br></li>
+<li>150/80 Mbps (TX/RX)<br></li>
+<li>&lt; 15ms latency end-to-end; faster than JS front-end can render<br></li>
+</ul></li>
+</ul></li>
+<li>@ Python<br>
+
+<ul>
+<li><a href="https://learn-gevent-socketio.readthedocs.io/en/latest/greenlets.html">Greenlets</a> (<code>gevent</code> pkg); <em>lightweight thread-like structure</em>.<br></li>
+</ul></li>
+<li>@ <a href="https://www.nginx.com/resources/wiki/modules/push_stream/" title="NGINX.com :: Puch-Stream Module">NGINX</a> | <a href="https://www.youtube.com/watch?v=yL4Q7D4ynxU">@YouTube</a><br>
+
+<ul>
+<li>Ubuntu <code>sysctl</code> settings to handle max load<br></li>
+<li>Shrink prealloc @ gzip on NGINX to 32KB; default is 264KB/conn; content is only ~ 2KB<br>
+<br></li>
+</ul></li>
+</ul>
+
+<h3>JAMstack</h3>
+
+<ul>
+<li>Lambda (JSON) -&gt; SMS-slack (Approval) -&gt; Lambda -&gt; Static HTML Generator/Server</li>
+</ul>
+
+<h3>Facebook comments page</h3>
+
+<ul>
+<li><code>2 MB</code> of files + <code>200 KB</code> page (<code>.html</code>)</li>
+<li><a href="li>
+<li><a href="li>
+<li><a href="a><br>
+<a href="li>
+</ul>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

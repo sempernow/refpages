@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TLS.ca-bundle</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>Add Root CA(s) to a host's Trust Store</h1>
+
+<p>The certificate file must be:</p>
+
+<ul>
+<li><p>Must be <strong>PEM format</strong></p>
+
+<pre><code class="language-bash"># Convert DER to PEM
+openssl x509 -in $ca$.der -inform DER -out $ca.crt -outform PEM
+</code></pre></li>
+
+<li><p>Must end with <strong><code>.pem</code></strong> or <strong><code>.crt</code></strong></p></li>
+</ul>
+
+<h2>RHEL/Fedora : <code>/etc/pki/ca-trust/source/anchors/</code></h2>
+
+<pre><code class="language-bash"># Install the package
+dnf install -y p11-kit-trust ca-certificates
+# Create the source dir
+mkdir -p /etc/pki/ca-trust/source/anchors/
+# Copy the CA cert(s) to the source dir
+cp -p lime-dc1-ca.crt /etc/pki/ca-trust/source/anchors/
+# Add : Process source CAs by creating symlinks and hash (c_rehash)
+update-ca-trust extract
+# Verify
+openssl x509 -subject -issuer -noout -in /etc/pki/tls/certs/ca-bundle.crt
+# Validate
+curl -sSIX GET https://dc1.lime.lan/
+</code></pre>
+
+<ul>
+<li>Verify step presumes the desired cert is the first one, else manually parse,
+else rely on the gold-standard validation:
+successful TLS handshake with a client, e.g., <code>curl</code>.</li>
+</ul>
+
+<h2>Debian/Ubuntu : <code>/usr/local/share/ca-certificates/</code></h2>
+
+<pre><code class="language-bash"># Install the package
+apt-get install -y ca-certificates
+# Copy the CA cert(s) to the source dir
+cp -p lime-dc1-ca.crt /usr/local/share/ca-certificates/
+# Add : Process source CAs by creating symlinks and hash (c_rehash)
+update-ca-certificates
+# Verify
+openssl x509 -subject -issuer -noout -in /etc/ssl/certs/ca-bundle.crt
+# Validate
+curl -sSIX GET https://dc1.lime.lan/
+</code></pre>
+
+<h3>Symlink Creation (<code>c_rehash</code>):</h3>
+
+<p>The <code>c_rehash</code> command is run on the <code>/etc/ssl/certs/</code> directory.
+Every <code>.crt</code> and <code>.pem</code>  file in the directory is processed.
+A hash of the certificate's subject name is created
+and used to map the symlink to the source certificate;
+<code>f10e7a5c.0 -&gt; lime-dc1-ca.crt</code></p>
+
+<h1>SSL_CERT_FILE</h1>
+
+<p>Setting <code>SSL_CERT_FILE</code> to point to a single file containing all your private CA certificates in PEM format is a common and often successful strategy, but it is <strong>not a universal solution.</strong> Its success depends entirely on whether the client library you are using respects that specific environment variable and how it implements trust.</p>
+
+<p>Here’s a detailed breakdown:</p>
+
+<h3>How <code>SSL_CERT_FILE</code> Works (The Theory)</h3>
+
+<p>The <code>SSL_CERT_FILE</code> environment variable is a convention used primarily by <strong>OpenSSL</strong> and software that directly uses the OpenSSL library (like many compiled programs, <code>curl</code> built with OpenSSL, Python's <code>requests</code> library when linked against OpenSSL, etc.).</p>
+
+<ul>
+<li><strong>What it does:</strong> When set, it tells the OpenSSL library to <strong>bypass the system's default trust store</strong> (e.g., <code>/etc/ssl/certs/</code> on Linux) and instead use the specified file as its sole source of trust anchors.</li>
+<li><strong>The Requirement:</strong> The file must be a concatenation of one or more PEM-encoded CA certificates. OpenSSL will read this file directly; it does <strong>not</strong> require the certificates to be in a hashed symlink directory structure.</li>
+</ul>
+
+<p>So, for any tool that uses OpenSSL and respects this variable, your unprocessed <code>ca-bundle.crt</code> file would be sufficient.</p>
+
+<h3>The Reality: A Fragmented Landscape of HTTP Clients</h3>
+
+<p>Not all HTTP clients or programming languages use OpenSSL or respect this variable. Here’s a categorization:</p>
+
+<h4>Category 1: Likely to Work (Uses OpenSSL &amp; respects <code>SSL_CERT_FILE</code>)</h4>
+
+<ul>
+<li><strong>curl (compiled with OpenSSL support):</strong> This is the classic example. <code>curl</code> will honor <code>SSL_CERT_FILE</code>.</li>
+<li><strong>wget (compiled with OpenSSL support):</strong> Similarly, it will often respect this variable.</li>
+<li><strong>Many compiled languages (C, C++, Go, Rust) when using OpenSSL bindings:</strong> If the program is explicitly linked against and configured to use OpenSSL, it will typically use this.</li>
+<li><strong>Python:</strong> The <code>requests</code> library (and <code>urllib3</code> underneath it) often uses the system's TLS libraries. On many systems, this is OpenSSL, so <code>SSL_CERT_FILE</code> will work. However, Python can be compiled against other backends.</li>
+<li><strong>Git:</strong> Often uses OpenSSL for HTTPS operations.</li>
+</ul>
+
+<h4>Category 2: Will NOT Work (Ignores <code>SSL_CERT_FILE</code>)</h4>
+
+<ul>
+<li><strong>Java (JVM):</strong> The JVM has its own proprietary certificate trust store (<code>cacerts</code>). It completely ignores <code>SSL_CERT_FILE</code>. You must import your CAs into the Java keystore using <code>keytool</code>.</li>
+<li><strong>Node.js:</strong> Node.js does not use the system OpenSSL settings by default. It has its own compiled-in list of CAs. To add custom CAs, you must use the <strong><code>NODE_EXTRA_CA_CERTS</code></strong> environment variable, which points to a file just like the one you described. <code>SSL_CERT_FILE</code> does nothing.</li>
+<li><strong>Google Chrome / Chromium / Microsoft Edge (on Linux):</strong> These browsers use the <strong>NSS</strong> (Network Security Services) library and its own trust store (<code>sqlite</code> databases in <code>~/.pki/nssdb/</code>). They ignore <code>SSL_CERT_FILE</code>. You must use <code>certutil</code> to add certificates to the NSS DB or import them through the browser's GUI.</li>
+<li><strong>Firefox:</strong> Also uses NSS and manages its own trust store completely independently of the operating system. It ignores <code>SSL_CERT_FILE</code>.</li>
+<li><strong>.NET / C#:</strong> Uses the underlying OS's trust store on Windows and macOS. On Linux, behavior can vary but often uses a custom path. It does not respect <code>SSL_CERT_FILE</code>.</li>
+<li><strong>Go (Programs using the native <code>crypto/tls</code> package):</strong> The Go compiler statically bundles a set of root CAs into the binary. It ignores <code>SSL_CERT_FILE</code>. You must either (1) set <code>tls.Config{RootCAs: pool}</code> in your code, or (2) set the <code>SSL_CERT_DIR</code> environment variable to point to a directory of hashed certificates (not a single file!), or (3) use the system cert pool, which may not read <code>SSL_CERT_FILE</code>.</li>
+</ul>
+
+<h4>Category 3: Has Its Own Mechanism</h4>
+
+<ul>
+<li><strong>Python (with <code>certifi</code>):</strong> Many Python packages use the <code>certifi</code> package, which provides a curated bundle of Mozilla's CA roots. You can override this by pointing <code>requests</code> to your custom bundle using the <code>verify</code> parameter or by setting the <code>REQUESTS_CA_BUNDLE</code> environment variable.</li>
+</ul>
+
+<h3>The Critical &quot;Hashed Symlink&quot; Requirement for <code>SSL_CERT_DIR</code></h3>
+
+<p>You might see advice to use <code>SSL_CERT_DIR</code> instead. This is even more strict. <code>SSL_CERT_DIR</code> must point to a directory (e.g., <code>/etc/ssl/certs</code>) that contains the <strong>hashed symlinks</strong> (<code>f10e7a5c.0 -&gt; some-cert.pem</code>). A directory containing just the raw <code>.pem</code> files without the symlinks will <strong>not work</strong> for OpenSSL unless the application specifically calls <code>SSL_CTX_load_verify_locations</code> on the file directly.</p>
+
+<h3>Best Practice and Recommendation</h3>
+
+<p><strong>1. For Application-Specific Control (Recommended):</strong>
+Use the environment variable <em>specific to your runtime</em> if it exists. This is the most reliable method.
+*   <strong>Node.js:</strong> <code>NODE_EXTRA_CA_CERTS</code>
+*   <strong>Python Requests:</strong> <code>REQUESTS_CA_BUNDLE</code>
+*   <strong>General OpenSSL:</strong> <code>SSL_CERT_FILE</code>
+*   <strong>curl/wget:</strong> <code>CURL_CA_BUNDLE</code> (though they also respect <code>SSL_CERT_FILE</code>)</p>
+
+<p><strong>2. For System-Wide Control (For Containers/Images):</strong>
+The most robust and portable solution is still to <strong>build the certificates into the system trust store</strong> using <code>update-ca-certificates</code> (Debian) or <code>update-ca-trust</code> (RHEL). This ensures that <em>every</em> tool on the system (that respects the OS defaults) will work without any special environment variables.</p>
+
+<p><strong>3. For your specific question:</strong>
+If you control the environment and know for a fact that every HTTP client you need to support is in <strong>Category 1</strong> (e.g., a container running a Python app using <code>requests</code> and some <code>curl</code> commands), then setting <code>SSL_CERT_FILE</code> to your unprocessed <code>ca-bundle.crt</code> is a perfectly valid and simple solution.</p>
+
+<p>However, if there's any chance a Java app, Node.js app, or web browser might be involved, <strong>it will not be sufficient.</strong> You must employ additional strategies for those specific runtimes.</p>
+
+<hr>
+
+<h1>TLS v. Other : <code>ca-bundle.crt</code> v <code>ca-bundle.trust.crt</code></h1>
+
+<ul>
+<li><strong><code>/etc/ssl/certs/ca-bundle.crt</code></strong> -&gt; <code>/etc/pki/tls/certs/ca-bundle.crt</code> (<strong>270–300 KB</strong>)
+
+<ul>
+<li>PEM</li>
+</ul></li>
+<li><strong><code>/etc/pki/tls/certs/ca-bundle.trust.crt</code></strong> (<strong>500–600 KB</strong>)
+
+<ul>
+<li>PEM + trust flags</li>
+</ul></li>
+</ul>
+
+<p>When an application requests the <strong>CA certificate bundle</strong>, the correct file to provide depends on:</p>
+
+<ol>
+<li><strong>The application’s TLS library</strong> (OpenSSL, GnuTLS, NSS, etc.)</li>
+<li><strong>Whether it expects trust flags (i.e., &quot;trusted for server auth&quot;)</strong></li>
+<li><strong>The expected format (PEM, DER, trust-annotated PEM)</strong></li>
+</ol>
+
+<p>Let’s break it down.</p>
+
+<hr>
+
+<h2>🔍 When to Provide Which CA Bundle</h2>
+
+<table>
+<thead>
+<tr>
+<th>Use Case / Application</th>
+<th>Provide This CA Bundle</th>
+<th>Why?</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>OpenSSL</strong>, <strong>curl</strong>, <strong>wget</strong>, <strong>git</strong>, <strong>dnf/yum</strong></td>
+<td><code>/etc/ssl/certs/ca-bundle.crt</code> <br>(on RHEL: symlink to <code>/etc/pki/tls/certs/ca-bundle.crt</code>)</td>
+<td>OpenSSL expects plain PEM format</td>
+</tr>
+
+<tr>
+<td><strong>GnuTLS</strong> (used by GNOME apps, <code>wget</code> on Fedora), <strong>glib-networking</strong></td>
+<td><code>/etc/pki/tls/certs/ca-bundle.trust.crt</code></td>
+<td>GnuTLS requires trust bits, supported in <code>*.trust.crt</code></td>
+</tr>
+
+<tr>
+<td><strong>Firefox</strong>, <strong>NSS-based apps</strong></td>
+<td>Internal NSS DB or <code>/etc/pki/nssdb</code></td>
+<td>Uses its own cert store; must be updated via <code>certutil</code></td>
+</tr>
+
+<tr>
+<td><strong>Python <code>requests</code></strong> (via <code>certifi</code>)</td>
+<td>Use <code>certifi.where()</code> or override via <code>REQUESTS_CA_BUNDLE</code></td>
+<td>Python uses its own vendored CA list unless overridden</td>
+</tr>
+
+<tr>
+<td><strong>Java (JVM)</strong></td>
+<td><code>$JAVA_HOME/lib/security/cacerts</code> (Java Keystore)</td>
+<td>Expects JKS or PKCS#12, not PEM — needs conversion</td>
+</tr>
+
+<tr>
+<td><strong>Go</strong> binaries (static)</td>
+<td>Uses system default (if dynamically linked) or may bundle its own</td>
+<td>Built-in Go TLS honors <code>/etc/ssl/certs</code> on Linux unless overridden</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>🧭 General Recommendation for Linux Systems</h2>
+
+<ul>
+<li><p>When in doubt, <strong>use <code>/etc/ssl/certs/ca-bundle.crt</code></strong></p>
+
+<ul>
+<li>This is the <strong>most widely compatible</strong> PEM-format bundle</li>
+<li>It is what most command-line and backend applications expect</li>
+</ul></li>
+
+<li><p><strong>Only use <code>/etc/pki/tls/certs/ca-bundle.trust.crt</code></strong> if the application is explicitly <strong>GnuTLS-based</strong> and respects trust flags</p></li>
+</ul>
+
+<hr>
+
+<h2>🔧 Custom Environment Variable Overrides (for applications)</h2>
+
+<p>If an app doesn’t pick up the right bundle:</p>
+
+<pre><code class="language-bash">export SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt
+export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
+</code></pre>
+
+<p>Or in systemd units:</p>
+
+<pre><code class="language-ini">[Service]
+Environment=&quot;SSL_CERT_FILE=/etc/ssl/certs/ca-bundle.crt&quot;
+</code></pre>
+
+<hr>
+
+<h2>🛠️ Summary Table</h2>
+
+<table>
+<thead>
+<tr>
+<th>Bundle Path</th>
+<th>Format</th>
+<th>Suitable For</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>/etc/ssl/certs/ca-bundle.crt</code></td>
+<td>PEM</td>
+<td>Most CLI tools (OpenSSL, curl, etc)</td>
+</tr>
+
+<tr>
+<td><code>/etc/pki/tls/certs/ca-bundle.trust.crt</code></td>
+<td>PEM w/ trust</td>
+<td>GnuTLS, glib-networking</td>
+</tr>
+
+<tr>
+<td><code>/etc/pki/nssdb/</code>, Firefox profile DBs</td>
+<td>NSS DB</td>
+<td>Firefox, Thunderbird, some security tools</td>
+</tr>
+
+<tr>
+<td>Java keystore (<code>cacerts</code>)</td>
+<td>JKS</td>
+<td>Java applications</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3>✅ TL;DR</h3>
+
+<p>Most applications expect <strong><code>/etc/ssl/certs/ca-bundle.crt</code></strong> — the plain PEM file — unless you're using <strong>GnuTLS-based tools</strong>, <strong>NSS (like Firefox)</strong>, or <strong>Java</strong>, which have different requirements.</p>
+
+<hr>
+
+<p>Yes — <strong>most container images</strong> <strong>do include at least one CA bundle</strong>,
+especially if the image is based on a full Linux distribution (e.g., RHEL UBI, Alpine, Debian, etc.). Here's how and why:</p>
+
+<hr>
+
+<h2>✅ <strong>Why CA Bundles Are Included in Container Images</strong></h2>
+
+<p>Most containers need CA bundles for <strong>TLS certificate validation</strong>, including:</p>
+
+<ul>
+<li><code>curl</code>, <code>wget</code>, <code>git</code>, <code>dnf</code>, <code>apt</code>, <code>apk</code></li>
+<li>Internal services making HTTPS requests</li>
+<li>Connecting to Kubernetes APIs or artifact registries</li>
+<li>Validating TLS connections to internal services using public or private certs</li>
+</ul>
+
+<p>If the CA bundle is missing:</p>
+
+<ul>
+<li>HTTPS connections will fail with <code>x509: certificate signed by unknown authority</code></li>
+<li><code>dnf</code>/<code>yum</code>, <code>git clone</code>, or similar operations will break</li>
+</ul>
+
+<hr>
+
+<h2>📦 <strong>Typical CA Bundle Locations in Container Images</strong></h2>
+
+<table>
+<thead>
+<tr>
+<th>Base Image</th>
+<th>Trust File</th>
+<th>Package Providing It</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>RHEL / UBI</strong></td>
+<td><code>/etc/pki/tls/certs/ca-bundle.crt</code></td>
+<td><code>ca-certificates</code></td>
+</tr>
+
+<tr>
+<td><strong>Debian/Ubuntu</strong></td>
+<td><code>/etc/ssl/certs/ca-certificates.crt</code></td>
+<td><code>ca-certificates</code></td>
+</tr>
+
+<tr>
+<td><strong>Alpine</strong></td>
+<td><code>/etc/ssl/certs/ca-certificates.crt</code></td>
+<td><code>ca-certificates</code> (musl/OpenSSL-based)</td>
+</tr>
+</tbody>
+</table>
+
+<blockquote>
+<p>🔹 These are symlinks or files pointing to trusted root bundles maintained by each distro's update mechanism.</p>
+</blockquote>
+
+<hr>
+
+<h2>🧼 <strong>Are They Always Included?</strong></h2>
+
+<p>Not always:</p>
+
+<ul>
+<li><strong>Slim/minimal base images</strong> (like <code>ubi-micro</code>, <code>alpine:3.19</code>, or <code>scratch</code>) <strong>may omit</strong> the bundle to reduce image size.</li>
+<li>You may need to install <code>ca-certificates</code> manually in a Dockerfile:</li>
+</ul>
+
+<hr>
+
+<h2>🧰 <strong>In Custom or Air-Gapped Containers</strong></h2>
+
+<p>You may:</p>
+
+<ul>
+<li>Inject your own <strong>custom CA bundle</strong> into <code>/etc/pki/ca-trust/source/anchors/</code> and rebuild with <code>update-ca-trust</code></li>
+
+<li><p>Mount or copy a CA file (e.g., <code>ca.crt</code>) and use <code>SSL_CERT_FILE</code>:</p>
+
+<pre><code class="language-Dockerfile">ENV SSL_CERT_FILE=/etc/ssl/certs/my-ca-bundle.crt
+</code></pre></li>
+</ul>
+
+<hr>
+
+<h3>✅ TL;DR</h3>
+
+<p>Yes, container images <strong>typically include CA bundles</strong>, especially standard ones like <code>ca-bundle.crt</code> or <code>ca-certificates.crt</code>, so that tools and applications can validate HTTPS/TLS connections.</p>
+
+<p>Minimal images might omit them for size, but in practice, <strong>most working containers need them</strong> — and you'll have to add them explicitly in custom or stripped-down images.</p>
+
+<p>You're absolutely right — RHEL (and many other Linux systems) maintain <strong>two primary CA bundle files</strong>, and their differing sizes and contents serve distinct purposes.</p>
+
+<p>Here’s what they are and <strong>why both exist</strong>:</p>
+
+<hr>
+
+<h2>📁 The Two Bundles in RHEL</h2>
+
+<h3>1. <strong><code>/etc/ssl/certs/ca-bundle.crt</code></strong></h3>
+
+<p>(Approx. <strong>270–300 KB</strong>)</p>
+
+<ul>
+<li><p><strong>Purpose:</strong> The main <strong>PEM-formatted trust store</strong> used by:</p>
+
+<ul>
+<li><code>curl</code></li>
+<li><code>git</code></li>
+<li><code>dnf</code> / <code>yum</code></li>
+<li>OpenSSL, libcurl, etc.</li>
+</ul></li>
+
+<li><p><strong>Contents:</strong></p>
+
+<ul>
+<li>A consolidated flat list of all trusted root CAs (and sometimes intermediates)</li>
+
+<li><p>Produced by <code>update-ca-trust</code> by merging:</p></li>
+
+<li><p>Red Hat’s default trust</p></li>
+
+<li><p>Any custom CAs in <code>/etc/pki/ca-trust/source/anchors/</code> or <code>/usr/share/pki/ca-trust-source/</code></p></li>
+</ul></li>
+
+<li><p><strong>Used by software that reads PEM-style CA lists.</strong></p></li>
+</ul>
+
+<hr>
+
+<h3>2. <strong><code>/etc/pki/tls/certs/ca-bundle.trust.crt</code></strong></h3>
+
+<p>(Approx. <strong>500–600 KB</strong>)</p>
+
+<ul>
+<li><p><strong>Purpose:</strong> A <strong>more detailed version</strong> of the trust store, including <strong>trust flags</strong>, used by:</p>
+
+<ul>
+<li><strong>GnuTLS</strong></li>
+<li><strong>glib-networking</strong> (which GNOME apps use)</li>
+<li>Applications using <strong>NSS</strong> (like Firefox or systemd with PKCS#11)</li>
+</ul></li>
+
+<li><p><strong>Contents:</strong></p>
+
+<ul>
+<li>In <strong>RFC 5280</strong> format with <strong>trust bits</strong> (e.g., <code>SERVER_AUTH</code>, <code>EMAIL_PROTECTION</code>, <code>CODE_SIGNING</code>)</li>
+<li>Derived from the same set of trusted CAs, but with richer metadata</li>
+</ul></li>
+
+<li><p><strong>Used by software that cares about certificate purpose constraints</strong>, not just validity.</p></li>
+</ul>
+
+<hr>
+
+<h2>🧠 Why Two Bundles?</h2>
+
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th><code>ca-bundle.crt</code></th>
+<th><code>ca-bundle.trust.crt</code></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Format</td>
+<td>PEM</td>
+<td>PEM + trust flags (OpenSSL + p11-kit)</td>
+</tr>
+
+<tr>
+<td>Consumers</td>
+<td>OpenSSL, curl, git, etc.</td>
+<td>GnuTLS, GNOME apps, systemd, Firefox*</td>
+</tr>
+
+<tr>
+<td>Trust metadata</td>
+<td>❌ No</td>
+<td>✅ Yes</td>
+</tr>
+
+<tr>
+<td>Size</td>
+<td>Smaller (~300 KB)</td>
+<td>Larger (~600 KB)</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>🔄 How They’re Maintained</h2>
+
+<p>Both are regenerated via:</p>
+
+<pre><code class="language-bash">update-ca-trust extract
+</code></pre>
+
+<p>...which reads from:</p>
+
+<ul>
+<li><code>/etc/pki/ca-trust/source/anchors/</code> (local trusted certs)</li>
+<li><code>/etc/pki/ca-trust/source/blacklist/</code> (locally rejected certs)</li>
+<li>System-wide default source (RPM-provided trusted certs)</li>
+</ul>
+
+<hr>
+
+<h2>🧩 In Air-Gapped or Hardened Systems</h2>
+
+<p>You can:</p>
+
+<ul>
+<li>Replace or prune both bundles</li>
+<li>Rebuild them with just internal CA(s) using <code>update-ca-trust</code></li>
+<li>Still serve both formats to satisfy all software</li>
+</ul>
+
+<hr>
+
+<h3>✅ TL;DR</h3>
+
+<p>RHEL provides <strong>two CA bundles</strong>:</p>
+
+<ul>
+<li><code>ca-bundle.crt</code>: for OpenSSL/curl-style consumers</li>
+<li><code>ca-bundle.trust.crt</code>: for GnuTLS/NSS consumers, with <strong>purpose-specific trust flags</strong></li>
+</ul>
+
+<p>You need <strong>both</strong> to ensure compatibility across all system libraries and tools.</p>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

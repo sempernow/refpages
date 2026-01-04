@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TLS.ADCS.ACME</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>TLS</h1>
+
+<h2>AD CS</h2>
+
+<p>Certificate issuance under Microsoft's manual PKI hellscape</p>
+
+<h3>Add CA cert to Ubuntu trust store</h3>
+
+<pre><code class="language-bash"># Copy the Root CA to ... MUST have extension: *.crt
+sudo lime-DC1-CA.cer /usr/local/share/ca-certificates/lime-DC1-CA.crt
+# Update the OS trust store
+sudo update-ca-certificates
+# Verify : flag --ca-native to use host's native trust store
+curl --ca-native  https://e2e.kube.lime.lan/foo/hostname
+</code></pre>
+
+<p>By default,
+the AD CS role of Windows Server 2019 provides
+<em>only RSA type</em> TLS certificates.</p>
+
+<p>We successfully obtained a TLS certificate for web server usage
+from AD CS web form of its Certificate Server
+<strong><code>lime-DC1-CA</code></strong> at <code>https://dc1.lime.lan/certsrv/</code></p>
+
+<p>The server responds with two (end-entity and full-chain) certificates,
+both <strong>in PKCS#7 format</strong> (<code>.p7b</code>),
+and so must be converted to PEM for use in most servers.
+Their odd format is useful only at Microsoft IIS and other legacy
+or non-standard servers such as Apache Tomcat.</p>
+
+<ul>
+<li><p><code>certnew.p7b</code></p>
+
+<pre><code class="language-bash"># Convert certificate from PKCS#7 (.p7b) to PEM format
+cn=kube.lime.lan
+openssl pkcs7 -print_certs -in certnew.p7b -out $cn.crt
+
+# Parse the certificate
+openssl x509 -noout -subject -issuer -startdate -enddate -ext subjectAltName -in $cn.crt
+</code></pre>
+
+<pre><code class="language-plaintext">subject=C = US, ST = MD, L = AAC, O = DisselTree, OU = ops, CN = kube.lime.lan, emailAddress = admin@lime.lan
+issuer=DC = lan, DC = lime, CN = lime-DC1-CA
+notBefore=Jan 25 14:32:36 2025 GMT
+notAfter=Jan 25 14:32:36 2027 GMT
+X509v3 Subject Alternative Name:
+DNS:kube.lime.lan, DNS:*.kube.lime.lan
+</code></pre></li>
+</ul>
+
+<h3>CSR</h3>
+
+<p>AD CS requires CSR in PKCS#10/#7 (New/Renew) format.
+OpenSSL generates the request (<code>*.csr</code>) in that format by default.</p>
+
+<p>Regarding Windows Server 2019 and prior,
+AD CS offers <strong>only RSA-based certificates</strong>
+unless that role is configured otherwise,
+which is a non-trivial task that nearly no organization performs.</p>
+
+<pre><code class="language-bash">domain=lime.lan
+cn=kube.$domain
+TLS_CN=$cn
+TLS_O=&quot;K8s on $domain&quot;
+TLS_OU=$domain
+## Create the configuration file (CNF) : See man config
+## See: man openssl-req : CONFIGURATION FILE FORMAT section
+## https://www.openssl.org/docs/man1.0.2/man1/openssl-req.html
+cat &lt;&lt;EOH |tee $cn.cnf
+[ req ]
+prompt              = no        # Disable interactive prompts.
+default_bits        = 2048      # Key size for RSA keys. Ignored for Ed25519.
+default_md          = sha256    # Hashing algorithm.
+distinguished_name  = req_distinguished_name 
+req_extensions      = v3_req    # Extensions to include in the request.
+[ req_distinguished_name ] 
+CN              = ${TLS_CN:-p.gotham.gov}   # Common Name
+O               = ${TLS_O:-Penguin Inc}     # Organization name
+OU              = ${TLS_OU:-gotham.gov}     # Organizational Unit name
+#L               = ${TLS_L:-Gotham}          # Locality name
+#ST              = ${TLS_ST:-NY}             # State or Province
+C               = ${TLS_C:-US}              # Country
+emailAddress    = admin@$root
+[ v3_req ]
+subjectAltName      = @alt_names
+keyUsage            = critical, digitalSignature
+extendedKeyUsage    = serverAuth
+[ alt_names ]
+DNS.1 = $cn
+DNS.2 = *.$cn   # Wildcard. CA must allow, else declare each subdomain.
+EOH
+
+# RSA (Use only this if the certificate server is AD CS)
+openssl req -new -noenc -config $cn.cnf -extensions v3_req -newkey rsa:2048 -keyout $cn.key -out $cn.csr 
+# ED25519
+openssl req -new -noenc -config $cn.cnf -extensions v3_req -newkey ed25519 -keyout $cn.key -out $cn.csr
+# ECDSA (NIST P-256 curve)
+openssl req -new -noenc -config $cn.cnf -extensions v3_req -newkey ec:&lt;(openssl ecparam -name prime256v1 -genkey) -keyout $cn.key -out $cn.csr
+
+</code></pre>
+
+<h2><a href="https://chatgpt.com/share/6897a869-d390-8009-b873-da33b20e8e0b" title="ChatGPT 5">Automated TLS Management (Enterprise Grade)</a></h2>
+
+<ul>
+<li><a href="https://github.com/cert-manager"><strong>cert-manager</strong></a></li>
+<li>Private Issuers (Backends):
+
+<ul>
+<li>Smallstep <a href="https://smallstep.com/docs/step-ca/" title="smallstep.com"><strong><code>step-ca</code></strong></a><br>
+An online CA for secure, automated X.509 and SSH certificate management. It's the server counterpart to <code>step</code> CLI. Run step-ca (internal ACME) + <code>step-issuer</code> or use <code>cert-manager</code>’s ACME issuer pointed at <code>step-ca</code>. Provides air-gapped ACME + tight Kubernetes integration.
+
+<ul>
+<li>Generate TLS certificates for private infrastructure using the ACME protocol.</li>
+<li>Automate TLS certificate renewal.</li>
+<li>Add Automated Certificate Management Environment (ACME) support to a legacy subordinate CA.</li>
+<li>Issue short-lived SSH certificates via OAuth OIDC single sign on.</li>
+<li>Issue customized X.509 and SSH certificates.</li>
+</ul></li>
+<li><strong>Hashicorp Vault PKI</strong> | <a href="https://openbao.org/docs/secrets/pki/"><strong>OpenBao PKI</strong></a></li>
+<li><strong>Venafi TLS Protect for Kubernetes</strong> (the commercial successor to <strong>Jetstack</strong> Secure): central policy/visibility across clusters and CAs (public or private). If you want enterprise governance and inventory at scale, this is the “batteries-included” option.</li>
+</ul></li>
+</ul>
+
+<h3>Recommendations</h3>
+
+<p><strong>Per environment</strong>:</p>
+
+<ul>
+<li>Air-gapped / Regulated:<br>
+<strong>cert-manager + Vault PKI</strong> (<strong>or step-ca</strong> if you want ACME everywhere). Both are proven, policy-driven, and keep keys/CAs entirely under your control.</li>
+<li>Large enterprise needing fleet-wide governance:<br>
+V<strong>enafi TLS Protect for Kubernetes</strong> integrated with <strong>cert-manager</strong> (<strong>or Venafi issuer</strong>) for policy, workflows, and inventory.</li>
+<li>AWS-only edge:<br>
+ACM + AWS Load Balancer Controller for public ingress, optionally cert-manager + Vault/step-ca for internal services and mTLS.</li>
+</ul>
+
+<hr>
+
+<h2><a href="https://en.wikipedia.org/wiki/Automatic_Certificate_Management_Environment">ACME</a></h2>
+
+<p><strong>Automated Certificate Management Environment</strong> (ACME)</p>
+
+<p>An ACME server is a trusted CA endpoint
+that issues certs after validating the
+client requestor has domain control.</p>
+
+<ul>
+<li><strong>Origin:</strong> ACME is an IETF standard (RFC 8555) created by the <strong>Let's Encrypt</strong> project to automate the issuance of publicly trusted TLS certificates.</li>
+<li><strong>Purpose:</strong> Automates domain-validated (DV) certificate requests and renewals from a Certificate Authority (CA).</li>
+<li><strong>Focus:</strong>
+
+<ul>
+<li>Primarily for <em>internet-facing</em> services.</li>
+<li>Proves control of DNS names via challenges<br>
+(HTTP-01, DNS-01, TLS-ALPN-01)
+to prove the requestor has domain control.</li>
+<li>Result: an X.509 certificate signed by a public CA.</li>
+</ul></li>
+<li><strong>Private/Internal ACME Servers</strong>
+
+<ul>
+<li>Smallstep Certificates (open-source &amp; enterprise versions)</li>
+<li>HashiCorp Vault (with ACME support)</li>
+<li>Boulder (OSS version of <strong>Let's Encrypt's</strong> CA software).</li>
+</ul></li>
+</ul>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

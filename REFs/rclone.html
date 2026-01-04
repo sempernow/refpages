@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>rclone</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><code>rclone</code> :: <code>rsync</code> for cloud-storage services</h1>
+
+<h2><a href="https://rclone.org/downloads/" title="rclone.org/downloads">Install</a></h2>
+
+<p><code>curl https://rclone.org/install.sh | sudo bash</code></p>
+
+<h2>Usage</h2>
+
+<pre><code class="language-bash"># Config; interactive; provides URL that returns OAuth token 
+rclone config  # 'rclone.conf' stored @ ~/.config/rclone/
+
+# Synch; skip per checksum, not mtime, match
+rclone sync $_SRC $_REMOTE:$_DST -c 
+
+# E.g., between local path &amp; Google Drive
+_SRC='/d/Dropbox/disk_utilities'  # Local path
+_REMOTE='google'                  # Config name 
+_DST='Dropbox/disk_utilities'     # Remote path
+</code></pre>
+
+<h2>Config file</h2>
+
+<ul>
+<li><a href="rclone.conf">@ <code>rclone.conf</code></a></li>
+</ul>
+
+<h2>References</h2>
+
+<ul>
+<li><a href="https://rclone.org/" title="rclone.org">rclone.org</a></li>
+<li><a href="http://lpan.io/one-liner-dropbox-client/" title="lpan.io">My one-liner Linux Dropbox client</a></li>
+</ul>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "______")
+
+([MD](___.html "@ browser"))   
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

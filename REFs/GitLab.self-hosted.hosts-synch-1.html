@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>GitLab.self-hosted.hosts-synch-1</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>GitLab : Synch Projects Between Air-gap Networks</h1>
+
+<h1>Q:</h1>
+
+<p>What is the advised Group structure for GitLab self-hosted instance on air-gap network where development projects recurringly cherry pick from their asynchronous twin copied in on another air-gap network?</p>
+
+<h1>A:</h1>
+
+<p>When setting up a GitLab self-hosted instance on an air-gapped network where development projects frequently cherry-pick from an asynchronous twin copied on another air-gapped network, the group structure should be designed to ensure efficient collaboration, security, and maintainability. Below is an advised group structure and workflow:</p>
+
+<hr>
+
+<h3><strong>1. Group Structure</strong></h3>
+
+<p>The group structure should reflect the separation of concerns, security boundaries, and the need for synchronization between the two air-gapped networks.</p>
+
+<h4><strong>Top-Level Groups</strong></h4>
+
+<ul>
+<li><strong>Network A Group</strong>: Represents the primary air-gapped network where active development occurs.</li>
+<li><strong>Network B Group</strong>: Represents the secondary air-gapped network where the asynchronous twin resides.</li>
+</ul>
+
+<h4><strong>Subgroups</strong></h4>
+
+<p>Under each top-level group, create subgroups based on:
+- <strong>Projects/Teams</strong>: Organize by development teams or projects.
+- <strong>Environments</strong>: Separate by environments (e.g., <code>dev</code>, <code>staging</code>, <code>prod</code>).
+- <strong>Functionality</strong>: Group by functionality (e.g., <code>frontend</code>, <code>backend</code>, <code>infrastructure</code>).</p>
+
+<p>Example:</p>
+
+<pre><code>Network A Group
+├── Team 1
+│   ├── Project A
+│   └── Project B
+├── Team 2
+│   ├── Project C
+│   └── Project D
+└── Infrastructure
+    ├── Terraform
+    └── CI/CD
+
+Network B Group
+├── Team 1
+│   ├── Project A
+│   └── Project B
+├── Team 2
+│   ├── Project C
+│   └── Project D
+└── Infrastructure
+    ├── Terraform
+    └── CI/CD
+</code></pre>
+
+<hr>
+
+<h3><strong>2. Repository Setup</strong></h3>
+
+<ul>
+<li><strong>Mirror Repositories</strong>: Use GitLab's repository mirroring feature to keep the repositories in sync between the two networks. This ensures that changes in one network can be cherry-picked in the other.</li>
+<li><strong>Read-Only Mirror for Network B</strong>: Configure the mirror in Network B as read-only to prevent accidental changes.</li>
+<li><strong>Branches</strong>: Use consistent branch naming conventions across both networks to simplify cherry-picking.</li>
+</ul>
+
+<hr>
+
+<h3><strong>3. Access Control</strong></h3>
+
+<ul>
+<li><strong>Network Separation</strong>: Ensure strict access control between the two networks. Only authorized personnel should have access to both networks.</li>
+<li><strong>Permissions</strong>: Use GitLab's role-based access control (RBAC) to restrict access to sensitive repositories and environments.</li>
+<li><strong>Audit Logs</strong>: Enable audit logs to track changes and access across both networks.</li>
+</ul>
+
+<hr>
+
+<h3><strong>4. Cherry-Picking Workflow</strong></h3>
+
+<ul>
+<li><strong>Cherry-Pick Process</strong>: Developers in Network A can cherry-pick changes from Network B by:
+
+<ol>
+<li>Pulling the latest changes from the mirrored repository in Network B.</li>
+<li>Using <code>git cherry-pick &lt;commit-hash&gt;</code> to apply specific changes.</li>
+<li>Pushing the changes to the appropriate branch in Network A.</li>
+</ol></li>
+<li><strong>Automation</strong>: Consider automating the cherry-pick process using GitLab CI/CD pipelines to reduce manual effort and errors.</li>
+</ul>
+
+<hr>
+
+<h3><strong>5. CI/CD Pipeline</strong></h3>
+
+<ul>
+<li><strong>Network-Specific Pipelines</strong>: Configure separate CI/CD pipelines for each network to account for differences in environments and security requirements.</li>
+<li><strong>Synchronization Jobs</strong>: Include jobs in the pipeline to periodically sync repositories between the two networks.</li>
+<li><strong>Validation</strong>: Add validation steps to ensure that cherry-picked changes do not break the build or introduce vulnerabilities.</li>
+</ul>
+
+<hr>
+
+<h3><strong>6. Backup and Disaster Recovery</strong></h3>
+
+<ul>
+<li><strong>Regular Backups</strong>: Schedule regular backups of both GitLab instances to prevent data loss.</li>
+<li><strong>Disaster Recovery Plan</strong>: Develop a disaster recovery plan to restore the GitLab instance in case of failure.</li>
+</ul>
+
+<hr>
+
+<h3><strong>7. Documentation and Training</strong></h3>
+
+<ul>
+<li><strong>Documentation</strong>: Maintain detailed documentation of the group structure, workflows, and access controls.</li>
+<li><strong>Training</strong>: Train developers and administrators on the cherry-pick process, security protocols, and CI/CD pipelines.</li>
+</ul>
+
+<hr>
+
+<h3><strong>8. Security Considerations</strong></h3>
+
+<ul>
+<li><strong>Air-Gap Compliance</strong>: Ensure that the setup complies with the security policies of the air-gapped networks.</li>
+<li><strong>Vulnerability Scanning</strong>: Regularly scan repositories for vulnerabilities.</li>
+<li><strong>Secrets Management</strong>: Use GitLab's secrets management or an external tool to securely manage credentials.</li>
+</ul>
+
+<hr>
+
+<p>By following this structure and workflow, you can maintain a secure, efficient, and scalable GitLab setup across two air-gapped networks while enabling seamless cherry-picking of changes.</p>
+
+<h1>Q:</h1>
+
+<p>Some argue to simply extract projects locally and merge into target domain project to avoid having twin projects.</p>
+
+<h1>A:</h1>
+
+<p>The approach of extracting projects locally and merging them into the target domain project, rather than maintaining twin projects, can be a valid alternative depending on your specific requirements, constraints, and workflows. This approach simplifies the architecture by avoiding the need to maintain two separate GitLab instances or mirrored repositories. However, it comes with its own trade-offs. Below, I’ll outline the pros, cons, and considerations for this approach, as well as how it compares to maintaining twin projects.</p>
+
+<hr>
+
+<h3><strong>Approach: Extract Projects Locally and Merge into Target Domain</strong></h3>
+
+<p>In this approach, instead of maintaining twin projects across two air-gapped networks, you:
+1. Extract the necessary code or changes from the source project (e.g., Network B) onto a local machine or intermediary storage.
+2. Transfer the extracted changes to the target network (e.g., Network A) using secure methods (e.g., USB drives, secure file transfer).
+3. Merge the changes into the target project manually or via scripts.</p>
+
+<hr>
+
+<h3><strong>Advantages of This Approach</strong></h3>
+
+<ol>
+<li><p><strong>Simplified Architecture</strong>:</p>
+
+<ul>
+<li>No need to maintain two separate GitLab instances or mirrored repositories.</li>
+<li>Reduces complexity in managing synchronization and access controls between networks.</li>
+</ul></li>
+
+<li><p><strong>Reduced Overhead</strong>:</p>
+
+<ul>
+<li>Avoids the overhead of maintaining twin projects, including repository mirroring, access control, and CI/CD pipeline synchronization.</li>
+</ul></li>
+
+<li><p><strong>Security</strong>:</p>
+
+<ul>
+<li>Limits exposure between the two air-gapped networks, as there is no direct connection or synchronization.</li>
+<li>Reduces the risk of accidental data leakage or unauthorized access.</li>
+</ul></li>
+
+<li><p><strong>Flexibility</strong>:</p>
+
+<ul>
+<li>Allows selective merging of changes, which can be useful if only specific features or fixes need to be transferred.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3><strong>Disadvantages of This Approach</strong></h3>
+
+<ol>
+<li><p><strong>Manual Effort</strong>:</p>
+
+<ul>
+<li>Requires manual extraction, transfer, and merging of changes, which can be time-consuming and error-prone.</li>
+<li>Increases the risk of human error during the process.</li>
+</ul></li>
+
+<li><p><strong>Lack of Traceability</strong>:</p>
+
+<ul>
+<li>Changes merged manually may not be tracked as effectively as those managed through GitLab’s native features (e.g., merge requests, commit history).</li>
+<li>Makes it harder to audit changes and maintain a clear history.</li>
+</ul></li>
+
+<li><p><strong>Inconsistencies</strong>:</p>
+
+<ul>
+<li>Without proper synchronization, the source and target projects may diverge over time, leading to inconsistencies.</li>
+<li>Increases the risk of merge conflicts and integration issues.</li>
+</ul></li>
+
+<li><p><strong>Limited Automation</strong>:</p>
+
+<ul>
+<li>Difficult to automate the process of extracting, transferring, and merging changes, which can slow down development workflows.</li>
+</ul></li>
+
+<li><p><strong>Scalability Issues</strong>:</p>
+
+<ul>
+<li>This approach may not scale well for large teams or projects with frequent changes.</li>
+</ul></li>
+</ol>
+
+<hr>
+
+<h3><strong>When to Use This Approach</strong></h3>
+
+<p>This approach is best suited for:
+- Small teams or projects with infrequent changes.
+- Environments where security requirements prohibit any form of synchronization between networks.
+- Scenarios where only selective changes need to be transferred (e.g., hotfixes, specific features).</p>
+
+<hr>
+
+<h3><strong>Comparison with Twin Projects</strong></h3>
+
+<table>
+<thead>
+<tr>
+<th><strong>Aspect</strong></th>
+<th><strong>Twin Projects</strong></th>
+<th><strong>Extract and Merge</strong></th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>Complexity</strong></td>
+<td>Higher (requires synchronization)</td>
+<td>Lower (no synchronization needed)</td>
+</tr>
+
+<tr>
+<td><strong>Manual Effort</strong></td>
+<td>Lower (automated sync and cherry-picking)</td>
+<td>Higher (manual extraction and merging)</td>
+</tr>
+
+<tr>
+<td><strong>Traceability</strong></td>
+<td>Better (native GitLab features)</td>
+<td>Limited (manual tracking required)</td>
+</tr>
+
+<tr>
+<td><strong>Security</strong></td>
+<td>Requires careful access control</td>
+<td>Simpler (no direct connection)</td>
+</tr>
+
+<tr>
+<td><strong>Scalability</strong></td>
+<td>Better for large teams/projects</td>
+<td>Less scalable</td>
+</tr>
+
+<tr>
+<td><strong>Consistency</strong></td>
+<td>Easier to maintain consistency</td>
+<td>Higher risk of inconsistencies</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h3><strong>Hybrid Approach</strong></h3>
+
+<p>If neither approach fully meets your needs, consider a hybrid approach:
+1. <strong>Maintain Twin Projects for Core Repositories</strong>:
+   - Use repository mirroring for critical projects that require frequent synchronization.
+2. <strong>Extract and Merge for Less Critical Projects</strong>:
+   - Use the extract-and-merge approach for smaller or less frequently updated projects.</p>
+
+<hr>
+
+<h3><strong>Recommendations</strong></h3>
+
+<ul>
+<li><strong>Evaluate Your Workflow</strong>: Assess how often changes need to be transferred and the complexity of your projects.</li>
+<li><strong>Prioritize Security</strong>: Ensure that the chosen approach complies with your organization’s security policies.</li>
+<li><strong>Document Processes</strong>: Clearly document the steps for extracting, transferring, and merging changes to reduce errors.</li>
+<li><strong>Consider Automation</strong>: Even in an extract-and-merge approach, explore ways to automate parts of the process (e.g., scripts for merging changes).</li>
+</ul>
+
+<hr>
+
+<p>Ultimately, the choice between maintaining twin projects and extracting/merging locally depends on your specific requirements, team size, and security constraints. If simplicity and security are your top priorities, the extract-and-merge approach may be a better fit. However, if you need scalability, traceability, and automation, maintaining twin projects with proper synchronization is likely the better choice.</p>
+
+<h3>&nbsp;</h3>
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>

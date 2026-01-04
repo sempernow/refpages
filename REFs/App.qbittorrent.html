@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>App.qbittorrent</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1><a href="https://chocolatey.org/packages?q=qbittorrent" title="@ Chocolatey.org">qBittorrent</a></h1>
+
+<h3>Install/update @ 2019-11-08 (v4.1.9)</h3>
+
+<pre><code class="language-shell">choco install qbittorrent
+</code></pre>
+
+<ul>
+<li><strong><em>Set its network adapter:</em></strong>
+
+<ul>
+<li>@ Tools &gt;  Options &gt; Advanced &gt; Network Interface
+
+<ul>
+<li>Select the VPN-client-specific adapter (e.g., <code>TAP1</code> or <code>PIA</code>).<br></li>
+</ul></li>
+</ul></li>
+<li>Validate the IP shown (&quot;<code>External IP:...</code>&quot;) at the <strong>Execution Log</strong> (tab). It <em>should be</em> the <strong>dynamic IP</strong> of the current VPN (e.g., OpenVPN or PIA client) connection, <em>not</em> that assigned per ISP (which is static).</li>
+</ul>
+
+<h3>ISSUE/FIX @ 2019-11-08</h3>
+
+<p>Upon resetting all my network adapters, qBittorrent would fail to download anything; the app's Execution Log (tab) showed message: &quot;The network interface defined is invalid &hellip;&quot;.</p>
+
+<p><del><strong><em>Fix</em></strong> @ Tools &gt;  Options &gt; Advanced &gt; Network Interface, and select the appropos adapter; vEthernet (External Switch). It had switched itself to TAP1, perhaps due to the network reset.</del></p>
+
+<p>UPDATE 2019-11-14: <strong><em>Do NOT use any adapter except that of VPN</em></strong> (<code>TAP1</code>). Validate (<code>External IP: ...</code>) at the Execution Log (tab). This <em>should be</em> the IP of the current (OpenVPN) VPN connection, <em>not</em> that assigned per ISP.</p>
+
+<h3> <a href="https://qbforums.shiki.hu/index.php?topic=7408.0">qBittorrent official forums</a></h3>
+
+<h3>&nbsp;</h3>
+
+<!-- 
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+
+# Link @ (MD | HTML)
+
+([MD](___.html "@ browser"))   
+
+
+# Bookmark
+
+- Reference
+[Foo](#foo)
+- Target
+<a name="foo"></a>
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
