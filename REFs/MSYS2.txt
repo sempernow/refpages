@@ -1,0 +1,68 @@
+MSYS2 Project :: environment for building native Windows software.
+ 
+	*** INACTIVE PROJECT :: forked to Git-for-Windows [SDK] *** 
+	
+		https://git-for-windows.github.io/
+		https://github.com/git-for-windows
+
+	- POSIX-compatible GNU build tools based on Cygwin.
+	- Pacman [of Arch Linux] Pkg-Manager
+	- MinGW64 toolchain
+	- 3 package REPOSITORIES:
+
+		msys2: MSYS2-dependent software
+		mingw64: 64-bit native Windows software 
+		mingw32: 32-bit native Windows software 
+
+	http://msys2.github.io/ 
+	https://github.com/msys2/msys2.github.io
+	https://github.com/msys2
+	https://sourceforge.net/projects/msys2/
+
+		
+	ONE-CLICK-INSALL
+
+		http://msys2.github.io/
+		
+	POST-INSTALL [run-once]
+		pacman -Sy pacman
+		pacman -Syu
+		pacman -Su
+		
+	PACKAGE MANAGER [pacman] USAGE
+
+		https://sourceforge.net/p/msys2/wiki/MSYS2%20installation/
+
+		INSTALLING NEW PACKAGES:
+
+			pacman -S <package_names|package_groups>
+		
+		For example, 
+		
+			pacman -S make gettext base-devel
+		
+		In this example <base-devel> is a package group which contains many packages. If you try to install a package group, Pacman will ask you whether you want to install one package from the group or all of the packages from the group.
+		
+		Removing packages:
+		
+			pacman -R <package_names|package_groups>
+		
+		Searching for packages:
+		
+			pacman -Ss <name_pattern>
+		
+		Other pacman options can be found in the Arch Linux wiki
+		https://wiki.archlinux.org/index.php/pacman
+
+		PACKAGES FOR GCC, MAKE, GIT [BUILD ENV.]
+
+			https://wiki.allegro.cc/index.php?title=Building_with_msys2
+		
+		pacman -S mingw-w64-x86_64-gcc
+		pacman -S git
+		pacman -S make
+		pacman -S mingw-w64-x86_64-cmake
+
+
+
+

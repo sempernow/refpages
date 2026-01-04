@@ -1,0 +1,315 @@
+Polly.Serverless
+052. Using Polly To Help You Pass Your Exam - A Serverless Approach - Part 1
+
+@ DynamoDB > "Create table"  
+  > Table name > posts  
+  > Primary key > id [type:String] [Partition key]  
+  "Table settings" > "Use deault settings"
+
+@ S3 > Create bucket 
+    sempernow-polly-web-1  # to store webpage
+    sempernow-polly-mp3-1  # to store mp3s; polly-generated text to speech
+
+@ SNS > Create topic
+    Topic name: new_topic
+    Display name: New Topic
+
+@ IAM > Roles > Create role 
+    > AWS service > Lambda > Next Permissions (button)
+    > Create policy (button)  # because need to use several services; DynamoDB, S3, Polly, ...
+    > JSON > (copy/paste lambdapolicy.json) 
+        > Review policy
+        Name: LambdaPolicyForPolly
+        Description: LambdaPolicyForPolly
+        > Create policy (button)
+
+    > Policies ... NOPE, forgotten; must go back once more thru ...
+    > Roles > Create role
+    > Filter policies: lambdapo 
+        X LambdaPolicyForPolly (select)
+        > Next: Review (button)
+        Role name: LambdaPolicyForPolly
+        Role description: LambdaPolicyForPolly
+        > Create role (button)
+
+@ Lambda > Create function > "Author from scratch"
+    Name: PostReader_NewPosts
+    Runtime: Python 2.7
+    Role: Choose an existing role 
+    Existing role: LambdaPolicyForPolly
+
+    > Create function (button)
+
+    PostReader_NewPosts (function)
+
+        > Function code: (cut/paste 'newposts.py' content) 
+            Handler: lambda_function.lambda_handler
+            - Boto3 (AWS SDK for Python) is utilized @ 'newposts.py'  
+                https://pypi.org/project/boto3/  
+                https://aws.amazon.com/sdk-for-python/  
+
+        > Environment variables 
+            Key: DB_TABLE_NAME
+            Val: posts
+                - ref @ newposts.py: "table = dynamodb.Table(os.environ['DB_TABLE_NAME'])"
+            Key: SNS_TOPIC
+            Val: arn:aws:sns:us-east-1:971733315851:new_posts
+                - ref @ newposts.py: "TopicArn = os.environ['SNS_TOPIC'],"
+        > Basic settings 
+            > Description: Create new posts @ DynamoDB and notify @ SNS
+
+        > Save (button)
+
+        > Select a test event > Configure test events  (@ top of GUI)
+            > Configure test event
+                Event template: Hello World (menu)
+                Event name: HelloJoanna    (added)
+                (cut/paste 'sample.json')
+                    {
+                    	"voice" : "Joanna",
+                    	"text" : "Hello Cloud Gurus!"
+                    }
+                > Create (button)
+                > Test (button)
+                    "Execution result: succeeded (logs)" 
+                    > Details ...  
+                        The area below shows the result returned by your function execution.
+                        "3799894d-fc8c-408c-a0fc-e7875aed7d02"
+                        Summary
+                            Code SHA-256
+                            7Cizs4Z2D9NY96p8rz9j4F2seldQKGHjQiUqR7Y4OeQ=
+                        Request ID
+                            219c1a54-b821-11e8-af73-5fb7ece51ea7
+                        Duration
+                            1447.17 ms
+                        Billed duration
+                            1500 ms
+                        Resources configured
+                            128 MB
+                        Max memory used
+                            45 MB
+                        Log output
+                        The area below shows the logging calls in your code. These correspond to a single row within the CloudWatch log group corresponding to this Lambda function. Click here to view the CloudWatch log group.
+                            START RequestId: 219c1a54-b821-11e8-af73-5fb7ece51ea7 Version: $LATEST
+                            Generating new DynamoDB record, with ID: 3799894d-fc8c-408c-a0fc-e7875aed7d02
+                            Input Text: Hello Cloud Gurus!
+                            Selected voice: Joanna
+                            END RequestId: 219c1a54-b821-11e8-af73-5fb7ece51ea7
+                            REPORT RequestId: 219c1a54-b821-11e8-af73-5fb7ece51ea7	Duration: 1447.17 ms	Billed Duration: 1500 ms 	Memory Size: 128 MB	Max Memory Used: 45 MB	
+
+                @ DynamoDB > Tables > posts > Items
+                    id                                      status        text                  voice
+                    3799894d-fc8c-408c-a0fc-e7875aed7d02    PROCESSING    Hello Cloud Gurus!    Joanna
+
+# Lambda :: Convert Audio [PostReader_ConvertToAudio]
+    SNS => Lambda funstion => Polly
+
+@ Lambda > Create function > "Author from scratch"
+    Name: PostReader_ConvertToAudio
+    Runtime: Python 2.7
+    Role: Choose an existing role 
+    Existing role: LambdaPolicyForPolly
+
+    > Create function (button)
+
+    PostReader_ConvertToAudio (function)
+
+        > Designer > Add triggers > SNS (Trigger)
+            > Configure triggers > SNS topic > new_posts
+                arn:aws:sns:us-east-1:971733315851:new_posts
+            > Add
+            
+        > Save (button)
+        
+        (page refresh required for 'Function code' (IDE) section to return; bug)
+
+        > Function code: (cut/paste 'convertoaudio.py' content) 
+            Handler: lambda_function.lambda_handler
+            - Boto3 (AWS SDK for Python) is utilized @ 'convertoaudio.py'  
+                https://pypi.org/project/boto3/  
+                https://aws.amazon.com/sdk-for-python/  
+
+        > Environment variables 
+            Key: DB_TABLE_NAME
+            Val: posts
+                - ref @ convertoaudio.py: "table = dynamodb.Table(os.environ['DB_TABLE_NAME'])"
+            Key: BUCKET_NAME
+            Val: sempernow-polly-mp3-1
+                - ref @ convertoaudio.py: "os.environ['BUCKET_NAME'], "
+
+        > Basic settings 
+            > Description: Retreive text file from DynamoDB; convert to audio file and save to S3
+            > Timeout: 5 min
+
+        > Save (button)
+
+@ Lambda > Create function > "Author from scratch"
+    Name: PostReader_GetPosts
+    Runtime: Python 2.7
+    Role: Choose an existing role 
+    Existing role: LambdaPolicyForPolly
+
+    > Create function (button)
+
+    PostReader_GetPosts (function)
+
+        > Function code: (cut/paste 'getposts.py' content) 
+            Handler: lambda_function.lambda_handler
+            - Boto3 (AWS SDK for Python) is utilized @ 'getposts.py'  
+                https://pypi.org/project/boto3/  
+                https://aws.amazon.com/sdk-for-python/  
+
+        > Environment variables 
+            Key: DB_TABLE_NAME
+            Val: posts
+                - ref @ convertoaudio.py: "table = dynamodb.Table(os.environ['DB_TABLE_NAME'])"
+
+        > Basic settings 
+            > Description: Get post from DynamoDB posts table
+            > Timeout: 5 min
+
+        > Save (button)
+
+        > Select a test event > Configure test events  (@ top of GUI)
+            > Configure test event
+                Event template: Hello World (menu)
+                Event name: TestEvent    (added)
+                    {
+                    	"postId" : "*"  
+                    }
+                    NOTE: key is var name @ 'getposts.py'; "KeyConditionExpression=Key('id').eq(postId)"  
+                > Create (button)
+                > Test (button)
+                    "Execution result: succeeded (logs)" 
+                    > Details ...  
+                        The area below shows the result returned by your function execution.
+                            [
+                              {
+                                "status": "PROCESSING",
+                                "text": "Hello Cloud Gurus!",
+                                "voice": "Joanna",
+                                "id": "3799894d-fc8c-408c-a0fc-e7875aed7d02"
+                              }
+                            ]
+                            Summary
+                                Code SHA-256
+                                    YuxuVawW4IAxG3rdtBRe5Xqk/rY9yzRnaSVPddHMHyg=
+                                Request ID
+                                    26eaba2c-b828-11e8-afd1-45fa9a99f650
+                                Duration
+                                    1665.69 ms
+                                Billed duration
+                                    1700 ms
+                                Resources configured
+                                    128 MB
+                                Max memory used
+                                    43 MB
+                                Log output
+                                The area below shows the logging calls in your code. These correspond to a single row within the CloudWatch log group corresponding to this Lambda function. Click here to view the CloudWatch log group.
+                                    START RequestId: 26eaba2c-b828-11e8-afd1-45fa9a99f650 Version: $LATEST
+                                    END RequestId: 26eaba2c-b828-11e8-afd1-45fa9a99f650
+                                    REPORT RequestId: 26eaba2c-b828-11e8-afd1-45fa9a99f650	Duration: 1665.69 ms	Billed Duration: 1700 ms 	Memory Size: 128 MB	Max Memory Used: 43 MB	
+
+Next (Part-2): API Gateway triggers
+
+053. Using Polly To Help You Pass Your Exam - A Serverless Approach - Part 2
+
+@ Amazon API Gateway > +Create API (button)
+
+    > Create new API > New API (check-box)
+        Settings 
+            API name: PostReader-1
+            Description: post reader api
+            Endpoint Type: Regional (default)
+    
+    @ PostReader-1 (API) 
+        > Resources > Actions > Create Method > GET 
+        @ / - GET - Setup
+            Choose the integration point for your new method.
+                Integration type
+                   X    Lambda Function (check box)
+                Use Lambda Proxy integration: X (check box)
+                    Lambda Region: us-east-1
+                    Lambda Function: PostReader_GetPosts
+                    Use Default Timeout: X (check box)
+            > Save (box)
+
+        > Resources > Actions > Create Method > POST 
+        @ / - POST - Setup
+            Choose the integration point for your new method.
+                Integration type
+                   X    Lambda Function (check box)
+                Use Lambda Proxy integration: X (check box)
+                    Lambda Region: us-east-1
+                    Lambda Function: PostReader_NewPosts
+                    Use Default Timeout: X (check box)
+            > Save (box)
+
+        > Resources > Actions > Enable CORS 
+            GET and POST interact with S3, which has different domain-name than API Gateway, so must enable CORS (Cross Origin Resource Sharing)
+            "Enable CORS and replace existing CORS headers" (button)
+                The following modifications will be made ... sure you want to continue?
+                    Create OPTIONS method
+                    Add 200 Method Response with Empty Response Model to OPTIONS method
+                    Add Mock Integration to OPTIONS method
+                    Add 200 Integration Response to OPTIONS method
+                    Add Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin Method Response Headers to OPTIONS method
+                    Add Access-Control-Allow-Headers, Access-Control-Allow-Methods, Access-Control-Allow-Origin Integration Response Header Mappings to OPTIONS method
+                    Add Access-Control-Allow-Origin Method Response Header to POST method
+                    Add Access-Control-Allow-Origin Integration Response Header Mapping to POST method
+                    Add Access-Control-Allow-Origin Method Response Header to GET method
+                    Add Access-Control-Allow-Origin Integration Response Header Mapping to GET method 
+                "Yes, replace ..." (button)
+
+        > Resources > GET > Method Request (link)
+            / - GET - Method Request
+                > URL Query String Parameters 
+                    Name: postId 
+
+            / - GET - Integration Request
+                > Mapping Templates
+                    Request body passthrough: "When there are no templates defined (recommended)"
+                    Add mapping template : "application/json"
+                        {
+                            "postId" : "$input.params('postId')"
+                        }
+
+        > Resources > / > Actions > Deploy API  
+            Deployment stage: [New Stage]
+            Stage name: dev
+            Stage description: dev 
+            Deployment description: dev  
+
+        > Stages 
+           invoke URL: https://27ymg5zmyi.execute-api.us-east-1.amazonaws.com/dev  
+
+@ S3  
+    sempernow-polly-web-1 > Bucket Policy 
+        bucketpolicypermissions.json (copy/paste)  # allow public read (get) access
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "PublicReadGetObject",
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": [
+                            "s3:GetObject"
+                        ],
+                        "Resource": [
+                            "arn:aws:s3:::sempernow-polly-web-1/*"
+                        ]
+                    }
+                ]
+            }
+
+    S3 > Upload 
+        index.html => https://s3.amazonaws.com/sempernow-polly-web-1/index.html
+        styles.css
+        scripts.js <==> copy/past the 'dev' API Gateway URL into "YOUR-API-GATEWAY-HERE"
+
+    TEST @ https://s3.amazonaws.com/sempernow-polly-web-1/index.html 
+
+    SUCCESS ! (@ Chrome; audio play button doesn't function @ Firefox)
+        Stored text; retreived audio; 
+        Search: *

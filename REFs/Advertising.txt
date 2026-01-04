@@ -1,0 +1,95 @@
+
+Waterfall bidding [SEQUENTIAL] [Google] 
+
+	a decision model with different inventory sources stacked in preference which their technology working down the list until a bid is secured. 
+	
+	At the top of the list may be the advertisers who have booked directly. With these deals the publisher has often guaranteed a certain number of impressions and also sold at a higher CPM. The impression will first be checked to see if it matches a direct buy. If no impressions is available it will then work down the waterfall in order of priority until it secures an advertiser willing to pay.
+
+	Within the waterfall could be multiple ad exchanges, running independent auctions, and will generally end with an open exchange buy taking the highest available bid from whoever is willing to pay.
+
+	Any auctions within the waterfall would generally operate on a 2nd price basis meaning the winning advertiser pays a penny more than the one in second place.
+
+Header Bidding  [CONCURRENT]
+
+	a type of inventory bid management that allows publishers to offer 'first look' and bid opportunity to multiple programmatic partners that is then carried through to the publishers adserver. The set up is powered by a 'demand' partner’s javascript tag that is placed on a publisher’s page (usually in the header) which requests bids from the partner before the adserver is called. This is sometimes referred to as header tag integrations or tagless integrations. The demand partner passes their bid value (through a key value pair) into the ad tag(s) that call the adserver. A campaign with line items in the publisher’s adserver are pre-set to target to those parameters. If the demand partner’s campaign wins above all other opportunity, the partner is called to serve the ad at the price they bid to pay.
+
+	allows advertisers to compete equally; concurrently; Header Bidding’s core concept — it enables publishers to increase bidding competition on a per-impression basis, which can drive up the price and increase overall advertising revenue. By taking cross marketplace bids and placing them in the first auction/marketplace, all marketplaces can compete to win the impression. 
+	
+	Publishers who use header bidding saw Google's share of revenue decline from 90% down to 40%-50%. 
+
+First Look
+
+	When a publisher or network gives a specific advertiser(s) or advertiser(s) representative/platform an opportunity to see the impression and some or all of it’s data to see, bid and/or win the impression ahead of everyone else.
+	
+AdExchanger "Header Bidding Unleashed A Huge Infrastructure Problem And Ad Tech Will Either Sink Or Swim"  https://www.thetradedesk.com/news/adexchanger-header-bidding-unleashed-a-huge-infrastructure-problem-and-ad-tech-will-either-sink-or-swim
+
+Inventory - Advertising slots; html element on a web-page 
+
+Impression - a served ad; fetched from its source, and is countable
+	
+CPI - Cost per Impression 
+		
+SSP - Supply-side Platform  [Publishers]
+DSP - Demand-side Platform  [Advertisers]
+
+	Demand; sources that seek to buy advertising impressions
+	https://en.wikipedia.org/wiki/Demand-side_platform
+
+	Adobe Media Optimizer (formerly Efficient Frontier)
+	AppNexus
+	DataXu
+	DoubleClick Bid Manager (DBM) (originally Invite Media Bid Manager)
+	Fiksu
+	MediaMath
+	StackAdapt
+	Tapad
+	TubeMogul
+
+Ad Exchange 
+	
+	Where the bidding occurs
+	
+Advertising Network 
+
+	connects advertisers to web sites wanting to host advertisements; DSPs perform this function.
+
+Programmatic Buys [Types]
+
+	Preferred Deal: No auction, set CPM, non-guaranteed inventory
+	Programmatic Guaranteed: No auction, set CPM, guaranteed inventory
+	Private Marketplace: Real time bidding, price floor, select group of advertisers
+	Open Exchange Buy: Real time bidding, variable cpm, open to all advertisers
+
+	
+GLOBAL DIGITAL ADVERTISING MARKET [eMarketer]
+
+	Google: 33% 
+	Facebook: 16.2% 
+
+Rubicon Project [RUBI]
+
+	ad tech company.
+	
+Ad Tech 
+
+		Ad-delivering tech; competes with publishers' in-house [human] ad-sales force.
+	
+The Creative 
+
+		The advertisement
+		
+DoubleClick for Publishers [DFP] [Google] 
+
+	- Google Publisher Tag (GPT) JavaScript code into a webpage
+	- JavaScript code creates an IFrame, DFP decides which campaign wins and deliver the creative to the IFrame.
+	- AdX doesn't [didn't] let third-party exchanges enter bids for those impressions;
+	
+	Dynamic Allocation
+	
+	- AdX gets first rights on buying an advert slot; allows Google's Ad Exchange [AdX] to compete directly with ads sold by publishers' in-house sales teams.
+
+Facebook Audience Network [FAN]
+
+	now opening up to mobile web publishers who use header bidding technology provided by six suppliers: Amazon, AppNexus, Index Exchange, Media.net, Sonobi, and Sortable
+		
+	

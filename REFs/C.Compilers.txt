@@ -1,0 +1,58 @@
+
+C compilers for Windows-7 OS
+============================
+
+	per MinGW compiler @ Win-CMD 
+	http://www.mingw.org/wiki/Getting_Started]
+	
+		Compile @ Win-CMD:	gcc foo.c -o foo-MinGW
+		Run @ Win-CMD:		foo-MinGW
+		
+	per MinGW compiler @ Cygwin
+	[x86_64-w64-mingw32-gcc package] 
+
+		Compile @ Cygwin: 	x86_64-w64-mingw32-gcc foo.c -o foo-MinGW
+		Run @ Win-CMD: 		foo-MinGW
+
+	per gcc package ...
+
+		Compile @ Cygwin:	gcc foo.c -o foo-Cygwin
+		Run @ Cygwin: 		.\foo-Cygwin
+
+	per x86_64-w64-mingw32-gcc package 
+
+		Compile @ Cygwin: 	x86_64-w64-mingw32-gcc foo.c -o foo-MinGW
+		Run @ Cygwin: 		foo-MinGW
+		
+		
+C compilers in UNIX
+===================
+
+	cc -o foo foo.c
+
+	
+C compilers in Linux/BSD
+========================
+	
+/*
+	"Compiler" does three steps 
+	
+		- Preprocess/Link/Compile 
+		
+			make.exe 	http://www.gnu.org/software/make
+					
+		- Compiler	
+		
+			gcc.exe 	http://gcc.gnu.org
+			
+		- Linker		
+		
+			ld.exe 		@ 'binutils pkg' http://www.gnu.org/software/binutils
+	
+
+		Installed Version Info ...
+		
+			gcc --version
+			ld -v 
+			make --version
+*/

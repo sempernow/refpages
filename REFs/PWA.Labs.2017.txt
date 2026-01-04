@@ -1,0 +1,319 @@
+Progressive Web Apps Training 
+	https://developers.google.com/web/ilt/pwa/
+
+	Setting Up the Labs 
+	https://developers.google.com/web/ilt/pwa/setting-up-the-labs
+	
+		git clone https://github.com/google-developer-training/pwa-training-labs.git
+
+		Web Server[s] :: Chrome 'Web Server' app OR Node.js 'http-server' module
+		
+		# "Web Server for Chrome" app            [localhost:8887]
+		  
+		# [npm install] http-server -g           [localhost:8080]
+		https://www.npmjs.com/package/http-server
+		
+Lab: Scripting the Service Worker 
+	https://developers.google.com/web/ilt/pwa/lab-scripting-the-service-worker
+	
+	Install Event  SUPPORT @ Chrome/Firefox
+		https://developer.mozilla.org/en-US/docs/Web/API/InstallEvent
+	
+Lab: Fetch API  SUPPORT @ Chrome/Edge/Firefox/Safari
+	https://developers.google.com/web/ilt/pwa/lab-fetch-api#1_get_set_up
+	
+	Fetch API  [replaces XMLHttpRequest] 
+		SUPPORT @ Chrome/Edge/Firefox/Opera/Safari [not really, i.e., 'response.ok' NOT @ Safari]
+		https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch	
+		https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API#Browser_compatibility
+		Response ... SUPPORT @ NONE if mobile ???
+		https://developer.mozilla.org/en-US/docs/Web/API/Response#Browser_compatibility
+	
+	Javascript Design Patterns
+		https://addyosmani.com/resources/essentialjsdesignpatterns/book/#modulepatternjavascript
+		
+	Qunit [JS Unit Test framework]
+		https://qunitjs.com/
+	Learning Javascript Design Patterns
+		https://addyosmani.com/resources/essentialjsdesignpatterns/book/#modulepatternjavascript
+		
+	Blob/File object :: URL.createObjectURL(responseAsBlob) [WIDELY SUPPORTED]
+		https://developer.mozilla.org/en-US/docs/Web/API/Blob
+		https://developer.mozilla.org/en-US/docs/Web/API/Filehttps://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
+		#Example_Using_object_URLs_to_display_images
+
+Lab: Caching Files with Service Worker
+	https://developers.google.com/web/ilt/pwa/lab-caching-files-with-service-worker
+
+	Application-managed caches per Cache API; orthogonal to Browser-managed caches which are handled per browser. Browser-managed caches are NOT available offline.
+		NOTE: Cache-API available @ 'window' object, so service worker NOT required; though designed as part of Service Worker spec. SUPPORT @ Chrome/Firefox
+	
+	Caching Files with Service Worker [Concepts]
+	https://developers.google.com/web/ilt/pwa/caching-files-with-service-worker
+	
+	Cache Interface  SUPPORT @ Chrome/Android/Firefox 
+		https://developer.mozilla.org/en-US/docs/Web/API/Cache#Browser_compatibility
+
+	Serve Files from Cache [INTERCEPTs NETWORK REQUESTS]
+		
+		CLONE; reading responses
+			https://jakearchibald.com/2014/reading-responses/
+	
+		Simulate Offline
+			https://developers.google.com/web/ilt/pwa/tools-for-pwa-developers#offline
+	
+	The Offline Cookbook
+		https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook/
+		
+		STRATEGY: 'Stale-while-revalidate'
+			https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook/#stale-while-revalidate
+		
+		STRATEGY: 'Cache falling back to network'  
+			https://developers.google.com/web/fundamentals/instant-and-offline/offline-cookbook/#cache-falling-back-to-network
+
+			
+Lab: Promises
+	https://developers.google.com/web/ilt/pwa/lab-promises
+			
+		.then(function-called-@-RESOLVED, function-called-@-REJECTED)
+		
+			@ .then(func1, func2), func1 OR func2 will be called, never both. 
+			@ .then(func1).catch(func2), both will be called if func1 rejects, as they're separate steps in the chain. 
+			
+		functions on an ARRAY of PROMISES
+		
+			.all()   resolves if all of the promises passed into it resolve
+			.race()  settles [resolves] on first resolved promise passed to it    
+	
+	Working with Promises
+		https://developers.google.com/web/ilt/pwa/working-with-promises
+		
+	JavaScript Promises: an Introduction [load a story, chapter by chapter]
+		getJSON('story.json').then(function(story) { addHtmlToPage(story.heading); ...
+		https://developers.google.com/web/fundamentals/getting-started/primers/promises
+
+	Promise Fates & States [no distinction even within their own abstractions;]
+		https://github.com/domenic/promises-unwrapping/blob/master/docs/states-and-fates.md
+
+
+Lab: IndexedDB
+	https://developers.google.com/web/ilt/pwa/lab-indexeddb
+		
+	Working with IndexedDB 
+		https://developers.google.com/web/ilt/pwa/working-with-indexeddb
+		
+	idb [IndexedDB, but with promises] [Library:2KB] [jakearchibald/idb] 
+		https://github.com/jakearchibald/idb   [GitHub]
+		https://www.npmjs.com/package/idb      [Node.js]
+	
+	IndexedDB API [MDN]
+		https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+		.createObjectStore()
+		https://developer.mozilla.org/en-US/docs/Web/API/IDBDatabase/createObjectStore
+		
+		
+Lab: Workbox [SUCCESSOR to sw-precache + sw-toolbox] [2017-09]
+	https://developers.google.com/web/ilt/pwa/lab-workbox
+	
+Lab: sw-precache and sw-toolbox [node-based] applications
+	https://developers.google.com/web/ilt/pwa/lab-sw-precache-and-sw-toolbox
+
+	# 4. Creating the service worker with sw-precache and gulp
+	
+		npm install --global gulp-cli
+		
+		cd ... /app # go to project dir
+		npm init # creates 'package.json'; info about the project and its dependencies.
+		npm install gulp --save-dev # download required Gulp dependencies
+		
+			# creates ... and subdirs [~3MB]; each dir has one or more: .js, .json, .md
+			./app/node_modules
+			
+	# install the sw-precache and sw-toolbox pkgs, and path pkg
+		npm install --save-dev path sw-precache sw-toolbox
+		
+	# run task: generate service-worker.js; after setting config @ gulpfile.js
+	gulp service-worker 
+
+	# 5. Creating routes with sw-toolbox
+	
+	# 6. Optional: Creating the service worker in the command line
+		https://github.com/GoogleChrome/sw-precache#command-line-interface
+	
+	sw-precache and sw-toolbox are two packages created by Google to automate the creation of service workers, and to make the creation of custom caching routes easier.
+		https://developers.google.com/web/ilt/pwa/using-sw-precache-and-sw-toolbox
+	 	
+	Gulp - Front-end Build Tool [Task Runners]; 
+	  Grunt was predecessor; others: Broccoli.js, Brunch, Webpack; Node/npm do much, and the [other] tools too.  
+		
+		Tutorial: https://www.sitepoint.com/introduction-gulp-js/
+		
+	Making Sense of Front-end Build Tools
+		https://medium.freecodecamp.com/making-sense-of-front-end-build-tools-3a1b3a87043b
+		
+Lab: Responsive Design 
+	https://developers.google.com/web/ilt/pwa/lab-responsive-design
+	
+	# /index.html
+	
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	# /styles/main.css
+	
+		@media screen and (max-width: 48rem) {
+			.container .col {
+				width: 95%;
+			}
+		}
+		# NOTHING WORKED UNTIL # 5.4 ... 
+		/* DONE :: TODO 5.4 - use media query with Flexbox */
+		
+		Flexible boxes, or flexbox, is a new layout mode in CSS3.
+			https://www.w3schools.com/css/css3_flexbox.asp
+			
+	# 6. Using Flexbox as a progressive enhancement
+
+		As Flexbox is a relatively new technology, we should include fallbacks in our CSS.
+		
+		Modernizr is a feature detection tool that simplifies testing for Flexbox support.
+		https://modernizr.com/download?setclasses
+		
+		# /index.html
+
+			<script src="modernizr-custom.js"></script> [4KB]
+			
+			... which adds ".[no-]flexbox" classes to elements per browser flex-box support
+			
+			So, can then prepend .[no-]flexbox class to each rule @ css file.
+
+Lab: Responsive Images 
+	https://developers.google.com/web/ilt/pwa/lab-responsive-images
+	
+	<img ... src="{default-image-path}"  srcset="{csv-image-path [ pxW]-list}" ...> 
+		browser chooses, from 'srcset' listed images when fetching image, per: viewport dimensions, image size relative to viewport, device pixel density, and source file dimensions.
+		
+		Browser downloads larger images as viewport grows, without page refresh! 
+	
+	SIZE PER VIEWPORT WIDTH [%vw]; @ html OR css:
+	
+		<img ... sizes="50vw" ...>  [html]
+
+		img#id {max-width: 50vw;}    [css]
+		
+	CHANGE %vw per viewport width, DYNAMICALLY, using MEDIA QUERIES; 
+	e.g., display img @ 50% if viewport larger than 700px, but at 90% if viewport smaller than 700px ...
+	
+		@media screen and (max-width: 700px) {               [css]
+			img#id {
+				max-width: 90vw;
+				width: 90vw;
+			}
+		}	
+	
+	<img ... sizes="(max-width: 700px) 90vw, 50vw" ...>    [html]
+
+	# 6. Optional: Use HTML5 PICTURE and SOURCE elements
+			https://developer.mozilla.org/en-US/docs/Web/HTML/Element/picture
+			https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source
+			
+			<figure>
+					<picture>
+					<source media="(min-width: 750px)"
+									srcset="images/horses-1600_large_2x.jpg 2x,
+													images/horses-800_large_1x.jpg" />
+					<source media="(min-width: 500px)"
+									srcset="images/horses_medium.jpg" />
+					<img src="images/horses_small.jpg" alt="Horses in Hawaii">
+					</picture>
+					<figcaption>Horses in Hawaii</figcaption>
+			</figure>
+	
+	
+Intro to PWA Architectures 
+	https://developers.google.com/web/ilt/pwa/introduction-to-progressive-web-app-architectures
+	
+	Notes:
+			In the future, consider a server-side render (SSR) of UI with Streams for body content model (even better). See https://jakearchibald.com/2016/streams-ftw/ to learn more.
+			
+			If you are building a PWA using Polymer leveraging this pattern, then it might be worth exploring SSR of content in the Light DOM
+	
+	STREAMs !!! >>> ReadableStream [Web API] :: .getReader()
+	
+	2016 - the year of web streams [jakearchibald.com]
+	// https://jakearchibald.com/2016/streams-ftw
+	
+	ReadableStream [Web API] :: .getReader()
+		https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream#Browser_compatibility
+	
+	
+Lab: Integrating Web Push
+	https://developers.google.com/web/ilt/pwa/lab-integrating-web-push
+	
+	npm install # reads/runs-tasks per './package.json' file; installs dependencies etc.
+	npm install web-push -g
+
+	# 2. Using the Notification API
+	
+		Intro to Push Notifications [analogous to native 'Push Messaging']
+			https://developers.google.com/web/ilt/pwa/introduction-to-push-notifications#how_web_push_works
+			
+			ServiceWorkerRegistration
+				https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration
+				
+			.showNotification()
+				https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/showNotification
+
+		Notifications API
+			https://developer.mozilla.org/en-US/docs/Web/API/Notifications_API
+			
+	# 3. Using the Push API
+		
+		*** SKIP DOWN TO 4.2; VAPID Protocol [NOT Google/Firebase labyrinth-of-bullshit]
+		
+		Push API
+			https://developer.mozilla.org/en-US/docs/Web/API/Push_API
+			
+			Push Event [Interface of Push API]
+				https://developer.mozilla.org/en-US/docs/Web/API/PushEvent
+		
+		Send SIMULATED push notifications
+			https://developers.google.com/web/ilt/pwa/tools-for-pwa-developers#push
+		
+		ROUTE PUSH MESSAGEs 
+		
+			Firebase account/console
+				https://console.firebase.google.com/?pli=1
+				Chrome uses Firebase Cloud Messaging (FCM) to route its push messages. All push messages are sent to FCM, and then FCM passes them to the correct client. [FCM has replaced Google Cloud Messaging (GCM). Some of the code to push messages to Chrome still contains references to GCM. These references are correct and work for both GCM and FCM.]
+				
+			OR use VAPID Protocol instead of FCM [avoid creating a Firebase account]
+			
+			VAPID Protocol
+				https://developers.google.com/web/ilt/pwa/lab-integrating-web-push#vapid
+				https://tools.ietf.org/html/draft-thomson-webpush-vapid-02
+				Use the VAPID protocol to identify the app for the push service. 
+				This eliminates the need for a Firebase account.
+				
+	# 4.2 Subscribe with the public key [VAPID Protocol]
+	
+		SUBSCRIPTION_OBJECT obtained from 'Enable Push Messaging' button
+	
+Intro to the Payment Request API [under Develepment]
+	https://developers.google.com/web/ilt/pwa/introduction-to-the-payment-request-api
+
+	Introducing the Payment Request API 
+		https://developers.google.com/web/fundamentals/discovery-and-monetization/payment-request/
+
+Lab: Integrating Analytics
+	https://developers.google.com/web/ilt/pwa/lab-integrating-analytics
+	
+	Integrating Analytics
+		https://developers.google.com/web/ilt/pwa/integrating-analytics
+		
+		Google Analytics Reporting API
+			https://developers.google.com/analytics/devguides/reporting/core/v4/
+		
+Lab: Gulp Setup
+	https://developers.google.com/web/ilt/pwa/lab-gulp-setup
+	
+	Introduction to Gulp
+		https://developers.google.com/web/ilt/pwa/introduction-to-gulp

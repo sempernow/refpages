@@ -1,0 +1,237 @@
+PRICING/BILLING
+===============
+    # Billing (hidden)  
+        Home     https://console.aws.amazon.com/billing/home  
+        Details  https://console.aws.amazon.com/billing/home?#/bills?year=2018&month=9  
+
+    # Cost Management  https://aws.amazon.com/aws-cost-management/pricing/  
+
+        - AWS Budgets; set custom cost and usage budgets alerts  
+            2 free, then $0.02/day 
+
+        - Cost Explorer; interface to visualize, understand, and manage AWS costs & usage over time
+            $.01/request
+
+            
+    # Systems Manager  https://aws.amazon.com/systems-manager/pricing/
+        Mostly free (within limits), e.g., Parameter Store 
+        Automation tasks @ 25,000 steps/mo, then $0.004/step
+    
+    # CloudWatch (to monitor)    
+        > Alarms > Billing     
+
+    # Always-free Services    
+        - VPC    
+        - Elastic Beanstalk    
+        - CloudFormation    
+        - OpsWorks    
+        - IAM     
+        - Autoscaling [not resources spun-up thereby]    
+        - Load Balancing; NOT ELB
+        - CloudWatch BASIC servie  
+
+    # Pay-as-you-go; pay for use    
+
+    # Free Tier (12mo) https://aws.amazon.com/free/     
+        750 hrs/mo EC2, 5GB S3, 1M Lambda, 750 hrs/mo RDS    
+
+    # 3 Billing Options:    
+    
+        1. On Demand    
+            fixed rate per hr; resources may not be available as needed!     
+        2. Reserved    
+            discount for 1-3 yr contract; 30%-75% discount; all/partial/no UPFRONT payment; A.U., P.U., N.U.    
+        3. Spot    
+            spin-UP/DOWN per PRESET-BID price; 2-minute WARNING; new in 2015+;    http://169.254.169.254/latest/meta-data/spot/termination-time    
+
+    # ACM (AWS Certificate Manager) :: HTTPS (SSL/TLS)  
+        https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html  
+        - Public SSL/TLS certificates provisioned through AWS Certificate Manager are free. 
+            https://aws.amazon.com/certificate-manager/pricing/ 
+
+    # Bandwidth Cost COMPARISONS
+        https://arador.com/ridiculous-bandwidth-costs-amazon-google-microsoft/
+
+    # EC2 (Compute Resources)  
+
+        - EC2 (IaaS; Infrastructure as a Service)  https://aws.amazon.com/ec2/pricing/    
+                - price INCLUDEs OS licence costs    
+                - per instance, per hr    
+                - config; cores/memory    
+                - instance pricing: OnDemand/Spot/Reserve; high to low price    
+                - autoscaling can spin-up     
+
+            RESERVED Discounts (from ON-DEMAND): 1yr ~ 38%, 3yr ~58%
+
+            SPOT Pricing  https://aws.amazon.com/ec2/spot/pricing/
+                - 2 minute warning before termination.
+                - 70% Discount.
+
+            ON-DEMAND Pricing  https://aws.amazon.com/ec2/pricing/    
+                               https://aws.amazon.com/ec2/pricing/on-demand/  
+
+                CPU: 1, RAM: 0.5/1/2, ECU: varies    
+
+                    t2.nano	     $0.0058/hr     $4.18/mo        
+                    t2.micro     $0.0116/hr     $8.35/mo    
+                    t2.small     $0.0230/hr     $16.56/mo    
+
+                    t3.nano      $0.0052/hr
+
+                    t3a.nano     $0.0047/hr  @ ON-DEMAND
+                    t3a.nano     $0.0014/hr  @ SPOT (70% discount)
+
+                CPU: 1, RAM: 3.75, ECU: 3, 1x4 SSD    
+
+                    m3.medium    $0.067/hr     $48.24/mo    
+
+                CPU: 2, RAM: 4/8    
+
+                    t2.medium    $0.0464/hr     $33.41/mo    
+                    t2.large     $0.0928/hr     $66.82/mo  
+
+                CPU: 8, RAM: 16
+
+                    c5.2xlarge   $0.34/hr       $245/mo   
+
+        - Lambda (FaaS; Function as a Service)  https://aws.amazon.com/lambda/pricing/  
+            First 1M requests / month   Free
+            First 400K GB-sec / month   Free
+            Requests / month            $ 0.20 per 1M
+            GB-sec / month              $16.67 per 1M   (GB of RAM per sec per month per million)
+
+            - API Gateway  
+                $3.50 per million API calls received  
+                + cost of data transfer out  
+                    $0.00/GB for the first 1GB  
+                    $0.09/GB for the next 9.999 TB
+                    $0.085/GB for the next 40 TB
+                    $0.07/GB for the next 100 TB
+                    $0.05/GB for the next 350 TB
+                + caching, for better performance 
+                    GB      $  /hr       $   /mo
+                    0.5 	$0.020           $14
+                    1.6 	$0.038           $27
+                    6.1 	$0.200          $144
+                    13.5 	$0.250          $180
+                    28.4 	$0.500          $360
+                    58.2 	$1.000
+                    118.0 	$1.900
+                    237.0 	$3.800        $2,736
+
+        - Storage    
+
+            S3/SIA    https://aws.amazon.com/s3/pricing/
+                - store +mgmt +access +dataOUT [~$0.60/GB/1M-req]  
+
+            EBS  https://aws.amazon.com/ebs/pricing/  
+                GP2 SSD    $0.10 per GB-month of provisioned storage  
+                IO1 SSD    $0.125 per GB-month of provisioned storage + $0.065 per provisioned IOPS-month   
+                ST1 HDD    $0.045 per GB-month of provisioned storage  
+                SC1 HDD    $0.025 per GB-month of provisioned storage  
+
+                Snapsht    $0.05 per GB-month of data stored  
+
+            EFS  https://aws.amazon.com/efs/pricing/  
+                - $0.30/GB    
+
+            RDS     
+                - per database, per hr of use    
+
+            DynamoDB  https://aws.amazon.com/dynamodb/pricing/    
+                Free Tier [permanent]  
+                    25 GB/mo of data storage  
+                    200 M req/mo through 25 write capacity units; 25 read capacity units  
+                    2.5 M stream req/mo from DynamoDB Streams  
+                    Deploy global tables in 1-2 AWS Regions  
+
+                    You pay for only the resources you provision beyond these free tier limits.   
+                    The DynamoDB free tier applies to all tables in a region; does NOT expire after 12-month  
+
+        - CloudFront   $0.04/GB - $0.08/GB;   
+                Invalidation Requests (update prior to TTL): 1,000/mo free; $0.005 per path thereafter   
+                https://aws.amazon.com/cloudfront/pricing/  
+
+        - CodeCommit (Git @ AWS)  
+                Free =< 5 users; more @ $1/ea/mo   
+
+    # Networking 
+        NAT Gateway; managed service (vs. NAT instance) to connect private subnet to internet;  
+            $0.05 per VPN Connection-hour ($36/mo/connection)   
+
+        Elastic IP Addresses (EIP)  https://aws.amazon.com/ec2/pricing/on-demand/#Elastic_IP_Addresses  
+            1 EIP address associated with a running instance at no charge (Permanent Free Tier).  
+            each additional EIP associated with that instance per hour.  
+            Additional EIPs are only available in Amazon VPC.  
+
+                $0.005/hr per additional IP address associated with a running instance  
+                $0.005/hr per Elastic IP address not associated with a running instance  ($3.65/mo; $45/yr)
+
+                $0.00/mo per Elastic IP address remap for the first 100 remaps  
+                $0.10/mo per Elastic IP address remap for additional remaps over 100  
+
+        Route53  https://aws.amazon.com/route53/pricing/  
+            Hosted Zones 
+                $0.50 per hosted zone / month for the first 25 hosted zones  ($6.00/HZ/yr) 
+                $0.10 per hosted zone / month for additional hosted zones  
+            Queries  
+                $0.400 per million queries – first 1 Billion queries / month  
+                $0.200 per million queries – over 1 Billion queries / month  
+            Latency Based Routing Queries  
+                $0.600 per million queries – first 1 Billion queries / month  
+                $0.300 per million queries – over 1 Billion queries / month  
+            Geo DNS and Geoproximity Queries  
+                $0.700 per million queries – first 1 Billion queries / month  
+                $0.350 per million queries – over 1 Billion queries / month  
+            Traffic Flow
+                $50.00 per policy record / month
+        
+        Elastic Load Balancers Elastic 
+            - Classic
+            - Network 
+            - Application -  One for all services; most expensive; "most cost-effective"
+            https://medium.com/cognitoiq/how-cognitoiq-are-using-application-load-balancers-to-cut-elastic-load-balancing-cost-by-90-78d4e980624b  
+        
+    # AWS WAF (Web App Firewall)  https://aws.amazon.com/waf/pricing/  
+        charges per number of WebACLs and the number of rules that you add per WebACL; no additional charge for reusing web ACLs across multiple CloudFront distributions and Application Load Balancers.  
+
+        WebACL Charges (in all available Regions)  
+            $5 per web ACL per month  
+        Rule Charges (in all available Regions)  
+            $1 per rule per web ACL per month  
+        Request Charge (in all available Regions)  
+            $0.60 per million web requests  
+
+    # Application Integration 
+
+        - SQS  (Simple Queue Service)  
+            Charge per SQS Request   
+
+                Free    1M /mo    
+                  $0.50/1M /mo thereafter    
+
+                1 SQS Request: 1 < messages < 10    
+                1 SQS Request: 64KB 'chunk' of payload    [BILLED]    
+                1 SQS Request: 256KB max total payload    [ALLOWED]    
+
+                    I.e., a 256KB payload is BILLED as 4 SQS Requests  
+
+        - SNS (Simple Notification Service)  
+            $0.50/M requests + ...  
+                $0.06/100K deliveries over HTTP  
+                0.75/100 deliveries   over SMS  
+                $2.00/100K deliveries over Email  
+
+
+Basic WordPress Site Cost [2015] 
+================================
+    https://www.sourcetoad.com/cloud-services/the-true-cost-of-aws-part-2/    
+    
+                                            [$/mo]    
+        Elastic Load Balancer                14.50    
+        2 EC2 10GB with EBS storage 10GB     20.00    
+        1 RDS Multi-AZ/Micro/10GB DB         22.00    
+        50 GB traffic                         4.50    
+        Misc; S3, Snapshot, Route 53          5.00    
+                                         ---------    
+                                             62.00    

@@ -1,0 +1,127 @@
+FontForge
+========= 
+  SFD [Spline Font Database] is the native filetype; it's an ASCII file.
+
+  FontForge           https://sourceforge.net/error-404.html?project=fontforgebuilds  
+  FontForge How-to    http://designwithfontforge.com/en-US/index.html  
+  Transfonter.org     https://transfonter.org  
+  UTF-8 Char Tables   http://www.utf8-chartable.de/unicode-utf8-table.pl  
+  Unicode Chars List  https://en.wikipedia.org/wiki/List_of_Unicode_characters#Latin-1_Supplement  
+
+Config
+======
+  - Set Bookmarked Folders @ \FontForge\share\fontforge\preferences
+  
+    `FCBookmarks:	R:/;C:/CACHE/Downloads/;C:/CACHE/Downloads/working/`
+  
+  - Python @ \FontForge\lib\python2.7
+  
+  - Other @ \FontForge\etc\fonts\fonts.conf
+
+Create Bold from Regular Weight 
+===============================
+
+  Edit > Select > Select All
+  Element > Style > Change Weight (try 10)
+  
+  NOT:
+    Edit > Select > Select All
+    Element > Expand Stroke > Main Stroke Width > (try ~10)
+
+
+Remove Spurious glyphs 
+======================
+
+  - Manually select per mouse LEFT-CLICK; 
+    SHIFT+ if more than one. Then ... 
+  
+      Encoding > "Detach & Remove Glyphs"
+      Encoding > Compact  (toggle off/on)
+    
+  - Element > Font info > Lookups > Select the problem > Delete
+
+Unicode Subset [Custom]
+=======================
+  >Select Unicode subrange:       Edit->Select->"Select by Script"  
+  or (De)Select glyphs manually:  SHIFT+LEFT_CLICK  
+  Invert Selection:              Edit->Select->"Invert Selection"  
+  Remove those:                  Encoding->"Detach & Remove Glyphs"  
+
+  >[ The last step takes a while. ]  
+
+  >Then, ...  
+
+  >Encoding > "Compact"  
+
+Add Glyph 
+=========
+
+  - @ Same SFD file
+  
+    Select source glyph with mouse LEFT-CLICK
+    RT-CLICK > Copy 
+    
+    Select target glyph with mouse LEFT-CLICK
+    RT-CLICK > Paste
+    
+  - @ another SFD file [per EPS file]
+  
+    Select/Open source glyph with mouse LEFT-DBL-CLICK
+    File > Export > press ENTER to save as autonamed [to $PWD]. 
+    
+    Select target glyph with mouse LEFT-CLICK
+    File > Import [SVG, EPS, ...]
+    
+  - @ NEW (unnamed) glyph 
+  
+    - Encoding > Add Encoding Slots 
+    - RT CLK > Glyph Info > Unicode Char > <type it in>
+    - Click on glyph 
+    - File > Import [SVG, ...]
+
+    
+    
+MODIFY Glyph
+============
+  E.g., for an Old Style + slashed-zero variant ...
+  
+    1. Modify, e.g., the `zero.tosf` glyph to some kind of slashed-zero effect. 
+    
+      - 'slash' source is `U+00A1 INVERTED EXCLAMATION MARK`
+      - mouse LEFT-DBL-CLK to open source glyph; arrow-select region; copy 
+      - paste to 'Back' of (opened) target glyph `U+0030 DIGIT ZERO`
+      - modify; transform/scale/rotate
+      - cut/paste to 'Fore'
+      
+    2. Copy/Paste the modified `*.tosf` set to their respective normal glyphs.
+    
+    3. Generate the (ttf) font. 
+    
+  By this method, the modified tabular/slashed-zero variant of Old Style Figures is invoked regardless of CSS property `font-variant-numeric` and related browser/typeface quirks.   
+    
+Meta Data
+=========
+
+  REQUIREd and affects how the platforms/applications render the font.
+  
+    Multiple Fonts of a Family 
+    --------------------------
+      
+      To install several fonts [sub-families] of same family [typeface] requires certain meta data
+    
+      Element > Font Info > ...
+        
+        PS Names
+        
+          Fontname         FAMILY-SUB
+          Family Name      FAMILY 
+          Name For Humans  FAMILY SUB
+
+        TTF Names [info/check; builds from PS Names]
+        
+          Family
+          Fullname 
+
+      Version Number Format: 001.001
+
+  

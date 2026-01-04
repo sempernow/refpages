@@ -1,0 +1,24 @@
+.circleci/
+k8s/
+.dockerignore
+.gitgnore
+CONTRIBUTORS
+docker*
+LICENSE
+makefile
+README.md
+.pgpass
+
+# Dirs @ root or any (sub)dir
+
+**/.env
+**/archives
+**/backup
+**/keys
+**/secrets
+
+# Files @ root or any (sub)dir
+
+**/pg.auto.pg1.conf
+**/pg.auto.pg2.conf
+**/.pgpass

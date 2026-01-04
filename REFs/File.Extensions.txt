@@ -1,0 +1,3093 @@
+File Extentions List  https://www.file-extensions.org/
+
+
+  .#24  Locoscript 24-pin Printer Data File
+  .#IB  Locoscript Dot Matrix Data File
+  .#SC  Locoscript Dot Matrix Data File
+  .#ST  Locoscript Dot Matrix Printer Definition File
+  .~    Temporary File
+  .~AP  Borland C++ AppExpert Project Database File
+  .~DE  Borland C++ Project Backup File
+  .~MN  Norton Menu Backup
+  .~PR  Terramodel Project Backup
+  .~SG  TapCIS Message Index File
+  .~$~  1st Reader Temporary File
+  .?q?  Squeeze
+  .???  ANY three character audio file: 
+	May be a dictation file where the
+        extension is the dictator's initials; 
+	playable by BCB Voice Systems software.
+  .$$$  Temporary File (various)
+  .$$A  OS/2
+  .$$F  OS/2 Database
+  .$$P  OS/2 Notes
+  .$$S  OS/2 Spreadsheet
+  .$D$  OS/2 Planner Data File
+  .$DB  dBase Temp File
+  .$ED  MS C/C++ Temporary Editor File
+  .$LN  Borland C++ TLink Response File
+  .$VM  MS Windows Virtual Manager Temp File
+  .@@@  Screen Files (shown during various installations) 
+  ._DD  Norton Disk Doctor Recovered File
+  ._DM  Nuts n Bolts Disk Minder Recovered File 
+	(Helix Software now part of McAfee)
+ 
+
+
+--------------------------------------------------------------------------------
+
+  .000  (000-999) Sequentially Numbered Backup Files
+        MS Doublespace Compressed Data File
+        Geoworks Data File
+  .001  Fax Data File (various)
+  .075  Ventura Publisher 75dpi Screen Characters
+  .085  Ventura Publisher 85dpi Screen Characters
+  .091  Ventura Publisher 91dpi Screen Characters
+  .096  Ventura Publisher 96dpi Screen Characters
+  .0B   PageMaker Printer Font LineDraw Characters
+
+
+  .10X  Gemini Bitmap Printer Graphics File
+  .113  Iomega Backup File
+  .123  Lotus File
+  .12M  Lotus Smartmaster File
+  .12U  PageMaker Font File
+  .15U  PageMaker Printer Font
+  .196  Computer Snooper Log File
+  .1PE  TurboTax Form File
+  .1ST  Information (e.g., README.1ST)
+
+  .24B  24-bit Graphic File
+  .286  Windows Standard Mode Driver
+  .2D   2D VersaCAD Drawing File
+  .2GR  Windows EGA/VGA Screen Grabber  [EGA] [VGA]
+
+  .301  Fax Data
+  .303  Seq-303 Settings
+  .320  Chromelion Demo Data File
+  .323  H.323 Internet Telephony
+  .340  Chromelion Demo Data File
+  .386  Windows Enhanced Mode Driver or Swap File
+  .3D   VersaCAD 3D Drawing File
+  .3DM  3D Modeler File
+  .3DP  Serif 3D Plus
+  .3DS  3D Studio Graphic  
+
+  .3FX  Corel Chart 3D Effect
+  .3GR  Windows SVGA/XVGA Screen Grabber  [SVGA]
+  .3IN  MSN Setup Information
+
+  .411  Sony Mavica Data File
+  .4GE  Informix 4GL Compiled Code
+  .4GL  Informix 4GL Source
+  .4SW  4DOS Swap File
+  .4TH  FORTH Program
+  .4V   Quartet Music File
+
+  .669  669 Tracker Module
+        Unis Composer Music File
+
+  .8    A86 Assembler Program File
+  .8BA  Adobe PhotoDeluxe Plugin (also ends in E, F, I, X, & Y)
+  .8BF  Filter Factory File  [Viewer]
+  .8M   PageMaker Math 8 Printer Font
+  .8U   PageMaker Roman 8 Printer Font
+
+  .906  Calcomp Plotter File
+ 
+
+
+--------------------------------------------------------------------------------
+
+  .A    UNIX Library  [UNIX]
+        ADA Program
+  .A01  ARJ Multi-volume Compressed Archive (can be 01 to 99)
+  .A11  Graphic
+  .A3K  Yamaha A3000 Sampler File
+  .A3L  Authorware 3.x Library
+  .A3M  Unpackaged Authorware MacIntosh File
+  .A3W  Unpackaged Authorware Windows File
+  .A4L  Authorware 4.x Library
+  .A4M  Unpackaged Authorware MacIntosh File
+  .A4P  Authorware File Without Runtime
+  .A4W  Unpackaged Authorware Windows File
+  .A5L  Authorware 5.x Library
+  .A5W  Unpackaged Authorware Windows File
+  .A86  A86 Assembler Program File
+  .A_T  A-Train  
+  .AA   Audio Book File
+  .AAM  Authorware Shocked File
+  .AAS  Authorware Shocked Packet
+  .AB   Applix Builder File
+  .AB6  AB Stat Data
+  .AB8  AB Stat Data
+  .AB$  AutoCAD Spooled Plot File
+  .ABC  Flowchart
+  .ABD  AmBiz Bonus Calculator Data File
+  .ABF  Adobe Binary Screen Font
+  .ABK  Corel Draw AutoBackup
+        Any Automatic Backup
+  .ABM  HitPlayer Audio Album File
+        Album File (various)
+  .ABO  Applix Builder Turbo File
+  .ABR  Photoshop Brush
+  .ABS  Abstracts
+        MPEG Audio Sound File  [MPEG]
+        PC GNU Compiler Output
+        Abscissa Data File
+  .ABW  AbiWord Document File
+  .ACA  MS Agent Character File
+        Project Manager Workbench File
+  .ACB  ACBM Graphic Image
+        Archived Data File
+  .ACC  DR-DOS Viewmax File
+  .ACD  Chromeleon Channel Raw Data
+        Sonic Foundry Acid Music File
+        MS Agent Character Definiton File
+  .ACE  The Ace Archiver Compressed File
+  .ACF  MS Agent Character File
+        Photoshop Custom Filter
+  .ACG  MS Agent Preview File
+  .ACI  ACI Development Appraisal
+  .ACL  Corel Draw 6 Keyboard Accelerator
+  .ACM  Audio Compression Manager Driver (Windows)
+        Photoshop Command Button
+        Windows System File
+        ACBM Image File
+        Interplay Compressed Sound File
+  .ACO  Photoshop Color Swatch File
+  .ACP  MS Office Assistant Preview File
+  .ACR  American College of Radiology File
+  .ACS  MS Agent Character File
+  .ACT  MS Office Actor Program File
+        FoxPro Documenting Wizard Action Diagram
+        Photoshop Color Table
+  .ACV  OS/2 Audio Drivers
+        Photoshop Saved Curve  Also see
+  .AD   AfterDark Screen Saver
+  .ADA  ADA Program File
+  .ADB  ADA Package Body
+        HP Organizer Appointment Database
+  .ADC  Chromeleon Demo Data File
+        Scanstudio 16-color Bitmap Graphic File
+        Lingvo Dictionary Text File
+  .ADD  OS/2 Adapter Device Driver
+        Adobe Pagemaker File
+  .ADE  MS Access Project Extension
+        ADC Audio File
+  .ADF  Adapter Description File
+        Admin Config File
+        Amiga Disk File (Uncompressed 901120 byte DD Diskimage)
+  .ADI  AutoCAD Plotter File
+  .ADL  QEMM MCA Adapter Description Library  [MCA]
+  .ADM  After Dark Screen Saver Module
+        Windows NT Policy Template
+  .ADN  1-2-3 Add In Utility
+        MS Access Blank Project Template
+  .ADO  Photoshop Duotone Options
+  .ADP  FaxWorks Modem Setup File
+        Astound Dynamite File
+        MS Access Project
+        AOLserver Dynamic Page File  [AOL]
+  .ADR  After Dark Random Screen Saver Module
+        Smart Address Address Book
+  .ADS  ADA Package Specification
+  .ADT  HP NewWave Card Application Data File
+        Lingvo Dictionary File
+        AdTech Fax File
+  .ADV  GUS Virtual Device Driver
+  .ADX  Lotus Approach Index File
+        Archetype Designer Document
+        Dynazip Active Delivery Script
+  .ADZ  GZ-Packed Amiga Disk File (see ADF)
+  .AE   SoftQuad Author/Editor File
+  .AEH  iPer Advanced Embedded Hypertext
+  .AEP  ArcExplorer Project File
+  .AEX  PGP Armored Extracted Public Encryption Key  [PGP]
+  .AF2  ABC Flowchart
+  .AF3  ABC Flowchart
+  .AFC  Apple Sound File
+  .AFI  Truevision Bitmap Graphic
+  .AFL  Lotus Font
+  .AFM  Outline Font Metric
+        HP NewWave Cardfile Application
+  .AFP  Flowchart Symbol Palette  
+  .AFS  Filter Factory Photoshop Filter
+  .AFT  Flowchart Template
+  .AFW  Flowchart Work Area
+  .AG   Applix Graphic
+  .AG4  Access G4 File
+  .AHS  Photoshop Halftone Screens
+  .AI   Adobe Illustrator Vector Graphic
+        Corel Trace Drawing
+  .AIF  Knowledgeware Setup Information
+        Audio Interchange File  [Viewer]  
+  .AIM  AOL Instant Messenger File  [AOL]
+  .AIN  AIN Compressed Archive
+  .AIO  APL File Transfer Format
+  .AIR  Align It! Resource File
+  .AIS  Array of Intensity Samples (Graphic)  
+        Velvet Studio Instruments
+        ACDSee Image Sequence File
+  .AIX  HP NewWave Cardfile Application Data
+  .AKF  Acrobat Key File
+  .AKW  RoboHELP Help Project Index File
+  .ALB  JASC Image Commander Album
+  .ALC  Norton Internet Security Ad Server File
+  .ALL  Arts & Letters Symbols and Characters
+        WordPerfect Printer Info
+  .ALS  Alias Image
+  .ALT  WordPerfect Menu File
+  .ALV  Photoshop Levels
+  .AM   Applix SHELF Macro
+  .AMF  Advanced Module Format Music File
+        DSMIA/Asylum Module Music 
+  .AMG  AMGC Compressed Archive (alternate site)
+        AMG ACTOR System Image
+  .AMI  Cocreate SolidDesigner Annotation File
+  .AMP  Photoshop Arbitrary Map Settings
+  .AMS  Extreme's Tracker Module Format
+        Photoshop Monitor Setup
+        Velvet Studio Module
+  .AN   Groundworks Text File 
+  .ANC  Canon Computer Pattern Maker File
+  .ANI  Animated Cursor  [Viewer]
+  .ANL  Project Analyzer Saved Analysis
+  .ANM  DeluxPaint Animation
+  .ANN  Help Annotation
+  .ANS  ANSI Graphic  [ANSI]
+        MS Word Text and Layout
+  .ANT  SimAnt for Windows Saved Game File
+  .AOS  Nokia Add-on Software
+  .AOT  ZenWorks Application Binary Object Template File
+  .AP   Applix Presents File
+        WHAP-Compressed Amiga Archive
+  .APC  Lotus Printer Driver Characters
+        Centura Team Developer Compiled Application File
+  .APD  Lotus Printer Driver
+        Centura Team Developer Dynamic Application Library File
+  .APF  Lotus Printer Driver Fonts
+        Acrobat Profile File
+        Homesite Project File
+  .API  Lotus Printer Driver Info
+        Photoshop Ink Colors Setup
+        Application Program Interface
+  .APL  Centura Team Developer Application Library File
+        APL Workspace File
+  .APP  R:Base, Symphony, DR-DOS, FoxPro (or other) Application
+        Centura Team Developer Normal Mode Application File
+  .APR  Lotus Approach 97 File
+        ArcView Project File
+  .APS  MS Visual C++ File
+  .APT  Centura Team Developer Text Mode Application File
+        Lotus Approach Data View File
+  .APX  Lotus Approach Paradox-specific Information File
+        Borland C++ Appexpert Database
+  .AQ   Applix Data
+  .ARC  Archive File
+        Compressed File
+  .ARF  Automatic Response File
+  .ARI  Aristotle Audio File
+        Compressed Archive
+  .ARJ  Compressed Archive
+  .ARK  Compressed Archive
+  .ARL  AOL Organizer File  [AOL]
+  .ARR  Atari Cubase Arrangement
+  .ART  Clip Art File
+        Xara Studio Drawing
+        Canon Crayola Art File
+        Another Ray Tracer Format
+        AOL Johnson-Grace Compressed File  [AOL]
+        First Publisher Raster Graphic
+  .ARX  Compressed Archive
+  .AS   Applix Spreadsheet
+  .ASA  MS Visual InterDev File
+        Active Server Document
+  .ASC  ASCII Text File  [ASCII]
+        PGP Armored Encrypted File  [PGP]
+  .ASD  MS Word Automatic Backup
+        Lotus Screen Driver
+        MS Advanced Streaming Format Description File
+  .ASE  Velvet Studio Sample
+  .ASF  MS Active Streaming File
+        Statgraphics Data
+        Lotus Screen Font
+        APL*Plus/PC APL Shared File
+        Electronic Arts Music File
+  .ASH  TASM Assembler Header
+  .ASI  Borland Assembler Include
+  .ASK  askSam Database
+  .ASM  Assembler Source Language (various)
+  .ASO  Assembler Object
+        Astound Dynamite Objects
+  .ASP  Active Server Page
+        Procomm Plus ASPECT Program
+        Astound Presentation File
+        Photoshop Photo File Index
+        Photoshop Separation Setup
+  .ASR  Automap Route
+        Photoshop Scratch Area
+  .AST  Astound Multimedia File
+        Photoshop Separation Tables
+        Claris Works Assistant File
+  .ASV  DataCAD Autosave File
+        Photoshop Selective Color
+  .ASX  Active Streaming File
+        Cheyenne Backup Script
+        MS Advanced Streaming Redirector File
+        Video File
+  .AT2  Aldus Persuasion 2.0 Auto Template
+  .ATF  Photoshop Transfer Function
+  .ATM  Adobe Type Manager Data File
+  .ATT  AT&T Group 4 Bitmap (fax)
+  .ATW  AnyTime Deluxe PIM File  [PIM]
+  .AU   Music File (various)  [Viewer]
+  .AUD  Audio File used by Westwood Studios for various games
+  .AUX  TeX/LaTeX Auxilliary Reference File
+        ChiWriter Auxilliary Dictionary File
+  .AVA  Avagio Publication
+  .AVB  Inculan Anti-Virus Virus Infected File
+  .AVI  Audio Video Interleave File  [Viewer]
+  .AVR  Audio Visual Research Sound File
+  .AVS  Animation File
+        Application Visualization System Format
+        Stardent AVS-X Image
+        Winamp Advanced Visualization Studio File
+  .AVX  ArcView File
+  .AW   HP AdvanceWrite Text File
+        Applix Word File
+  .AWD  Faxviewer Document
+  .AWK  AWK Script
+  .AWM  Animation Works Movie
+  .AWR  Telsis Digital Audio File
+  .AWS  StatGraphics Data File
+  .AXL  ArcIMS XML Project File  [XML]
+  .AXR  Telsis Digital Audio File
+  .AXT  ASCII Application Object Template
+        Photoshop Replace Color/Color Range
+ 
+
+
+--------------------------------------------------------------------------------
+
+  .B1J  BookJones
+  .B1N  1st Reader Binary Screen Image
+  .B1S  BookSmith
+  .B30  Ventura Publisher Printer Font
+  .B3D  3D Builder File
+  .B4   Helix Nuts and Bolts File 
+	(Helix Software now part of McAfee)
+  .B64  Base 64 MIME-encoded File  [MIME]
+  .B8   Piclab Raw Graphic File
+  .BAC  Backup
+  .BAD  Rime Mailer Address File
+        Oracle BAD File
+  .BAK  Backup
+  .BAL  Ballade Music Score
+  .BAS  BASIC Language Source
+        Basic Module
+  .BAT  Batch Processing
+  .BB   Papyrus Database Backup
+  .BBL  TeX/BibTeX Bibliographic Reference File
+  .BBM  Deluxe Paint Image File
+  .BBS  Bulletin Board Sytem Text
+  .BCH  dBase Application Generator Batch Process Object
+        Phoenix Software (Datalex) Entry Point 90 Data File
+  .BCK  Backup
+  .BCM  MS Works Communications Ffile
+  .BCO  Bitstream Fontware File
+  .BCP  Borland C++ Makefile
+  .BCW  Borland C++ 4.5 Environment Settings
+  .BDB  MS Works Dababase File
+  .BDF  West Point Bridge Designer File
+  .BDF  Egret Data File
+  .BDR  MS Publisher Border
+  .BEZ  Bitstream Fontware File
+  .BF2  Bradford 2 Font
+  .BFA  Blowfish-encrypted File (Extension added to original)
+  .BFC  Briefcase File
+  .BFM  UNIX Font Metrics File
+  .BFX  BitFax Document
+  .BG   MS Backgammon for Windows Game
+  .BGA  OS/2 Graphic Array
+  .BGI  Borland Graphic Interface
+  .BGL  Flight Simulator Scenery File
+  .BHF  pcAnywhere Host File
+  .BI   Binary File
+  .BIB  Bibliography
+        TeX/BibTeX Literature Database
+  .BIF  GroupWise Initialization File
+  .BIG  Chinese (old version)
+  .BIK  BioCharter Profile Backup File
+  .BIN  Binary File
+  .BIO  BioCharter Profile File
+        OS/2 Bios File
+  .BIT  Bitmap Image  
+  .BK   Backup
+        JetFax Faxbook File
+  .BK!  Backup
+  .BK$  Backup
+  .BK1  Backup (Can be 1 to 9, usually with WordPerfect)
+  .BKI  Backup Index
+  .BKP  Backup  
+  .BKS  Bookshelf Backup
+        IBM BookManager Read Bookshelf
+        MS Works Spreadsheet Backup
+  .BKW  FontEdit Fontset Mirror Image
+  .BLB  DreamWorks Resource Archive 
+  .BLD  BASIC Bload Graphics
+  .BLK  WordPerfect Temp File
+        Alias Wavefront Image
+  .BLT  Wordperfect for DOS File
+  .BM   Graphic (bitmap)
+  .BM1  Apogee BioMenace Data File
+  .BMF  Image File  
+  .BMI  Buzz Instrument
+  .BMK  Help Bookmark
+  .BMP  Windows OS/2 Bitmap Graphics  [Viewer]
+  .BMS  Backup Magic Backup Set
+  .BMW  Buzz Music File with Waves
+  .BMX  Buzz Music File
+  .BN   AdLib Instrument Bank
+  .BNK  Adlib Instrument Bank
+        SimCity Game File
+        (reported to be) Bink Compressed Video/Audio File
+  .BOO  Image File
+        Book
+        Compressed Archive File  
+  .BOX  Notes Mailbox
+  .BPC  Business Plan Toolkit Chart
+  .BPL  Delphi Library
+  .BPS  MS Works Document
+  .BPT  Bitmap Master File
+  .BPX  Truevision Targa Bitmap
+  .BQY  BrioQuery File
+  .BR   Bridge Script
+  .BR3  Bryce 3D Scene File
+  .BRC  Bryce 2 Scene File
+  .BRD  EAGLE Board File
+  .BRI  Basic Rate Interface File
+  .BRK  Brooktrout Fax-Mail File
+  .BRX  Multimedia Browsing Index
+  .BS_  MS Bookshelf Find Menu Shell Extension
+  .BS1  Apogee Blake Stone Data File
+  .BSA  BSARC Compressed Archive
+  .BSC  Apple II Compressed Archive
+        Boyan Script
+        MS Developer Studio Browser File
+  .BSK  Bryce 4 File
+  .BSP  Quake Map
+  .BSV  BASIC Bsave Graphics
+  .BTM  4DOS Batch To Memory Batch File
+  .BTN  ButtonWare File
+  .BTR  Btrieve Database File
+  .BUD  Quicken Backup
+  .BUG  Bug (Problem) File
+  .BUN  CakeWalk Audio Bundle File
+  .BUP  Backup
+  .BUT  Buttons! Button Definition
+  .BUY  Movie Data File
+  .BV1  WordPerfect Overflow File (Can be 1 to 9)
+  .BW   SGI Black and White Image
+  .BWB  Visual Baler Spreadsheet File
+  .BWR  Kermit Beware Bug List
+  .BWV  Business Wave File
+  .BYU  Movie File
+  .BZ   Bzip UNIX Compressed File
+  .BZ2  Bzip UNIX Compressed File (Replaces .BZ)
+ 
+
+--------------------------------------------------------------------------------
+
+  .C    C Program File
+  .C00  Ventura Print File
+  .C01  Typhoon Wave File
+  .C86  C86 C Program 
+  .C--  Sphinx C-- Source code
+  .CA   Telnet Server Initial Cache Data File
+  .CA7  Beta 44 Job File
+  .CAB  Cabinet File (Microsoft installation archive)
+  .CAC  dBase IV Executable File
+  .CAD  Softdesk Drafix CAD File
+  .CAG  MS Clip Gallery Catalog File
+  .CAL  SuperCalc Worksheet
+        Calendar File
+        CALS compressed bitmap
+  .CAM  Casio Camera Graphic  [Viewer]
+  .CAN  Navigator Fax
+  .CAP  Ventura Caption
+        Telix Session Capture
+        Compressed Music File
+  .CAR  AtHome Assistant File
+  .CAS  Comma-delimited ASCII File
+  .CAT  dBase Catalog
+        Quicken IntelliCharge Categorization File
+  .CB   MS Clean Boot File
+  .CBC  CubiCalc Fuzzy Logic System File
+  .CBI  IBM Mainframe Column Binary Formatted File
+  .CBL  COBOL Program
+  .CBM  XLib Compiled Bitmap
+  .CBT  Computer Based Training
+  .CC   C++ Program File
+        Visual dBASE Custom Class File
+  .CCA  CC:Mail File
+  .CCB  Visual Basic Animated Button Configuration
+  .CCC  Chat
+        Curtain Call Native Bitmap Graphic
+  .CCE  Calendar Creator Plus Data File
+  .CCF  OS/2 Multimedia Viewer Configuration File
+        Symphony Communications Configuration File
+  .CCH  Corel Chart
+  .CCL  Intalk Communication Command Language
+  .CCM  Lotus CC:Mail Mailbox
+  .CCO  CyberChat Data File
+  .CCR  Chat Room Shortcut
+  .CCT  Macromedia Director Shockwave Cast
+  .CDA  CD Audio Track
+  .CDB  Turbo C Database
+        Clipboard File
+        CardScan Database
+        PowerDesigner Conceptual Model Backup File  
+  .CDC  Chromeleon Driver Configuration Plugin
+  .CDD  Chromeleon Device Driver
+  .CDF  Comma Delimited Format
+        Cyberspace Description Format
+        MS Channel Definition Format
+  .CDI  Phillips Compact Disk Interactive Format
+  .CDK  Atari Calamus Document
+  .CDM  PowerDesigner Conceptual Model File  
+        Visual dBASE Custom Data Module
+  .CDR  Corel Vector Graphic
+        Raw Audio-CD Data
+  .CDT  Corel Draw Template
+  .CDX  Compound Index
+        Corel Draw Compressed Drawing
+        MS Visual Foxpro Index
+        Active Server Document
+  .CE   FarSide Computer Calendar File
+  .CEG  Continuous Edge Graphic
+        Tempra Show Bitmap Graphic
+  .CEL  Autodesk Animator Graphic
+        CIMFast Event Language File
+        Kiss Paper Doll File
+  .CER  Certificate File
+  .CEX  The Currency Exchanger Rate File
+  .CF   Imake Configurtion File
+  .CFB  Comptons Multimedia File
+  .CFG  Configuration (various)
+  .CFL  Corel Flowchart File
+  .CFM  Corel FontMaster
+        Cold Fusion Template File
+        Visual dBASE Windows Customer Form
+  .CFN  Atari Calamus Font Data File
+  .CFO  TCU Turbo C Utilities C Form Object
+  .CFP  Complete Fax Portable Fax File
+  .CGA  Ventura CGA Screen Characters
+  .CGI  Common Gateway Interface Script
+  .CGM  Computer Graphics Metafile
+  .CH   Clipper Header
+        OS/2 Configuration File
+  .CH3  Harvard Chart (Harvard Graphics taken over by Serif)
+  .CH4  Charisma 4.0 Presentation
+  .CHA  Adobe Pagemaker Kerning Data
+  .CHD  FontChameleon Font Descriptor
+  .CHF  pcAnywhere Remote Control File
+  .CHI  Chiwriter Document
+  .CHJ  Help Composer Project
+  .CHK  CHKDSK/SCANDISK Output
+        WordPerfect Temp File
+  .CHL  Chromeleon Channel Raw Data
+        Configuration History Log
+  .CHM  Compiled HTML Help
+  .CHN  Ethnograph Data File
+  .CHP  Ventura Publisher Chapter
+  .CHR  Character or Font File
+  .CHT  Cheat Machine Data File
+        ChartViewer dBase Interface File
+        Harvard Graphics Vector File 
+	(Harvard Graphics taken over by Serif)
+  .CIF  Ventura Chapter Information
+        Easy CD Creator Image
+        pcAnywhere Caller File
+        Ventura Converted Image File
+        Colombo Ipermedia File
+  .CIL  Clip Gallery Download Package
+  .CIM  Sim City 200 File
+  .CIN  OS/2 Change Control File
+  .CIR  SuperMax E-CAD Save-File Command
+  .CIT  Intergraph Scanned Image
+  .CIX  TCU Turbo C Utilities Database Index
+  .CK1  iD/Apogee Commander Keen 1 Data File (.CK1 to .CK6)
+  .CKB  Borland C++ Keyboard Mapping File
+  .CKP  Ingres Checkpoint File
+  .CL   Generic LISP Source Code
+  .CL3  Easy CD Creator Layout File
+  .CL4  Easy CD Creator Layout File
+  .CLA  Java Class File (usually .CLASS but can be shortened)
+  .CLG  Disk Catalog Database
+  .CLL  Crick Software Clicker File
+  .CLO  Cloe Image
+  .CLP  Windows Clipboard/Picture  [Viewer]
+        Quattro Pro Clip Art
+        Clipper 5 Compiler Script
+  .CLR  WinEdit Colorization Word List
+        1st Reader Binary Color Screen Image
+        PhotStyler Color Defintion
+  .CLS  Visual Basic Class Module
+        C++ Class Definition
+  .CM   Craftman Data File
+  .CMA  Applix TM1 Database File (text)
+  .CMB  Chromeleon Backup Archive
+  .CMD  OS/2, WinNT Command File
+        DOS CP/M Command File
+        dBase II Program File
+        1st Reader External Command Menu
+  .CMF  Creative Music File
+        Corel Metafile
+  .CMG  Chessmaster Saved Game
+  .CMK  Card Shop Plus File
+  .CML  Cheat Machine Library File (Windows)
+        PADGen Company Info File
+  .CMP  Leadview Bitmap
+        Open Access File
+        Address Document
+        JPEG Bitmap
+        CorelDRAW Postscript Printer Header
+        Route 66 Address Document
+        MS Word for DOS User Dictionary
+  .CMR  MediaPlayer Movie
+  .CMU  Carnegie Mellon Univeristy Stereo Raster Image
+  .CMV  Corel Move Animation
+  .CMX  Corel PhotoPaint Image
+        Corel Presentation Exchange Image
+        Apple Viewer File
+  .CNF  Configuration (various)
+        SpeedDial
+  .CNM  Windows Application Menu Options and Setup File
+  .CNQ  Compuworks Design Shop File
+  .CNT  Help File Contents (and other contents needs)
+  .CNV  MS Word Data Conversion File
+        WS_FTP Pro Upload Conversion File Data
+        WordPerfect Temporary File
+  .COB  COBOL Program File
+        Caligari Truespace Format
+        TrueSpace2 Object
+  .COD  Code List
+        Compiler Program Code
+  .COD  Multiplan Data File
+        dBase Template Source File
+        FORTRAN Compiled Code
+  .COL  Autodesk Color Palette
+        Multiplan Spreadsheet
+        Lotus Notes Import Column Description File
+  .COM  Command (Executable file)
+  .CON  Knowledgeware Consolidation File
+        Simdir Configuration File
+  .CP8  CP8 256 Gray Scale Image
+  .CPD  Fax Coversheet
+        Corel PrintOffice File
+        Complaints Desk Script
+  .CPE  Fax Coversheet
+  .CPF  Complete Fax File
+  .CPH  Corel Print House Image
+  .CPI  Code Page Information
+        ColorLab Image
+  .CPJ  CeQuadrant CD Project
+  .CPL  Control Panel Extension
+        Corel Color Palette
+        Compel Presentation
+  .CPO  Corel Print House File
+  .CPP  C++ Program
+        CA-Cricket Presents Presentation
+  .CPR  Corel Presents Presentation
+        Knowledge Access Graphics
+  .CPS  Antivirus Checksum File
+        Central Point PC Tools Backup
+        Colored PostScript File
+  .CPT  Macintosh Compressed File
+        Corel Photo-Paint Image  [Viewer]
+        dBase Encrypted Memo
+        CA Cricket Presents Template
+  .CPX  Control Panel Applet
+        CryptaPix Encrypted Image
+        Corel Presentation Exchange Compressed Drawing
+  .CPY  Copy Books Data File
+  .CPZ  COMPOZ Music Text
+  .CRD  Cardfile (Windows 3.x Database)
+  .CRF  Zortech C++ Cross-Reference File
+  .CRH  MS Golf Image File
+  .CRL  Certificate Revocation List
+  .CRP  dBase Encrypted Database
+        Visual dBASE Custom Report
+        Corel Presents Run-Time Presentation
+  .CRS  WordPerfect 5.1 for Windows File Conversion Resource
+  .CRT  Certificate File
+        Oracle Terminal Settings Info
+        UNIX Crontab File (not a required extension for Crontab)
+  .CRU  CRUSH Compressed Archive
+  .CRY  Crypto Chat II Encrypted Notebook-content
+  .CSA  Comma Deliminated Text
+  .CSC  Corel Script
+  .CSD  Bitstream Fontware File
+        Chemsoft� MSDS Database File
+  .CSF  Chemical Sample File - Cache Software
+  .CSH  Hamilton Labs C Shell Script File
+  .CSK  Claris Works
+  .CSM  Borland C++ Symbol File
+        Borland C++ 4.5 Precompiled Header
+        Kodak DC265 Camera Script
+  .CSP  PC Emcee On-Screen Image
+  .CSQ  Foxpro Queries
+  .CSS  Hypertext Cascading Style Sheet
+        Stats+ Datafile
+        Statistica Datasheet
+  .CST  Macromedia Director Cast File
+  .CSV  Comma-Separated Variables
+  .CT   Scitex CT Bitmap
+  .CTF  TIFF Compressed File
+        Symphony Character Code Translation
+  .CTL  Setup Information (various)
+        User Control (various)
+  .CTX  Compressed Text
+        Visual Basic User Control Binary File
+        Pretty Good Privacy (PGP) Ciphertext File
+        MS Online Course Text
+  .CTY  SimCity City File
+  .CUE  MS Cue Cards Data
+  .CUF  Turbo C Utilities Form Definition
+  .CUL  IconForge/ImageForge Cursor Library
+  .CUR  Cursor  [Viewer]
+  .CUT  Dr. Halo Bitmap Graphic
+  .CV   Corel Versions Archive
+        MS CodeView Information
+  .CV4  Codeview Colors
+  .CVP  WinFax Cover Page
+  .CVS  Canvas Drawing File
+  .CVT  dBase Converted Database
+  .CVW  Codeview Colors
+  .CWE  Crossword Express
+  .CWK  Claris Works Data
+  .CWS  Claris Works Template
+  .CXT  Macromedia Director Protected Cast File
+  .CXX  Zortech C++ Program
+ 
+
+--------------------------------------------------------------------------------
+
+  .D    Dialect Source Code File
+  .D3D  CorelDream 3D File
+  .D64  Commodore 64 Emulator Disk Image
+  .D8A  AmBiz Productivity Pak Catalog
+  .DAD  Chromeleon Channel Raw Data
+  .DAP  Omnis5 Application File
+        MS Access Data Access Page
+  .DAT  Data (multiple programs)
+        WordPerfect Merge Data
+        (also possibly) MPEG File
+  .DB   Paradox Database   
+  .DB2  dBase II File
+  .DBC  MS Visual Foxpro Database Container
+  .DBF  Database (multiple programs) [started as dBASE]
+        Oracle 8.x Tablespace File
+  .DBK  dBase Database Backup
+        Orcad Schematic Capture Backup File
+  .DBM  Cold Fusion Template
+  .DBO  dBase IV Compiled Program File
+  .DBQ  Paradox Memo
+  .DBT  Database Text File [dBASE]
+  .DBV  Flexfile Memo Field File
+  .DBW  DataBoss Database File
+  .DBX  Database (multiple programs)
+        DataBeam Image
+        MS Visual Foxpro Table
+  .DC   DesignCAD CAD File
+  .DC2  DesignCAD CAD File
+  .DC5  DataCAD Drawing File
+  .DCA  Visual Basic Active Designer Cache
+        IBM DisplayWrite Document Content Architecture Text File
+  .DCD  Document Content Description File 
+  .DCF  Design Rule for Camera File Systems File
+  .DCM  DCM Module Format
+  .DCP  Delphi Compiled Packages
+        OS/2 Data CodePage
+  .DCR  Shockwave File
+  .DCS  Quark Desktop Color Separation Specification
+        ACT! Activity Data File
+  .DCT  Dictionary (various)
+        MS Visual Foxpro Database Container
+  .DCU  Delphi Compiled Unit
+  .DCX  FAX Image  [Viewer]
+        Bitmap Graphics  [Viewer]  
+        Macros
+        MS Visual Foxpro Database Container
+  .DD   Macintosh Compressed Disk Doubler Archive
+  .DDB  Bitmap Graphics File
+  .DDE  Dynamic Data Exchange
+  .DDF  BTRIEVE Database
+        Bitstream Fontware File
+  .DDI  DiskDupe Image
+        Disk Doubler Image
+  .DDP  OS/2 Device Driver Profile File
+  .DEB  DOS Debug Script
+        Debian Linux Package
+  .DEF  Definitions
+        Defaults
+        SGML Tag Definition
+        SmartWare II Data File
+        C++ Definition
+        Geoworks Assembly Header File
+  .DEL  Data
+  .DEM  Demonstration  
+        USGS Map  
+  .DEP  Setup Wizard Dependency  
+  .DER  Certificate File
+  .DES  Description Text
+  .DEV  Device Driver
+        Device Independent TeX
+        LaTeX File
+  .DEZ  DES Encrypted Zip File
+  .DF1  Omnis7 and Omnis Studio Database File (also .DF2, .DF3, etc.)
+  .DFD  File Flow Diagram Graphic
+  .DFI  Digifont Outline Font Description
+  .DFL  Signature Default Program Settings
+  .DFM  Delphi Forms
+        File Flow Diagram Model  
+  .DFS  Delight Sound File
+  .DFV  Word Print Format Template
+  .DG   Autotrol Graphics
+  .DGC  TurboTax-related File
+  .DGN  Microstation95 CAD Drawing File
+        Intergraph Graphics
+  .DGS  AT Advanced Diagnostics File
+  .DH   Geoworks Dependency Information File
+  .DHP  Dr. Halo PIC
+  .DHT  Gauss Data File
+  .DIA  Computer Support Corp Diagraph Graphics File
+  .DIB  Device-Independent Bitmap Graphic  [Viewer]
+  .DIC  Dictionary (various)
+  .DIF  Data Interchange Format
+  .DIG  Text Document
+        Digilink Format
+        Sound Designer Audio File
+  .DIP  Graphics File
+  .DIR  Procomm Plus Dialing Directory
+        Macromedia Director File
+        DEC VAX Directory
+  .DIS  Corel Draw Thesaurus
+  .DIT  MS Win2000 Active Directory Schema
+  .DIZ  Description In Zip File
+  .DKB  DKBTrace Ray-Traced Graphics File
+  .DL   Animations file
+  .DLD  Lotus File
+  .DLG  Dialog Resource Script
+        C++ Dialogue Script
+  .DLL  Dynamic Link Library
+        CorelDraw Export/Import Filter
+  .DLS  Downloadable Sounds (Interactive Music Architecture)
+        Norton DiskLock Setup File
+  .DMD  Visual dBASE Data Module
+  .DMF  Delusion/XTracker Digital Music File
+        Packed Amiga Disk Image
+  .DMO  Demo  
+  .DMP  Dump (various)
+  .DMS  Compressed Archive  
+  .DNE  Darn v5+ (Windows) Events List
+  .DOB  User Document Form File  
+  .DOC  Document or Documentation (many programs/formats)
+        MS Word Document
+  .DOG  Laughing Dog Screen Saver
+  .DOH  Geoworks Dependency Information File
+  .DOS  Text File/DOS Specification Info
+  .DOT  MS Word Document Template
+        Corel Lines-Definition
+  .DOX  Text File
+        MultiMate Document
+        User Document Binary Form File  
+  .DOZ  VENDINFO Description Out of Zip File
+  .DP   Daily Planner Calendar File
+        DataPhile Data File
+  .DPA  Serif DrawPlus Animation
+  .DPJ  DeskProto CAM Project File
+  .DPK  Delphi Package File
+  .DPL  Borland Delphi 3 Packed Library
+  .DPP  Serif DrawPlus Drawing
+  .DPR  Borland C++ (or Delphi) Default Project
+  .DPT  Publish-It! Publication File
+  .DPX  Digital Moving Picture Exchange
+  .DQY  MS Excel ODBC Query File
+  .DRC  Orcad Schematic Capture Design Rules Check Report File
+  .DRN  Darn for DOS
+  .DRS  WordPerfect Driver Resource
+  .DRV  Device Driver
+  .DRW  Drawing (various)
+        Micrografix Vector Graphic
+        Pro/E Drawing
+  .DS4  Micrografx Designer Graphics (ver 4)
+  .DSC  Oracle Discard File
+        Nikon Coolpix Disk Identification File
+  .DSD  DataShaper Database File
+        Document Structure Definition File 
+  .DSF  Micrografx Designer
+        Delusion/XTracker Digital Sample
+  .DSG  Doom Saved Game
+  .DSK  Borland C++ or Turbo Pascal Project Desktop File
+        Novell Driver File
+  .DSL  Lingvo User Feature Dictionary
+  .DSM  Delphi Symbol File
+        Digital Sound Module Tracker Format
+        Dynamic Studio Music Module
+  .DSN  ODBC Data Source
+        SureThing Office Labeler (formerly DesignExpress) Document
+        Orcad Schematic Capture Schematic File
+  .DSP  Signature Display Parameters
+        Dr. Halo Graphic Screen Driver
+        MS Developer Studio Project
+  .DSQ  Corel QUERY File
+  .DSR  WordPerfect Driver
+        Active Designer File  
+  .DSS  Digital Soup Digital Sound File
+  .DST  Embroidery Machines Graphics File
+  .DSW  MS Developer Studio Workspace
+        Borland C++ Desktop Settings
+  .DSX  Active Designer Binary File  
+  .DT_  Macintosh Data File Fork
+  .DTA  Data (Various)
+  .DTD  SGML Document Definition File
+  .DTF  Q&A Database  
+  .DTM  DigiTrekker Module
+  .DTP  SecurDesk! Desktop
+        Timeworks Publisher Text Document
+        Pressworks Template File
+  .DUN  Dial-Up Network
+  .DUP  Duplicate Backup
+  .DV   DESQview Script
+        Digital Video File
+  .DVC  Lotus File
+  .DVF  DV Studio Camcorder Graphics File
+  .DVI  Device Independent Document  
+  .DVP  DESQview Program Information
+        AutoCAD Device Parameter
+  .DVR  Device Driver
+  .DW2  DesignCAD Drawing File
+  .DWC  Compressed Archive
+  .DWD  DiamondWare Digitized File
+  .DWF  Autodesk Vector Graphic
+  .DWG  AutoCAD Drawing Database
+  .DWP  Dweep Game Levels
+        DeScribe Document File
+  .DWS  Dyadic Workspace File
+  .DWT  AutoCAD Template/Prototype File
+  .DX   Document Imaging File
+        Digital Electric Corporation (DEC) Data Exchange File
+  .DXB  Drawing Interchange Binary
+  .DXF  AutoCAD Drawing Interchange Format
+  .DXN  Fujitsu dexNet Fax Document
+  .DXR  Macromedia Director Protected Movie File
+  .DYN  Lotus File
+ 
+
+--------------------------------------------------------------------------------
+
+  .EBJ  Geoworks Error Checking Object File
+  .ECC  Ecchi Role-playing Format (Generally X-rated Anime File)
+  .ECW  Ensoniq Waveset Format
+  .ED5  EDMICS Graphics File
+  .ED6  EDMICS Graphics File
+  .EDA  Ensoniq ASR Disk Image
+  .EDB  ROOTS3 Geneological Data
+  .EDD  FrameMaker Element Definition Document
+  .EDE  Ensoniq EPS Disk Image
+  .EDK  Ensoniq KT Disk Image
+  .EDQ  Ensoniq SQ1/SQ2/KS32 Disk Image
+  .EDS  Ensoniq SQ80 Disk Image
+  .EDT  VAX Edt Default Settings
+  .EDV  Ensoniq VFX-SD Disk Image
+  .EEB  WordPerfect Equation Editor Button Bar
+  .EFA  Ensoniq ASR File
+  .EFE  Ensoniq EPS File
+  .EFK  Ensoniq KT File
+  .EFQ  Ensoniq SQ1/SQ2/KS32 File
+  .EFS  Ensoniq SQ80 File
+  .EFT  Chiwriter High Res Screen Characters
+  .EFV  Ensoniq VFX-SD File
+  .EFX  Everex EFax Fax Document
+  .EGA  Ventura EGA Screen Characters
+  .EL   eMacs Lisp Source Code
+  .ELC  eMacs Lisp Byte-compiled Source Code
+  .ELI  Encyclopedia Article List
+  .ELM  MS FrontPage Theme-Pack File
+  .ELT  Event List Text  
+  .EMB  Everest Embedded Bank File
+  .EMD  ABT Extended Module
+  .EMF  Extended Windows Metafile Format  [Viewer]
+  .EML  MS Outlook Express Electronic Mail
+  .EMS  PC Tools Enhanced Menu System Config
+  .EMU  Emulation  
+  .ENC  UUENCODEd Encoded File
+        Video File
+        Knowledgeware Encyclopedia
+        Encore Music File
+  .END  Corel Arrow Definition
+  .ENG  Dictionary
+  .ENR  Enroute Toolath
+  .ENV  WordPerfect Environment
+  .EPD  Express Publisher Publication File
+  .EPI  Express Publisher Document File
+  .EPS  Encapsulated PostScript  [Viewer]
+        Ventura Printer Font
+  .EQN  WordPerfect Equation
+  .ER1  ERWin File
+  .ERD  Entity Relationship Diagram  
+  .ERM  Entity Relationship Diagram Model
+  .ERR  Error Log (various)
+  .ERX  ERWin File
+  .ESF  Emblaze Audio File
+  .ESH  Extended Shell Batch File
+  .ESI  Esri Plot File
+  .ESL  MS Visual FoxPro Distributable Support Library
+  .ETH  Ethnograph Document File
+  .ETX  SetText Structure Enhanced Text
+  .EUC  Japanese (Kanji)
+  .EUI  Ensoniq EPS Family Compacted Disk Image
+  .EVT  PC Tools Event File Scheduler
+        MS WinNT/2000 Event Log
+  .EVY  Envoy Document
+  .EWD  Express Publisher for Windows Document
+  .EWL  MS Encarta Document
+  .EX3  Harvard Device Driver (Harvard Graphics taken over by Serif)
+  .EXC  QEMM Exclude File
+        REXX Program
+        MS Word Exclusion Dictionary
+        Text Document
+  .EXE  Executable File
+  .EXP  ICQ Saved Chat File
+  .EXT  Norton Commander Extension File
+  .EYB  Encyclopedia Yearbook File
+  .EZP  Edify Electronic Workforce Backup Utility
+  .EZS  Sunburst Technology Easy Sheet Document
+  .EZT  Sunburst Technology Easy Sheet Template
+ 
+
+--------------------------------------------------------------------------------
+
+  .F    Compressed Archive File (UNIX)
+        FORTRAN Program
+  .F01  Perfect Fax Document
+  .F06  DOS 6 Pixel Screen Font
+  .F07  DOS 7 Pixel Screen Font
+  .F08  DOS 8 Pixel Screen Font
+  .F09  DOS 9 pixel Screen Font
+  .F10  DOS 10 Pixel Screen Font
+  .F11  DOS 11 Pixel Screen Font
+  .F12  DOS 12 Pixel Screen Font
+  .F13  DOS 13 Pixel Screen Font
+  .F14  DOS 14 Pixel Screen Font
+  .F15  DOS 15 Pixel Screen Font
+  .F16  DOS 16 Pixel Screen Font
+  .F2R  Farandoyle Linear Module Format
+  .F3R  Farandoyle Blocked Module Format
+  .F32  Raw 32-bit IEEE Floating Point Values
+  .F64  Raw 64-bit IEEE Floating Point Values
+  .F77  FORTRAN 77 Program
+  .F90  FORTRAN Program
+  .F96  Frecom FAX96 Document
+  .FAC  FACE Graphic
+  .FAQ  Frequently Asked Questions
+  .FAR  Farandoyle Tracker Music Module
+  .FAS  3D Fassade Plus Basic Module
+  .FAV  MS Outlook Bar Shortcuts
+  .FAX  Fax File
+  .FBC  FamilyTree Compressed Backup File
+  .FBK  Navison Financials Backup
+        FamilyTree Backup File
+  .FBM  Fuzzy Bitmap
+  .FBS  File Burner Skin
+  .FC   Harvard Dictionary (Harvard Graphics taken over by Serif)
+  .FCD  Virtual CD-ROM
+        FastCAD/EasyCAD Output
+        Patton & Patton Flow Charting 3 File
+  .FCT  Foxpro Catalog
+  .FD   FORTRAN Declarations
+        Dataflex Field Compiler Offsets
+  .FDB  Navison Financials Database
+        Art Explosion Portfolio Catalog File
+  .FDF  Adobe Acrobat Forms Document
+  .FDX  Force Index
+  .FEB  WordPerfect Figure Editor Button Bar
+  .FEM  CADRE Finite Element Mesh File
+  .FEX  Focus File
+  .FF   AGFA CompuGraphics Outline Font Description
+  .FFA  MS Fast Find File
+  .FFF  GUS PnP Bank
+        defFax Fax Document
+  .FFL  MS Fast Find File
+        PrintMaster Gold Image File
+  .FFO  MS Fast Find File
+  .FFT  DCA/FFT Final Form Text
+  .FFX  MS Fast Find File
+  .FGA  Folder Guard Attributes
+  .FGD  Folder Guard Data
+  .FGP  Folder Guard Passwords File
+  .FH3  Aldus Freehand 3 Drawing
+  .FH4  Aldus Freehand 4 Drawing
+  .FI   FORTRAN Interface File
+  .FIF  Fractal Image Format
+  .FIG  REND386/AVRIL Graphic
+  .FIL  dBase Files List Object
+        WordPerfect Overlay
+  .FIN  WordPerfect Print Format Text
+  .FIT  FITS Graphic
+  .FIX  Generic Patch File
+  .FKY  Foxpro Macro
+  .FLA  Macromedia Flash Movie
+  .FLB  Papyrus Format Library
+  .FLC  AutoDesk FLIC Animated Picture
+  .FLD  Charisma Folder
+        Hijaak Thumbnail Folder
+  .FLF  Corel Paradox Form
+        OS/2 Driver File
+        Navison Financials License File
+  .FLI  Autodesk FLIC Animation
+  .FLL  Foxpro Library
+  .FLM  AutoCAD Film
+  .FLR  Live3D File
+  .FLT  Corel Graphic Filter
+        StarTrekker Music Module
+        MulitGen Open Flight File
+  .FLX  Image File
+        Dataflex Ordered Binder
+  .FM   Adobe FrameMaker Document
+        FileMaker Pro Spreadsheet
+  .FM1  Lotus Spreadsheet File
+  .FM3  Harvard Device Driver (Harvard Graphics taken over by Serif)
+        1-2-3 Format File
+  .FMB  WordPerfect File Manager Button Bar
+        Oracle Binary Form Source Code
+  .FMD  Open Access File
+  .FML  GetRight File Mirror List
+  .FMO  dBase Ordered Format
+  .FMP  FileMaker Pro Document
+  .FMT  Format File
+        Style Sheet  
+        Oracle Text Form Format
+        MS Schedule+ Print File
+        MS Visual FoxPro Csreen Format File
+  .FMV  Frame Vector Metafile
+  .FMX  Oracle Executable Form
+  .FND  MS Explorer Saved Search
+  .FNG  Font Navigator Group File
+  .FNK  FunkTracker Module
+  .FNO  Folio Infobase
+  .FNT  Font File
+  .FOG  Fontographer Font
+  .FON  Font File
+        Procomm Plus Call Log
+  .FOR  FORTRAN Source
+  .FOT  Font-related File
+  .FOX  FoxBase File
+  .FP   FileMaker Pro File
+  .FP1  Flying Pigs for Windows Data
+  .FP3  FileMaker Pro File
+  .FP5  FileMaker Pro Document
+  .FPC  FoxPro Catalog File
+  .FPT  FileMaker Pro File
+        FoxPro Memo Fields
+  .FPX  FlashPix Bitmap  [Viewer]
+  .FRM  Form File
+        FrameMaker Document
+        FrameBuilder Document
+        Oracle Executable Form
+        Visual Basic Form
+        WordPerfect Merge Form
+        DataCAD Symbol Report File
+  .FRS  WordPerfect Graphics Driver
+  .FRT  FoxPro Report File
+  .FRX  Visual Basic Binary Form File
+        FoxPro Report File
+  .FSF  Convert It! Factor File
+        fPrint Audit Tool File
+  .FSL  Borderland's Paradox 7 Forms
+        Corel Paradox Saved Form
+  .FSM  Farandoyle Sample Format
+  .FST  FastStats Analyzer File
+  .FT   Lotus Notes Full Text Index
+  .FTG  Windows Help Full-text Search Group File
+  .FTM  Family File
+  .FTS  Windows Help Full-Text Search Index File
+  .FTV  Forest & Trees File
+  .FTW  Family File
+  .FW2  Framework II File
+  .FW3  Framework III File
+  .FW4  Framework IV File
+  .FWL  FileWrangler EXE Library
+  .FXD  WinFax Sent Document (TIFF format)
+  .FXI  File-Ex File
+  .FXP  FoxPro Compiled Source
+  .FXR  WinFax Received Document (TIFF format)
+  .FZB  Casio FZ-1 Bank Dump
+  .FZF  Casio FZ-1 Full Dump
+  .FZV  Casio FZ-1 Voice Dump
+ 
+
+--------------------------------------------------------------------------------
+
+  .G3   G3 FAX File  [Viewer]
+  .G4   GTX RasterCAD File
+  .GAL  Gallery of Pictures
+        Corel Multimedia Manager Album
+  .GB   Chinese
+  .GBK  Interbase Database Backup
+  .GC   Sierra Print Artist File
+  .GCA  GOCA Graphics File
+  .GCD  Generic CADD Drawing
+  .GCF  WinXComp Grouped Compressed File
+  .GCI  GTA2 Game File
+  .GCP  Ground Control Point File (map projection)
+  .GDB  Interbase Database
+  .GDM  Bells, Whistles, and Sound Boards Module
+  .GDS  Image File
+  .GED  GEDCOM Family History File
+        Graphic Environment Document
+        Arts & Letters Graphics File
+  .GEM  GEM (a desktop interface) File
+  .GEN  Ventura-Generated Text File
+        Chromeleon Generic Driver Configuration
+  .GEO  VideoScope File
+  .GFC  Patton & Patton Flowcharting 4 File
+  .GFI  Genigraphics Graphics Link Presentation
+  .GFX  Genigraphics Graphics Link Presentation
+  .GHO  Symantec Ghost Disk Image File
+  .GID  Windows Help Index File
+  .GIF  Graphic Interchange Format  [Viewer]
+  .GIM  Genigraphics Graphics Link Presentation
+  .GIX  Genigraphics Graphics Link Presentation
+  .GKH  Ensoniq EPS Family Disk Image
+  .GKS  Gravis GripKey Document
+  .GL   Animated Picture
+  .GLY  MS Word Glossary
+  .GMP  GTA2 Game File
+  .GNA  Genigraphics Graphics Link Presentation
+  .GNT  Micro Focus Generated Code
+  .GNX  Genigraphics Graphics Link Presentation
+  .GP3  CCITT Group 3 File (fax)
+  .GP4  CCITT Group 4 File (fax)
+  .GPP  Serif GraphicsPlus Object
+  .GR2  Windows 3.0 Screen Driver
+  .GR3  Windows 3.0 Screen Grabber
+  .GRA  Flight Simulator File
+        MS Graph Chart
+  .GRB  MS-DOS Shell Monitor
+  .GRD  Gradebook Power File
+        Map Projection Grid File
+  .GRF  Graph
+        Golden Software Graph File
+        Grafix Idea File
+  .GRP  Program Manager Group
+  .GRY  Picture File
+  .GSM  Raw GSM 6.10 Audio Stream
+        US Robotics Modem File
+  .GSP  Geometer's Sketchpad Material File
+  .GT2  Graoumftracker Music Module (new)
+  .GTK  Graoumftracker Music Module (old)
+  .GTY  Gibson Tray File
+  .GWX  Genigraphics Graphics Link Presentation
+  .GWZ  Genigraphics Graphics Link Presentation
+  .GX1  Show Partner Graphics File
+  .GX2  Show Partner Graphics File
+  .GXT  GTA2 Game File
+  .GZ   Gzip Compressed Archive
+ 
+
+--------------------------------------------------------------------------------
+
+  .H    Header (Usually C Compiler)
+  .H!   Flambeaux Tutorial Database
+  .H++  C++ Header File
+  .H--  Sphinx C-- Header File
+  .HA   Compressed Archive
+  .HAM  Image File
+  .HBK  Mathcad Handbook
+  .HDF  Hierarchical Data Format File
+  .HDL  Procomm Plus Alternate Download File Listing
+  .HDR  Procomm Plus Message Header
+        PC-File+ Database Header
+  .HDX  Help Index (Various)
+  .HED  HighEdit Document
+  .HEL  MS Hellbender Saved Game
+  .HEX  Hex Dump
+        Macintosh BinHex 2.0 File
+  .HFI  HP Font Info
+  .HFX  HotFax File
+  .HGL  HP Graphics Language
+  .HH   C++ Header
+        Help Topic Map File
+  .HHC  Table of Contents File (HHW Application)
+        TurboTax Contents File
+  .HHH  Power C Precompiled Header
+  .HHK  Help Workshop Index File
+  .HHP  Procomm Plus Help Data
+  .HHP  HTML Help Project
+  .HLP  Windows Help File
+  .HMM  Procomm Plus Alternate Mail Read Option Menu
+  .HOF  Hall Of Fame (scores)
+  .HOG  Lucas Arts Dark Forces WAD File
+  .HPF  PageMaker HP LaserJet Fonts
+  .HPG  Hewlett-Packard Graphics (plotter)
+  .HPI  Gem Font Information
+  .HPJ  Help Project File
+  .HPK  Compressed Archive  
+  .HPL  HP Graphics File
+  .HPP  C++ Program Header
+  .HPR  RoboHELP Configuration File
+  .HQX  Binhex Text Conversion File (Macintosh)
+  .HRL  Herolab EasyWin32
+  .HPM  Procomm Plus Alternate Main Menu
+  .HPP  Zortech C++ Header
+  .HPR  RoboHelp Configuration
+  .HQX  Macintosh BinHex 4 Compressed Archive
+  .HRM  Procomm Plus Alternate Main Menu
+  .HRX  Herolab EasyWin32
+  .HRZ  Image File
+  .HSS  Photoshop Hue/Saturation Information
+  .HST  History File
+        Host File
+  .HT   HyperTerminal
+  .HTA  Hypertext Application (run apps from HTML doc)
+  .HTF  WebBase File
+  .HTI  WebBase File
+  .HTM  Hypertext Markup Language (HTML)
+  .HTT  Hypertext Template
+  .HTX  Extenended Hypertext Template
+        Internet Database Connector File
+  .HWP  Hangul Word Processor File
+  .HXM  Procomm Plus Alternate Protocol Selection Menu
+        Descent2 HAM File
+  .HXX  C++ Header
+  .HYC  WordPerfect Hyphenation File
+  .HYD  WordPerfect Hyphenation Dictionary
+  .HYP  Hypertext File
+        Hyphenation File
+        Compressed Archive  
+
+  .HZ   Chinese
+ 
+
+--------------------------------------------------------------------------------
+
+  .IBA  mde infoHandler Infobase File
+  .IBM  Image File
+  .ICA  Citrix File
+        IOCA Graphics File
+  .ICB  Targa Bitmap
+  .ICC  Kodak Printer Image
+  .ICE  Archive File
+  .ICL  Icon Library File (various) ImageForge/IconForge  [Viewer]
+  .ICM  Image Color Matching Profile File
+  .ICN  Icon Program
+  .ICO  Icon  [Viewer]
+  .ICS  Outlook Calendar File
+  .ID   Disk Identification File
+  .IDB  MS Developers Intermediate File
+  .IDD  MIDI Instrument Definition
+  .IDE  Integrated Development Environment Configuration File
+  .IDF  MIDI Instruments Drivers File
+  .IDQ  Internet Data Query File
+  .IDX  Index (multiple programs)
+  .IEF  Image File
+  .IFF  Graphic, Sound (Interchangeable File Format)  [Viewer]
+  .IFS  OS/2 System File
+        IconForge Image EXE Library
+  .IGF  Inset Systems Metafile
+  .IGS  IGES-Format
+  .IIF  QuickBooks for Windows Interchange File
+  .III  Intel Phone Compatible
+  .IL   Icon Library
+  .IM8  Sun Raster Graphic
+  .IMA  WinImage File
+  .IMF  ImageForge/ImageForge Image EXE Library
+  .IMG  Bitmap Graphic (several programs)  [Viewer]
+  .IMP  Urban Chaos Game File
+  .IN3  Harvard Input Device Driver 
+	(Harvard Graphics taken over by Serif)
+  .INC  Include File (various)
+  .IND  dBase IV or DataPerfect Index
+  .INF  Information or Setup File
+  .INI  Initialization file (many)
+  .INK  Pantone Reference File
+  .INP  Oracle Source Code
+  .INS  Internet Communication Setting
+        WordPerfect File
+        Ensoniq EPS Family Instrument
+        Sample Cell / II Instrument
+        InstallShield Script
+        X-Internet Sign-up File
+  .INT  Borland Interface Units
+        Foxpro Code Page
+        Intermediate Code used for syntax checking (various)
+  .INX  Foxbase Index
+  .IO   Compressed Archive  
+  .IOB  Imagine File
+  .IOF  Findit Document
+  .ION  Text Program/Installation Description
+  .IPL  Corel Pantone Spot Reference Palette
+  .IPX  Interactive Pictures Corporation AV File
+  .IQY  Excel Web Query
+  .IRS  WordPerfect Resource File
+  .ISD  RapidFile Dictionary
+  .ISH  Compressed Archive File
+  .ISO  File List for CD-ROM
+  .ISP  X-Internet Sign-up File
+        Internet Communication Settings
+  .ISS  InstallShield Response File
+  .IST  Digitrakker Instrument File
+  .ISU  InstallShield Uninstall Script
+        Netscape File
+  .IT   Impulse Tracker Music Module
+  .ITI  Impulse Tracker Instrument
+  .ITS  Internet Document Set
+        Impulse Tracker Sample
+  .IV   VRML File
+        Open Inventor File
+  .IVF  Indeo Video File
+  .IW   Iconware Application
+        Idlewild Screensaver
+  .IWA  IBM Writing Assistant Text
+  .IWP  Wang Text File
+  .IX   Framemaker Index File
+ 
+
+--------------------------------------------------------------------------------
+
+  .J62  Ricoh Camera File
+  .JAR  Java Archive File  
+
+  .JAS  Compressed Graphic
+  .JBC  Jam Byte-Code Hex File (8051 Microprocessor File)
+  .JBD  SigmaScan Data File
+  .JBF  Paint Shop Pro Browser File
+  .JBX  Project Scheduler File
+  .JFF  JPEG Image
+  .JFI  Image File
+  .JIF  JPEG Image
+  .JIS  Japanese
+  .JMP  SAS JMPDiscovery Chart-to-statistics File
+  .JMS  Voxtron TeleButler Graphical Voice Response Call Flow
+  .JN1  Epic MegaGames Jill of the Jungle Data File
+  .JNB  Sigma Plot Workbook File
+  .JNK  Junk (temporary file)
+  .JNL  Ingres Journal File
+  .JOB  Job File
+        Task Scheduler Task Object
+        QuestVision Vector Graphics File (IMG File Conversion)
+  .JOR  MS SQL Server Journal File
+  .JPC  Picture File (Japanese)
+  .JPE  JPEG Image
+  .JPG  JPEG Image  [Viewer]
+  .JS   JavaScript Source Code
+  .JSD  eFAX Jet Suite Document
+  .JSL  PaintShop Pro File
+  .JSP  Java Server Page
+  .JT   JT Fax  
+  .JTF  JPEG Tagged Interchange Format Image
+  .JTK  Sun Java ToolKit File
+  .JW   Justwrite Text
+  .JWL  Justwrite Text File Library
+  .JZZ  Jazz Spreadsheet
+ 
+
+--------------------------------------------------------------------------------
+
+  .K25  Kurzweil 2500 Sample
+  .KAR  Karaoke MIDI File
+  .KB   Borland C++ Keyboard Script
+        Knowledge Pro Source Code
+  .KBD  Keyboard Script File Layout (various)  
+  .KBI  Keirsey-Bates Temperament Sorter Index
+  .KBM  Reflection Keyboard Script File Layout
+  .KBP  Keirsey-Bates Temperament Sorter Profile
+  .KBR  Keirsey-Bates Temperament Sorter Data
+  .KCL  Kyoto Common LISP Source Code
+  .KDC  Kodak Photo-Enhancer  [Viewer]
+  .KEX  KEDIT Profile File
+  .KEY  Keyboard Macros
+        Forecast Pro Datafile
+        Program Security or Registration File (various)
+        DataCAD Icon Toolbar File
+  .KFX  KoFax Group 4 Image
+  .KIZ  Kodak Digital Postcard File
+  .KKW  RoboHELP Keyword Help project Index File
+  .KMP  Korg Trinity KeyMaP File
+  .KNO  Personal Knowbase File
+  .KPP  SmartPad Toolpad
+  .KQP  Konica Camera File
+  .KR1  Kurzweil 2000 Sample (multi-floppy)
+  .KRZ  Kurzweil 2000 Sample
+  .KSC  Korg Trinity Script
+  .KSE  Keepsake Studio Export File
+  .KSF  Korg Trinity Sample
+  .KSH  Prodigy Internet Registration File
+  .KTT  KeyText Data File
+  .KYB  Keyboard Layout
+  .KYE  Kye Game Data
+ 
+
+--------------------------------------------------------------------------------
+
+  .L    LEX Program File
+        Link Instructions
+        LISP Program File
+  .LAB  Mailing Labels
+  .LAT  Crossword Express Lattice File
+  .LAY  Applause Word Chart Layout
+  .LBG  dBase IV Label Generator
+  .LBL  Labels (various)
+  .LBM  Deluxe Paint Bitmap Graphic  [Viewer]
+  .LBO  dBase IV Ordered Labels
+  .LBR  Compressed Archive File
+        Lotus Screen Driver
+        Omnis7 Application File
+  .LBS	Omnis Studio Application File
+  .LBT  Foxpro Label Memo
+  .LBX  Foxpro Label
+  .LCF  Linker Control File  
+  .LCK  MS Frontpage-related File
+        Adobe Pagemaker Database File
+  .LCN  WordPerfect Dictionary File
+  .LD   Telix Long Distance Codes
+  .LD1  dBase Overlay File
+  .LDB  MS Access Lock File
+        TrueVector Log Database
+  .LDF  LuraDocument File  [Viewer]
+  .LDL  Corel Paradox Delivered Library
+  .LEG  Legacy Graphic Format
+  .LES  Learn Lesson File
+        Logitech Entertainment Game Profile
+  .LET  Letter
+  .LEX  Lexicon (dictionary file)
+  .LFT  Chiwriter Laser Printer Font
+        3D Studio Loft File
+  .LGC  Program Use Log File (for Windows Program Use Optimization)
+  .LGO  MS Windows Logo Driver
+  .LGT  Urban Chaos Game File
+  .LHA  Compressed Archive File (LZH)
+  .LHS  Literate Haskell Source File
+  .LHW  Compressed Amiga Archive File  
+  .LHZ  LHA Compressed Archive File
+  .LIB  Program Library (diverse programmers' languages)
+  .LIC  License File (various Shareware)
+  .LIF  Compressed Archive File
+        HP Logical Interchange Format File
+  .LIN  AutoCAD Line Art
+  .LIS  Program Listing
+        Structured Query Reporting (SQR) Output
+  .LIT  MS Reader EBook File
+  .LJ   Text File for HP LJ II Printer
+  .LLC  LapLink Saved Connection File
+  .LLX  Laplink Exchange Agent
+  .LM8  Picture File
+  .LMD  Tune Smithy List of Modes for a Musical Scale
+  .LND  3D Landscape Data
+  .LNK  Linker File
+        Windows Shortcut File
+  .LOG  Log File (many different programs)
+  .LOK  FileWrangler/ZipWrangler/SecurDesk! Encrypted Archive
+  .LP   LP88 Linear Programming for the IBM-PC File
+  .LPB  LP88 Linear Programming for the IBM-PC File
+  .LPD  Helix Nuts and Bolts File 
+	(Helix Software now part of McAfee)
+  .LRC  Intel Video Phone File
+  .LRF  Linker Response File
+  .LRS  WordPerfect Language Resource File
+  .LSC  Tune Smithy List of Muscial Scales
+  .LSF  Streaming Audio/Video File
+  .LSL  Corel Paradox Saved Library
+  .LSP  LISP Program File
+  .LST  Listing or List (e.g., packing list)
+        PowerPoint File
+        Ingres Dump List File
+  .LSX  Streaming Audio/Video Shortcut
+  .LTR  Letter
+  .LU   ThoughtWing Library Unit File
+  .LVL  Parallax Miner Descent/D2 Level Extension
+  .LWF  LuraWave-compressed Graphic File  [Viewer]
+  .LWP  Lotus Wordpro 96/97 File
+  .LWV  MS Linguistically Enhanced Sound File
+  .LYR  DataCAD Layer File
+  .LYT  TurboTax Log File
+  .LZH  Compressed Archive File
+  .LZS  Compressed Archive File
+        Skyroads Data File
+  .LZW  Compressed Amiga Archive File
+
+  .LZX  Compressed File
+ 
+
+--------------------------------------------------------------------------------
+
+ 
+
+  .M    Matlab Function
+        Macro Source
+        Mathematica File
+  .M??  Ingres Modify Table/Index File (?? = Hex 00 to FF)
+  .M18  Accolade Golf Course File
+  .M1V  MPEG File
+  .M3   ModuleA 3 Program File
+  .M3A  MPEG Archive Enhanced .M3U Playlist File
+  .M3D  3D Animations Macro
+        Corel Motion 3D Animation
+  .M3U  MPEG URL
+  .MA3  Harvard Macro (Harvard Graphics taken over by Serif)
+  .MAC  MacPaint Bitmap Graphic
+        Macro (various)
+  .MAD  MS Access Module Shortcut
+  .MAF  MS Access Form Shortcut
+  .MAG  Picture File
+        MS Access Diagram Shortcut
+  .MAI  Mail
+  .MAK  Make File (compiler project file)
+  .MAM  MS Access Macro Shortcut
+  .MAN  Manual
+  .MAP  Image
+        Color Palette
+        Duke Nukem WAD File
+        Ingres Termcap Mapping File
+        Linker Map
+        Micrografx Format Data
+  .MAQ  MS Access Query Shortcut
+  .MAR  MS Access Report Shortcut
+  .MAS  Focus Master Data Definition
+        MS Access Stored Procedures
+        Lotus Freelance Graphics Smartmaster File
+  .MAT  Sound File
+        Matlab Variables Binary File
+        MS Access Table Shortcut
+  .MAV  MS Access View Shortcut
+  .MAW  MS Access Data Access Page
+  .MAX  Kinetix's 3D Studio MAX Scene
+        Paperport File
+        OrCAD Layout File
+  .MAZ  Hover Maze Data
+        Division's dVS/dVISE File
+  .MB   Paradox Memo Holder
+  .MB1  Apogee Monster Bash Data File
+  .MBF  MS Money Backup File
+  .MBK  dBase IV Multiple Index Backup
+  .MBX  Mailbox Message File (Outlook v1-4 or Eudora)
+  .MCC  Mathcad Configuration
+        Dialer10 Calling Card
+        Monu-Cad Pro CAD File
+  .MCD  Mathcad Document
+        Monu-Cad Pro CAD File
+  .MCF  Mathcad Font
+  .MCI  Media Control Interface Command Set
+  .MCL  Multimedia Manager Collection File
+  .MCP  Mathcad Printer Driver
+  .MCR  DataCAD Keyboard Macro File
+  .MCS  MathCAD Format File
+  .MCW  Word for Macintosh Text File
+  .MCX  Graphic File
+  .MD   Compressed Archive File
+  .MDA  MS Access Add-in
+        MS Access 2 Workgroup
+  .MDB  MS Access Database
+        MS Access Application
+  .MDE  MS Access Database File
+  .MDF  Menu Definition File
+  .MDL  Digitrakker Music Module
+        Quake Model File
+  .MDM  Telix Modem Definition
+  .MDN  MS Access Blank Database Template
+  .MDP  MS Developer Studio Project
+  .MDT  MS Access Add-in Data
+  .MDW  MS Access Workgroup Information
+  .MDX  dBase IV Multiple Index
+  .MDZ  MS Access Wizard Template
+  .ME   Information (e.g., READ.ME)
+  .MEB  WordPerfect Macro Editor Bottom Overflow File
+  .MED  WordPerfect Macro Editor Delete Save
+        OctaMED Tracker Module
+  .MEM  WordPerfect Macro Editor Macro
+        Memory File of Variables
+  .MEN  Menu
+  .MEQ  WordPerfect Macro Editor Print Queue
+  .MER  WordPerfect Macro Editor Resident Area
+        Data Interchange Format
+  .MES  Message File
+        WordPerfect Macro Editor Work Space
+  .MET  WordPerfect Macro Editor Top Overflow File
+        Presentation Manager Meta File
+        OmniPage Document
+  .MEU  DOS Shell Menus
+  .MEX  Matlab Executable Command
+        WordPerfect Macro Editor Expound File
+  .MF   MetaFont Text File
+  .MFF  MIDI File Format
+  .MGC  MGCSoft Equation Editor File
+  .MGF  Image File
+        Micrografx Font
+        Materials and Geometry Format File
+  .MGM  MGCSoft Equation Editor Macro File
+  .MH   Graphic File
+  .MHG  Multimedia File
+  .MHT  MS MHTML Document (Archived Web Page)
+  .MI   Miscellaneous
+  .MIC  MS Image Composer File
+  .MID  MIDI File  [Viewer]
+  .MIF  MIDI Instrument
+        Adobe FrameMaker Interchange Format
+  .MIL  Group 4 Fax File
+  .MIM  Multi-Purpose Internet Mail Extensions (MIME) File  [MIME]
+  .MIX  Power C Object File
+        Multilayer Picture File (MS PhotoDraw 2000 & MS Picture It!)
+        Command & Conquer Movie/Sound File
+  .MK   Make File
+  .MKE  Make File
+  .MKI  Picture File
+  .MLB  Macro Library
+  .MLI  Encyclopedia Media List
+        3D Studio's Material-Library File
+  .MLS  Miles Sound Tools Compressed DLS
+  .MM   Macro Mania Macro
+  .MMC  Media Catalog  
+  .MME  Multi-Purpose Internet Mail Extensions (MIME) File  [MIME]
+  .MMF  Meal Master Format
+        MS Mail File
+  .MMM  Animation MS Multimedia Movie
+  .MMP  MindManager Player Play List File
+  .MMS  Miles Sound Tools (Midi+DLS/MLS)
+  .MMZ  MusicMatch Theme File
+  .MN2  Descent2 Mission File
+  .MND  AutoCAD Menu Program File
+        MNI Mandelbrot for Windows
+  .MNG  Animation Shop Animation
+        Multi-image Network Graphics
+  .MNT  Foxpro Menu Memo
+  .MNU  Menu File (various)
+  .MNW  Menu File (various)
+  .MNX  AutoCAD Compiled Menu File
+        Foxpro Menu
+  .MNY  MS Money File
+  .MOB  Device Definitions  
+  .MOD  Music File
+        ModuleA-2 Program File
+        Windows Kernel Module
+        Amiga and PC Tracker Module
+        MS Multiplan Spreadsheet
+  .MOV  QuickTime Video Clip  [Viewer]
+        Apple QuickTime Audio
+  .MOZ  Netscape Temp File
+  .MP   Multiplan File
+  .MP1  MPEG Audio Stream, Layer I
+  .MP2  MPEG Audio Stream, Layer II
+  .MP3  MPEG Audio Stream, Layer III  [Viewer]
+  .MPA  MPEG Audio Stream, Layer I, II or III
+  .MPC  MS Project Calender
+  .MPD  Mini Port Driver
+  .MPE  MPEG Movie Clip
+  .MPG  MPEG Animation  [Viewer]
+        MPEG 1 System Stream
+  .MPJ  RoboHTML Project
+  .MPM  WordPerfect MathPlan Macro
+  .MPP  MS Project File
+        CAD Drawing File
+  .MPQ  Blizzard Game Data File
+  .MPR  Foxpro Program
+  .MPS  Multimedia File
+  .MPT  MS Project Template File
+  .MPV  MS Project View
+  .MPX  Foxpro Compiler Menu
+        MS Project Export File
+  .MRB  Multiple Resolution Bitmap Graphic
+  .MRI  MRI Scan
+  .MRK  Informative Graphics Markup File
+  .MRS  WordPerfect Macro Resource File
+  .MS   Checksum File for Anti-Virus
+  .MSA  Magic Shadow Archive
+  .MSG  Program Message
+        OzWin Message/Mail File
+        MS Mail Message
+  .MSH  MASH (The Microsoft Agent Scripting Helper)
+  .MSI  Windows Installer File
+  .MSK  Autodesk Mask File
+        PaintShop Pro Mask File
+  .MSN  MS Network Document
+        Descent Mission File
+  .MSP  MS Paint Graphic File
+        Windows Installer Patch
+  .MST  Minispecification  
+        Windows SDK Setup Script
+  .MSW  Word Text File
+  .MTH  Derive Math File
+  .MTM  Sound File
+        MultiTracker Music Module
+  .MTV  Picture File
+  .MTW  Minitab Data File
+  .MU   Quattro Menu
+  .MUL  Ultima Online Game
+  .MUP  Music Publisher File
+  .MUS  Audio File
+  .MVB  Database
+        MS Multimedia Viewer File
+  .MVF  Movie Stop Frame File  
+  .MWP  Lotus Wordpro 97 Smartmaster File
+  .MXT  MS C
+  .MYS  Myst Saved Game
+  .MZ   MOZART Music Document
+  .MZT  MOZART Template File
+ 
+
+--------------------------------------------------------------------------------
+
+ 
+
+  .NAN  Nanoscope File
+  .NAP  NAP Metafile Vector Image
+  .NAV  MSN Application Extension
+  .NB   Nota Bene Text File
+  .NCB  MS Developer Studio File
+  .NCD  Norton Change Directory
+  .NCF  Netware Command File
+        Lotus Notes Internal Clipboard
+  .NDL  Lotus Notes
+  .NDO  3D Low-polygon Modeler  
+  .NDX  Index (usually dBase compatible)
+  .NED  MSN Application Extension
+  .NET  Network Configuration
+  .NEW  New Information (e.g., WHATS.NEW)
+  .NFF  Image File
+        Neutral File Format
+  .NFO  Folio Infobase
+  .NG   Norton Guide Online Documentation
+  .NIL  Norton Icon Library File
+  .NLB  Oracle 7 Data
+  .NLM  Netware Loadable Module
+  .NLS  Code Page National Language Support
+  .NLU  Norton Live Update E-Mail Trigger File
+  .NOL  Nokia Operator Logo
+  .NOT  Notes
+  .NOW  Text File (e.g., README.NOW)
+  .NPM  Nokia Picture Message
+  .NRG  Norton Registration Entries
+  .NRT  Nokia RingTone
+  .NS2  Lotus Notes 2 Database
+  .NS3  Lotus Notes
+  .NSF  Lotus Notes Database
+  .NSG  Lotus Notes
+  .NSH  Lotus Notes
+  .NST  Audio File
+        Noise Tracker Music Module
+  .NTF  Lotus Notes Database Template
+  .NTS  Norton Tutorial
+  .NTX  Clipper Index
+  .NW   NoteWorthy 2 File
+  .NWC  Noteworthy Composer Song File
+  .NWS  MS Outlook Express News File
+ 
+
+--------------------------------------------------------------------------------
+
+  .O    Object File (various)
+  .O$$  Output File (temporary usually)
+  .O01  Typhoon Voice File
+  .OAB  MS Outlook Address Book
+  .OAZ  OAZ Fax File  
+  .OBD  MS Office Binder
+  .OBJ  Relocatable Object Code (various)
+        Lightwave Object
+  .OBZ  MS Office Binder Wizard
+  .OCA  Control Typelib Cache
+  .OCX  Object Linking and Embedding (OLE) Control Extension
+  .OD1  Omnis5 Database File (also .OD2, .OD3, etc.)
+  .ODF  Open Document Interchange
+        BattleZone Cartographers Guild File
+  .ODS  MS Outlook Express Mailbox
+  .OFC  Open Financial Connectivity File
+  .OFF  Vector Graphic (Object File Format)
+        3D Mesh Object File Format
+  .OFM  Adobe Font
+  .OFN  MS Office FileNew File
+  .OFT  MS Outlook Item Template
+  .OFX  Open Financial Exchange File
+  .OKT  Oktalyzer Tracker Module
+  .OLB  Object Library
+  .OLD  Old Version (sometimes used as a backup indicator)
+  .OLE  Object Linking and Embedding (OLE) Object
+  .OLI  Olivetti Text File
+  .OMF  Image File
+  .OND  Lotus Notes-related File (unverified)
+  .ONX  Onyx Graphics Postershop File
+  .OPC  Beta 44 Job File
+  .OPL  Psion Organiser Programming Language Source File
+  .OPO  OPL Output Executable File
+  .OPT  QEMM Optimize
+        Options
+        MS Developer Studio File
+  .OPX  MS Orgchart Organization Diagram
+        OPL Extension DLL
+  .OQY  MS Excel OLAP Query File
+  .OR2  Lotus Organiser 2 File
+  .OR3  Lotus Organiser 97 File
+  .ORA  Oracle 7 Configuration
+  .ORC  MIDI File
+        Oracle 7 Script
+  .ORG  Lotus Organiser File
+  .ORI  Original
+  .OSS  MS Office Search
+  .OST  MS Exchange/Outlook Offline File
+  .OTL  Super NoteTab Template File
+  .OUT  Outlines or Output File (various)
+  .OUT  Primavera Systems, Inc. project management software - Schedule report text files 
+	(can be read in Textpad)
+  .OV1  Program File - Overlay
+  .OV2  Program File - Overlay
+  .OV3  Program File - Overlay
+  .OVL  Program File - Overlay
+  .OVR  Program File - Overlay
+  .OZM  Sharp Organizer Memo Bank
+  .OZP  Sharp Organizer Telephone Bank
+ 
+
+--------------------------------------------------------------------------------
+
+  .P    PASCAL Program File
+        Applause Picture
+  .P10  Tektronix Plot 10 Drawing
+        Certificate Request
+  .P3   Primavera Systems, Inc. project management software - Primavera Project data files 
+	(of various types)
+  .P65  Pagemaker 6.5 File
+  .P7C  Digital ID File
+  .P7M  PKCS #7 MIME Message (see Section 3.2 in RFC 2311  [MIME]
+  .P7R  Certificate Request Response
+  .P7S  PKCS #7 Signature
+  .PAB  MS Personal Address Book
+  .PAC  SB Studio II Package
+  .PAD  Telemate Keypad Definition
+  .PAG  Property Page File
+  .PAK  Compressed Archive File
+        Quake WAD File
+  .PAL  Color Palette
+        Adobe Pagemaker Library Palette
+        Compressed File
+  .PAN  Chromeleon Control Panel
+  .PAR  Fractint Parameter File
+  .PAS  Pascal Source Code
+  .PAT  AutoCAD Hatch Pattern
+        Patch
+        Corel Vector Pattern
+        Advanced Gravis Ultrasound
+        Forte Tech. Patch
+  .PBD  PowerBuilder Dynamic Library
+  .PBF  Turtle Beach Pinnacle Bank File
+  .PBK  MS Phonebook
+  .PBL  PowerBuilder Library
+  .PBM  UNIX Portable Bitmap
+  .PBR  PowerBuilder Resource
+  .PBI  Profiler Binary Input  
+
+  .PBM  PBM Portable Bit Map Graphic  [Viewer]
+  .PBO  Profiler Binary Output  
+
+  .PBT  Profiler Binary Table  
+  .PC   PC-specific Text File
+  .PC3  Harvard Custom Palette 
+        (Harvard Graphics taken over by Serif)
+  .PC5  Rockwell Software Logix 5 File
+  .PC8  ASCII Text IBM-8
+  .PCA  PCAnywhere Registry Backup
+  .PCB  Protel Technology Advanced PCB Design
+  .PCC  Image File
+  .PCD  Photo-CD Image  [Viewer]
+        P-Code Compiled Test Scripts
+  .PCE  Eudora Mailbox Name Map
+  .PCF  Profiler Command File  
+
+  .PCH  Patch File
+        MS C PreCompiled Header
+  .PCK  Turbo Pascal Pick File
+  .PCL  HP-PCL Graphic Data File (HP Printer Control Language)
+  .PCM  Sound File
+        OKI MSM6376 Synth Chip PCM Format
+  .PCP  Symantec Live Update Pro
+  .PCS  PICS Animation
+  .PCT  Bitmap Graphic (Apple PICT Format Usually)
+  .PCW  PC Write Text File
+  .PCX  PC Paintbrush Bitmap Graphic  [Viewer]
+  .PDB  Palmpilot Database File
+        Pegasus DataBase
+        Tact File
+        QuickPOS Database File
+  .PDD  Adobe PhotoDeluxe Image
+  .PDF  Printer Description
+        Adobe Acrobat File
+        Netware Printer Definition File
+        MS Package Definition File (Inventory-related)
+  .PDG  PrintShop Deluxe File
+  .PDI  MS Powerpoint File
+  .PDQ  Patton & Patton Flowcharting PDQ Lite File
+  .PDR  Port or Printer Driver
+  .PDS  PDS Graphic
+        Telsis HiCall Program File
+  .PDT  ProCite Primary Database
+  .PDV  Paintbrush Printer Driver
+  .PDX  Paradox Files
+        ProCite Database Keys
+        Acrobat Catalog Index
+  .PEB  WordPerfect Program Editor Bottom Overflow File
+  .PED  WordPerfect Program Editor Delete Save
+  .PEM  WordPerfect Program Editor Macro
+  .PEQ  WordPerfect Program Editor Print Queue File
+  .PER  WordPerfect Program Editor Resident Area
+  .PES  WordPerfect Program Editor Work Space File
+  .PET  WordPerfect Program Editor Top Overflow File
+  .PF   Monitor or Printer Profile File
+        Aladdin Systems Private Files Encrypted File
+  .PFA  Outline Font (ASCII)
+  .PFB  Outline Font (Binary)
+  .PFC  PF Component
+  .PFE  Programmers File Editor
+  .PFK  XTree Programmable Function Keys
+  .PFM  Printer Font Metrics
+  .PFP  Panorama Factory Project File
+  .PFR  PaintShop Pro File
+  .PFT  Chiwriter Printer Font
+  .PGL  Graphics (Plotter)
+  .PGM  Portable Graymap Graphic  [Viewer]
+        Chromeleon Batch Program
+  .PGP  Program Parameter
+        Pretty Good Privacy
+  .PGX  Binary Property Page File
+  .PH   PERL Header
+        MS Help Compiler Phrase Table
+  .PHD  PC Help Desk File
+  .PHO  Phone List
+  .PHP  PHP Script
+        MS Picture It! Publishing Project File
+  .PHR  NoExcuse Phrase Checker
+  .PIC  PC Paint Bitmap Graphic
+        Lotus Picture
+        Macintosh PICT Drawing
+  .PIF  Windows Program Information File
+        IBM PIF Drawing
+  .PIG  Lucas Arts Dark Forces WAD File
+  .PIM  PixMaker Project File
+  .PIN  Pushpin Set
+        Epic Pinball Data File
+  .PIT  Macintosh Compressed Archive File
+  .PIX  PrintMaster Graphic File
+        Inset Systems Bitmap
+  .PJ   MKS Source Integrity File
+  .PJL  ProCite Term Lists and Journal Title Lists
+  .PJT  Foxpro Project Memo
+  .PJX  Foxpro Project
+  .PKA  Compressed Archive File
+  .PKB  QuickPOS (Point-Of-Sale) Keyboard Layout File
+  .PKG  MS Developer Studio Application Extension
+        AppleLink Package Compression Format File
+  .PKO  PublicKey Security Object
+  .PKR  PGP Public Keyring
+  .PL   Harvard Palette (Harvard Graphics taken over by Serif)
+        PERL Program File
+  .PL3  Harvard Chart Palette (Harvard Graphics taken over by Serif)
+  .PLB  Foxpro Library
+  .PLB  LogoShow Screensaver
+  .PLC  Lotus Add-in
+  .PLD  PLD2 Source File (program due out 1Q2001)
+  .PLG  REND386/AVRIL File
+  .PLI  Oracle 7 Data Description
+  .PLL  Prelinked Library
+  .PLM  DisorderTracker2 Module
+  .PLN  WordPerfect Spreadsheet File
+  .PLS  DisorderTracker2 Sample
+        WinAmp MPEG PlayList File
+        Shoutcast File
+        MYOB Data File
+  .PLT  AutoCAD HPGL Vector Graphic Plotter File
+        Gerber Sign-making Software File
+  .PLY  Autodesk Polygon
+  .PM   PM Graphic or Perl Module
+  .PM3  PageMaker 3 Document
+  .PM4  PageMaker 4 Document
+  .PM5  PageMaker 5 Document
+  .PM6  PageMaker 6 Document
+  .PML  NT4 Performance Monitor Log File
+        PADGen Program Information
+  .PN3  Harvard Printer Driver (Harvard Graphics taken over by Serif)
+  .PNG  Public (Portable) Network Graphic 
+	(proposed GIF replacement)  [Viewer]
+        PaintShop Pro Browser
+  .PNM  PBM Portable Any Map Graphic
+  .PNT  MacPaint File
+  .POG  Descent2 File
+  .POL  Music File
+        AscToHTM Policy File
+  .POP  dBase Popup Menu
+  .POS  ProCite Output Styles
+        QuickPOS IIF File (see IIF above)
+  .POT  PowerPoint Template
+  .POV  Persistence of Vision Ray-tracer
+  .PP   Compressed Archive File
+  .PP4  Picture Publisher
+  .PP5  Picture Publisher
+  .PPA  PowerPoint Add-in
+  .PPB  WordPerfect Print Preview Button Bar
+  .PPD  PostScript Printer Description
+  .PPF  Turtle Beach Pinnacle Program File
+  .PPL  Harvard Polaroid Palette Plus ColorKey Driver
+	 (Harvard Graphics taken over by Serif)
+  .PPM  PBM Portable Pixelmap Graphic  [Viewer]
+  .PPO  Clipper Preprocessor Output
+  .PPP  Serif PagePlus Publication
+        Parson Power Publisher
+  .PPS  PowerPoint Slideshow
+  .PPT  PowerPoint Presentation
+  .PPX  Serif PagePlus Publication
+  .PQ   Adobe Pagemaker Default Printer Style
+  .PQI  Power Quest Drive Imaging Software
+  .PR2  Persuasion Presentation
+  .PR2  dBase IV Printer Driver
+  .PR3  dBase IV PostScript Printer Driver
+  .PRC  Palmpilot Resource File
+  .PRD  Printer Driver
+  .PRE  Freelance Presentation
+  .PRF  Preferences File (various)
+        dBase IV Printer Driver
+        Profiler Output
+        PICS Rules File
+  .PRG  Program File (various)
+        OzWin Purged Messages File
+        WAVmaker Program
+  .PRJ  Project File
+        3D Studio File
+        HitPlayer Advanced Playlist File
+  .PRM  Parameter File
+  .PRN  Printer Text File
+        DataCAD Windows Printer File
+        XYWrite Printer Driver
+        PostScript File
+  .PRO  Profile
+        PROLOG Program File
+  .PRS  Printer Resource File
+        WordPerfect Printer Resource Font File
+        dBase Procedure
+        Harvard File (Harvard Graphics taken over by Serif)
+  .PRT  Printer  Configuration
+        Printer-formatted File
+        Unigraphics Part File (CAD modeling data)
+  .PRV  PsiMail Internet Provider Template
+        Previous Version (used for files that change)
+  .PRX  Foxpro Compiler Program
+  .PRX  Primavera Systems, Inc. project management software - Archive file of all packaged 
+	project datafiles compressed for transfer to another user or for archival purposes.
+  .PRZ  Freelance Graphics 97 File
+  .PS   PostScript
+  .PSB  Pinnacle Sound Bank
+  .PSD  Photoshop Format  [Viewer]
+        Apple Viewer File
+  .PSF  Chiwriter PostScript Printer Font
+  .PSI  PSION A-law Audio
+  .PSM  Turbo Pascal Symbol Table
+        Protracker Studio Module Format
+        Epic Games Sound Data
+  .PSP  PaintShop Pro Image  [Viewer]
+  .PST  Outlook Personal Folder File
+  .PSY  PLD2 System File (program due out 1Q2001)
+  .PT3  Harvard Device Driver
+	(Harvard Graphics taken over by Serif)
+  .PT3  PageMaker Template
+  .PT4  PageMaker Template
+  .PT5  PageMaker Template
+  .PTM  PolyTracker Music Module
+  .PUB  PGP Public Key Ring
+        Ventura Publication
+        MS Publisher Document
+  .PUF  Puffer Encrypted File
+  .PW   Professional Write Text File
+  .PWA  Password Agent File
+  .PWD  Pocket Word Document
+  .PWF  ProCite Workforms
+  .PWL  Password List
+  .PWP  Photoworks Image File
+  .PWZ  PowerPoint Wizard
+  .PX   Primary Index
+  .PX   Paradox Primer Database Index
+  .PXL  Pocket Excel Spreadsheet
+  .PY   PYTHON Script
+        Yahoo Saved Messages
+  .PYC  Compiler PYTHON Script
+  .PZD  Pizazz Plus File
+  .PZO  Pizazz Plus File
+ 
+
+--------------------------------------------------------------------------------
+
+  .Q9Q  BladePro Graphic Plugin File
+  .QAD  PF QuickArt Document
+  .QAG  Norton Desktop Quick Access Group
+  .QBB  QuickBooks for Windows Backup File
+  .QBD  Keyboard Layout
+  .QBE  Example Query (Query By Example)
+  .QBO  dBase IV Ordered Query
+  .QBW  QuickBooks for Windows File
+  .QCP  Qualcomm PureVoice File
+  .QDI  Dictionary
+  .QDK  Quarterdeck QEMM File
+  .QDT  Quicken Data
+  .QEF  Excel Query
+  .QEP  IRMA Wordstation for Windows
+  .QFL  Family Lawyer Document
+  .QFX  Quick Link Fax
+  .QIC  Backup Set
+  .QIF  Quicken Interchange Format
+        QuickTime Image
+  .QLB  MS C Quick Library
+  .QLC  PostScript Help File
+  .QM   Quality Motion File
+  .QMT  Quicken Memorized List
+  .QNT  Chromeleon Quantification Method
+  .QNX  Quicken Indexes
+  .QPR  OS/2 Printer Queue Driver
+        Foxpro Relational Query
+  .QPX  Foxpro Ordered Query
+  .QRP  Centura Report Builder File
+  .QRS  WordPerfect Equation Editor
+  .QRT  QRT Ray Tracing Graphic
+  .QRY  dBase IV Query
+        MS Query
+  .QSC  Pxyl Visuals Chart
+  .QST  Quake Spy Tab File
+  .QT   Quicktime Video
+  .QTI  QuickTime Image
+  .QTM  QuickTime Movie
+  .QTP  QuickTime Preferences
+  .QTS  Macintosh PICT Image
+        QuickTime Image
+  .QTX  QuickTime Image
+  .QUE  Task Scheduler Queue Object
+        CuteFTP Queue File
+  .QW   Q&A Write File
+  .QWB  Quotes WriteBack Import File (MS Money)
+  .QXD  QuarkExpress File
+ 
+
+--------------------------------------------------------------------------------
+
+  .R    Pegasus Mail Resource File
+  .R??  RAR Compressed File (?? can be 01 to 99)
+  .R8   RAW Graphic File
+  .R8L  LaserJet Landscape Font
+  .R8P  LaserJet Portrait Font
+  .RA   RealMedia File  [Viewer]
+  .RAM  RealMedia Metafile
+  .RAR  RAR Compressed Archive
+  .RAS  Sun Raster Graphic  [Viewer]
+  .RAT  Rating System File
+  .RAW  RAW RGB 24-bit Graphic
+        Raw Signed PCM Data
+  .RAX  Image File
+  .RB   RocketEdition File
+  .RBF  R:Base Data File
+  .RBH  RoboHelp Configuration
+  .RC   Borland C++ Resource Compiler Script File
+  .RD3  Ray Dream Designer Graphics
+        CorelDream 3D
+  .RD4  Ray Dream Designer Graphics
+  .RD5  Ray Dream Designer Graphics
+  .RDB  TrueVector Rules Database
+  .RDF  Resource Description Framework File
+        Chromeleon Report Definition
+  .RDL  Descent Registered Level
+  .RDX  Reflex Data File
+  .REC  Sprint Record File
+        Windows Recorder Macro
+        RapidComm Voice File
+  .REF  Cross Reference
+  .REG  Registration Data
+  .REM  Annotation (remark)
+  .REP  Text Document
+  .REQ  Request
+  .RES  Resource File (various programs)
+  .REX  REXX Program File
+  .REZ  Resources
+  .RF   Sun Raster Graphic
+        RealFlash Clip
+  .RFD  RecogniFORM Form Definition
+  .RFG  RFG Research System Database
+  .RFH  RFG Household Database
+  .RFT  Revisable Format Text
+  .RGB  Picture File
+  .RI   Lotus File
+  .RIA  Alpharel Group IV Raster Graphics File
+  .RIC  Ricoh Graphic File
+  .RIF  Fractal Painter Bitmap
+  .RIP  Remote Imaging Protocol
+  .RIX  Colorix File
+        RIX Virtual Screen
+  .RL2  Descent2 Registered Level
+  .RLA  Advanced Visualizer File
+        Wavefront Raster Image
+  .RLB  Harvard Graphic File (Harvard Graphics taken over by Serif)
+  .RLC  Image Systems CAD Overlay
+  .RLE  Graphic (Run Length Encoded)  [Viewer]
+  .RM   RealMedia File
+  .RMD  RegMaid Document
+  .RMF  Rich Map Format (3D Games)
+  .RMI  MIDI File  [Viewer]
+  .RMK  RMake Make File
+  .RMM  RealPlayer File
+  .RND  AutoCAD Rendering Slide
+        AutoShade Format
+  .RNL  GTX Runlength Raster Graphics
+  .RNX  RealPlayer File
+  .ROL  Adlib Music
+  .ROV  Rescue Rover Data
+  .RP   RealPix Clip
+  .RPD  Rapidfile Database
+  .RPM  RedHat Package Manager (Linux)
+        RealMedia Player File
+  .RPT  Report (various)
+  .RQY  MS Excel OLE DB Query File
+  .RR   Railroad Tycoon
+  .RRS  Road Rash Save File
+  .RSB  Rogue Spear Bitmap
+  .RSL  PC Tools Resources Library
+        Borderland's Paradox 7 Report
+        Adobe Pagemaker File
+  .RSP  Responce Text File
+        Rockwell Software Logix 5 File
+  .RT   RealText Clip
+  .RTA  RoboHelp Configuration
+  .RTF  Rich Text Format
+  .RTK  RoboHelp Configuration
+  .RTL  Text File
+  .RTM  Real Tracker Music Module
+  .RTP  TurboTax Update File
+  .RTS  RoboHelp Configuration
+        RealAudio RTSL Document
+  .RUL  InstallShield
+  .RUN  PC Tools Script Tools Program
+  .RV   RealVideo Clip
+  .RVP  Microsoft Scan Configuration File
+  .RX   Reflex Database Driver
+  .RXD  Reflex Database
+  .RXH  Reflex Database Help File
+  .RXR  Reflex Database Report
+  .RXS  Reflex Database Screen Driver
+ 
+
+--------------------------------------------------------------------------------
+
+  .S    Assembler Source Code
+  .S$$  Temporary Sort File
+  .S01  WordPerfect Distribution File
+  .S02  WordPerfect Distribution File
+  .S03  WordPerfect Distribution File
+  .S3I  ScreamTracker v3 Instrument
+  .S3M  ScreamTracker v3 Module
+        ScreamTracker v3 Sound File
+  .SAH  http://setiathome.ssl.berkeley.edu/
+  .SAM  AMI Pro Text File
+        Signed 8-bit Sample Data
+  .SAN  The Curse of Monkey Island Movie File
+  .SAV  Backup
+        Saved File
+  .SB   Audio File
+        Raw Signed Byte (8-bit) Data
+  .SBK  Emu SoundFont v1.x Bank Files
+        Creative Labs SB AWE 32
+  .SBL  Shockwave Flash Object
+  .SBP  Superbase DML Program
+  .SC   Framework Screen Driver
+        Paradox Source Code
+        Ingres Embedded SQL/C Source File
+  .SC2  Sample Cell
+        II PC Instrument
+        Schedule+ File
+        SAS Catalog
+  .SC3  Harvard Screen Driver (Harvard Graphics taken over by Serif)
+  .SCC  Text File
+        Stamp Collector's Girl Friday Catalog File
+        Source Safe File
+  .SCD  Graphic (SCODL Scan Conversion Object Description Language)
+        Schedule+ File
+        TurboTax Schedule File
+  .SCE  SoftCuisine Data Exchange File
+  .SCF  Windows Explorer Command
+  .SCH  Schedule+ File
+        EAGLE Schematic File
+  .SCI  ScanVec Inspire File
+  .SCL  SCALA Scale
+  .SCM  SchematicMaker (Topanga Software) File
+        ScreenCam Movie
+  .SCN  Compressed Screen format
+        TrueSpace2 Scene
+  .SCO  High Score (various)
+  .SCP  Script (various)
+  .SCR  Faxview Fax
+        Screen Saver
+        Script
+  .SCT  Foxpro Screen
+        PC Tools Script Tools
+        Scitex Continuous Tone Bitmap
+        SAS Catalog
+        Windows Script Component
+        Lotus Screen Capture Text
+  .SCV  ScanVec CASmate File
+  .SCX  Foxpro Screen
+        Image File
+  .SD   Sound Designer I Audio
+  .SD2  Sound Designer II Flattened File
+        Sound Designer II Data Fork
+        SAS Database
+  .SDA  StarOffice Drawing
+        SoftCuisine Data Archive
+  .SDC  StarOffice Spreadsheet
+  .SDD  StarOffice Presentation
+  .SDF  Standard Data Format
+        Schedule Data File
+        System File Format
+        Autodesk MapGuide Spatial Data Files
+  .SDK  Roland S-series Floppy Disk Image
+        Autosketch Drawing
+  .SDL  SmartDraw Library
+  .SDN  Shell Archive
+  .SDR  SmartDraw Drawing
+  .SDS  StarOffice Chart
+        Raw Midi Sample Dump Standard File
+  .SDT  SmartDraw Template
+  .SDV  Semicolon Divided Values File
+  .SDW  StarOffice Text
+        Raw Signed DWord (32-bit) Data
+        Lotus WordPro Graphic
+  .SDX  Midi Sample Dump Standard Files Compacted by SDX
+  .SEA  Macintosh Compressed Archive File
+  .SEC  Compressed Archive File
+        PGP Secret Key Ring
+  .SEG  Compressed File Segment
+  .SEL  PaintShop Pro Selection File
+  .SEP  TIFF Bitmap Separation
+  .SEQ  Animation File
+        Chromeleon Sequence List
+  .SES  Digital Audio Editor File
+  .SET  Driver Set
+        Image Settings
+        Backup File Set
+        Configuration (various)
+  .SEX  Urban Chaos Game File
+  .SF   Sound File
+        OS/2 WPS Attribute Storage
+        IRCAM SoundFile
+  .SF2  Emu SoundFont v2.0 File
+        Creative Labs Soundfont 2.0 Bank File
+  .SFD  SoundStage Sound File Data
+  .SFI  Ventura Printer Font
+        SoundStage Sound File Info
+  .SFL  Ventura Printer Font
+        LaserJet Landscape Font
+  .SFP  Ventura Printer Font
+        LaserJet Portrait Font
+  .SFR  Sonic Foundry Sample Resource
+  .SFS  StarOffice Frame
+        PCL 5 Scalable Font
+  .SFT  Chiwriter Screen Font
+  .SFW  Graphic File (Seattle Film Works)  [Viewer]
+  .SFX  Self-extracting Archive
+  .SGF  Smart Game Format
+  .SGI  Graphic File  [Viewer]
+  .SGL  StarOffice Master Document
+  .SH   Archive File
+  .SH3  Harvard Presentation (Harvard Graphics taken over by Serif)
+  .SHB  Corel Background File
+        Document Shortcut File
+  .SHG  Hotspot Editor Hypergraphic
+  .SHK  Macintosh Compressed Archive File
+  .SHM  WordPerfect Shell Macro
+  .SHP  3D Studio Shapes File
+        3D Modeling File (various)
+  .SHR  Archive File
+  .SHS  Shell Scrap Object File
+  .SHW  Corel Presentation
+        WordPerfect Slide Show
+        Show File
+  .SI   SoftImage Image File
+  .SIG  Signature File
+  .SIK  Backup File
+  .SIM  Simulation
+  .SIT  Macintosh Compressed Archive File
+  .SIZ  Oracle 7 Configuration
+  .SKA  PGP Secret Keyring
+  .SKB  QuickPOS (Point-Of-Sale) Standard Keyboard Layout File
+  .SKL  Authorware Resource
+  .SKN  FileWrangler/SecurDesk!/ImageForge Graphic Skin
+        eRocket eBook Skin
+  .SL   S-Lang Program File
+        PACT's Save Layout
+  .SLB  AutoCAD Slide Library
+  .SLC  Telix Compiler SALT Script
+  .SLD  AutoCAD Slide
+  .SLG  Chromeleon Audit Trail
+  .SLK  Data Exchange File (Symbolic Link)
+  .SLT  Telix SALT Script Application
+  .SM   Smalltalk Program File
+  .SM   Samna Word Text File
+  .SM3  DataCAD Symbol File
+  .SMD  StarOffice Mail
+  .SMF  StarOffice Formula
+  .SMI  RealPlay SMIL File
+  .SMK  Smacker Compressed File
+  .SMM  Ami Pro Macro
+  .SMP  Sample or Samplevision Format
+        Ad Lib Gold Sample
+  .SND  Sound Clip  [Viewer]
+        Raw Unsigned PCM Data
+        AKAI MPC-series Sample
+        NeXT Sound
+        Macintosh Sound Resource
+  .SNG  MIDI Song
+  .SNM  Netscape Mail
+  .SNO  SNOBOL Program File
+  .SNP  Shapshot file (Snapview)
+  .SOU  SB Studio II Sound
+  .SP   Compressed Archive File
+  .SPC  Multiplan Program
+        WordPerfect Temp File
+        SNES Audio file
+  .SPD  Harvard Bitstream Typefaces 
+	(Harvard Graphics taken over by Serif)
+        PostScript Printer
+        Mini-driver
+        Speech Data File
+        Speedo Scalable Font
+  .SPG  Sprint Glossary
+  .SPL  Compressed Archive File
+        Printer Spool File
+        Sprint Printer Driver
+        Sample File
+        Spell Checker
+        Digitrakker Sample
+        Shockwave Flash Object
+  .SPM  WordPerfect File
+  .SPN  WordPerfect Distribution File
+  .SPP  Sprint Printer File
+  .SPR  Sprint Document Letter
+        Foxpro Generated Screen Program
+  .SPS  Sprint Screen Driver
+  .SPT  SPITBOL Program File
+  .SPX  Foxpro Compiler Screen Program
+        Screen Peace Extension
+  .SQB  SyQuest Backup
+  .SQC  Structured Query Language Common Code File  [SQL]
+  .SQL  Structured Query Language Data  [SQL]
+  .SQR  Structured Query Language Program File  [SQL]
+  .SQZ  Compressed Archive File
+  .SRC  Sourcecode (various)
+  .SRF  Sun Raster Graphic File
+  .SSD  SAS Database
+  .SSF  Enable Spreadsheet File
+  .SSI  Installer/GD Software Setup Information
+  .SSM  RealPlay Standard Streming Metafile
+  .SST  Certificate Store
+  .ST   SMALLTALK Program File
+        Atari ST Disk Image
+  .STA  Eudora File
+  .STD  State Transition Diagram Graphic
+        SureThing CD Labeler Document
+  .STF  Compressed Archive File
+        Setup Information
+        Structured File
+  .STG  PageKeeper Storage File
+  .STK  Personal Stock Monitor File
+  .STL  Certificate Trust List
+        CAD Software Solid Modeling/Prototyping File
+  .STM  Sound File
+        State Transition Diagram Model
+        Scream Tracker v2 Module
+        SHTML File
+  .STP  PageKeeper Packed Storage File
+  .STR  dBase Structure List
+        DataPerfect Structure File
+        Sceensaver
+        Stream File (Playstation Discs)
+  .STS  MS C Project Status Info
+  .STY  Style Sheet
+        MS Interactive Music Control
+        LaTeX2e Style
+  .SUD  Super Project Analyzer Data
+  .SUN  Sun Raster Graphic File
+  .SUP  WordPerfect Supplemental Dictionary
+        Super Porject Analyzer Project
+  .SVD  Word Backup File
+  .SVG  Word Backup File
+        Scalable Vector Graphics File
+  .SVS  Word Backup File
+  .SVX  Interchange File Format, 8SVX/16SV
+        Amiga 8SVX Sound
+  .SW   Audio File
+        Raw Signed Word (16-bit) Data
+  .SWA  Shockwave Audio File
+  .SWD  Storybook File (educational)
+  .SWF  Macromedia Flash Format  [Alternate]  [Viewer]
+  .SWI  Swish Data File
+  .SWL  Macromedia Flash Format  [Alternate]
+  .SWP  Sprint Backup File
+        Swap File
+  .SWT  VB Setup Wizard Template File
+        Space Watch Pro Data File
+  .SY3  Harvard Symbol File (Harvard Graphics taken over by Serif)
+  .SYD  Sysedit Backup File
+  .SYL  SYLK Spreadsheet Format
+  .SYM  Symbol Table (various)
+  .SYN  Synonym File
+  .SYS  System Configuration
+        System Device Driver
+  .SYW  Harvard Symbol Graphic (Harvard Graphics taken over by Serif)
+        Yamaha SY-series Wave Files
+ 
+
+--------------------------------------------------------------------------------
+
+ 
+
+  .T??  Ingres Table/Index File (?? = Hex 00 to FF)
+  .T2T  Sonata CAD Modelling File
+  .TAB  Guitar Tablature File
+  .TAG  Dataflex Query Tag Name
+  .TAH  Turbo Assembler Help File
+  .TAL  Adobe TypeAlign Text Illustration File
+  .TAR  Compressed Archive File
+  .TAX  Turbotax File
+  .TAZ  TAR.Z Compressed File
+  .TB1  Turbo C Font
+  .TB2  Turbo C Font
+  .TBK  Memo Backup (database programs)
+        Asymetrix Toolbook
+  .TBL  Adobe Pagemaker Import Mapping Table
+  .TC   Borland Configurations File
+  .TCH  Borland Help File
+  .TCL  TCL/TK Language Script
+  .TD   Turbo Debugger Configurations File
+  .TDB  Thumbs Plus Database
+  .TDF  Trace Definition File
+        Typeface Definition File (for fonts)
+  .TDH  Turbo Debugger Help File
+  .TDK  Turbo Debugger Keyboard Record
+  .TDO  Compressed File
+  .TDP  Serif DrawPlus Thumbnail
+  .TDS  Turbo Debugger Symbol Table
+  .TEM  Icon Author Template
+        Turbo Editor Macro Language
+  .TEX  TeX
+        LaTeX File
+        Texture File
+  .TF   Turbo Profiler Configuration File
+  .TFA  Turbo Profiler Area File
+  .TFH  Turbo Profiler Help File
+  .TFM  Tagged Font Metric
+  .TFS  Turbo Profiler Statistic
+  .TG4  CCITT Group 4 Fax
+  .TGA  Truevision Targa Graphic  [Viewer]
+  .TGZ  UNIX Tar File Zipped
+  .THB  Bitmap Graphic
+  .THD  Thread
+  .THM  MS Clipart Gallery Database
+        Serif DrawPlus Theme
+  .THN  Graphics Workshop for Windows Thumbnail
+  .THP  TurboTax-related File
+  .THS  WordPerfect Thesaurus
+  .TIF  Tagged Image Format File  [Viewer]
+  .TIG  Tiger Government Map File
+  .TLB  Remote Automation Truelib Files
+        OLE Type Library
+  .TLD  Trellix File
+  .TLE  NASA Two-Line Element Set
+  .TLT  Trellix Web Design File
+  .TLX  Telex
+        Trellix Data File
+  .TMF  WordPerfect Tagged Font Metric File
+  .TMO  Zortech C++ Global Optimizer Output File
+  .TMP  Temporary File
+  .TMS  Telemate Script
+  .TOC  Eudora Table Of Contents
+  .TOL  Kodak Photoenhancer
+  .TP   Turbo Pascal Configuration File
+  .TP3  Harvard Template (Harvard Graphics taken over by Serif)
+  .TPH  Turbo Pascal Help File
+  .TPL  Turbo Pascal Resident Units
+        Harvard Template (Harvard Graphics taken over by Serif)
+        fKey Template Designer Template File
+        CakeWalk Audio Template File
+        DataCAD Template File
+  .TPP  Turbo Pascal Protected Mode Units
+        Teleport Pro Project
+        TypePlus File
+  .TPU  Turbo Pascal Unit
+  .TPW  Turbo Pascal Unit
+  .TRE  PC Tools Directory Tree
+  .TRK  Kermit Script File
+  .TRM  Terminal Settings (various)
+  .TRN  Quattro Translation
+        Adobe Pagemaker File
+        MKS Source Integrity Project Log
+  .TRP  Tripmaker File
+  .TS   Tune Smithy File
+  .TSP  Windows Telephony Service Provider
+  .TST  WordPerfect Printer Test File
+        Test File
+  .TTC  TrueType Compressed Font
+  .TTF  TrueType Font
+  .TTK  Corel Catalyst Translation Tool Kit
+  .TTL  Tera Term Macro File
+  .TUB  PaintShop Pro Tube File
+  .TUT  Tutorial
+  .TWF  TabWorks File
+  .TWW  Tagwrite Template
+  .TX8  DOS Text File
+  .TXB  Descent/D2 Encoded Briefing File
+  .TXC  Urban Chaos Game File
+  .TXT  Text File
+  .TXW  Yamaha TX16W Wave Files
+  .TXX  DataPerfect Text Storage
+  .TYM  PageMaker Time Stamp
+  .TZ   Compressed File
+        Ingres Time Zone File
+ 
+
+--------------------------------------------------------------------------------
+
+  .U96  EasyZip Temporary File
+  .UAP  User Agent Wireless Telephony Profile
+  .UB   Audio File
+        Raw Unsigned Byte (8-bit) Data
+  .UC2  Compressed File  
+
+  .UCM  Urban Chaos Game File
+  .UCN  Compressed Archive 
+
+  .UDF  WindowsNT Uniqueness Database File
+        Photostyler Image Filter
+  .UDL  MS Data Link
+  .UDW  Raw Unsigned DoubleWord (32-bit) Data
+  .UE2  Encrypted Archive 
+
+  .UFO  Ulead Object File
+  .UG   Drawing File (various)  
+
+  .UHS  Universal Hint System File
+  .UI   User Interface
+        Geoworks UI Compiler Espire Source
+  .UIF  WordPerfect Long Prompts
+  .UIH  Geoworks UI Compiler Espire Header
+  .UL   uLAW Audio File
+  .ULD  Procomm Uploaded Files
+  .ULS  Internet Location Service
+  .ULT  UltraTracker Music Module
+  .UMB  MemMaker Backup Archive
+  .UNI  MikMod (UniMod) Format
+        Forcast Pro Data File
+  .UNX  Text File (usually UNIX)
+  .UPD  dBase Update File
+        Universal Print Driver (cross-platform)
+        Updated Program Data (various)
+  .UPI  ULead Photo Impact Program File
+  .UPO  dBase Compiled Update File
+  .UPX  ULead Photo Express Saved Image File
+  .URF  Radar ViewPoint Universal Radar Format
+  .URL  Internet Location
+  .USE  MKS Source Integrity File
+  .USL  LaserJet Landscape Font
+  .USP  PageMaker Printer Font
+        LaserJet Portrait Font
+  .USR  User Database (various)
+  .UTL  Sound File
+  .UTP  BinPatch Patch Data File
+  .UU   Compressed Archive File (UUENCODE)
+  .UUD  Uudecoded
+  .UUE  Uuencoded
+  .UW   Audio File
+        Raw Unsigned Word (16-bit) Data
+        Unitype GlobalWriter File
+  .UWF  UltraTracker Wave File
+ 
+
+--------------------------------------------------------------------------------
+
+ 
+
+  .V8   Covox 8-bit Audio
+  .VAL  Validity Checks
+        dBase Values
+  .VAP  Annotated Speech
+  .VAR  Icon Author Variable
+  .VBA  VBase File
+  .VBG  Visual Basic Group Project
+  .VBL  User Control Licensing File
+  .VBP  Visual Basic Project
+  .VBR  Remote Automation Registration Files
+  .VBS  VBScript Script File
+  .VBW  Visual Basic Project Workplace
+  .VBX  Visual Basic Extension
+  .VBZ  Wizard Launch File
+  .VC   VisiCalc Spreadsheet File
+  .VCE  Natural MicroSystems Voice File
+  .VCF  vCard File
+        Vevi Configuration File
+  .VCS  vCalendar File (Outlook)
+  .VCT  FoxPro Class Library
+  .VCX  FoxPro Class Library
+        Spreadsheet File
+  .VDA  Targa Bitmap
+  .VDO  VDOScript File
+  .VEW  Clipper Viewfile
+  .VGA  VGA Screen Driver
+        Targa Bitmap
+  .VGR  Ventura Graphic
+  .VI   Virtual Instrument LabView File
+  .VIB	Chemsoft� Export/Import MSDS Data
+  .VIC  Vicar Picture File
+  .VID  Monitor Control File
+        Screen Driver
+  .VIK  Viking Picture File
+  .VIR  Virus Infected File (renamed by Symantec Anti-Virus)
+  .VIS  Picture File
+  .VIV  VivoActive Player Video File
+  .VIZ  Division dVS/dVISE File
+  .VLB  Corel Ventura Library
+  .VMF  Ventura Font Characteristics
+        FaxWorks Audio File
+  .VOB  DVD Video Movie File
+  .VOC  Quartet Audio File
+        Creative Labs Sound
+  .VOX  Vox Audio
+        Dialogic ADPCM
+        Talking Technology Inc. File
+        Natural MicroSystmes Voice File
+  .VP   Ventura Publisher File
+  .VQE  Yamaha Sound-VQ Locator File
+  .VQF  Yamaha Sound-VQ File
+  .VQL  Yamaha Sound-VQ Locator File
+  .VRF  Oracle 7 Configuration File
+  .VRS  WordPerfect Graphics Driver
+  .VS2  Roland-Bass Transfer File
+  .VSD  Visio Drawing
+  .VSL  GetRight Download List File
+  .VSS  Visio Stencil
+  .VST  Visio Template
+        Truevision Vista Graphic
+        Targa Bitmap
+  .VSW  Visio Workspace File
+  .VUE  dBase or Foxpro View
+  .VVF  ViVerify Fingerprint
+  .VVR  ViVerify Repair
+  .VW   Volkswriter Text File
+  .VWF  CADvance Drawing File
+  .VWR  PC Tools File Viewer
+  .VXD  Virtual Device Driver
+ 
+
+--------------------------------------------------------------------------------
+
+  .W    Applause Word Chart
+  .W30  Ventura Printer Font
+  .W40  Win95 Backup File
+  .WAB  Outlook File
+  .WAD  Doom Game File
+  .WAL  WalMaster Showlist File
+        Quake 2 Texture File
+  .WAV  Waveform Audio (PCM Wave)  [Viewer]
+  .WB1  QuattroPro for Windows
+  .WB2  QuattroPro for Windows
+  .WBF  Windows Batch File
+  .WBK  Word Backup
+        WordPerfect Workbook
+  .WBL  Argo WebLoad II Upload File
+  .WBR  Crick WordBar File
+  .WBS  WebExpress Website File
+  .WBT  WinBatch Script
+        Crick Wordbar Template
+  .WCD  WordPerfect Macro Token List
+  .WCM  Works File Transmission
+        WordPerfect Macro
+  .WD2  WordExpress Document
+  .WDB  Works Database
+  .WDK  WhizFolder Desktop File
+  .WEB  Web Vector Graphic File
+        Corel Xara Web Document
+  .WFB  Turtle Beach WaveFront Bank
+  .WFD  Turtle Beach WaveFront Drum Set
+  .WFN  Corel Symbols and Fonts
+  .WFP  Turtle Beach WaveFront Program
+  .WFX  Winfax Data File
+  .WGP  Wild Board Games File
+  .WHT  MS NetMeeting Old Whiteboard Document
+  .WID  Ventura Width Table
+  .WIF  Weaving Information Format
+        Wavelet Image File
+  .WIL  Windows Interface Language Script
+        WinImage File
+  .WIN  dBase or Foxpro Window
+        Windows Backup File
+  .WIZ  Wizard File [MS Publisher and Word]
+  .WK1  Lotus Spreadsheet File
+  .WK3  Lotus Spreadsheet File
+  .WK4  Lotus Spreadsheet File
+  .WKB  WordPerfect Document
+  .WKB  Workbook
+  .WKE  Lotus Educational Version Spreadsheet File
+  .WKQ  Quattro Spreadsheet
+  .WKS  Lotus Spreadsheet File
+        XLISP Workspace
+        Works Document
+  .WKZ  Compressed Spreadsheet
+  .WLD  REND386/AVRIL File
+  .WLF  Argo WebLoad I Upload File
+  .WLG  Dr. Watson Log
+  .WLL  Word Add-in
+  .WLR  VRML Page
+  .WLS  602 pro PC SUITE Worksheet File
+  .WMA  Windows Media File  
+  .WMC  WordPerfect Macro
+        Wordmarc Text File
+  .WMF  Windows Metafile  [Viewer]
+  .WN   Write Now Text File   
+  .WNF  Corel Outline Font
+  .WOA  Windows Swap File
+  .WOW  Grave Composer Music Module
+  .WP   WordPerfect Document File
+  .WP4  WordPerfect Document File
+  .WP5  WordPerfect Document File
+  .WP6  WordPerfect Document File
+  .WPD  WordPerfect Screen Driver or Document
+        602 pro PC SUITE Document File
+  .WPF  WordPerfect Text File
+        Enable Document
+  .WPG  WordPerfect/Drawperfect Graphics
+  .WPK  Keyboard
+        WordPerfect Macros
+  .WPM  WordPerfect Macro
+  .WPS  Works Text Document
+  .WPT  WordPerfect Template
+        602 pro PC SUITE Template Document File
+  .WPW  PerfectWorks Document  
+  .WQ!  Quattro Pro Compressed Spreadsheet
+  .WQ1  Quattro Pro Spreadsheet
+  .WQ2  Quattro Pro Spreadsheet
+  .WR1  Symphony Spreadsheet File
+  .WRD  Charisma Template
+  .WR1  Symphony Document
+  .WRI  Write Document
+  .WRK  Spreadsheet File
+        Cakewalk Music Project File
+  .WRL  Plain Text VRML File  [VRML]
+  .WRP  Amiga Compressed Archive File
+  .WRS  WordPerfect Windows Printer Driver
+  .WRZ  GNUZIP Compressed VRML File  [VRML]
+  .WS   WordStar Document
+  .WS1  WordStar for Windows 1 Document
+  .WS2  WordStar for Windows 2 Document
+  .WS3  WordStar for Windows 3 Document
+  .WS4  WordStar for Windows 4 Document
+  .WS5  WordStar for Windows 5 Document
+  .WS6  WordStar for Windows 6 Document
+  .WS7  WordStar for Windows 7 Document
+  .WSC  Windows Script Component
+  .WSD  WordStar Data File
+  .WSE  Wise File
+  .WSH  Windows Script Host Settings File
+  .WSP  Chromeleon Wordspace
+  .WSQ  Wavelet-packet Scalar Quantization
+  .WST  WordStar Text File
+  .WT2  WordExpress Document Template
+  .WVL  Wavelet Compressed Bitmap
+  .WWL  Word Add-in File
+  .WZD  Sharp Organizer Program or Data File
+  .WZN  WhizFolder Document
+ 
+
+--------------------------------------------------------------------------------
+
+  .X    LEX Program File
+        AVS Image   
+
+  .X01  Paradox Secondary Index (can be 01 to 09)
+  .X16  Macromedia Program Extension (16-bit)
+  .X32  Macromedia Program Extension (32-bit)
+  .X5   Rockwell Software Logix 5 File
+  .XA   Extended Architecture File
+        File on PSX Disc
+  .XAB  Xenis Mail Address Book
+  .XAR  Corel Xara Drawing
+  .XBM  X Bitmap Graphic  [Viewer]  
+  .XFN  Ventura Printer Font
+  .XFT  Chiwriter 24 Pin Printer Font
+  .XFX  Fax File (various)
+  .XI   Fast Tracker 2 Instrument
+        ScreamTracker Instrument File
+  .XIF  Wang Image File
+        Xerox Image File
+  .XLA  Excel Add-in
+  .XLB  Excel File
+  .XLC  Excel Chart
+  .XLD  Excel Dialog
+  .XLG  Xnetech Engraving Logo File
+  .XLK  Excel Backup
+  .XLL  Excel Add-in (Dynamic Link Library)
+  .XLM  Excel Macro
+  .XLS  Excel Worksheet
+  .XLT  Excel Template
+        Lotus Translation Table
+  .XLV  Excel VBA
+  .XLW  Excel Workspace
+  .XM   Sound File
+        Fast Tracker 2 Extended Module
+  .XML  Extensible Markup Language File  [XML]
+  .XNK  Exchange Shortcut
+  .XOT  Xnetech Job Output File
+  .XPM  X Picsmap Graphic  [Viewer]
+  .XQT  SuperCalc Macro Sheet
+  .XRF  Cross Reference
+  .XR1  Epic MegaGames Xargon File
+  .XSL  XML Stylesheet  [XML]
+  .XSM  LEXIS-NEXIS Tracker
+  .XT*  Crosstalk Related File
+  .XWD  X Windows Dump  
+        Crossdown Puzzle File
+  .XWF  Yamaha XG Works File
+  .XXE  Xxencoded File
+  .XY   XYWrite Text File
+  .XY3  XYWrite Text File
+  .XY4  XYWrite IV Document
+  .XYP  XYWrite III Plus Document
+  .XYW  XYWrite Windows 4.0 Document
+ 
+
+--------------------------------------------------------------------------------
+
+  .Y    Amiga Yabba Compressed Archive File
+        Yaac Grammar File
+  .Y01  Paradox Secondary Index (can be 01 to 09)
+  .YAL  Arts & Letters Clipart
+  .YBK  Encarta Yearbook
+  .YUV  Color Space Pixel Format
+  .YZ   Yac Compressed Archive File
+ 
+
+--------------------------------------------------------------------------------
+
+
+  .Z    Compressed Archive File
+  .Z3   Infocom Game Module
+  .ZAP  FileWrangler Compressed File (only used in beta)
+        MS Windows Software Installation Settings
+  .ZC   Zipkey Configuration File
+  .ZDG  ZView Compressed Document
+  .ZER  Zerberus File
+  .ZFS  C++ Assembly Source
+  .ZGM  ZenoGraphics File
+  .ZIP  Compressed Archive File
+  .ZOM  Amiga Compressed Archive File
+  .ZOO  Compressed Archive File
+  .ZVD  ZyXEL Voice File
+  .ZW   Chinese
+
+

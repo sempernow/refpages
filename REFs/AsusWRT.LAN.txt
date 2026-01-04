@@ -1,0 +1,56 @@
+MAC
+===
+    CPE/Router
+    e0:3f:49:9a:8b:b8
+    HFC/Modem
+    3c:36:e4:62:5c:80
+    
+        CPE = Customer Premises Equipment 
+        HFC = Hybrid Fiber-Coax
+
+HOST Adapters
+=============
+
+	@ Win7, config to help host discover others on LAN after VPN on/off ...
+	
+		GbE Adapter > Properties > UNcheck: 'Internet Protocol Version 6 (TCP/IPv6)'
+	
+SB6121 DOCSIS 3.0 Cable Modem 
+=============================
+
+	http://192.168.100.1
+
+	DOCSIS [Data Over Cable Service Interface Specification] 
+	https://wiki.openwrt.org/doc/howto/configurecablemodem
+	
+	Default IP Address: 192.168.100.
+	Default Mask:       255.255.255.0
+	
+	Modem IP is on its own subnet; NOT on LAN; NOT Gateway Router's Network Address [192.168.1.x]
+
+	
+Asus RT-AC66U Router  
+====================
+
+	http://192.168.1.1
+
+	router.asus.com
+	SMB.LANDOMAIN
+	
+	Configured DHCP range: 192.168.1.[200-255]
+	 
+	Manually Assigned IP around the DHCP range [+ IP/MAC Binding]
+	
+		LAN > DHCP Server > ...
+	
+			MAC                 IP              Hostname
+			70:85:C2:3B:C6:54   192.168.1.101   XPC 
+			D0:50:99:1C:BC:27   192.168.1.102   HTPC
+			
+	AsusWRT-Merlin 
+		https://www.mediafire.com/folder/bkfq2a6aebq68/Asuswrt-Merlin
+
+	Customization @ GitHub/RMerl/asuswrt-merlin
+		https://github.com/RMerl/asuswrt-merlin/wiki/Custom-config-files
+		https://github.com/RMerl/asuswrt-merlin/wiki/User-scripts
+

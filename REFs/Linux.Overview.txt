@@ -1,0 +1,177 @@
+Linux OS - Linux kernal (Linus Torvalds) + GNU 
+aka GNU OS, aka GNU/Linux OS
+Canonical - company founded & funds Ubuntu linux distro
+
+GNU Project - www.gnu.org
+Free Software Foundation - www.fsf.org (GPL)
+DistroWatch - distrowatch.com
+
+LANGUAGES
+---------
+C/C++, Python, bash
+GUI apps: C++, Python
+Console apps: C, C++
+
+(Port C++ from MS Visual Studio to Linux w/ CMake, or @ command line w/ LLVM-Clang or G++ toolkit)
+
+DISTRIBUTIONS
+-------------
+Debian      - Basis for many distros, many containerized OSS apps
+Ubuntu      - Debian based
+RedHat      - RHEL, Fedora, CentOS
+OpenSUSE    - RedHat derivative; commercial & OSS branches; forked to several distros 
+Alpine 
+Busybox 
+
+INIT 
+----
+    systemd [systemctl...] https://en.wikipedia.org/wiki/Systemd
+        New [2014] an init system; bootstraps the user space and manage all processes subsequently
+        replaced the UNIX System V or Berkeley Software Distribution (BSD) init systems.
+        
+        systemctl
+
+LOCALE
+------
+Locale : defines the regional settings and language preferences for the user interface and system behavior; how elements like date and time formats, currency symbols, numbers, and text encoding are displayed and otherwise handled. 
+
+    - C.UTF-8 : an extension of the `C` locale that supports the UTF-8 character encoding; suitable for most applications that require UTF-8 encoding.
+
+    - C : a minimal locale that provides a basic, default environment for the system. It uses the ASCII character set and standard formatting for numbers, dates, and other data; used for scripts and system operations where nothing more than basic ASCII required.
+
+    - POSIX : Essentially another name for the `C` locale. It ensures compatibility with the POSIX (Portable Operating System Interface) standard, which defines a consistent API for Unix-like operating systems.
+
+    - fr_FR.UTF-8 : French
+
+    - en_US.UTF-8 : US English
+
+    - ... (per language)
+
+HELP
+----
+www.ubuntu.com - PDF available.
+help.ubuntu.com/community/installation
+www.linuxquestions.org - HCL (hardware compatibility list).
+
+APPS
+----
+BASH    - CLI processor [interprets scripts]
+GRUB     - bootloader
+
+GNOME     - GUI desktop [terminal]
+KDE     - GUI desktop [terminal]; menu is hideous
+
+nano     - CLI editor
+vim     - CLI editor; completely keyboard-based; fast, portable, light. (vi based)
+Emacs    - CLI editor; large library of extensions; browse files, RSS feeds, ...
+gedit     - CLI editor; GNOME based; fails @ VM shares
+Kate     - CLI editor; KDE based [lifehacker favorite 2012]
+
+Eclipse    - Full development environment
+
+Terminal - command line interface [CLI] window
+
+mc         - midnight commander - 2 pane file manager w/ editor
+
+
+Add/Remove apps
+---------------
+Menu > Applications > Add/Remove - Ubuntu curated / categorized list
+System > Admin > Synaptic Package Manager - all possible packages.
+System > Admin > Software Sources - select servers/repositories for add/remove packages.
+
+3rd party tools for add/remove
+------------------------------
+Download & install package that handles add/remove packages.
+easyUbuntu [easyubuntu.freecontrib.org]
+Automatic [getautomatix.com]
+
+CUSTOMIZE
+---------
+art.gnome.org
+
+terms
+-----
+bash - login shell; PID 1
+xinit - X Windowing System
+xterm - terminal
+stdin - standard input (e.g., keyboard)
+stdout - standard output (e.g., monitor)
+stderr - standard error (e.g., monitor) -- error messages 
+magic number - allowing file to be treated as executable
+
+System V [SVID] - AT&T UNIX System V Interface Definition (SVID); ATT's published POSIX standard from which Linux was written
+
+BSD - UC Berkely's project; unlike GNU project, can be license allows use by proprietary vendors [Mac OS X is built on a BSD derivative]; BSD versions are available from three major projects: FreeBSD [easy to use], NetBSD [most portable], and OpenBSD [most secure]. 
+
+Linux [GNU/Linux]
+
+Open Source Initiative [OSI] http://www.opensource.org
+
+
+filesystem 
+----------
+/etc/magic - file containing list of file types and information that the system uses to determine a file's type
+
+forbidden file name characters
+------------------------------
+"/" and NULL 
+spaces can be used but cause problems because they delimit commands
+inode - Index or Information Node. This is a structure containing the basic information about a file such as owner, type, access permissions and pointers (links) to the actual data on the disk. Inodes are stored in the per filesystem inode table and are referenced through inode numbers.
+
+Linux Filesystem Standard
+-------------------------
+http://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard
+
+/           - Root directory AKA "slash"
+
+/boot       - Boot loader files; initrd, ; boot directory used to boot the system.
+
+/home       - Container for $HOME (~) directory of each user
+
+/root       - HOME dir of root user
+
+/bin        - Essential command binaries for single-user mode.
+
+/sbin       - Essential system binaries
+/sbin/init          - FreeBSD startup script
+
+/lib        - Librarys required by binaries of /bin and /sbin
+
+/opt        - Add-on application software packages.
+
+/dev        - Device directory containing the device nodes (device files).
+
+/etc        - Static configuration files and startup scripts; 
+              Originally "etcetera" for use as catch-all; since backronymed to:  
+              "Editable Text Configuration" or "Extended Tool Chest"
+/etc/rc.d/init.d    - Startup (init) scripts
+/etc/init.d.        - Startup (init) scripts
+
+/usr        - Read-only, shareable user data; mmost (multi-)user utilities and applications.
+/usr/local          - Specific to this host; read-only and sharable; ./bin, ./lib, ./share
+/usr/share          - Architecture-independent (shared) data; read-only and sharable.
+/usr/local/bin      - Users' shell scripts; read-only and sharable.
+~/.local/bin        - The per-user equivalent; app installs may place scripts and configs here.
+
+/media      - Mount points for removable media
+
+/mnt        - Temporary mount points for fileystems
+
+/var        - Variable files; logs and such that change continually during OS operation.
+
+/proc       - Virtual filesystem for process +kernel info as files; procfs mount.
+
+/sys        - Virtual filesystem (sysfs), comparable to /proc. Formerly symbolic link to kernel source. 
+              Contains information about devices, drivers, and some kernel features.
+/sys/firmware/efi/efivars 
+                    - Contains UEFI (firmware) altering files. It's a special filesystem that presents the configuration settings for the computer's underlying UEFI firmware to the user. These configuration variables are used to control the way the motherboard firmware starts up the system and boots your operating system. CHANGING THE FILES IN THIS DIRECTORY THEREFORE CHANGES THESE RESPECTIVE VARIABLES IN THE FIRMWARE. 
+                    http://www.theregister.co.uk/2016/02/02/delete_efivars_linux/
+
+/run        - Temporary filesystem (tmpfs); newer, for volatile runtime data available early on boot;
+              replaces /var/run and hacks of /dev/.udev, /dev/.mdadm, /dev/.systemd or /dev/.mount
+
+/vmlinuz
+    This file is the Linux operating system proper. It contains all the functions that make everything go. When referring to the file on the hard disk, one refers to "/vmlinuz". Whereas the in-memory, executing version is referred to as the "kernel".
+
+

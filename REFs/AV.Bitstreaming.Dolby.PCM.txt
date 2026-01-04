@@ -1,0 +1,17 @@
+The Core i3 HTCP build [2010]
+-----------------------------
+"
+Intel Core i3 [H55 Chipset] supports HDMI Audio Pass Through for Native Dolby TrueHD & DTS-HD Master Audio bitstreaming.
+
+There are basically 2 types of audio
+
+    uncompressed audio = LPCM
+    lossless compressed = DTS HD / DD TrueHD
+
+So bitstreaming means sending undecoded True HD or DTS HD Bitstream over a digital link (minimum HDMI 1.3) to an external device (receiver / amplifier). The amplifier with True HD and DTS HD decoding capabilities can then decode that stream, rather than the software on the HTPC.
+
+An alternative to bitstreaming is software decoding. Here, a piece is software (ex: ffdshow) is responsible for decoding the True HD / DTS HD bitstream. It then goes on to send multi channel linear PCM to the receiver (MCH PMC). Here, your receiver is unaware that it’s receiving either Dolby True HD or DTS HD, so there will be no indicators on the receiver telling you that it is actually playing Dolby True HD / DTS HD. The receiver just gets the multi channel linear PCM and outputs that.
+"
+@ 
+http://doityourselfhtpc.wordpress.com/2010/09/13/bitstreaming-dolby-truehd-and-dts-hd-with-intel-core-i3/
+

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginxdaemon
+  namespace: default
+  labels:
+    k8s-app: nginxdaemon
+spec:
+  selector:
+    matchLabels:
+      name: nginxdaemon
+  template:
+    metadata:
+      labels:
+        name: nginxdaemon
+    spec:
+      containers:
+      - name: nginx
+        image: nginx

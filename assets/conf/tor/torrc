@@ -1,0 +1,6 @@
+SOCKSPort 0.0.0.0:9050
+SOCKSPolicy accept 10.0.200.0/24
+Log notice stdout
+DataDirectory /var/lib/tor
+HiddenServiceDir /var/lib/tor/hidden_service/
+HiddenServicePort 80 ngx:8888

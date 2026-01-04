@@ -1,0 +1,6 @@
+*.html
+*.log
+LOG.md
+!*.sql
+!REFs/*.sql
+!**/.bin/*

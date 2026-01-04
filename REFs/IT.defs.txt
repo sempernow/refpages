@@ -1,0 +1,521 @@
+Segmentation 
+	Dividing each process into several segments or sections of different sizes. A segment can be a main program, function, stacks, symbol tables, data structures, etc. A segment is a LOGICAL ADDRESS SPACE, loaded into non-contiguous memory, referenced per segment NUMBER and OFFSET. The OS maintains a table called SEGMENT MAP TABLE or LOCAL DESCRIPTOR TABLE.  This table stores records of every process and free memory blocks. It consists of the BASE ADDRESS (starting address) and the LENGTH of every segment.
+
+Service 
+	Superset of processes (daemons); typically persistent, e.g., a database manager.
+	
+	OS Bootstrap models 
+		E.g., Linux init process, the legacy bootstrap last-process which forks all child processes, became obsolete as internet tech spawned many stateful processes for which init did not scale well, and so systemd, a service-based scheme, was born. Automated Service Management. See "The Tragedy of systemd"; https://www.youtube.com/watch?reload=9&v=o_AIw9bGogo&feature=youtu.be  
+		
+		systemd (LINUX) - a spawn of launchd; "Rethinking PID 1" by Lennart Poettering
+			systemd grew into a System Manager (SM); config mgmnt AND services mgr; a SYSTEM LAYER 
+				
+				Userspace <=> System <=> Kernel 
+
+				cgroups, user-level units, Message Transport, Automation via API, Containers 
+
+		Others:
+			launchd - MacOS Tiger; replaced all event-handler daemon; listens on all ports
+			upstart - Ubuntu; not quite as capable systemd
+			OpenRC
+
+Containerization (OS Virtualization) 
+	an OS feature (ISOLATION MECHANISM) in which the kernel allows the existence of MULTIPLE ISOLATED USER-SPACE INSTANCES. Such instances, called CONTAINERs, PARTITIONs, VIRTUALIZATION ENGINEs (VEs) or JAILs (FreeBSD jail or chroot jail); may appear to program running therein as a computer, but processes inside container have no access to any resource(s) not assigned to the container; container is assigned some portion of computer's resources (CPU, RAM, Disk, Network, ...); an ADVANCED IMPLEMENTATION OF the standard CHROOT mechanism, in Unix-like systems, which changes the apparent root folder for the current running process and its children. In addition to isolation mechanisms, the kernel often provides RESOURCE-MANAGEMENT FEATURES to limit the impact of one container's activities on other containers. 
+
+	Container Image 
+		Snapshot of a filesystem, and possibly a startup command; placed in container, whereof it may utilize only its assigned resources.
+
+	Namespacing 
+		Isolating resources per process, or group of processes  
+
+	Control Groups (cgroups)
+		Limiting amount of resources used per process. Namespacing and cgroups are core components of containerization.
+
+Encodings
+	base32 {a..z}, {2..7} ; '0' => 'a' ; 
+	       blocks of 5 bytes (40 bits); 8 bits/rune; '0' rune-padding; '=' chunk padding
+	base64 {A-Z}, {a..z}, {0..9}, '+', '/', '=' zero-padding; 
+	       url-safe variant of base64: '+' => '-', '/' => '_'
+	base62 {A-Z}, {a..z}, {0..9}, '=' zero-padding; used @ keybase/saltpack; 
+	       not as easily applicable as a binary transmission substitute, and therefore is far less popular.
+
+Robustness Principle 
+	Be conservative in what you send; be liberal in what you accept. 
+	a.k.a. Postel's Law [for TCP]:   
+	Be conservative in what you do, be liberal in what you accept from others.  https://en.wikipedia.org/wiki/Robustness_principle
+
+Middleware
+	services to software applications; most commonly used for software that enables communication and management of data in distributed applications; those services found above the transport (TCP/IP) layer, but below the application environment" (app APIs). E.g., request routing, muxing, database access service; tools that support application development and delivery such as CMS, web servers, and  app servers.
+
+	https://en.wikipedia.org/wiki/Middleware
+
+	Composing a web app as a chain of middleware handlers is a very powerful and flexible approach; avoids a lot of cross-cutting concerns; factors app in elegant and easy-to-maintain ways.
+
+Cross-cutting Concern
+	In ASPECT-ORIENTED software DEVELOPMENT; parts (concerns) of a program that rely on or must affect many other parts (concerns) of the system; do not fit cleanly into object-oriented or procedural programming; often cannot be cleanly decomposed from the rest of the system; can result in either SCATTERING (code duplication), TANGLING (significant dependencies between systems), or both.
+
+	https://en.wikipedia.org/wiki/Cross-cutting_concern
+
+Atomic
+	In CONCURRENT programming, an operation (or set of operations) is ATOMIC, LINEARIZABLE, INDIVISIBLE or UNINTERRUPTIBLE if it appears to the rest of the system to occur instantaneously. Atomicity is A GUARANTEE OF ISOLATION from interrupts, signals, concurrent processes and threads. It is relevant for thread safety and reentrancy. Additionally, atomic operations commonly have a succeed-or-fail definition; they either successfully change the state of the system, or have no apparent effect.
+
+	E.g., ATOMIC COUNTER: handles concurrent processes accessing one process; accurately counting the total number of times the subject (counted) process was accessed.
+
+		`atomic.AddInt64(&counter, 1)` @ Golang's "sync/atomic" package
+
+	Atomicity is often enforced by mutual exclusion (Mutex), either in HW (cache coherency protocol), or SW (semaphores or locks). If an operation is not atomic, then sporadic extraneous behaviour caused by interactions between concurrent operations must be dealt with explicitly, which by their nature are likely to be hard to reproduce and debug.  
+	
+	PRIMITIVE ATOMIC INSTRUCTIONS
+		The ability to temporarily inhibit interrupts, ensuring that the currently running process cannot be context switched; processors have instructions that can be used to implement locking and lock-free and wait-free algorithms; used directly by compiler and operating system writers but are also abstracted and exposed as bytecodes and library functions in higher-level languages: atomic read-write, atomic swap, test-and-set, fetch-and-add, compare-and-swap, load-link/store-conditional.
+	
+	HIGH-LEVEL ATOMIC OPERATIONS
+		All-or-nothing interfaces are a common design theme: either an operation succeeds completely, or it fails and does nothing. (ACID databases refer to this principle as atomicity.) If the operation fails (usually due to concurrent operations), the user must retry, usually performing a different operation.
+
+	https://en.wikipedia.org/wiki/Linearizability
+
+Mutex 
+	Mutual Exclusion (Lock); a property of concurrency control; for preventing race conditions; ensures exclusive control over the value of specified memory address(es), for the duration of its 'lock' condition, in a concurrent processing environment. E.g., in Go language, a data structure that ensures only one goroutine can access a variable at a time, avoiding conflicts sans communication (channels).  https://en.wikipedia.org/wiki/Mutual_exclusion
+	
+Semaphore
+  a variable or abstract data type used to CONTROL ACCESS to a COMMON RESOURCE by MULTIPLE PROCESSES in a CONCURRENT system. E.g., counting the number of available resources. E.g., a Counting Semaphore; equipped with two operations, `wait` and `signal`, conventionally denoted as P (wait/decrement) and V (increment) respectively; S(P,V); associated queue (FIFO process) @ zero or negative P.  https://en.wikipedia.org/wiki/Semaphore_(programming)
+
+ETL [Extract, Transform, Load]
+	a process in database usage; data warehousing; extract from data sources; transform per format required for querying and analysis; load into database; typically all done in parallel, and connect/integrate many data sources.
+	https://en.wikipedia.org/wiki/Extract,_transform,_load
+
+Data Log [Transaction Log]
+	time sequenced record; each record holds identically-structured data; index is timestamp; last [max] index is state; NOT application/error log, which contain merely human-readable info/text; the Data Log solves THE distributed data problem of synch by removing all non-deterministic processes. A log input to identical data-processors necessarily produces identical output [state]. Such is a LOG-BASED ARCHITECURE [vs. Database architecture]; Apache Kafka - a distributed streaming platform - is a log-based architecture; an EVENT LEDGER; a kind of DISTRIBUTED COMMIT LOG [append only]
+	  "
+	  With the log [instead of database] as the source of truth, ... 
+		
+	    there is no longer any need for a single database that all systems have to use. Instead, every system can create its own data store (database) -- its own materialized view [schema-on-the-fly] -- representing only the data it needs, in the form that is the most useful for that system. This massively simplifies the role of databases in an architecture, and makes them more suited to the need of each application.
+	
+	    we can now do immutable deployments of stateful systems. Since any data store can be recreated from the log, we can create them from scratch every time we deploy changes, instead of changing things in-place — a practical example of this is given later in the article.
+	  " 
+	  https://www.confluent.io/blog/publishing-apache-kafka-new-york-times/
+	
+	Detailed Explanation of the ideas:  https://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
+	
+DevOps 
+	Applying software engineering discipline to SysOps [System Administration]
+	Dev is evermore about microSERVICES, so bash/python scripts are now [huge] the develpment projects themselves, instead of merely housekeeping scripts. SysOps guys version control their bash, python, etc admin scripts, so is available to team. Golang was designed for SysOps, but seems to work better than bash/python for DevOps too.
+
+Write-ahead Logging [WAL]  https://en.wikipedia.org/wiki/Write-ahead_logging
+	database technique; log all writes to disk by appending to a file; on system crash, then use log to determine which unstored changes can be revovered; roll-forward recovery [REDO]; @ PostgreSQL: "... any changes that have not been applied to the data pages can be redone from the log records."
+	
+Data Structures 
+	Linear 
+	
+		Stack, Que, Array, Linked List
+		
+	Hierarchical; Recursive
+	
+		Tree
+			Tree with N nodes always has N-1 links [edges]; all nodes, except root, have 1 incomming edge; DEPTH of node X is length of path [number of links aka edges] from root to X; depth of root is 0; HEIGHT of node X is longest path [number of edges] from X to a leaf node; height of leaf node is 0; height of tree is height of root node. Nodes at same depth are at same LEVEL. MAX depth of tree equals height of tree, but depth and height of a node are NOT necessarily equal; height of EMPTY tree [no nodes] is -1; height of tree with 1 node is 0.
+			
+			BINARY TREE has 2 or fewer children per node; Binary Tree created typically as a kind of linked list struct with three memory addresses per node; data plus two pointers; left-child and right-child addresses; each pointer is root of its sub-tree; However, COMPLETE BINARY TREE may be created using arrays, where nodes are indices, numbered left to right, top to bottom, thus left-child-index is 2i+1, and right-child-index is 2i+2; such an array's search cost is in LOGARITHMIC TIME (log N) if sorted, but insert/del is order of N, since all elements must shift. Binary Tree used for storage [filesystem], organization [binary search tree], trie [dictionary, dynamic spell-checking], network routing algo, ...; search-time of binary search tree is logarithmic time; max number of nodes at level i is 2^i; Level X can have at most 2 * X children; Max number of nodes in binary tree of height H is 2^0 + 2^1 + ... 2^H = 2^(H+1) - 1
+
+			STRICT/PROPER BINARY TREE has 2 or 0 children per node
+			
+			COMPLETE BINARY TREE has all levels, except possibly last  [deepest], filled [2 children], and all leaves are as far left as possible; 
+
+			PERFECT BINARY TREE; all levels completely filled; L = H, so 
+			max nodes is 2^(L+1) -1, so height is log2 (N+1) -1, or floor[log2 N]
+			
+			Big-O; O(f(t)); time-cost of search, insert, remove in perfect binary tree is proportional to HEIGHT, so want dense/perfect tree to minimize height floor[log2 N]; O(log2(N)); However, max height of binary tree is N-1, a sparse tree, which is as expensive as linked list; linear-time O(N). https://en.wikipedia.org/wiki/Time_complexity#Logarithmic_time
+
+			Big-O comparison between perfect binary tree, O(log2(N)), and linked list data structures, O(N); that is, logarithmic time vs linear time; Say N = 2^100, then List vs Tree is 2^100 vs 100*(log2 2), i.e., 1E+30 vs 100
+
+			BALANCED Binary Tree; difference in height between subtrees is not more than K (e.g., 1).
+
+			BINARY SEARCH TREE [BST]  https://www.youtube.com/watch?v=pYT9F8_LFTM
+				For each node, value of all nodes in left subtree is lesser or equal to its value; value of all nodes in right subtree is greater. Efficient, O(log2 N), structure for search, insert and remove, if BST is BALANCED; Just as an array is efficient, O(log2 N), for search [only] if sorted; can become unbalanced by insertion/deletion; balance by moving nodes per reference/pointers, no shifting needed; balancing operation is super efficient; CONSTANT TIME, ie. `O(1)`; balancing cost is proportional to the number of nodes balanced.
+
+				RED-BLACK TREE 
+					a kind of BST where balance is preserved by painting each node of the tree with one of two colors, e.g., 'red' or 'black', in a way that satisfies certain properties, which collectively constrain how unbalanced the tree can become in the worst case. 
+
+			B-TREE  https://en.wikipedia.org/wiki/B-tree
+				a self-balancing tree data structure that keeps data sorted; efficient [log-time] searches, sequential access, insertions, and deletions; generalized BST; node can have more than two children; Unlike self-balancing BST, B-tree is optimized for read and write of large blocks [pages] of data; good data structure for PAGE-ORIENTED DATABASES; external memory; page-oriented databases and filesystems;
+				
+				PostgreSQL, MySQL, SQLite, etcd are all PAGE-ORIENTED STORAGE ENGINES.
+
+			B+TREE  https://en.wikipedia.org/wiki/B%2B_tree
+				an N-ary tree with a variable but often large number of children per node; consists of a root, internal nodes and leaves. The root may be either a leaf or a node with two or more children. 
+				
+				A B+tree can be viewed as a B-tree in which EACH NODE CONTAINS ONLY KEYS (not key–value pairs), and to which an additional level is added at the bottom with linked leaves; for efficient retrieval in a BLOCK-ORIENTED STORAGE; filesystems; unlike binary search trees, B+ trees have very high fanout (number of pointers to child nodes in a node, typically on the order of 100 or more, which reduces the number of I/O operations required to find an element in the tree.
+
+				Used @ ReiserFS, NSS, XFS, JFS, ReFS, and BFS for metadata indexing 
+
+			LSM TREE [log-structured merge-tree]  https://en.wikipedia.org/wiki/Log-structured_merge-tree
+				a key-value pairs data structure; efficient [log-time] for indexed access to files with high insert volume, such as LOG-ORIENTED DATABASES; transactional log data; maintain data in two or more separate structures; e.g., Level-0 in memory, and Level 1, 2, ... in SSD, each of which is optimized for its respective underlying storage medium; data is synchronized between the two structures efficiently, in batches; 
+				
+				Leveldb, Rocksdb, Cassandra are LOG-ORIENTED STORAGE ENGINES.
+
+		Graph
+	
+Containers 
+	Began w/ chroot @ 1960's; a filesystem container @ Unix 7th Ed.; FreeBSD jail - to run untested software, cuz chroot had escapes. Then, virtualized OS w/ zones [Solaris/Kevlar]. Unlike Virtual Machine [HW virtualization; hypervisor], which was developed cuz required for Windows stack; this SECOND OPERATING SYSTEM SLOWS you down.Containers are inherently secure; born of chroot; Linux implementation [substrate] is insecure.  https://www.youtube.com/watch?v=coFIEH3vXPw
+	
+WebSocket 
+	Client-Server communications protocol, providing full-duplex communication channels over a single TCP connection; real-time data transfer between [to/from] client/server; an independent TCP-based protocol. Its only relationship to HTTP is that its handshake is interpreted by HTTP servers as an Upgrade request. 
+	CAUTION: Requires open connection for duration of client/server session. 
+	URLs are ws:// (@ port 80) or wss:// (@ port 443) [Chrome/Firefox/Opera/IE10]  https://en.wikipedia.org/wiki/WebSocket 
+	https://samsaffron.com/archive/2015/12/29/websockets-caution-required
+	Nice (Golang) Intro @ https://astaxie.gitbooks.io/build-web-application-with-golang/en/08.2.html
+
+WebRTC [Web Real-Time Communication] 
+	P2P RTC; several JS APIs; a standard that defines a collection of communications protocols and application programming interfaces that enable real-time communication over peer-to-peer connections; allows web browser [client] to server [comms] AND real-time information from other browsers [Chrome/Firefox/Opera/Edge]; enables apps like video conferencing, file transfer, chat, or desktop sharing without requireing plugins. Typically utilizes Websocket to establish connection: SIP [Session Initiation Protocol] over Websockets. Issue @ VPN: DNS leak! https://en.wikipedia.org/wiki/WebRTC (fixalbe w/ uBlock Origin)
+
+WebTorrent
+	WebRTC for torrents; a streaming torrent client. Server-side, it's a simple torrent client in Node.js, using TCP and UDP to talk to other torrent clients. Client-side, it's javascript [webtorrent.min.js] in the browser. WebTorrent uses WebRTC (data channels) for peer-to-peer transport. 
+	https://github.com/feross/webtorrent
+	https://webtorrent.io/
+
+Foreign Function Interface [FFI]
+	Language Bindings; Native Interface; Native Access; Inter-language calls; inter-program interface; e.g., Cordova [Apache.org] framework for building native mobile apps from only html, css and js code; FFIs via JavaScript callback functions -- thru WebView --for access to phone's native features including Accelerometer, Camera, Compass, Storage, Notification, etc.
+
+WebView 
+	Minimal browser; browser functionality as interface for hybrid mobile app; code in html/css/js <==> [WebView/FFI] <==> native executables; Android WebView class, uses WebKit rendering engine; https://developer.android.com/reference/android/webkit/WebView.html
+
+WebKit/Blink
+	layout engine software component for rendering web pages in web browsers; WebKit @ Apple's Safari web browser; Blink @ Chromium-based browsers, Google Chrome, Opera. 
+	https://en.wikipedia.org/wiki/WebKit
+	
+Enterprise Service Bus [ESB]
+	a software architecture model used for designing and implementing communication between mutually interacting software applications in a service-oriented architecture (SOA); architectural model for distributed computing; a specialty variant of the client-server model; promotes agility and flexibility with regard to communication between applications. Its primary use is in enterprise application integration (EAI) of heterogeneous and complex landscapes. https://en.wikipedia.org/wiki/Enterprise_service_bus
+
+Server Push
+	Push, or server push, describes a style of comms where the client-server transaction request is initiated by the server; a publish/subscribe model; contrasted with pull/get, where the request is initiated by the receiver or client.
+
+	Push services are often based on information preferences expressed in advance; client "subscribes" to various information "channels" provided by a server; whenever new content is available on one of those channels, the server pushes that information out to the client.
+
+	Synchronous conferencing, IM, Chat, decentralised peer-to-peer programs (WASTE) and centralised programs (IRC, XMPP). Email (SMTP) is a push protocol, but the last step, from mail server to desktop computer—typically uses a pull protocol like POP3 or IMAP. Modern e-mail clients make this step seem instantaneous by repeatedly polling the mail server, frequently checking it for new mail.
+	
+	HTTP server push a.k.a. HTTP streaming
+		HTML5 WebSocket API allows a web server and client to communicate over a full-duplex TCP connection; server leaves the connection open and sends updates per whatever change/event. Most web servers offer this functionality via CGI. The underlying mechanism for this approach is Chunked transfer encoding.
+
+		Netscape 1995; special MIME type called multipart/x-mixed-replace, which browsers interpret this as a document change; still supported by Firefox, Opera, and Safari today, but it is ignored by Internet Explorer. Also for webcam streaming images.
+
+		WHATWG Web Applications (Opera 2006); "Server-Sent Events"; now being standardized as part of HTML5.
+	
+	Pushlet - persistent HTTP connection
+	Long Polling (BOSH, XMPP)
+	Flash XMLSocket relays 
+	
+	https://en.wikipedia.org/wiki/Push_technology
+
+MapReduce 
+	a programming model and an associated implementation for processing and generating large data sets with a parallel, distributed algorithm on a cluster. A MapReduce program is composed of a Map() procedure (method) that performs filtering and sorting (such as sorting students by first name into queues, one queue for each name) and a Reduce() method that performs a summary operation (such as counting the number of students in each queue, yielding name frequencies). The "MapReduce System" (also called "infrastructure" or "framework") orchestrates the processing by marshalling the distributed servers, running the various tasks in parallel, managing all communications and data transfers between the various parts of the system, and providing for redundancy and fault tolerance. https://en.wikipedia.org/wiki/MapReduce
+
+BGP 
+	Border Gateway Protocol; a standardized exterior gateway protocol designed to exchange routing and reachability information among autonomous systems (AS); makes routing decisions based on paths, network policies, or rule-sets configured by a network administrator and is involved in making core routing decisions.
+	https://en.wikipedia.org/wiki/Border_Gateway_Protocol
+
+Overload[ing/ed]
+	ability to create/handle multiple methods/vars of the same name with different implementations. I.e., calls to an OVERLOADED function will run a specific implementation of that function appropriate to the context of the call, allowing one function call to perform different tasks depending on context, operators to perform differently per argument type.
+
+	E.g., doTask() and doTask(object O) are overloaded methods. To call the latter, an object must be passed as a parameter, whereas the former does not require a parameter; handle more than one argument type; process differently per type.
+	
+	https://en.wikipedia.org/wiki/Function_overloading
+	https://en.wikipedia.org/wiki/Operator_overloading
+	https://en.wikipedia.org/wiki/Ad_hoc_polymorphism
+	
+SMB
+	Server Message Block (SMB); Protocol is a network file sharing protocol, and as implemented in Microsoft Windows is known as Microsoft SMB Protocol. The set of message packets that defines a particular version of the protocol is called a dialect. The Common Internet File System (CIFS) Protocol is a dialect of SMB. https://en.wikipedia.org/wiki/Server_Message_Block
+	
+SMBus
+	System Management Bus (SMBus or SMB); a single-ended simple two-wire bus for the purpose of lightweight communication. Most commonly it is found in computer motherboards for communication with the power source for ON/OFF instructions. https://en.wikipedia.org/wiki/System_Management_Bus
+
+ImmutableServer Pattern 
+	Immutable/Phoenix/Snowflake Server [Netflix] http://martinfowler.com/bliki/ImmutableServer.html
+	Automated Config Tools: CFEngine, Puppet, Chef 
+	https://puppetlabs.com/puppet/what-is-puppet 
+	https://www.chef.io/chef/ 
+	
+Gamification
+	The application of game-design elements and game principles (e.g., point scoring, competition with others, rules of play) in non-game contexts https://en.wikipedia.org/wiki/Gamification
+
+MVP [Minimum viable product] https://en.wikipedia.org/wiki/Minimum_viable_product
+
+SPA [Single-page App]
+	File URI Scheme 
+		file://{host}/{path} => file:///c:/dir/this.png
+		https://en.wikipedia.org/wiki/File_URI_scheme
+
+VNC [Virtual Network Computing]
+	Pixel-based graphical desktop sharing system that uses the Remote Frame Buffer protocol (RFB) to remotely control another computer. It transmits the keyboard and mouse events from one computer to another, relaying the graphical screen updates back in the other direction, over a network. [X11 is graphics-instruction/vector based, more efficient]
+	
+    VNC server - the program on the machine that shares its screen. The server passively allows the client [app] to take control of it.
+    VNC client (or viewer) is the program [app] that watches, controls, and interacts with the server. The client controls the server.
+	
+    VNC protocol (RFB protocol) is very simple, based on one graphic primitive from server to client ("Put a rectangle of pixel data at the specified X,Y position") and event messages from client to server. [Default @ TCP port 5900, or tunnel per SSH]
+	
+	https://en.wikipedia.org/wiki/Virtual_Network_Computing
+	VNC and RFB are registered trademarks of RealVNC Ltd. 
+	https://en.wikipedia.org/wiki/RealVNC
+
+CPI/CPM 
+	Cost per Impression (CPI), per thousand impressions (CPM). An impression (old-media term) is a page display. 
+	E.g., $0.02 CPM = $200 per 10M ads (pages) served
+
+AMI	
+	Amazon Machine Image; virtual appliance that is used to instantiate (create) a virtual machine within the Amazon Elastic Compute Cloud (EC2). It serves as the basic unit of deployment for services delivered using EC2. https://en.wikipedia.org/wiki/Amazon_Machine_Image
+
+Open Graph Protocol
+	HTML meta tag(s) specifying a web page as an object in [Facebook's] social graph http://opengraphprotocol.org
+	
+SOAP 
+	Simple Object Access Protocol; specification for exchanging structured information in the implementation of web services; relies on HTTP and SMTP protocols. https://en.wikipedia.org/wiki/SOAP
+	
+SOA 
+	Service-oriented Architecture; architectual pattern; comms interface between web-app components services; data-centric; independent of any vendor, product or technology https://en.wikipedia.org/wiki/Service-oriented_architecture
+	
+NIO 
+	Non-blocking I/O; collection of (java.nio) APIs for such. 
+	https://en.wikipedia.org/wiki/Non-blocking_I/O_%28Java%29
+
+REST 
+	(REpresentational State Transfer) an ARCHITECTURAL STYLE of the Web; RESTful API HTTP methods [Web Services] are said to CONFORM thereto; core concept is that everything is a resource; Objects in REST are defined as addressable URIs, interact thru HTTP verbs [GET, PUT, DELETE, POST, etc.]; an architecture constraint [HATEOAS] in which the client interacts with hypermedia links, rather than through a specific interface.
+
+	Architectural Constraints: 
+		* HATEOAS; Hypermedia as the engine of application state
+		* Uniform interface separating Client-Server 
+		* Stateless [session state is held in the client only] 
+		* Cacheable or not [defined responses], 
+		* Layered System [transparent to client], 
+		* Code on demand [Java applets, Javascript] 
+
+	Critisisms:
+
+	- Ill-defined; 'RESTful' as in REST-ish is best we have.
+	- Poorly supported; only reliable HTTP Responses across 
+		browsers and servers are '200 OK', and '500 Internal server error'. 
+	- HTTP Responses don't match up with HTTP methods, 
+		and it's all far too limited to handle comms of modern applications.
+	- Debugging nightmare; many different locations to piece together 
+		what happened across a transaction. 
+	
+	Wikipedia  https://en.wikipedia.org/wiki/Representational_state_transfer
+	Design     https://nordicapis.com/designing-a-true-rest-state-machine/
+	Critique   https://mmikowski.github.io/the_lie/
+
+GraphQL 
+	A data query language and runtime [Facebook] [2012] [released in 2015]; alternative to REST and ad-hoc webservice architectures; allows clients to define and request the structure of the data required, and exactly the same structure of the data is returned from the server; a strongly typed runtime which allows clients to dictate what data is needed; avoids over/under -fetching;
+
+	Wikipedia  https://en.wikipedia.org/wiki/GraphQL
+
+Actor Model
+	a mathematical model of concurrent computation that treats "actors" as the universal primitives of concurrent computation: in response to a message that it receives, an actor can make local decisions, create more actors, send more messages, and determine how to respond to the next message received. https://en.wikipedia.org/wiki/Actor_model
+
+	Adopts philosophy that everything is an actor; similar to the everything is an object philosophy used by some object-oriented programming languages, but differs in that object-oriented software is typically executed sequentially, while the Actor model is inherently concurrent.
+	
+	characterized by inherent concurrency of computation within and among actors, dynamic creation of actors, inclusion of actor addresses in messages, and interaction only through direct asynchronous message passing with no restriction on message arrival order. 
+
+POLA
+	Principle of Least Authority; Native aspects of OO programming used to double as security; Waterken Platform as an example
+	
+	Actor Model
+		better security	
+	
+CSP 	
+	Communicating Sequential Processes; a formal language for describing patterns of interaction in concurrent systems. Broadly similar to the Actor model. However, the two models make some fundamentally different choices with regard to the primitives they provide; CSP is: anonymous, NOT inherently asynchronous, thru channels vs to actors; See:   https://en.wikipedia.org/wiki/Communicating_sequential_processes#Comparison_with_the_Actor_Model.
+	Go CSP <--> ClojureScript core.async
+	https://en.wikipedia.org/wiki/Communicating_sequential_processes
+
+Dynamic UI Binding
+	not just pass data to View at page load; automatically update View when the data (of the underlying Model) changes.
+
+Lambda
+	a.k.a. Anonymous Function, a.k.a. Function Literal; a function with no name, i.e., a function definition that is not bound to an identifier.  https://en.wikipedia.org/wiki/Anonymous_function
+
+Closure
+	an INSTANCE of a function, a value, whose non-local variables have been BOUND either to values or to storage locations. PERSISTENCE of STATE by the variable (binding) they "close over" is the hidden magic; "close" as in "trap"; used extensively in languages whereof functions are 1st class (returned "as a value", i.e., in a particular state), so successive calls start from the returned state of the previous call.  https://en.wikipedia.org/wiki/Closure_(computer_programming)
+
+Unikernel [libOS]
+	Specialised, single address space machine images constructed by using library operating systems. https://en.wikipedia.org/wiki/Unikernel
+
+Exokernel [libOS+VM]
+	A [MIT] operating system kernel and a class of similar operating systems forcing the minimally required hardware absractions. Functionality is limited to ensuring protection and multiplexing of resources -- that the requested resource is free, and the application is allowed to access it. Allows programmers to choose how much and what level of abstraction they want, and to implement custom abstractions. https://en.wikipedia.org/wiki/Exokernel
+	
+	Exokernel vs. Unikernel - both provide only what the application(s) on the system need. Exokernel predates current gen VM; played the role of VM and libOS;  tried to move as much code as possible from the OS into the applications. Unikernels do not do that, and run only one app. 
+	
+Library Operating System [libOS]
+    Protection boundaries are pushed to the lowest hardware layers.
+		- a set of libraries that implement mechanisms such as those needed to drive hardware or talk network protocols;
+		- a set of policies that enforce access control and isolation in the application layer.
+
+	Single address space; no need for repeated privilege transitions to move data between user space and kernel space. Therefore, improved performance by allowing direct access to hardware without context switches. However, no separation; trying to run multiple applications side by side in a library OS, but with strong resource isolation, can become complex. 
+	 
+	A library OS running as a virtual machine only needs to implement drivers for these stable virtual hardware devices and can depend on the hypervisor to drive the real physical hardware. However, protocol libraries are still needed to replace the services of a traditional operating system. Creating these protocol libraries is where the bulk of the work lies when implementing a modern library OS.
+	
+	https://en.wikipedia.org/wiki/Unikernel
+	
+Microservices 
+	a software architecture style in which complex applications are composed of small, independent processes communicating with each other using language-agnostic APIs. These services are small, highly decoupled and focus on doing a small task, facilitating a modular approach to system-building. https://en.wikipedia.org/wiki/Microservices
+	
+Software Transactional Memory (STM)
+	a concurrency control mechanism analogous to database transactions for controlling access to shared memory in concurrent computing; alternative to lock-based synchronization. Unlike locking, a thread completes modifications to shared memory without regard for other threads, recording every read and write; no thread needs to wait for access to a resource, and different threads can safely and simultaneously modify disjoint parts of a data structure that would normally be protected under the same lock.
+	https://en.wikipedia.org/wiki/Software_transactional_memory
+
+Persistent Data Structure
+	always preserves the previous version of itself when it is modified; immutable; operations do not (visibly) update the structure in-place, but instead always yield a new updated structure. https://en.wikipedia.org/wiki/Persistent_data_structure
+
+Symmetric Multiprocessing (SMP) 
+	two or more identical processors connect to a single, shared main memory, have full access to all I/O devices, and are controlled by a single operating system instance that treats all processors equally, reserving none for special purposes. Most multiprocessor systems today use an SMP architecture. https://en.wikipedia.org/wiki/Symmetric_multiprocessing
+
+Multiprocessing
+	Using two or more central processing units (CPUs)
+	
+Multithreading 
+	Multiple threads in a single process; concurrent or parallel.
+
+Unix Socket
+	A special file for 2 way communication; just like two-way FIFOs for IPC, http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#fifos , but communicates through the sockets interface, instead of through the file interface; `socket()` returns the socket descriptor; communicate through it using the specialized `send()` & `recv()` socket calls; CAN use the normal `read()` & `write()` calls of FIFO to communicate through sockets, but `send()` & `recv()` offer much greater control over data transmission.
+
+	There are many kinds of sockets, all of which are endpoints of/for communication between processes/machines; Unix Sockets, which identify path names on a local node, X.25 Sockets, which identify CCITT X.25 addresses; "DARPA Internet addresses" aka Network Sockets, or Internet Sockets, which identify internal endpoint for sending or receiving data at a single node in a computer network.
+  
+	http://beej.us/guide/bgipc/output/html/singlepage/bgipc.html#unixsock
+	
+	Berkeley Sockets 
+		API for BOTH Internet Sockets AND Unix Domain Sockets; used for IPC.  https://en.wikipedia.org/wiki/Berkeley_sockets
+
+gRPC
+	 A high performance, open-source universal RPC framework for machine-to-machine, app-to-app communication; an open source remote procedure call (RPC) system; Google initiative; successor to REST etal; uses HTTP/2 for transport, Protocol Buffers as the interface description language, and provides features such as authentication, BIDIRECTIONAL streaming and flow control, blocking or nonblocking bindings, and cancellation and timeouts. It generates cross-platform client and server bindings for many languages
+	 
+	 Much more general than Sockets, which require separate connection per stream; HTTP/2 allows multiplexing, so far more resource efficient; gRPC is designed for any machine to any other machine; server to server; server to mobile [esp efficient], whereas sockets are for server to browser connections. 
+
+	 https://grpc.io/ 
+	 https://github.com/grpc
+
+Protocol Buffers 
+	a method of serializing structured data; [for autonomous inter-machine communication]; used @ gRPC and data storage; includes an INTERFACE DESCRIPTION LANGUAGE [IDL] for metadata; defines data AND services thereupon; langauge neutral, binary, extensible, strongly-typed, versioned. 
+
+	1,000x FASTER than JSON [120 vs. 1600 microseconds @ round-trip]
+
+	Proto Definition File [.proto] 
+		defines data structures [messages] and services; compiled with `protoc`, which generates code that can be invoked by a sender or recipient of these data structures. For example, example.proto will produce example.pb.cc and example.pb.h, which will define C++ classes for each message and service that example.proto defines.
+
+	Wikipedia  https://en.wikipedia.org/wiki/Protocol_Buffers
+	Google     https://developers.google.com/protocol-buffers/
+
+API 
+	Application Programming Interface; set of routines, protocols, and tools for building software applications; expresses a software component in terms of its operations, inputs, outputs, and underlying types, independent of their respective implementations. With SOAP and REST services, an API is simply a specification of remote calls exposed to the API consumers. An API is a source code interface, whereas an Application Binary Interface (ABI) is a binary interface; POSIX is an API, while the Linux Standard Base provides an ABI.
+
+RPC [Remote Procedure Call]
+	a protocol that one program can use to request a service from a program located in another computer on a network without having to understand the network's details; inter-machine implementation of Procedure Call, a.k.a. Function Call a.k.a. Subroutine Call.
+	
+IPC [Inter Process Communication] 
+	communication between processes on same/different systems; shared memory, socket, pipe, message queue, file, signal, ... https://en.wikipedia.org/wiki/Inter-process_communication
+
+Process
+	A Task, in Linux, with parent/child relationship [unlike Windows]; a process has a self-contained execution environment. A process generally has a complete, private set of basic run-time resources; in particular, each process has its own memory space; a single application may be a set of cooperating processes; MAY CONTAIN MANY THREADS (multithreading). https://docs.oracle.com/javase/tutorial/essential/concurrency/index.html
+
+Thread
+	thread of execution; smallest sequence of programmed instructions that can be managed independently by [OS] scheduler; Multiple threads can exist within one process, executing concurrently and sharing resources; threads per process differ per OSs, but in most cases a thread is a component of a process; sometimes called lightweight process. Efficient, but potentially problematic, communication. Creating a new thread requires fewer resources than creating a new process.
+	
+	POSIX Thread (Pthread) is a standardized interface for thread implementation; a set of C-function library calls.
+	
+	https://en.wikipedia.org/wiki/Thread_(computing)
+
+	Linux/BSD/Win32 use a 1-1 threading model (kernel-threading), with no distinction (to the kernel) between processes and threads -- everything is simply a runnable task. 
+
+		On Linux, the system call `clone()` clones a task, with a configurable level of sharing.
+			- `fork()` calls `clone(least sharing)`
+			- `pthread_create()` calls `clone(most sharing)`.
+
+	Some consider this 3 options: process, thread, fork
+	
+	http://stackoverflow.com/questions/807506/threads-vs-processes-in-linux
+
+	Linux Process/Thread  http://stackoverflow.com/questions/9305992/linux-threads-and-process
+			
+							  USER VIEW
+		 <-- PID 43 --> <----------------- PID 42 ----------------->
+							 +---------+
+							 | process |
+							_| pid=42  |_
+						  _/ | tgid=42 | \_ (new thread) _
+			   _ (fork) _/   +---------+                  \
+			  /                                        +---------+
+		+---------+                                    | process |
+		| process |                                    | pid=44  |
+		| pid=43  |                                    | tgid=42 |
+		| tgid=43 |                                    +---------+
+		+---------+
+		 <-- PID 43 --> <--------- PID 42 --------> <--- PID 44 --->
+							 KERNEL VIEW
+					 
+Abstract Data Type [ADT] 
+	Defined data and operations, but no implementation [versus data structure]; class of objects whose logical behavior is defined by a set of values and a set of operations; list [integers,array], linked-list, queue, tree, graph, ...; 
+	NOTE: An array is a DATA STRUCTURE --an IMPLEMENTATION --of the list ADT; integers can be a type of array.
+		* Array - cost [time & memory usage] is okay when list size is NOT very dynamic
+		* Linked-List ['Struct Node' in C] - use when list size is very dynamic; [el-value,addr-next-el] so, unlike array, cannot access el in constant time [must start at 1st [head] node]; identified by pointer [var], which is address of 'head node' [first node]; address of last node is null. 
+		https://www.youtube.com/watch?v=92S4zgXN17o
+	https://en.wikipedia.org/wiki/Abstract_data_type
+	
+Low-level Language 
+	language that is specific to the CPU/machine architecture; machine code and assembly. https://en.wikipedia.org/wiki/Assembly_language
+		
+High-level Language 
+	Abstracted from machine architecture Human language semantics; 
+	Compiled; source code [app.c] is compiled to machine code [app.exe].
+	Interpreted; executed within interpreter; no .exe file is generated.
+	C is basis for most other high-level languages; C++, Java, C#, ...;
+	C gives lots of low-level language access. https://www.youtube.com/playlist?list=PL2_aWCzGMAwLSqGsERZGXGkA5AfMhcknE
+		
+Public-Key (Asymmetric) Encryption (Cryptography)
+	 Any cryptographic system that USES PUBLIC-PRIVATE KEY PAIRS; public keys that may be widely disseminated PAIRED with private keys which are known only to the user. A key used for encryption is not the same as the key used for decryption. TWO FUNCTIONS that can be achieved:
+
+    Public-key encryption [CONFIDENTIALITY]
+		a message is encrypted with a recipient's public key, and decrypted only by the recipient's MATCHING private key. Slow. Faster; create private session (symmetric) key (shared secret) known only by/between 2 parties who each know only each other's public-key; session-key is DFKEmap(public1*private2) = DFKEmap(public2*private1). This is the process used by PGP and GPG https://en.wikipedia.org/wiki/Session_key
+	
+    Digital signatures [AUTHENTICATION]
+		a message is encrypted (signed) with a sender's (signer's) private key, and decrypted (verified) with sender's public key. A "digital signature" is the "message digest" [hash of the message] that's encrypted with sender's private key. This verification proves that the sender had access to the private key, and therefore is likely to be the person associated with the public key. This also ensures that the message has not been tampered with between sender/reciever (signer/verifier), as any manipulation of the message will result in changes to the encoded message digest.
+
+	Some public key algorithms provide key distribution and secrecy, e.g., Diffie–Hellman Key Exchange (DHKE), some provide digital signatures, e.g., Digital Signature Algorithm (DSA), and some provide both, e.g., Rivest–Shamir–Adleman (RSA).
+	
+	Must be computationally easy for a user to generate a PUBLIC/PRIVATE KEY-PAIR to be used for encryption and decryption. The strength of a public-key cryptography system relies on the degree of difficulty (computational impracticality) for a properly generated private key to be determined from its corresponding public key. Much more computationally intensive than symmetric-key algos, so used to encrypt only the "Symmetric Encryption Key" a.k.a. "Session Key", which is then used to decrypt the [much bigger] symmetric-key-encrypted payload; e.g., an AES-encrypted file. 
+	
+	Public Key Cryptography  https://en.wikipedia.org/wiki/Public-key_cryptography
+		
+	AES  https://en.wikipedia.org/wiki/Advanced_Encryption_Standard 
+
+	DHKE  https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
+		
+	Diffie–Hellman Key Exchange (DHKE)
+
+		Host1					Host2			
+		-----        			-----			
+		Prime   P				Prime   P		Prime number; "Prime Modulus"
+		Integer G				Integer G		Base; primitive root modulo P; "Generator"
+		
+		The resulting SHARED SECRET can take on any value from 1 to P–1
+
+		Relative to symmetric cyphers, computing the DHKE is costly (slow), so it is typically used once per "session". That is, its SHARED SECRET is used by both parties (referred to as sender/receiver or server/client) as the key ("Symmetric Encryption Key" a.k.a. "Session Key") for an agreed upon symmetric cypher, which encrypts/decrypts all communications thereafter, packet by packet, throughout the session. Currenlty, the most secure and commonly used symmetric cypher is Advanced Encryption Standard (AES), a.k.a. Rijndael, a 128 bit block-cypher, which allows for 128, 192 or 256 bit keys.
+
+		Generate "Public/Private Key Pair"
+		----------------------------------
+		
+			Generate a PRIVATE KEY 
+			----------------------
+			Pri = RandomInteger(pass)
+			 
+			Generate PUBLIC KEY using DHKE function
+			---------------------------------------
+			DHKE(R,G,P) = G^R Mod P
+			
+			Host1 :: DHKE(R=Pri1) => Pub1		Generate Pub1 (PAIRED to Pri1) Key
+			Host2 :: DHKE(R=Pri2) => Pub2		Generate Pub2 (PAIRED to Pri2) Key
+			-----------------------------
+			Pub1 = G^Pri1 Mod P
+			Pub2 = G^Pri2 Mod P
+			
+			Host1 :: DHKE(R=Pri1,G=Pub2)        Generate SHARED SECRET
+			Host2 :: DHKE(R=Pri2,G=Pub1)        Generate SHARED SECRET
+			----------------------------
+			Pub2^Pri1 Mod P = (G^Pri2 Mod P)^Pri1 Mod P 
+			Pub1^Pri2 Mod P = (G^Pri1 Mod P)^Pri2 Mod P
+
+		Those 2 are equal; the SHARED SECRET; the magic of DHKE
+		-------------------------------------------------------
+		Pub2^Pri1 Mod P == Pub1^Pri2 Mod P

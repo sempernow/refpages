@@ -1,0 +1,223 @@
+rem  https://www.gnupg.org/download/index.html
+rem  http://portableapps.com/apps/security/gpg-plugin-portable
+rem  https://www.gpg4win.org/index.html
+rem 
+rem    GnuPG 1.4.20 [w32cli-1.4.20]  'Classic'
+rem    GnuPG 2.0.30 [Gpg4win-2.3.1]  'Stable'  [PortableApps]
+rem    GnuPG 2.1.12 [w32-2.1.12]     'Modern'  [-UNSTABLE-]
+
+	"Wir nehmen Abscheid von einem sicher geglaubten Freund, dem Fernmeldegeheimnes"
+	"We say goodbye to a safe believed friend, the secrecy of telecommunications"
+
+	S/MIME [X.509]
+		“Secure / Multipurpose Internet Mail Extension”; 
+		key MUST BE AUTHENTICATED BY AN ACCREDITED ORGANISATION.
+	
+	OpenPGP 
+		“Web of trust”; without authentication by a higher-ranking agency.
+		
+	-- the two are NOT INTEROPERABLE. 
+	-- Gpg4win handles both.	
+
+	
+PASSPHRASE handling  
+-------------------
+
+	rem -- FAILs to start --
+	gpg-agent --allow-preset-passphrase
+	rem -- FAILs to start --
+	gpg-agent SIGHUP
+
+	rem -- FAILs; needs 'keygrip', but v 2.0.30 has no method to get 'keygrip' --
+	rem -- GnuPG docs as useless as ever; nothing defining anything; 100% procedural.
+	gpg-preset-passphrase --passphrase %_RESULT%
+	rem -- so, 'keygrip' is just the fingerprint --
+	rem -- but nothing there works either ....
+	rem -- FAIL @ ...
+	gpg-preset-passphrase --preset %_fingerprint%
+	rem -- FAIL @ ...
+	echo %_fingerprint% | gpg-preset-passphrase --preset 
+
+	
+	
+
+Packets ...  'gpg --list-packets --verbose'
+-------------------------------------------
+	GnuPG v 2.0.30 
+        digest algo 8, begin of digest d6 63
+	
+        hashed subpkt 11 len 4 (pref-sym-algos: 9 8 7 3)
+        hashed subpkt 21 len 4 (pref-hash-algos: 10 9 8 11)
+        hashed subpkt 22 len 4 (pref-zip-algos: 2 3 1 0)
+
+	GnuPG v 1.4  		
+        digest algo 2, begin of digest bb fe
+
+        hashed subpkt 11 len 5 (pref-sym-algos: 9 8 7 3 2)
+        hashed subpkt 21 len 5 (pref-hash-algos: 8 2 9 10 11)
+        hashed subpkt 22 len 3 (pref-zip-algos: 2 3 1)
+
+		
+OpenPGP Message Format	RFC 4880	http://tools.ietf.org/html/rfc4880
+
+
+	
+6 How to Specify a User Id	https://www.gnupg.org/documentation/manuals/gnupg-2.0
+         -----------------
+	
+	The best way to specify a key Id is by using 
+	the 40-char (160 bit) fingerprint WITHOUT WHITESPACES (gpgsm.exe also accepts colons between each pair) 
+		The fingerprint is the SHA-1 hash of the certificate
+		The certificate is the self-signed Primary key.
+	
+			48176B7DA38F64CCA044BC9D97C83D3E40A23240
+			or
+			0x48176B7DA38F64CCA044BC9D97C83D3E40A23240
+		
+			Key-ID LONG: 	40 char x 4 bits per 1 hex = 160 bits = 20 bytes
+			Key-ID SHORT:   16 char x 4 bits per 1 hex =  64 bits =  8 bytes **
+			
+			** 'SHORT' form is NOT what's shown @ 'gpg --list-keys', etc. 
+			    Rather, HALF THAT is shown; the last 8 chars (32-bits/4-bytes) of fingerprint
+
+		@ gpg.conf, put "keyid-format 0xLONG" to always show  
+		
+			gpg --keyid-format 0xLONG -k 0xhhhhhhhh
+			or
+			gpg --keyid-format LONG -k 0xhhhhhhhhhhhhhhhh
+	
+		- if fingerprint not typed in correctly: 
+		  "gpg: error reading key: No public key"
+	
+		- '!' 
+			Appending an exclamation point forces gpg to use the specified key, else it tries to figure out which primary or secondary key to use. 
+			
+		- The key Id of an X.509 certificate are the low 64 bits of its SHA-1 fingerprint.)
+		 
+		- gpgsm uses the full 20 byte version fingerprint, exclusively 
+		
+
+9.1.  Public-Key Algorithms	http://tools.ietf.org/html/rfc4880#section-9.1
+
+      ID           Algorithm
+      --           ---------
+      1          - RSA (Encrypt or Sign) [HAC]
+      2          - RSA Encrypt-Only [HAC]
+      3          - RSA Sign-Only [HAC]
+      16         - Elgamal (Encrypt-Only) [ELGAMAL] [HAC]
+      17         - DSA (Digital Signature Algorithm) [FIPS186] [HAC]
+      18         - Reserved for Elliptic Curve
+      19         - Reserved for ECDSA
+      20         - Reserved (formerly Elgamal Encrypt or Sign)
+      21         - Reserved for Diffie-Hellman (X9.42,
+                   as defined for IETF-S/MIME)
+      100 to 110 - Private/Experimental algorithm
+	  
+9.2.  Symmetric-Key Algorithms	http://tools.ietf.org/html/rfc4880#section-9.2
+
+       ID           Algorithm
+       --           ---------
+       0          - Plaintext or unencrypted data
+       1          - IDEA [IDEA]
+       2          - TripleDES (DES-EDE, [SCHNEIER] [HAC] -
+                    168 bit key derived from 192)
+       3          - CAST5 (128 bit key, as per [RFC2144])
+       4          - Blowfish (128 bit key, 16 rounds) [BLOWFISH]
+       5          - Reserved
+       6          - Reserved
+       7          - AES with 128-bit key [AES]
+       8          - AES with 192-bit key
+       9          - AES with 256-bit key
+       10         - Twofish with 256-bit key [TWOFISH]
+       100 to 110 - Private/Experimental algorithm
+	   
+9.3.  Compression Algorithms	http://tools.ietf.org/html/rfc4880#section-9.3
+
+       ID           Algorithm
+       --           ---------
+       0          - Uncompressed
+       1          - ZIP [RFC1951]
+       2          - ZLIB [RFC1950]
+       3          - BZip2 [BZ2]
+       100 to 110 - Private/Experimental algorithm
+
+   Implementations MUST implement uncompressed data.  Implementations
+   SHOULD implement ZIP.  Implementations MAY implement any other
+   algorithm.
+
+   
+9.4.  Hash Algorithms	http://tools.ietf.org/html/rfc4880#section-9.4
+
+      ID           Algorithm                             Text Name
+      --           ---------                             ---------
+      1          - MD5 [HAC]                             "MD5"
+      2          - SHA-1 [FIPS180]                       "SHA1"				
+      3          - RIPE-MD/160 [HAC]                     "RIPEMD160"
+      4          - Reserved
+      5          - Reserved
+      6          - Reserved
+      7          - Reserved
+      8          - SHA256 [FIPS180]                      "SHA256"			Default @ GnuPG v 1.4  
+      9          - SHA384 [FIPS180]                      "SHA384"
+      10         - SHA512 [FIPS180]                      "SHA512"			Default @ GnuPG v 2.0.30
+      11         - SHA224 [FIPS180]                      "SHA224"
+      100 to 110 - Private/Experimental algorithm
+
+
+'Anatomy of a GPG Key'	https://davesteele.github.io/gpg/2014/09/20/anatomy-of-a-gpg-key/
+
+	fingerprint/key-id		
+	------------------
+
+		in some contexts, the six-digit fingerprint value needs to have “0x” prepended (‘0x366150CE’) when referencing it.
+
+		The fingerprint/key-id is a hash of the entire key packet, and only the key packet. It is invalidated (changed) if any information in the key packet is changed, but is unaffected by any changes in any other packets.
+			
+			
+	Key Flag Subpacket	$ gpg -a --export $_uid | gpg --list-packets --verbose
+	------------------
+
+		Flag 	gpg character 	Description
+
+		0x01 	“C” 	Key Certification
+		0x02 	“S” 	Sign Data
+		0x04 	“E” 	Encrypt Communications
+		0x08 	“E” 	Encrypt Storage
+		0x10 	  	    Split key
+		0x20 	“A” 	Authentication
+		0x80 	  	    Held by more than one person
+
+	
+'Intermediate GPG' 	https://davesteele.github.io/gpg/2015/08/01/intermediate-gpg/
+
+	Creating a new GPG key		https://keyring.debian.org/creating-key.html
+	----------------------
+		Update ~/.gnupg/gpg.conf
+		
+			personal-digest-preferences SHA256
+			cert-digest-algo SHA256
+			default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
+		
+		@ gpg command-line options ...
+		
+		--personal-digest-preferences SHA256
+		--cert-digest-algo SHA256
+		--default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB BZIP2 ZIP Uncompressed
+
+	GPG Vulnerability; Why separate keys for sign vs. encrypt 
+	---------------------------------------------------------
+
+		Do NOT Sign/Certify/Authenticate using Encrypt/Decrypt key
+		 
+		If you look into the details of the math of public-key encryption, you will discover that signing and decrypting are actually identical operations. Thus in a naïve implementation it is possible to trick somebody into decrypting a message by asking them to sign it.
+
+		Several things are done in practice to guard against this. The most obvious is that you never sign an actual message, instead you sign a secure hash of the message. Less obviously, but just to be extra safe, you use different keys for signing and encrypting. Also, keeping the encryption key separate allows you to keep the other arguably more important and definitely less frequently used keys off-line and more secure. That is the case with the keys you have inspected. By the way the flags mean:
+
+			e = encrypt/decrypt (decrypt a message you received encrypted for you to read)
+			s = sign (sign data. For example a file or to send signed e-mail)
+			c = certify (sign another key, establishing a trust-relation)
+			a = authentication (log in to SSH with a PGP key; this is relatively new usage)
+
+		Note that in all cases, "key", means a public & private key pair.
+		
+		REF: http://serverfault.com/questions/397973/gpg-why-am-i-encrypting-with-subkey-instead-of-primary-key

@@ -1,0 +1,69 @@
+--- ## @ kubernetes.io > Search > pods
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ngx
+  ## Add labels for NetworkPolicy
+  labels:
+    app: ngx
+spec:
+  containers:
+  - name: ngx
+    image: nginx
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bbox
+  ## Add labels for NetworkPolicy
+  labels:
+    access: allowed
+    ## wget fails until below is added.
+    #role: frontend
+spec:
+  containers:
+  - name: bbox
+    image: busybox
+    ## args syntax from `k run bbox --image=busybox --dry-run=client -o yaml -- sleep 3600`
+    args: 
+      - sleep
+      - "3600"
+ 
+--- ## @ kubernetes.io > Search > network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      #role: db
+      app: ngx
+  policyTypes:
+    - Ingress
+    #- Egress
+  ingress:
+    - from:
+        # - ipBlock:
+        #     cidr: 172.17.0.0/16
+        #     except:
+        #       - 172.17.1.0/24
+        # - namespaceSelector:
+        #     matchLabels:
+        #       project: myproject
+        - podSelector:
+            matchLabels:
+              ## bbox wget will fail until we add this to its labels
+              role: frontend
+  #     ports:
+  #       - protocol: TCP
+  #         port: 6379
+  # egress:
+  #   - to:
+  #       - ipBlock:
+  #           cidr: 10.0.0.0/24
+  #     ports:
+  #       - protocol: TCP
+  #         port: 5978
+

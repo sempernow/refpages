@@ -1,0 +1,75 @@
+7-Zip 9.20  Copyright (c) 1999-2010 Igor Pavlov  2010-11-18
+
+Usage: 7z <command> [<switches>...] <archive_name> [<file_names>...]
+       [<@listfiles...>]
+
+Commands and switches can be entered in upper or lower case.
+Command is the first non-switch argument.
+The "archive_name" must be the first filename on the command line after the command.
+The switches and other filenames can be in any order.
+Wildcards or filenames with spaces must be quoted:
+	"Dir\Program files\*"
+    Dir\"Program files"\*
+
+7-Zip uses wild name matching similar to Windows 95:
+	'*' means a sequence of arbitrary characters. 
+	'?' means any character. 
+
+7-Zip doesn't follow the archaic rule by which *.* means any file. 
+7-Zip treats *.* as matching the name of any file that has an extension. 
+To process all files, you must use a * wildcard.
+
+	Examples:
+
+	*.txt means all files with an extension of ".txt" 
+	?a* means all files with a second character of "a" 
+	*1* means all names that contains character "1" 
+	*.*.* means all names that contain two at least "." characters 
+
+The default wildcard "*" will be used if there is no filename/wildcard 
+in the command line.
+Slash ('\') at the end of a path means a directory. 
+Without a Slash ('\') at the end of the path, 
+the path can refer either to a file or a directory. 
+	
+<Commands>
+  a: Add files to archive
+  b: Benchmark
+  d: Delete files from archive
+  e: Extract files from archive (without using directory names)
+  l: List contents of archive
+  t: Test integrity of archive
+  u: Update files to archive
+  x: eXtract files with full paths
+  
+<Switches>
+  -ai[r[-|0]]{@listfile|!wildcard}: Include archives
+  -ax[r[-|0]]{@listfile|!wildcard}: eXclude archives
+  -bd: Disable percentage indicator
+  -i[r[-|0]]{@listfile|!wildcard}: Include filenames
+  -m{Parameters}: set compression Method
+  -o{Directory}: set Output directory
+  -p{Password}: set Password
+  -r[-|0]: Recurse subdirectories
+  -scs{UTF-8 | WIN | DOS}: set charset for list files
+  -sfx[{name}]: Create SFX archive
+  -si[{name}]: read data from stdin
+  -slt: show technical information for l (List) command
+  -so: write data to stdout
+  -ssc[-]: set sensitive case mode
+  -ssw: compress shared files
+  -t{Type}: Set type of archive
+  -u[-][p#][q#][r#][x#][y#][z#][!newArchiveName]: Update options
+  -v{Size}[b|k|m|g]: Create volumes
+  -w[{path}]: assign Work directory. Empty path means a temporary directory
+  -x[r[-|0]]]{@listfile|!wildcard}: eXclude filenames
+  -y: assume Yes on all queries
+
+Exit Codes from 7-Zip:
+
+	0 	No error 
+	1 	Warning (Non fatal error(s)). E.g., locked files. 
+	2 	Fatal error 
+	7 	Command line error 
+	8 	Not enough memory for operation 
+	255 User stopped the process 
