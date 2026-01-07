@@ -226,9 +226,12 @@ systemctl restart sssd  # Restart sssd (to apply changes)
     # RHEL brands OSS
         go-toolset  # Golang having curated package versions tailored for current RHEL version.
         idm         # FreeIPA
-        
-    # Modules are part of Application Stream (AppStream) of RHEL8+;
-    # collections of software packages grouped together and managed as a unit. They contain a set of RPM packages and metadata that define their default versions and available streams (app versions)
+ 
+    # Modules are part of Application Stream (AppStream) repo of RHEL8+ .
+        # Collections of software packages grouped together and managed as a unit. 
+        # They contain a set of RPM packages and metadata 
+        # declaring their default versions and available streams (app versions)
+        # 
         # List Available Modules
         dnf module list
         # Enable a Module Stream (version) : To use a non-default version
@@ -241,12 +244,38 @@ systemctl restart sssd  # Restart sssd (to apply changes)
         # Disable a Module : Prevent from being installed
         dnf module disable go-toolset
 
-        # Change version without using package manager
-        alternatives # Maintain symbolic links determining default commands
-        # ... LINK NAME PATH PRIORITY 
-        alternatives --install /usr/bin/python python /usr/bin/python3.6 1
-        alternatives --config python # List configured versions
-        alternatives --list          # List all  
+        # Python : Each RHEL release is BOUND TO a system Python version.
+            # DO NOT CHANGE, e.g., /usr/bin/python3 @ RHEL9 (Python 3.9)
+            # Install *other* versions of Python using AppStream (repo) by dnf module method:
+
+            # Check available Python versions
+            sudo dnf module list python* 
+
+            # Enable and install Python 3.12 to /usr/bin/python3.12
+            sudo dnf module install python3.12
+            #... this leaves the system Python version UNTOUCHED.
+
+            # Using it for development
+                # Create virtual environments using the new version:
+                python3.12 -m venv app-env
+                source app-env/bin/activate
+                # Run scripts explicitly with the versioned interpreter:
+                python3.12 a.py
+
+    alternatives # Versions manager : CAUTION : Do not use on RHEL OS tools/dependencies
+        # OK : managing which Java version is default
+        sudo alternatives --config java
+
+        # OK : custom app with multiple versions
+        sudo alternatives --install /usr/local/bin/myapp myapp /opt/myapp-v1/bin/myapp 1
+        sudo alternatives --install /usr/local/bin/myapp myapp /opt/myapp-v2/bin/myapp 2
+
+        # NOT OK : DO NOT DO THIS
+        sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+        sudo alternatives --config python3  # Switch system default to 3.12
+        #... This can break system tools that expect /usr/bin/python3 to be the system Python.
+        #    For example, dnf has a shebang pointing to /usr/bin/python3 .
+        #    Many other RHEL system scripts and utilities make similar assumptions.
 
     # CVEs / PATCHes 
         # Test if a specific Linux kernel (RHEL version) is vulnerable to a declared CVE
