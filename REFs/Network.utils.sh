@@ -14,6 +14,17 @@ exit
         #  https://github.com/systemd/systemd/blob/master/src/udev/udev-builtin-net_id.c#L20
         # e.g., eth0 => enp1s0 : en=Ethernet, p1=PCI-bus1, s0=slot-0
 
+
+# Network Layer vs. tool
+    ###########################################################################
+    # | Layer | Name      | Unit    | Identifiers     | Tools                 |
+    # |-------|-----------|---------|-----------------|-----------------------|
+    # | L2    | Data Link | Frame   | MAC addresses   | `ip link`, `ip neigh` |
+    # | L3    | Network   | Packet  | IP addresses    | `ip addr`, `ip route` |
+    # | L4    | Transport | Segment | Ports (TCP/UDP) | `ss`, `netstat`       |
+    ###########################################################################
+
+
 # CIDR blocks
     # -----[ Private IP Address Ranges : RFC-1918 ]---------
     # CIDR block      Class    Start         End
@@ -451,7 +462,7 @@ exit
         # Validate endpoint/resource and print only the response-code line (lines on redirect)
             wget -Sq --spider $url 2>&1 |grep HTTP
         # Download and execute a shell script (COMMON, INSECURE, and DANGEROUS)
-            wget -O - $_bash_script_url |sh
+            wget -qO- $_bash_script_url |bash
         # Download binary directly into its install location
             wget -O $destination $url
         # Download server response body to FILE @ $PWD; report meta @ STDERR
@@ -644,11 +655,19 @@ exit
     # Get bandwidth of a network interface
     lshw -class network |grep -A 10 eth0 |grep size # size: 10Gbit/s
 
-    ss # Socket Statistics; IP:PORT; like netstat
+
+
+    ss # Socket Statistics; IP:PORT; like netstat : L4 (Transport Layer)
         -r     # resolve names
         -n     # numeric; don't resolve names
         -p     # incl. processes
         -at4r  # all-sockets, tcp, IPv4, resolve-names
+
+    # L4 (Transport Layer)
+        ss -tlnp          # TCP listeners with PIDs
+        ss -ulnp          # UDP listeners
+        ss -tn state established  # Active TCP connections
+        netstat -tulpn    # Older equivalent
 
         # Display all TCP sockets with process SELinux security contexts.
             ss -t -a -Z
@@ -953,13 +972,45 @@ exit
         # ipmaddr           ip maddr                      Multicast
         # netstat           ip -s, ss, ip route           Show various network stats
 
-        ip addr # List all addresses; per interface
-            -c  # color highlights
+        # Network model vs. ip method 
+        #############################################################################
+        # ip link   L2      What interfaces exist and how they're connected.
+        #                   ↓
+        # ip addr   L2/L3   What IPs are assigned to those interfaces. 
+        #                   ↓
+        # ip route  L3      Given a destination IP, which interface/gateway to use.
+        #                   ↓
+        # ip neigh  L2/L3   For that next-hop IP, what's the MAC address.
+        #############################################################################
 
-        # L4 AKA Layer 4 AKA Transport layer AKA Transport Control Layer
-            # AKA Session Layer AKA TCP/UDP Layer AKA Ports Layer
-            # AKA End-to-end Comms Layer AKA Connection Layer
-            # AKA Flow Control Layer AKA Reliability Layer AKA Segmentation Layer
+        ip link # MAC per device 
+            # L2 (Data Link Layer) 
+            # AKA Link Layer (TCP/IP model)
+            # AKA MAC Layer AKA Frame Layer AKA Switching Layer AKA Bridge Layer
+            # AKA Ethernet Layer AKA Physical Addressing Layer
+                # Manage physical and logical device settings (MAC address)
+                # Device AKA adapter AKA interface AKA connection AKA NIC
+            man ip-link                 # Network device configuration
+            ip link                     # Show MAC of all devices
+            dev=ens192                  # Common: eth0, ens192, wlan0, docker0, cni*
+            ip -s link dev show $dev    # Show link statistics
+                # Path MTU Discovery (PMTUD) may cause a transitory,
+                # per-connection change MTU setting (nominally 1500) of a device,
+                # e.g., to account for tunnel protocol (VPN, SSH, ...),
+                # which adds data to packets' header
+                # See:
+                sudo tcpdump -i $dev                    # Reports size per packet, e.g., "length 1414"
+            sudo ip link set dev $dev mtu 9000          # Set MTU to allow Jumbo Frames
+            #... both TX and RX devices must support, else no affect.
+            sudo ip link set $dev up|down               # Set UP/DOWN; toggle on/off; use to apply new config(s)
+            sudo ip link set $dev alias "Public link"   # Set alias AKA description
+
+        ip addr # IP(s) per interface
+            # L2/L3 (Data Link Layer / Network Layer)
+            # ARP (Address Resolution Protocol) table for IPv4
+            # Neighbor Discovery Protocol (NDP) table for IPv6.
+            # - These tables map MAC addresses (L2) to IP addresses (L3).
+            # - Essential for LAN traffic
             man ip-address         # Protocol address management
             ip addr                # show IP and MAC of all devices/interfaces
             ip addr show dev $dev  # show IP and MAC of device (eth0 or whatever)
@@ -971,7 +1022,8 @@ exit
             sudo ip [-4] addr del $ipv4_cidr dev $dev
             ip maddr show eth0                 # show MAC
 
-        # L3 AKA Layer 3 AKA Network Layer
+        ip route # Route to the gateway, per interface.
+            # L3 (Network Layer)
             # AKA Routing Layer AKA IP Layer AKA Switching Layer
             # AKA Packet Forwarding Layer AKA Logical Addressing Layer
             # AKA Internet Layer
@@ -985,7 +1037,24 @@ exit
             sudo ip route add 20.0.0.0/8 via 192.168.1.1  # add a route
             sudo ip route add default via 192.168.50.100  # add default gateway
 
-            man ip-tunnel               # Tunnel configuration
+        ip neigh # For that next-hop IP, what's the MAC address.
+            # L2/L3 (Data Link / Network layer)
+            ip neigh show dev $dev  # Show IP (v4/v6) to MAC address maps for that device
+                # 172.27.240.1              lladdr 00:15:5d:91:f1:6c STALE
+                # fe80::c9c4:32bb:162f:22cb lladdr 00:15:5d:91:f1:6c STALE
+                #... Same MAC (physical address) regardless of IP version
+            ip -4 neigh show dev eth0
+                # 192.168.1.2 dev eth0 lladdr 00:21:29:ae:77:b6 STALE      # CB router with eth0 connected
+                # 192.168.1.1 dev eth0 lladdr e0:3f:49:9a:8b:b8 REACHABLE  # Gateway router
+                # 192.168.1.101 dev eth0 lladdr 00:1c:c0:4d:94:bf STALE    # Local host (this machine)
+
+        ip tunnel # Tunnel over IP
+            # L2/L3 (Data Link Layer / Network Layer)
+            # L3-based for transport but achieves L2 functionality through encapsulation. 
+            # - Allowing for both L3 (IP over IP/GRE) and L2 (Ethernet, VLANs via L2TPv3/EoIP) tunneling 
+            # - Extending L2 across L3 network
+            # - Enabling L2 bridging or VPNs. 
+            man ip-tunnel # Tunnel configuration
             ip tunnel list
                 # https://en.wikipedia.org/wiki/IP_tunnel
                 # Connect two IPv6 islands, A and B (IPv6 address of each gateway), across an IPv4 network.
@@ -1081,50 +1150,14 @@ exit
 						route $a 255.255.255.0
 						EOH
 
-        # L3/L2 (Network/Link layers)
-            # ARP (Address Resolution Protocol) table for IPv4
-            # Neighbor Discovery Protocol (NDP) table for IPv6.
-            # - These tables map IP addresses (L3) to MAC addresses (L2).
-            # - Essential for LAN traffic
-            ip neigh
-            ip neigh show dev $dev  # Show IP (v4/v6) to MAC address maps for that device
-                # 172.27.240.1              lladdr 00:15:5d:91:f1:6c STALE
-                # fe80::c9c4:32bb:162f:22cb lladdr 00:15:5d:91:f1:6c STALE
-                #... Same MAC (physical address) regardless of IP version
-            ip -4 neigh show dev eth0
-                # 192.168.1.2 dev eth0 lladdr 00:21:29:ae:77:b6 STALE      # CB router with eth0 connected
-                # 192.168.1.1 dev eth0 lladdr e0:3f:49:9a:8b:b8 REACHABLE  # Gateway router
-                # 192.168.1.101 dev eth0 lladdr 00:1c:c0:4d:94:bf STALE    # Local host (this machine)
+    # LEGACY utilities
+        ifdown/ifup
+            # @ LAN
+            ifdown 'eth0' && sudo ifup 'eth0'
+            # @ WLAN
+            ifdown 'wlan0' && sudo ifup 'wlan0'
 
-        # L2 AKA Layer 2 AKA Data Link layer AKA Link Layer (TCP/IP model)
-            # AKA MAC Layer AKA Frame Layer AKA Switching Layer AKA Bridge Layer
-            # AKA Ethernet Layer AKA Physical Addressing Layer
-                # Manage physical and logical device settings (MAC address)
-                # Device AKA adapter AKA interface AKA connection AKA NIC
-            man ip-link                 # Network device configuration
-            ip link                     # Show MAC of all devices
-            dev=ens192                  # Common: eth0, ens192, wlan0, docker0, cni*
-            ip -s link dev show $dev    # Show link statistics
-                # Path MTU Discovery (PMTUD) may cause a transitory,
-                # per-connection change MTU setting (nominally 1500) of a device,
-                # e.g., to account for tunnel protocol (VPN, SSH, ...),
-                # which adds data to packets' header
-                # See:
-                sudo tcpdump -i $dev                    # Reports size per packet, e.g., "length 1414"
-            sudo ip link set dev $dev mtu 9000          # Set MTU to allow Jumbo Frames
-            #... both TX and RX devices must support, else no affect.
-            sudo ip link set $dev up|down               # Set UP/DOWN; toggle on/off; use to apply new config(s)
-            sudo ip link set $dev alias "Public link"   # Set alias AKA description
-
-            # LEGACY utilities
-                ifdown/ifup
-                # @ LAN
-                sudo ifdown 'eth0' && sudo ifup 'eth0'
-                # @ WLAN
-                sudo ifdown 'wlan0' && sudo ifup 'wlan0'
-
-    ifconfig  # OBSOLETE since 1996 !!! : use `ip` utility instead
-
+        ifconfig  # OBSOLETE since 1996 !!! : use `ip` utility instead
         ifconfig -a                   # show info for all adapters
         ifconfig eth0 down            # disable NIC
         ifconfig eth0 up              # enable NIC

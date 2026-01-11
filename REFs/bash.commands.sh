@@ -515,7 +515,7 @@ exit
             -j, --bzip2         # .tar.bz2 is .tbz2
             -z, --gz            # .tar.gz  is .tgz
             -J, --xz            # .tar.xz  is .txz
-            -C PARENT # Place BEFORE all other flags, especially on create
+            -C PARENT # This is brittle : Best run tar from parent of target.
             --newer-mtime=DATE # Work on files whose data changed after DATE.  
             # If DATE starts with '/' or '.', then treated as file; DATE is mtime. 
             # Exclude certain folders|files; multiple such excludes okay
@@ -533,11 +533,15 @@ exit
                 cd /parent 
                 tar -cavf a.tgz ./a  # Use relative paths
 
-            # Create tarball from ANYWHERE
+            # Create tarball from ANYWHERE : -C is brittle; best run tar from parent of target.
                 tar -C /parent -cavf a.tgz ./a
                 
                 # From source root, dumping archive to parent and preserving ./source as its root.
                 tar -C .. -cavf ../source.tgz ./source
+
+            # Create tarball of all dot files at root of user's HOME; exclude subdir content.
+                cd ~ # Else fails at using "-C ~" 
+                tar -cvaf ~/dotfiles.$(date -Id).tgz --exclude='.*/*' .[a-zA-Z]*
 
             # Extract tarball to its relative location (under /parent)
                 cd /parent 
@@ -2577,19 +2581,24 @@ exit
 
     wget [options] URL  # download web page[s]  https://www.gnu.org/software/wget/manual/wget.html
 
-        # Download directly into install location 
-        wget $url -O $destination
+        # Download a file to PWD as is
+        wget $url
 
-        # Download, extract, install a BINARY to /usr/local/bin/THIS
-        wget -nv $url -O - |sudo tar -C /usr/local/bin -xzvf - 
+        # Download to declared path (Output; -O)
+        wget -O /to/afile $url
 
-        # Download, extract, and make (compile and install) from SOURCE tarball
-            wget URL_TO_SOURCE.tarball  # download it 
-            tar -xaf SOURCE.tarball     # extract it / read about it
-            configure --help # show info; source dir often include a 'configure' file
-            ./configure  # generates files required to build SW and setup system parameters. 
-            make         # build the libraries and applications. 
-            make install # install the libraries and applications. 
+        # Download and EXECUTE a remote script
+        wget -qO- $url |bash
+
+        # Download, extract, install a BINARY to /usr/local/bin/
+        wget -qO- $url |sudo tar -C /usr/local/bin -xzvf - 
+
+        # Download, extract, COMPILE (make), and INSTALL from remote SOURCE ARCHIVE
+        wget $base/a.tgz # download it 
+        tar -xvaf a.tgz  # extract it
+        ./configure  # generates files required to build SW and setup system parameters. 
+        make         # build
+        make install #... and/or install
 
 # ADMIN COMMANDS
 

@@ -88,6 +88,7 @@ exit 0
         df -hT      # Per device
         du -h       # Disk usage per directory under PWD
         du -hs $dir # Disk usage summary of all folders thereunder (default is PWD)
+        ncdu        # NCurses Disk Usage
 
     # CPU info
         lscpu    # YAML : Architecture, Model name, CPU(s), Thread(s) per Core, ...
@@ -207,14 +208,23 @@ exit 0
 
 # SERVICEs
 
-    # @ NOT systemd
+    # @ NOT systemd (LEGACY)
         service $service status|start|stop|enable|disable
 
-    # @ systemd : See man systemd.service
-        systemctl status|is-active|start|stop|enable|disable $service
+    # @ systemd : See `man systemd.service`, `man systemctl`
+        systemctl [OPTIONS...] COMMAND [UNIT...]
 
-        # Enable and start
+        # Print STATUS
+        systemctl status --no-pager --full $service
+
+        # Print THE EFFECTIVE CONFIGURATION of a service 
+        systemctl cat $service # Reconning all its config (drop-in) files across all its dirs.
+
+        # Create/ENABLE and then START the service
         systemctl enable --now $service
+
+        # Delete/DISABLE after STOPping the service
+        systemctl disable --now $service
 
         # Verify service STATUS is 'active'|'activating' : $? is 0|3 respectively.
         systemctl is-active [--quiet] $service # --quite prints nothing
@@ -229,18 +239,11 @@ exit 0
         systemctl list-unit-files
 
         # LOCATION matters
-            # If installed by package manager 
-            /usr/lib/systemd/system     # Managed by vendor; overrides /usr/...;
-            # If *not* installed by package manager
+            # Files installed by PACKAGE MANAGER 
+            /usr/lib/systemd/system     # Managed by vendor; overwritten on OS update (possible)
+            # Files installed otherwise : ADD drop-in FILEs here, regardless.
             /etc/systemd/system         # Managed by sudoer; overrides /usr/...; survives updates
             /run/systemd/system         # Managed by sudoer; overrides /usr/...; survives updates; runtime
-
-            systemctl cat $name.service  # Prints the EFFECTIVE config; the merged totality of all its configs.
-
-        # Create a service for COMMAND (quickly)
-            systemctl enable --now COMMAND
-        # Delete a service
-            systemctl disable --now COMMAND
 
         # Create : Example : ssh-user-sessions.service
             vi /etc/systemd/system/ssh-sessions.service # Edit:
@@ -274,6 +277,22 @@ exit 0
 
                 [Install]
                 RequiredBy=sleep.target
+
+        # Add drop-in : ALWAYS at /etc/systemd/system/... (Protected from OS updates; /usr/lib/systemd/...).
+            mkdir -p /etc/systemd/system/keepalived.service.d
+            vi /etc/systemd/system/keepalived.service.d/10-options.conf
+
+                # /etc/systemd/system/keepalived.service.d/10-options.conf
+                [Service]
+                # Ensure clean override of ExecStart
+                ExecStart=
+                ExecStart=/usr/sbin/keepalived $KEEPALIVED_OPTIONS
+
+                # Kill all lingering processes in the control group on stop/restart
+                KillMode=control-group
+
+                # Kill rogue keepalived processes before starting
+                ExecStartPre=/usr/local/bin/keepalived-rogue-cleanup.sh
 
             # LECAGCY METHODS (RHEL 6)
                 # ... runs all executables (hooks) @ ...

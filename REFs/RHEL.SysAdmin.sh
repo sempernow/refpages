@@ -226,8 +226,8 @@ systemctl restart sssd  # Restart sssd (to apply changes)
     # RHEL brands OSS
         go-toolset  # Golang having curated package versions tailored for current RHEL version.
         idm         # FreeIPA
-        
-    # Modules are part of Application Stream (AppStream) repo of RHEL8+;
+ 
+    # Modules are part of Application Stream (AppStream) repo of RHEL8+ .
         # Collections of software packages grouped together and managed as a unit. 
         # They contain a set of RPM packages and metadata 
         # declaring their default versions and available streams (app versions)

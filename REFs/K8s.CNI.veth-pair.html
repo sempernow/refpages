@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>K8s.CNI.veth-pair</title>
+    <link rel="icon" href="https://sempernow.github.io/refpages/sa/favicon.png">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/normalize.css">
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/main.css">
+    <!--
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/dev.css">
+    -->
+    <link rel="stylesheet" href="https://sempernow.github.io/refpages/sa/css/hljs.github.min.css">
+    <style>
+
+    </style>
+    <script src="https://sempernow.github.io/refpages/sa/js/hl.min.js"></script>
+    <script>hljs.highlightAll()</script>
+</head>
+<body>
+    <main>
+        <h1>K8s : CNI : Virtual Ethernet (veth) Pair</h1>
+
+<p>A <strong>veth pair</strong> is two virtual network interfaces
+connected back-to-back to create a <strong>bidirectional pipe</strong>.
+Whatever enters one end exits the other.</p>
+
+<p><strong>Why they exist</strong></p>
+
+<p>Network namespaces are isolated by design;
+they can't see each other's interfaces,
+so veth pairs are used to punch a hole between them.</p>
+
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│ Host network namespace                                  │
+│                                                         │
+│    ┌─────────┐                                          │
+│    │  eth0   │ ← physical NIC                           │
+│    └────┬────┘                                          │
+│         │                                               │
+│    ┌────┴────┐                                          │
+│    │ cbr0/   │ ← bridge (or CNI interface)              │
+│    │ cni0    │                                          │
+│    └────┬────┘                                          │
+│         │                                               │
+│      vethXYZ  ← host end of pair                        │
+│         │                                               │
+└─────────┼───────────────────────────────────────────────┘
+          │ ← the &quot;pair&quot; connection
+┌─────────┼───────────────────────────────────────────────┐
+│ Pod network namespace                                   │
+│         │                                               │
+│       eth0    ← pod end (renamed from veth peer)        │
+│         │                                               │
+│    Pod sees this as its network interface               │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
+
+<p><strong>In K8s terms</strong></p>
+
+<p>When a pod starts:
+1. CRI tells the runtime to create the pod sandbox with a new network namespace
+2. CNI plugin creates a veth pair
+3. One end stays in the host namespace (attached to a bridge or used for routing)
+4. Other end moves into the pod's namespace and becomes <code>eth0</code></p>
+
+<p>You can see the host ends with<br>
+<code>ip link | grep cali</code><br>
+(or whatever the CNI's prefix),<br>
+e.g., <code>cali6db1a6d597f@if3</code>.</p>
+
+<p>The <code>@if3</code> indicates the interface index of the peer in the other namespace.</p>
+
+<hr>
+
+<p>That's expected behavior—Calico doesn't need IPv4 addresses on the veth interfaces themselves.</p>
+
+<p><strong>How Calico routes differently</strong></p>
+
+<p>Most CNIs use a bridge model where the host-side veth needs an IPv4 address for L2 connectivity.
+Calico uses pure <strong>L3 routing</strong>:</p>
+
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│ Host                                                    │
+│                                                         │
+│  Routing table:                                         │
+│  10.244.1.5 dev cali1234 scope link                     │
+│  10.244.1.6 dev cali5678 scope link                     │
+│                                                         │
+│  cali1234 ──────────┬─────────── cali5678               │
+│  (no IPv4)          │           (no IPv4)               │
+│                     │                                   │
+└─────────────────────┼───────────────────────────────────┘
+                      │
+    ┌─────────────────┴────────────────┐
+    │                                  │
+┌───┴───┐                          ┌───┴───┐
+│ Pod A │                          │ Pod B │
+│eth0:  │                          │eth0:  │
+│10.244.1.5                        │10.244.1.6
+└───────┘                          └───────┘
+</code></pre>
+
+<p>The host routes packets directly to the veth device—no next-hop IP needed. The <code>scope link</code> route says &quot;this IP is reachable directly via this interface.&quot;</p>
+
+<p><strong>Why IPv6 appears</strong></p>
+
+<p>The <code>fe80::/10</code> link-local addresses you're seeing are auto-configured on any interface with IPv6 enabled (default kernel behavior). They're not part of Calico's data path; they're just the kernel doing its thing.</p>
+
+<p><strong>Verification</strong></p>
+
+<pre><code class="language-bash"># Host routes for pods - note &quot;scope link&quot;, no gateway
+ip route | grep cali
+
+# Inside the pod - default route points to a link-local or 169.254.x.x
+kubectl exec &lt;pod&gt; -- ip route
+</code></pre>
+
+<p>Calico uses proxy ARP on the host side so the pod's <code>eth0</code> can ARP for its gateway and get a response, even though no real IPv4 exists on the host end.</p>
+
+<hr>
+
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Layer</th>
+<th>What it shows</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>ip link</code></td>
+<td>L2</td>
+<td>Interfaces, MAC addresses, MTU, state (up/down), veth peers</td>
+</tr>
+
+<tr>
+<td><code>ip addr</code></td>
+<td>L2/L3</td>
+<td>L2 info + IP addresses bound to interfaces</td>
+</tr>
+
+<tr>
+<td><code>ip route</code></td>
+<td>L3</td>
+<td>Routing table—where to send packets for each destination</td>
+</tr>
+
+<tr>
+<td><code>ip neigh</code></td>
+<td>L2/L3</td>
+<td>ARP/NDP cache—IP to MAC mappings</td>
+</tr>
+</tbody>
+</table>
+
+<p><code>ip method</code> vs. network model</p>
+
+<pre><code>ip link   L2        What interfaces exist and how they're connected.
+                    ↓
+ip addr   L2/L3     What IPs are assigned to those interfaces. 
+                    ↓
+ip route  L3        Given a destination IP, which interface/gateway to use.
+                    ↓
+ip neigh  L2/L3     For that next-hop IP, what's the MAC address.
+</code></pre>
+
+<p>For Calico debugging, the sequence is usually:</p>
+
+<pre><code class="language-bash">ip link show type veth          # do the veth pairs exist?
+ip route | grep cali            # is the pod IP routed to the right veth?
+ip neigh show dev caliXXX       # does the host have the pod's MAC?
+</code></pre>
+
+<hr>
+
+<h2>Network layer vs. tool</h2>
+
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Name</th>
+<th>Unit</th>
+<th>Identifiers</th>
+<th>Tools</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>L2</td>
+<td>Data Link</td>
+<td>Frame</td>
+<td>MAC addresses</td>
+<td><code>ip link</code>, <code>ip neigh</code></td>
+</tr>
+
+<tr>
+<td>L3</td>
+<td>Network</td>
+<td>Packet</td>
+<td>IP addresses</td>
+<td><code>ip addr</code>, <code>ip route</code></td>
+</tr>
+
+<tr>
+<td>L4</td>
+<td>Transport</td>
+<td>Segment</td>
+<td>Ports (TCP/UDP)</td>
+<td><code>ss</code>, <code>netstat</code></td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>For L4 inspection</strong></p>
+
+<pre><code class="language-bash">ss -tlnp          # TCP listeners with PIDs
+ss -ulnp          # UDP listeners
+ss -tn state established  # active TCP connections
+netstat -tulpn    # older equivalent
+</code></pre>
+
+<p><code>ip addr</code> maxes out at L3; it'll show you which IPs exist on which interfaces,
+but has no concept of what's listening or connected on those IPs.</p>
+
+<!-- 
+
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
+
+# Markdown Cheatsheet
+
+[Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet "Wiki @ GitHub")
+
+# README HyperLink
+
+README ([MD](__PATH__/README.md)|[HTML](__PATH__/README.html)) 
+
+# Bookmark
+
+- Target
+<a name="foo"></a>
+
+- Reference
+[Foo](#foo)
+
+-->
+ 
+    </main>
+
+    <script src="https://sempernow.github.io/refpages/sa/js/base.js"></script>
+    <script>
+        ;(function(o, undefined){
+            'use strict'
+            window.addEventListener('load', () => {
+                ;(() => {})//()
+                ;(() => {})//()
+                ;(() => { // FOO LAB
+                    const log = o.log('foo')
+                        ,main = o.css('MAIN')
+                    log('foo')
+                    o.toDOM(main, '<h1>TEST</h1>')
+                })//()
+            })
+        })( (typeof window !== 'undefined') 
+            && (window[__APP__] = window[__APP__] || {})
+                || (typeof global !== 'undefined') 
+                    && (global[__APP__] = global[__APP__] || {})
+        );
+    </script>
+</body>
+</html>
