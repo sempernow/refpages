@@ -213,6 +213,7 @@
 ## [K8s.CNI.calico.md](./REFs/K8s.CNI.calico.md)
 ## [K8s.CNI.cilium.md](./REFs/K8s.CNI.cilium.md)
 ## [K8s.CNI.kube-router.md](./REFs/K8s.CNI.kube-router.md)
+## [K8s.CNI.veth-pair.md](./REFs/K8s.CNI.veth-pair.md)
 ## [K8s.configure-kernel.sh](./REFs/K8s.configure-kernel.sh)
 ## [K8s.CSI.Rook.md](./REFs/K8s.CSI.Rook.md)
 ## [K8s.FS.md](./REFs/K8s.FS.md)

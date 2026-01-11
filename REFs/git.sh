@@ -60,15 +60,35 @@ exit
 
 #########
 ## COMMIT 
+    # One liner
+    git add -u && git add . && git commit # Invokes editor to add commit message.
+    # Else
     git commit -m 'Commit message'
-    git commit --amend # Edit a (unpushed) commit msg : invoke default editor.
-    git commit --amend -m 'New message.'  # Edit a (unpushed) commit : in place.
+    git commit --amend # Edit a (LOCAL) commit msg : invoke default editor.
+    git commit --amend -m 'New message.' #... same, but in place.
     git rev-parse HEAD # hash of current state
     git rev-list HEAD  # hash list of up to 40 most recent revisions
+    # Conventional commit message:
+    ####################################################################
+    # <type>[(optional scope)]:<description having imperative tone>
+    #
+    # [optional body]       # Motivation and other context
+    #
+    # [optional footer(s)]  # Reference(s) or BREAKING CHANGE indicator
+    ####################################################################
+    # TYPES: 
+    # feat:     A new feature is introduced to the codebase. (Correlates with MINOR in SemVer).
+    # fix:      A bug fix is patched in the codebase. (Correlates with PATCH in SemVer).
+    # docs:     Documentation-only changes.
+    # style:    Changes that do not affect the meaning of the code (whitespace, formatting, etc.).
+    # refactor: A code change that neither fixes a bug nor adds a feature.
+    # perf:     A code change that improves performance.
+    # test:     Adding missing tests or correcting existing tests.
+    # chore:    A catch-all for changes to the build process or auxiliary tools and libraries.
 
 ## DIFF : Compare  
-    git diff origin     # Show changes between local and remote of current branch
-    git diff HEAD       # Show changes since last commit 
+    git diff origin/$br $br # Diff origin v. local of $br
+    git diff HEAD           # Diff working v. last commit 
 
 ##################
 ## Merge v. Rebase 
