@@ -51,7 +51,12 @@ Client checks:
 <li>CA signature</li>
 <li>Expiration</li>
 <li>Revocation</li>
-<li>Domain match</li>
+<li>Domain match
+
+<ul>
+<li>Modern browsers rely on <strong>SAN</strong>s (<strong>S</strong>ubject <strong>A</strong>lternate <strong>N</strong>ame) for validation,<br>
+so the <strong>CN</strong> (<strong>C</strong>ommon <strong>N</strong>ame) <em>must be included</em> (repeated exactly) in its SANs list.</li>
+</ul></li>
 </ul></li>
 <li><strong>Proof of Private Key Possession</strong><br>
 Does the server control the private key?<br>
