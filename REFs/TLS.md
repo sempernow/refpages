@@ -26,6 +26,8 @@ Nominally, the client application has access to a **trust store** containing a l
     - Expiration
     - Revocation
     - Domain match
+        - Modern browsers rely on **SAN**s (**S**ubject **A**lternate **N**ame) for validation,  
+          so the **CN** (**C**ommon **N**ame) *must be included* (repeated exactly) in its SANs list.
 2. __Proof of Private Key Possession__  
     Does the server control the private key?  
     The client/server key exchange fails if not.  

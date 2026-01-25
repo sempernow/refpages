@@ -935,17 +935,20 @@ exit
         #   Also, UNLIKE bash, '*' matches both ‘/’ and leading dots in paths
         # http://mywiki.wooledge.org/UsingFind
     
+        find . -type f -printf '%T@\t%p\n'  # List files by mtime : Sort using: ...|sort -n 
+        find . type d -mtime +33            # List folders older than 33 days
+        
         find            # List relative paths of all folders & files @ $PWD
         find /abs/path  # Specify top-level search by ABSOLUTE path
         find ./rel/path # Specify top-level search per RELATIVE path
+
+        find . -ipath '*/new */foo bar.txt' # case insensitive path search within PWD & below
+        find . -iname 'foo*'                # print ./fname.ext; 1 per line; all foo*
         
-        find . -ipath '*/new */foo bar.txt'  # case insensitive path search within PWD & below
-        find . -iname 'foo*'                 # print ./fname.ext; 1 per line; all foo*
-        
-        find "$dir" -iname "foo*bar"  # find all @ subdirs within $dir & below
-        find . -name "[a-m]*.*"       # find per globbing
-        find . -size +5M              # find files bigger than 5MB
-        find . -type l                # find symbolic links (symlinks); regular files (f); dirs (d)
+        find "$dir" -iname "foo*bar"        # find all @ subdirs within $dir & below
+        find . -name "[a-m]*.*"             # find per globbing
+        find . -size +5M                    # find files bigger than 5MB
+        find . -type l                      # find symbolic links (symlinks); regular files (f); dirs (d)
 
         # Set depth of search 
             find -mindepth 1 -maxdepth 1  # PWD only; files & folders
