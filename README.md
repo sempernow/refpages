@@ -182,6 +182,7 @@
 ## [ImageX.cmd](./REFs/ImageX.cmd)
 ## [ImgBurn.txt](./REFs/ImgBurn.txt)
 ## [IP_Addresses_Ports.txt](./REFs/IP_Addresses_Ports.txt)
+## [ISO.vs.QCOW2.md](./REFs/ISO.vs.QCOW2.md)
 ## [IT.defs.txt](./REFs/IT.defs.txt)
 ## [JacamarCI.md](./REFs/JacamarCI.md)
 ## [JS.Array.reduce.js](./REFs/JS.Array.reduce.js)
