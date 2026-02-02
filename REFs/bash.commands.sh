@@ -569,9 +569,14 @@ exit
             # PIPEd input per `-` (stdin)
             ... |tar [OPTIONS] -
 
-                # Extract/Install all archived (tgz) bin/* files to /usr/local/bin/*
+                # Install all archived remote bin/* files to /usr/local/bin/*
                 curl -sSL https://source.com/set_of_binaries.tar.gz |
-                    sudo tar -C /usr/local -xzf - 
+                    sudo tar -C /usr/local -xzf -  # Sets UID:GID to those of source
+
+                # Install archived remote binary "$name" to /usr/local/bin/$name
+                curl -sSL https://source.com/$name.tar.gz |
+                    tar -C /tmp -xzf - &&
+                        sudo install /tmp/$name /usr/local/bin/ 
 
                 # Create archive of all dot files @ root dir
                 find . -maxdepth 1 -type f -iname '.*' -print0 |
