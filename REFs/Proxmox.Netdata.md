@@ -32,10 +32,9 @@ netstat -tlnp | grep 19999
 ```
 
 ### Step 4: Access the dashboard
-Open your browser and navigate to:
-```
-http://your-proxmox-ip:19999
-```
+
+Open your browser and navigate to:  
+http://192.168.28.181:19999
 
 ---
 

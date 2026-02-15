@@ -96,14 +96,16 @@ kubectl label $kind $name k1=v1
 kubectl label $kind $name k1=vZ --overwrite
 # Labels : Delete
 kubectl label $kind $name k1-
-# Annotations : Key pattern : the.subject.domain.name/{owner,team,poc,repo,expiry,description}
-# Annotation : Add as k=v pair
+# Annotations 
+# - Pattern : <resource-reference>/{owner,team,poc,repo,expiry,description}
+# - Well known keys : https://kubernetes.io/docs/reference/labels-annotations-taints/
+# Annotation : Add 
 kubectl annotate $kind $name a/b=c
-# Annotation : Modify as k=v pair
-kubectl annotate $kind $name a/b=x --overwrite
+# Annotation : Modify (overwrite)
+kubectl annotate $kind $name kubernetes.io/description="Configrued to delete PV path on PVC delete" --overwrite
 # View : labels||annotations (either)
 kubectl get $kind $name -o jsonpath="'{.metadata.$either}'"
-kubectl get $kind $name -o jsonpath="'{.metadata.$either."a/b"}'" #=> 'x'
+kubectl get $kind $name -o jsonpath="'{.metadata.$either."a/b"}'" 
 # Execute an interactive shell (bash, sh, …) into a container 
 kubectl exec -it $pod -- /bin/bash    # If single-container Pod
 kubectl exec -it $pod -c $ctnr -- sh  # If multi-container Pod : Use TAB completion

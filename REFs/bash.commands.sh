@@ -530,11 +530,11 @@ exit
                 unzip --help
  
             # Create tarball : Relative path allows for extraction to anywhere.
-                cd /parent 
+                cd /parent           # Has /parent/a
                 tar -cavf a.tgz ./a  # Use relative paths
 
             # Create tarball from ANYWHERE : -C is brittle; best run tar from parent of target.
-                tar -C /parent -cavf a.tgz ./a
+                tar -C /parent -cavf a.tgz ./a # Requires /parent/a 
                 
                 # From source root, dumping archive to parent and preserving ./source as its root.
                 tar -C .. -cavf ../source.tgz ./source
@@ -543,9 +543,11 @@ exit
                 cd ~ # Else fails at using "-C ~" 
                 tar -cvaf ~/dotfiles.$(date -Id).tgz --exclude='.*/*' .[a-zA-Z]*
 
-            # Extract tarball to its relative location (under /parent)
+            # Extract tarball to its relative location under /parent
                 cd /parent 
-                tar -xavf a.tgz
+                tar -xavf /path/to/a.tgz
+                # Or
+                tar -C /parent -xavf /path/to/a.tgz  
 
             # Extract a SINGLE FILE (preserving relative location under /anywhere)
                 tar -xavf a.tgz ./a/file
@@ -554,10 +556,11 @@ exit
                 tar -xavf a.tgz --wildcards ./a/b/c/2025-*.log
 
             # Extract a SINGLE FILE to PWD (strip relative path) : N = Number of slashes
-                tar -xavf a.tgz ./a/file --strip-component=$N # N=2
+                tar -xavf a.tgz a/file --strip-component=$N # N=2
 
             # Extract tarball to ANYWHERE (preserving relative locations under /anywhere)
                 tar -C /anywhere -xavf a.tgz    # Good semantics 
+                tar -xavf a.tgz -C /anywhere    # Good semantics 
                 tar -Cxavf /anywhere a.tgz      # Bad semantics, but commonly used
 
             # List archive content : Names only (a); Verbose; ls -hl (v)

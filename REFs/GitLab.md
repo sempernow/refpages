@@ -15,7 +15,6 @@
     - __GitLab Operator__  : a __K8s Operator__ (Not for production)
         - [Releases](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/releases "gitlab.com/gitlab-org/cloud-native/") : [`/-/raw/<OPERATOR_VERSION>/CHART_VERSIONS`](https://gitlab.com/gitlab-org/cloud-native/gitlab-operator/-/raw/1.4.2/CHART_VERSIONS)
 
-
             |Operator|Chart|GitLab|
             |-----|-----|--------|
             |1.4.2|8.4.2|v17.4.2 |
