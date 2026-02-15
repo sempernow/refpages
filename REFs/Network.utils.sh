@@ -1312,25 +1312,22 @@ exit
                 192.168.1.1 SMB.aDOMAIN SMB
 
                 # Block websites
-                0.0.0.0     malicious.site
-                0.0.0.0     bad.place.com
+                0.0.0.0     malicious.site 
+                0.0.0.0     bad.place.com same.bad.place.net
 
-# SSH / OpenSSH a.k.a. "OpenBSD Secure Shell" : See 'REF.Network.SSH.sh'
+# SSH / OpenSSH a.k.a. "Openbsd Secure SHell" : See 'REF.Network.SSH.sh'
 
-    # BYOC (Bring your own creds)
-    ssh -i ${key} ${user}@${host_name_OR_public_ip}
-
-    # @ public key @ ~/.ssh/config
-    ssh ${user}@${host_name_OR_public_ip}
-    # OR
-    ssh -l $user ${host_name_OR_public_ip}
-    # OR, if `Host ...` @ `~/.ssh/config`
-    ssh xMachine
-    # Host xMachine
-    #   HostName centos
-    #   User rbox
-    #   CheckHostIP yes
-    #   IdentityFile ~/.ssh/centosvm_ed25519
+    # Generate key pair
+    ssh-keygen -t ecdsa -b 521 -C "$(id -un)@$(hostname)" -N '' -f $key
+    # Push key to host (ssh-copy-id) SECURELY 
+    # - List FPRs of host : scan a host's key(s) and print the fingerprint(s)
+    ssh-keyscan $host 2>/dev/null |ssh-keygen -lf -
+    # - Push key on query ONLY IF host claim validates agaisnt the scan above (1).
+    ssh-copy-id -i $key ${user}@$host
+    # Connect by one of ...
+    ssh -i ${key} ${user}@${host_name_OR_public_ip} # Unconfigured; BYOC (Bring your own creds)
+    ssh ${user}@${host_name_OR_public_ip}           # Key having a default name at ~/.ssh/
+    ssh xMachine                                    # Cofnigured at ~/.ssh/config
 
     # SCP : Secure Copy  https://en.wikipedia.org/wiki/Secure_copy
         scp $source user@host:$target     # upload source FILE to host @ target

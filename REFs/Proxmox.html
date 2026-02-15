@@ -20,15 +20,34 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://www.proxmox.com/en/proxmox-virtual-environment/overview" title="Proxmox.com">Proxmox VE</a> (PVE) | <a href="https://www.proxmox.com/en/products/proxmox-virtual-environment/overview" title="Proxmox.com">Download ISO</a></h1>
+        <h1><a href="https://www.proxmox.com/en/proxmox-virtual-environment/overview" title="Proxmox.com"><strong>P</strong>roxmox <strong>V</strong>irtual <strong>E</strong>nvironment</a> (PVE)</h1>
 
 <h2>Install</h2>
 
-<p>Copy ISO, e.g., <code>proxmox-ve_8.4-1.iso</code>, onto USB using Rufus. Boot from USB at target machine, and follow the installation prompts. Select the misleading &quot;GUI&quot; install, which is the normal, headless install.</p>
+<p><a href="https://www.proxmox.com/en/products/proxmox-virtual-environment/overview" title="Proxmox.com">Download ISO</a></p>
+
+<ol>
+<li>Copy ISO, e.g., <code>proxmox-ve_8.4-1.iso</code>, onto USB using Rufus.</li>
+<li>Boot from USB at target machine, and follow the installation prompts.</li>
+<li>Select the misleading &quot;GUI&quot; install, which is the normal, <strong><em>headless</em></strong> install.</li>
+</ol>
+
+<hr>
 
 <h2>Overview</h2>
 
-<p><strong>Proxmox Virtual Environment</strong> (<strong><code>pve</code></strong>) is an open-source server-management platform for enterprise virtualization; VMs, containers, HA clusters and integrated disaster recovery. Built upon <strong>Debian</strong>, it installs <strong>headless</strong> by default, providing a <strong>web UI</strong> available locally, e.g., <code>https://192.168.28.181:8006</code>, and SSH access (<code>root@192.168.28.181</code>).</p>
+<p>Proxmox is an open-source server-management platform for enterprise virtualization;
+managing VMs, containers, LXC, HA clusters, and integrated disaster recovery.</p>
+
+<p>Built upon <strong>Debian</strong>, it installs <strong>headless</strong> by default,
+providing web UI and CLI interfaces:</p>
+
+<p>MiniPC:</p>
+
+<ul>
+<li><strong>WebUI</strong> : <a href="https://192.168.28.181:8006">https://192.168.28.181:8006</a></li>
+<li><strong>SSH</strong>: root@192.168.28.181</li>
+</ul>
 
 <blockquote>
 <p>Compute, network, and storage in a single solution.</p>
@@ -54,34 +73,460 @@
 <li><code>.vdi</code></li>
 </ul>
 
+<hr>
+
+<h2><a href="https://www.youtube.com/watch?v=GoZaMgEgrHw">Configuration</a></h2>
+
+<ul>
+<li>Allow <em>updates sans subscription</em>
+
+<ul>
+<li><strong>Enable</strong> non-production updates at <code>/etc/apt/sources.list</code></li>
+<li><strong>Comment out</strong> the enterprise list at <code>/etc/apt/sources.list.d/pve-enterprise.list</code></li>
+</ul></li>
+<li>Storage
+
+<ul>
+<li>ZFS</li>
+</ul></li>
+<li>IOMMU
+
+<ul>
+<li>Enables host device passthrough; must be supported by cpu and mainboard and enabled in bios.</li>
+</ul></li>
+</ul>
+
+<hr>
+
+<h2>Proxmox Storage</h2>
+
+<p>The setup matters quite a bit for VM performance and flexibility &hellip;</p>
+
+<p><strong>What Proxmox expects by default:</strong></p>
+
+<p><strong>The installer</strong> typically creates an LVM volume group (<code>pve</code>) with:</p>
+
+<ul>
+<li><code>pve-root</code> — ext4 for the OS (~30-100GB)</li>
+<li><code>pve-swap</code> — swap</li>
+<li><code>pve-data</code> — <strong>LVM-thin pool</strong> for VM disks</li>
+</ul>
+
+<p>The key is that <code>pve-data</code> <em>should</em> be an <strong>LVM-thin</strong> pool,
+<em>not a regular logical volume</em>.
+LVM-thin gives you <strong>thin provisioning</strong>,
+<strong>snapshots</strong>, and <strong>efficient cloning</strong>;
+all critical for VM operations.</p>
+
+<p>If you manually create <em>regular</em> LVM logical volumes, you'll lose those features.
+Proxmox will still work, but you'll be stuck with <em>raw disk images</em> and <em>no snapshot capability</em>.</p>
+
+<p><strong>Quick check</strong>:</p>
+
+<p><code>lvs -o lv_name,vg_name,lv_attr,lv_size,pool_lv</code></p>
+
+<pre><code class="language-bash">root@pve [06:07:30] [1] [#0] ~
+# lvs -o lv_name,vg_name,lv_attr,lv_size,pool_lv
+  LV                VG  Attr       LSize    Pool
+  base-9000-disk-0  pve Vri-a-tz-k    3.00g data
+  data              pve twi-aotz-- &lt;348.82g         # Thin LVM
+  root              pve -wi-ao----   96.00g         # Plain LVM
+  swap              pve -wi-ao----    8.00g
+  vm-9000-cloudinit pve Vwi-a-tz--    4.00m data
+</code></pre>
+
+<ul>
+<li>The <code>t</code> attribute indicates <em>thin pool</em>; <code>V</code> indicates <em>thin volume</em>.<br>
+Plain LVM reports <code>-wi-a-----</code> attributes.</li>
+</ul>
+
+<p><strong>Recommendations for a single 512GB NVMe:</strong></p>
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Pros</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><strong>LVM-thin</strong> (default)</td>
+<td>Simple, snapshots, thin provisioning</td>
+</tr>
+
+<tr>
+<td><strong>ZFS</strong></td>
+<td>Compression, checksums, snapshots, better for your RAM (64GB is plenty for ARC)</td>
+</tr>
+</tbody>
+</table>
+
+<p>Given your 64GB RAM, <strong>ZFS</strong> is actually a strong option — it'll use ~8-16GB for ARC cache which dramatically improves I/O. You could reinstall selecting ZFS, or:</p>
+
+<p><strong>What's in that 100GB you left unallocated?</strong> Was that intentional for something specific, or were you unsure about the partitioning?</p>
+
+<h3>Proxmox VE Ceph Reef cluster</h3>
+
+<blockquote>
+<p>Reef clusters are an evolution in Ceph's long-term release series, bringing improvements in scalability, performance, security, and Kubernetes integration. These advancements make <a href="https://docs.ceph.com/en/reef/cephfs/" title="docs.ceph.com/reef">CephFS</a> more capable of handling large-scale, distributed storage requirements across various industries, while still leveraging Ceph's robust object storage foundation, <def title="Reliable Autonomic Distributed Object Store"><strong>RADOS</strong></def>.</p>
+</blockquote>
+
+<h4>See Ceph (<a href="h4>
+
+<hr>
+
+<h2>Proxmox VMs</h2>
+
+<h3>Create VM (button)</h3>
+
+<ol>
+<li>OS tab — select ISO from <code>local</code>
+
+<ul>
+<li>But don't do this GUI method. Using a <code>*.iso</code> would an interactive install.
+Rather, use <strong><code>qm</code></strong>-automated <strong><code>cloud-init</code></strong> script method on a <strong><code>*.qcow2</code></strong> artifact:
+
+<ul>
+<li><a href="https://cloud.debian.org/images/cloud/bookworm/latest/">https://cloud.debian.org/images/cloud/bookworm/latest/</a> , e.g.,</li>
+<li><a href="https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2">https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2</a></li>
+</ul></li>
+</ul></li>
+<li>Disks tab — select <code>local-lvm</code> for the VM's virtual hard drive</li>
+</ol>
+
+<h3>Create VM by CLI <a href="https://pve.proxmox.com/pve-docs/qm.1.html"><code>qm</code></a></h3>
+
+<p>Proxmox CLI for managing QEMU/KVM VMs</p>
+
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>qm create</code></td>
+<td>Create a VM</td>
+</tr>
+
+<tr>
+<td><code>qm set</code></td>
+<td>Modify VM config</td>
+</tr>
+
+<tr>
+<td><code>qm start/stop</code></td>
+<td>Power control</td>
+</tr>
+
+<tr>
+<td><code>qm importdisk</code></td>
+<td>Import a disk image</td>
+</tr>
+
+<tr>
+<td><code>qm template</code></td>
+<td>Convert VM to template</td>
+</tr>
+
+<tr>
+<td><code>qm clone</code></td>
+<td>Clone a VM or template</td>
+</tr>
+
+<tr>
+<td><code>qm list</code></td>
+<td>List all VMs</td>
+</tr>
+</tbody>
+</table>
+
+<p>There's also <code>pct</code> for LXC containers, and <code>pvesm</code> for storage (which you used earlier).</p>
+
+<h3>Create VM Template</h3>
+
+<pre><code class="language-bash">bash debian12-template.sh
+</code></pre>
+
+<p>Debian 12 (bookworm) configured for <code>cloud-init</code> method (<strong><code>*.qcow2</code></strong>)</p>
+
+<p>@ <a href="debian12-template.sh"><strong><code>debian12-template.sh</code></strong></a></p>
+
+<hr>
+
+<h2>K0s on Proxmox</h2>
+
+<p>Build Network and VMs for Kubernetes cluster</p>
+
+<h3>@ <code>./pve/k0s-lab</code></h3>
+
+<p>See  README (<a href="pve/k0s-lab/README.md">MD</a>|<a href="pve/k0s-lab/README.html">HTML</a>)</p>
+
+<h3>Infra Architecture and Resources Plan</h3>
+
+<p>Here's our preliminiary design goal for this private network:</p>
+
+<ul>
+<li>One 3-node K0s cluster (1 control, 2 worker) on Debian 12.</li>
+<li>One RHEL 9 IdM domain controller having cross-forest trust <em>under</em> AD (WinSrv 2019) domain controller
+that is on another subnet (NAT network on 10.0.11.0/24).
+AD is the authoritative IdP.</li>
+</ul>
+
+<p>Guest VMs on this pve should be on segregated network (10.0.33.0/24, perhaps) having access to, but protected from, upstream gateway router (192.168.28.1) that connects this network to the internet.</p>
+
+<h3>Storage</h3>
+
+<p>The 100GB is default install. Is that too much? Regarding ZFS, taking some 8-16 GB of memory, not sure if we can afford that.</p>
+
+<h3>CPU/RAM</h3>
+
+<p>Ryzen 7 has 16 threads. Each is a vCPU under a type-1 hypervisor (pve).
+So, regarding resources (cpu, ram), perhaps  :</p>
+
+<ul>
+<li>IdM : 2 vCPU / 4 GB</li>
+<li>K0s control: 2 vCPU / 4 GB</li>
+<li>K0s worker: 4 vCPU / 16 GB</li>
+</ul>
+
+<p>Guest VMs total: 12 CPU / 40 GB</p>
+
+<p>That leaves 4 vCPU / 24 GB for the hypervisor (pve) <em>and</em> ZFS</p>
+
+<p>So, if ZFS takes 16 GB, that leaves only 6 GB for pve.</p>
+
+<h3>Assessment</h3>
+
+<p>Good plan overall. A few corrections and suggestions:</p>
+
+<h3>CPU Misconception</h3>
+
+<p>vCPUs aren't &quot;reserved&quot; — they're scheduled. Proxmox (KVM) time-slices physical cores across VMs. You can safely overcommit for bursty workloads. Your 12 vCPU allocation across 16 threads is conservative and fine.</p>
+
+<h3>RAM Reality</h3>
+
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>RAM</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Proxmox host</td>
+<td>~1-2 GB</td>
+</tr>
+
+<tr>
+<td>IdM</td>
+<td>4 GB</td>
+</tr>
+
+<tr>
+<td>K0s controller</td>
+<td>4 GB</td>
+</tr>
+
+<tr>
+<td>K0s workers (2×16)</td>
+<td>32 GB</td>
+</tr>
+
+<tr>
+<td><strong>Total</strong></td>
+<td>~42 GB</td>
+</tr>
+</tbody>
+</table>
+
+<p>Leaves ~22 GB free. You're not using ZFS (you have LVM-thin), so that concern doesn't apply unless you reinstall.</p>
+
+<h3>Assessment by Component</h3>
+
+<p><strong>Storage (100GB root):</strong> Oversized but harmless. Default installer is cautious. Not worth reinstalling.</p>
+
+<p><strong>IdM (2 vCPU / 4 GB):</strong> Tight but workable for lab. FreeIPA runs LDAP + Kerberos + DNS + CA. If sluggish, bump to 6GB.</p>
+
+<p><strong>K0s controller (2 vCPU / 4 GB):</strong> Fine for a 3-node cluster.</p>
+
+<p><strong>K0s workers (4 vCPU / 16 GB each):</strong> Generous — good if you're running real workloads. Could start at 8GB and scale up.</p>
+
+<h3>Network Topology</h3>
+
+<p>For the segregated 10.0.33.0/24:</p>
+
+<pre><code>                    ┌─────────────────┐
+                    │  192.168.28.1   │
+                    │  (gateway/NAT)  │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │ pve host (vmbr0)            │
+              │ 192.168.28.x                │
+              └──────────────┬──────────────┘
+                             │
+         ┌───────────────────┴───────────────────┐
+         │ vmbr1 (internal only, 10.0.33.0/24)   │
+         │ no gateway, or pve as router          │
+         └───────────────────┬───────────────────┘
+                             │
+        ┌────────────┬───────┴────────┬────────────┐
+        │            │                │            │
+    k0s-ctrl     k0s-w1          k0s-w2         IdM
+   10.0.33.11   10.0.33.12      10.0.33.13    10.0.33.10
+</code></pre>
+
+<p>You'll need:</p>
+
+<ol>
+<li>Create <code>vmbr1</code> (no physical interface, internal only)</li>
+<li>Either run a router VM, or enable IP forwarding on pve host with iptables NAT</li>
+</ol>
+
+<h3>Revised Resource Allocation</h3>
+
+<table>
+<thead>
+<tr>
+<th>VM</th>
+<th>vCPU</th>
+<th>RAM</th>
+<th>Disk</th>
+<th>Network</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>IdM</td>
+<td>2</td>
+<td>4-6 GB</td>
+<td>40 GB</td>
+<td>vmbr1 (+ vmbr0 for AD trust?)</td>
+</tr>
+
+<tr>
+<td>k0s-ctrl</td>
+<td>2</td>
+<td>4 GB</td>
+<td>32 GB</td>
+<td>vmbr1</td>
+</tr>
+
+<tr>
+<td>k0s-w1</td>
+<td>4</td>
+<td>12 GB</td>
+<td>32 GB</td>
+<td>vmbr1</td>
+</tr>
+
+<tr>
+<td>k0s-w2</td>
+<td>4</td>
+<td>12 GB</td>
+<td>32 GB</td>
+<td>vmbr1</td>
+</tr>
+
+<tr>
+<td><strong>Total</strong></td>
+<td>12</td>
+<td>32-34 GB</td>
+<td>136 GB</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+<p>This leaves ~30GB RAM headroom for growth or burst.</p>
+
+<hr>
+
+<h2><strong>W</strong>ake <strong>o</strong>n <strong>L</strong>an (WoL)</h2>
+
+<h3>How to Wake a <strong>headless</strong> Proxmox node:</h3>
+
+<ul>
+<li><strong>Configure</strong> for WoL:
+
+<ul>
+<li>BIOS/UEFI:
+
+<ul>
+<li>Disable: &quot;<code>ERP Ready</code>&quot;</li>
+<li>Enable: &quot;<code>Resume By PCI-E Device</code>&quot;</li>
+</ul></li>
+
+<li><p>Install <code>ethtool</code> (installed by default at pve v8.4.1):</p>
+
+<pre><code class="language-bash">apt install ethtool -y
+</code></pre></li>
+
+<li><p>Enable WoL on the public-facing interface (<strong><code>$ifc</code></strong>):</p>
+
+<pre><code class="language-bash">ethtool -s $ifc wol g # Wake on Magic Packet
+ethtool -s $ifc wol u # Wake on any traffic
+</code></pre></li>
+
+<li><p>Make it persistent by appending to the interfaces file &hellip;</p>
+
+<pre><code class="language-bash">tee -a /etc/network/interfaces &lt;&lt;-EOH
+post-up /sbin/ethtool -s $ifc wol g
+EOH
+</code></pre></li>
+</ul></li>
+<li><strong>Wake Proxmox</strong> (pve):
+
+<ul>
+<li>Send Magic Packet:<br>
+
+<ul>
+<li>Use a WoL app on remote machine to send magic packet to Proxmox's MAC address.</li>
+
+<li><p>SSH config</p>
+
+<pre><code class="language-ini">Host proxmox pve
+    HostName 192.168.1.181
+    User root
+    # Runs WoL cmd locally before SSH session
+    ProxyCommand sh -c &quot;wakeonlan &lt;MAC_ADDR&gt; &amp;&amp; sleep 30; nc %h %p&quot;
+</code></pre></li>
+</ul></li>
+</ul></li>
+
+<li><p><strong>Wake guest VM</strong> on pve:</p>
+
+<pre><code class="language-bash">qm sendkey $vm_id # Wake via SSH ProxyCommand method
+</code></pre></li>
+
+<li><p>Automation: Tools like Home Assistant can be configured to detect network activity and automatically send the wake-on-lan packet to boot the server.</p></li>
+</ul>
+
+<p>Note: Ensure the NIC supports WOL, as indicated by <code>Wake-on: g</code> in the <code>ethtool</code> <code>&lt;interface&gt;</code> output.</p>
+
+<hr>
+
 <h2><a href="https://chatgpt.com/share/f5522c3c-a597-42ac-adee-4d445b0836f6" title="ChatGPT.com">Proxmox v. ESXi v. OpenStack</a></h2>
 
 <blockquote>
 <p>VMware is now owned by Broadcom, which has <strong>discontinued the Free ESXi Hypervisor</strong> : <a href="https://knowledge.broadcom.com/external/article?legacyId=2107518" title="knowledge.broadcom.com">End Of General Availability of the free vSphere Hypervisor</a>&quot;</p>
 </blockquote>
 
-<h2>Proxmox VE Ceph Reef cluster</h2>
-
-<blockquote>
-<p>Reef clusters are an evolution in Ceph's long-term release series, bringing improvements in scalability, performance, security, and Kubernetes integration. These advancements make <a href="https://docs.ceph.com/en/reef/cephfs/" title="docs.ceph.com/reef">CephFS</a> more capable of handling large-scale, distributed storage requirements across various industries, while still leveraging Ceph's robust object storage foundation, <def title="Reliable Autonomic Distributed Object Store"><strong>RADOS</strong></def>.</p>
-</blockquote>
-
-<h3><a href="https://proxmox.com/en/downloads/proxmox-virtual-environment/documentation/proxmox-ve-ceph-benchmark-2023-12">Ceph Benchmark</a></h3>
-
-<p>Fast SSDs and network speeds in a . Current fast SSD disks provide great performance, and fast network cards are becoming more affordable. Hence, this is a good point to reevaluate how quickly different network setups for Ceph can be saturated depending on how many OSDs are present in each node.
-Summary</p>
-
-<p>In this paper we will present the following three key findings regarding hyper-converged Ceph setups with fast disks and high network bandwidth:</p>
-
-<ul>
-<li>Our benchmarks show that a 10 Gbit/s network can be easily overwhelmed. Even when only using one very fast disk the network becomes a bottleneck quickly.</li>
-<li>A network with a bandwidth of 25 Gbit/s can also become a bottleneck. Nevertheless, some improvements can be gained through configuration changes. Routing via FRR is preferred for a full-mesh cluster over Rapid Spanning Tree Protocol (RSTP). If no fallback is needed, a simple routed setup may also be a (less resilient) option.</li>
-<li>When using a 100 Gbit/s network the bottleneck in the cluster seems to finally shift away from the actual hardware and toward the Ceph client. Here we observed <strong>write speeds of up to 6000 MiB/s and read speeds of up to 7000 MiB/s for a single client</strong>. However, when using multiple clients in parallel, writing at up to 9800 MiB/s and reading at 19 500 MiB/s was possible.</li>
-</ul>
-
 <h3>&nbsp;</h3>
 
 <!-- 
+… ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚
 
 # Markdown Cheatsheet
 

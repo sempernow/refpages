@@ -55,7 +55,7 @@ chart=nginx
 ## Search for chart LOCALLY : Against all repos of `help repo list`
 helm search repo $chart 
 ## Search for chart at ArtifactHub.io (hub)
-helm search hub $repo 
+helm search hub $repo -o yaml 
 helm search hub $repo |grep $chart
 
 ########################################
@@ -100,23 +100,27 @@ helm upgrade $release $chart --install --values $values
     --set k1=v1,k2=v2   # Set the declared values; multiple --set ... declarations ok
     --wait              # Wait until all K8s-API resources are created else timeout.
  
+## Differential upgrade : --reuse-values
+## Perfoms a merge of this values file; keeping all of current state; overwriting only those declared.
+helm upgrade $release $chart --reuse-values --values $values_subset
+
 ## Alternate (bad) install method : Don't use; subsequent update requires teardown.
 helm install $release $repo/$chart $flags
 
 # Status of deployment (release) : a repeat of that reported on install.
 helm status $release
 
-# Test and get useful info on an installed chart (release)
+# Test and get useful info on an installed chart (release).
 helm test $release
 
-# Desired State : Render chart templates locally and print resulting manifest of current config ($values)
+# Declared state : Render chart templates locally per $values, and print resulting manifest (YAML). 
 helm template $chart --values $values --namespace $ns
 
-# Running State : Capture manifest of the running release from the K8s API
-helm get manifest $release -n $ns
+# Running state : Capture manifest of the running release from K8s API.
+helm get manifest $release -n $ns # Useful to diff YAMLs: `helm template` v. `helm get manifest`
 
 # Show ... {chart,values} are YAML(ish)
 helm show {chart,readme,crds,values,all} $chart
 
-# Teardown : Aliases: uninstall, del, delete, un
+# Teardown : uninstall|del|delete|un
 helm uninstall $release
