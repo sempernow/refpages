@@ -6,7 +6,7 @@ Kubernetes is a universal control plane that is most commonly used to build plat
 
 ## [Overview](https://kubernetes.io/docs/home/?path=users&persona=app-developer&level=foundational) | [Tools](https://kubernetes.io/docs/reference/tools/ "kubernetes.io/docs/...") | [GitHub](https://github.com/kubernetes "Kubernetes repo") | [Wikipedia](https://en.wikipedia.org/wiki/Kubernetes)  
 
-- Admin: [`K8s.kubeadm.sh`](K8s.kubeadm.sh)
+- Admin: [`K8s.kubeadm.sh`](Distros/kubeadm/K8s.kubeadm.sh)
 - Client: [`K8s.kubectl.sh`](K8s.kubectl.sh) 
 
 
@@ -98,6 +98,59 @@ See [`K8s.provision-kubernetes.sh`](K8s.provision-kubernetes.sh)
 
 ## Topics of Interest
 
+### [__Life of a Packet__](https://www.youtube.com/watch?v=0Omvgd7Hg1I "YouTube video by Michael Rubin (Google) at 2017 KubeCon Europe") in Kubernetes.
+**iptables v. K8s** 
+
+#### Why iptables is a "hack" for Kubernetes Services
+
+iptables is a **firewall and packet filtering tool** built on top of Linux netfilter. It was designed to accept or drop packets based on rules, with some NAT capability bolted on. Kubernetes kube-proxy hijacked its DNAT capability to implement Service load balancing: when a Pod tries to reach a ClusterIP, iptables rules intercept the packet and rewrite the destination to one of the backend Pod IPs.
+
+The problems with this at scale:
+
+**Linear rule matching.** iptables rules are evaluated as an ordered list. Every packet destined for any Service traverses the chain until it hits a match. With N services and M endpoints, you end up with O(N×M) rules. At hundreds of services with many replicas, this becomes a real latency hit per packet.
+
+**Atomic full rewrites.** When anything changes — a new Pod comes up, an endpoint is removed — kube-proxy has to dump and rewrite the *entire* iptables ruleset. This is an O(N) operation on every change, and it holds a kernel lock while doing it. At scale this causes noticeable churn and brief drops.
+
+**Connection tracking overhead.** netfilter's conntrack module tracks every connection to handle stateful NAT. This table has a finite size, and high-traffic clusters can exhaust it, causing dropped connections. The conntrack entries also consume memory and CPU.
+
+**No designed-for-purpose semantics.** iptables has no native concept of a "load balancer." The load balancing is achieved through probabilistic DNAT using `statistic` module rules — essentially a chain of "send this to backend 1 with probability 1/N, else try backend 2 with probability 1/(N-1)..." — which is both fragile and not easily observable.
+
+
+#### The cleaner paths available today
+
+**IPVS mode (kube-proxy)** — Available since Kubernetes 1.9, GA in 1.11. IPVS (IP Virtual Server) is a Linux kernel module that was *actually designed* for load balancing. It uses hash tables internally, giving O(1) lookup per packet regardless of how many Services exist. kube-proxy in IPVS mode still uses some iptables for packet marking but the core load balancing path is far better. This is a meaningful improvement and widely deployed, though it still lives in the netfilter/kernel hook path.
+
+**nftables mode (kube-proxy)** — Beta in Kubernetes 1.31. nftables is the modern successor to iptables in the Linux kernel, with a proper set/map data structure so lookups are O(1) rather than O(N). It also supports atomic partial updates rather than full rewrites. This keeps the kube-proxy model but on a much more sane foundation.
+
+**eBPF / Cilium (kube-proxy replacement)** — This is the genuinely different architectural answer. Cilium can run in kube-proxy-replacement mode, which eliminates kube-proxy entirely. Instead of netfilter hooks, it attaches eBPF programs directly at the network driver level (XDP/TC). Service lookups hit BPF hash maps — O(1) — before the packet even enters the full network stack. Benefits:
+
+- No conntrack for East-West traffic (Cilium tracks connections itself in BPF maps, or skips tracking for some paths entirely)
+- No iptables rules at all for Service routing
+- Topology-aware routing, DSR (Direct Server Return), and load balancing algorithms like Maglev are first-class features
+- Much richer observability via Hubble since eBPF has full visibility into the packet path
+
+The net result is dramatically lower per-packet latency, no O(N) rule rewrite storms, and far less conntrack pressure.
+
+#### Where things sit today
+
+| Mode | Lookup complexity | Rule update cost | Still uses netfilter? |
+|---|---|---|---|
+| iptables (legacy) | O(N) | Full rewrite O(N) | Yes |
+| IPVS | O(1) | Incremental | Partially |
+| nftables | O(1) | Incremental | Yes |
+| eBPF (Cilium) | O(1) | Incremental | No |
+
+If you're on a greenfield cluster today, Cilium with kube-proxy-replacement is the architecturally cleanest answer — it's what Rubin's critique implicitly points toward even if eBPF wasn't ready in 2017. For environments where CNI flexibility is constrained (FIPS, STIG, RHEL, air-gapped), IPVS mode is a solid pragmatic middle ground since it's just a kube-proxy flag flip and ships in every distribution. The nftables mode is promising but still relatively new.
+
+#### Cluster Network v. Pod Network
+
+The kube-proxy/iptables/IPVS/eBPF-replacement discussion is specifically about the **Service network**: making a virtual ClusterIP (which exists on no real interface anywhere) actually route packets to backing Pod IPs. That's the DNAT hack Rubin is calling out.
+
+The **pod network** is a separate layer — that's the CNI's job (Calico in your case). Calico handles how a pod on node A actually gets a packet to a pod on node B, whether via BGP-advertised routes, VXLAN encapsulation, etc. iptables shows up there too, but for different reasons — masquerading traffic leaving the cluster, enforcing NetworkPolicy, etc. — which is a different set of complaints.
+
+The place where the two layers blur is with Cilium specifically, because it's designed to own *both* layers simultaneously. When Cilium runs as the CNI *and* in kube-proxy-replacement mode, it handles pod-to-pod routing *and* Service resolution in a unified eBPF data plane with no conceptual seam between them. That's a big part of why it's architecturally appealing — other solutions (like switching kube-proxy to IPVS mode) only clean up the Service layer while the pod network remains a separate concern.
+
+---
 
 ### [Node Allocatable](https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable) (cgroup) 
 
@@ -165,6 +218,8 @@ Settings are applied by default on `kubeadm init`/`join`. Modifying this after i
 - 2000001000
 ```
 
+---
+
 ### [CPI (Cloud Provider Interface)](https://github.com/kubernetes/cloud-provider-vsphere/blob/master/docs/book/cloud_provider_interface.md) | [Graphic](cpi.png)
 
 >Unlike all other K8s interfaces (CRI, CNI, CSI), which are runtime interfaces, CPI remains __a buildtime interface__, 
@@ -195,6 +250,8 @@ The CPI is slow-walking what would be the way out of the cartel's grasp.
 - [CCM (Cloud Controller Manager)](https://kubernetes.io/docs/concepts/architecture/cloud-controller/) | [Develop](https://k8s-docs.netlify.app/en/docs/tasks/administer-cluster/developing-cloud-controller-manager/)
     - [Getting Started](https://www.techtarget.com/searchCloudComputing/tutorial/Get-started-with-Kubernetes-Cloud-Controller-Manager)
 
+
+---
 
 ### [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) v. [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/) 
 
@@ -293,9 +350,13 @@ kubectl get $kind $name -o jsonpath="'{.metadata.$either}'"
 kubectl get $kind $name -o jsonpath="'{.metadata.$either."a/b"}'" #=> 'x'
 ```
 
+---
+
+### Annotations
+
 #### Q:
 
-This pattern of an annotation containing the manifest it is annotating is common. 
+This pattern of an annotation containing the manifest that it is annotating is common. 
 How is such redundancy useful?
 
 ```bash
@@ -339,6 +400,8 @@ The pattern of storing a resource's manifest (or a portion of it) inside an anno
 ##### Conclusion:
 
 Although storing the manifest in an annotation can appear redundant, it provides significant benefits in terms of reconciliation, rollback, drift detection, and auditing. This pattern allows Kubernetes controllers and tools like Helm, K3s, and Argo CD to manage resources in a declarative, self-healing manner, ensuring that the actual state of resources always matches their desired state without requiring constant reference to external sources.
+
+---
 
 ### [Local ephemeral storage](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#local-ephemeral-storage) | [ChatGPT](https://chatgpt.com/share/2846e45f-b59f-4911-be09-09cd1e4f903c)
 
@@ -416,6 +479,7 @@ spec:
         ephemeral-storage: "200Mi"  # Min that must be requested
 ```
 
+---
 
 ### [Operator (Pattern)](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
@@ -425,6 +489,8 @@ Operators implement and automate common Day-1 (installation, configuration, etc.
 
 With Operators an application is treated as a single object, and exposes only that 
 which makes sense for the application to work.
+
+---
 
 ### [Manage TLS Certificates](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/) | [mTLS of Control Plane](https://kubernetes.io/docs/tasks/administer-cluster/certificates/) | 
 
@@ -568,6 +634,7 @@ authorityInfoAccess = caIssuers;URI:http://ca.example.com/rootCA.crt
 
 The intermediary CA’s validity period should be scoped appropriately. Typically, it has a shorter validity period than the root CA, ensuring that if compromised, the intermediary CA’s certificates will expire sooner.
 
+---
 
 ### [__Authn__/__Authz__](https://kubernetes.io/docs/concepts/security/controlling-access/ "Kubernetes.io")
 
@@ -658,18 +725,24 @@ of subject:
           - `ClusterRole`
           - `ClusterRoleBinding`
 
+---
+
 ### `kubectl`
 
 Client CLI to communicate with Kubernetes API server
 Must be configured to cluster, context and have user of `kubeadm`'s config.
 
-### [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file 
+#### [kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file 
 
 >A reference to any file that is used to configure access to clusters. 
 >This is a generic way of referring to configuration files. 
 >It does not mean that there is a file named `kubeconfig`.
 
-Optionally set using K8s environment variable: `KUBECONFIG=/path/to/that/file`
+Optionally set using K8s environment variable:
+
+```bash
+export KUBECONFIG=/path/to/that/file`
+```
 
 Example @ `~/.kube/config` (default location)
 
@@ -832,7 +905,7 @@ kubectl config --kubeconfig=$file set-context $contexts_name \
   not for ServiceAccounts.
 - Use [`client-go` credential plugins](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#client-go-credential-plugins)
 
-
+---
 
 ### [Admission Controller](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
 
@@ -852,6 +925,8 @@ kube-apiserver --enable-admission-plugins=NamespaceLifecycle,LimitRanger ...
 # Disable some 
 kube-apiserver --disable-admission-plugins=PodNodeSelector,AlwaysDeny ...
 ```
+
+---
 
 ### Pods Inherit Environment
 
@@ -977,7 +1052,7 @@ In most cases, the inheritance or sharing of environment variables is due to exp
 
 These common environment variables provide a way for containers to discover and connect to other services within the Kubernetes cluster, facilitating communication and integration between components.
 
-
+---
 
 ### [Downward API](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/) Example
 
@@ -1056,6 +1131,7 @@ spec:
       echo "If from shell environment: ${POD_NAMESPACE}"
 ```
 
+---
 
 ### Naming convention
 
@@ -1074,6 +1150,8 @@ spec:
 5. **Human Factors**: Ultimately, Kubernetes is used by humans, and the naming conventions reflect a balance between machine efficiency and human readability. While the redundancy might be "noise" in a strictly informational sense, it aids in quick comprehension and reduces cognitive load when scanning through resource lists or configurations.
 
 Despite these reasons, it's important for users and teams to develop and follow their own conventions that best suit their workflows and organizational practices. Kubernetes is flexible enough to accommodate different naming strategies, and what might be redundant or noisy in one context could be clarity-enhancing in another. The key is finding the right balance between Kubernetes' declarative nature, the practical requirements of managing complex systems, and the preferences and practices of the teams involved.
+
+---
 
 ### [Static Pods](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/)
 
@@ -1142,6 +1220,8 @@ In summary, static pods serve as a bridge between the host system and the Kubern
 
 In summary, while the similarity between `10.244.0.0/12` and `10.240.0.0/12` might raise eyebrows, the decision likely prioritized consistency, predictability, and avoiding common address spaces. Kubernetes architects aimed for a balance between practicality and uniqueness when defining the default Pod Network CIDR.
 
+---
+
 ### [Service](https://kubernetes.io/docs/concepts/services-networking/service/)
 
 Exposes a Deployment to a port under a protocol, sans IP Address(es). 
@@ -1161,6 +1241,8 @@ spec:
       targetPort: 9376
 ```
 
+---
+
 ### Kubernetes API Server (Master)
 
 #### [`kube-apiserver`](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) 
@@ -1174,6 +1256,8 @@ which all other components interact.
 The API is extensible. The core is `v1` . 
 An important add-on API is `apps/v1`, 
 which defines the `Deployment` and `ReplicaSet` objects.
+
+---
 
 ### Cluster Management
 
@@ -1202,7 +1286,9 @@ sudo systemctl restart kubelet
 kubectl get nodes
 ```
 
-## CNI : Container Network Interface 
+---
+
+### CNI : Container Network Interface 
 
 The Pod network is created and managed by a CNI-compliant provider; Calico, Cilium, &hellip;
 
@@ -1269,9 +1355,12 @@ firewall-cmd --permanent --zone=$z --add-port=179/tcp
 firewall-cmd --permanent --zone=$z --add-masquerade
 
 ```
-## K8s API Server Objects
 
-### Resources Available 
+---
+
+### K8s API Server Objects
+
+#### Resources Available 
 
 ```bash
 # List all API resources (v1)
@@ -1316,7 +1405,7 @@ Have hierarchy:
 - `Secrets`
 - `PersistentVolumes`
 
-### Object : `Node` (Minion)
+#### Object : `Node` (Minion)
 
 - A k8s minion server that runs a `kubelet`.
 - A compute unit.
@@ -1332,7 +1421,8 @@ Have hierarchy:
         - LoadBalancer; external to the cluster
     - Container Network Interface (CNI) provider
 
-### Object : `Pod` 
+
+#### Object : `Pod` 
 
 - An abstraction of a server running an app.
 - Can run one or more containers with a single NameSpace, 
@@ -1347,19 +1437,19 @@ Have hierarchy:
     - `mnt` (mount) namespace
     - `user` (user ID) namespace
 
-### Object : Higher-level Abstractons
+#### Object : Higher-level Abstractons
 
 Typically spawn one or more Pods; typically create ___replica objects___, which then create Pods.
 
-#### `Deployment`
+##### `Deployment`
 
 The most common object; deploys a mircroservice
 
-#### `Job`
+##### `Job`
 
 Run a Pod as a batch process
 
-#### `StatefulSet`
+##### `StatefulSet`
 
 Host applications requiring specific needs; oftten stateful, e.g., data store.
 
@@ -1369,13 +1459,15 @@ Features
 - Persistent storage always mounted to same Pod
 - Ordered start/scale/update
 
-#### `DaemonSet`
+##### `DaemonSet`
 
 Run a single Pod as an "agent" on every node in a cluster; system services, storage, logging, ...
 
-## YAML Manifest 
+---
 
-### Ingredients (fields):
+### YAML Manifest 
+
+#### Ingredients (fields):
 
 - `apiVersion:` K8s API-server version
 - `kind:` K8s Object type
@@ -1394,13 +1486,15 @@ kubectl explain --recursive  pod.spec
 ```
 - Use JSONPath identifer syntax
 
-### Generate YAML 
+#### Generate YAML 
 
 ```bash
 kubectl create|run --dry-run=client -o yaml > app.yaml
 ```
 
 ### &nbsp;
+
+
 <!-- 
 
 # Markdown Cheatsheet

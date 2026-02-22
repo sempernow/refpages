@@ -1,35 +1,82 @@
-# [k0S](https://docs.k0sproject.io/stable/ "k0sproject.io")
+# [k0S](https://k0sproject.io/ "k0sproject.io") ("*K-zero-ess*") | [Docs](https://docs.k0sproject.io/stable/ "docs.k0sproject.io") | [GitHub](https://github.com/k0sproject/k0s)
 
 _The Simple, Solid & Certified Kubernetes Distribution_
 
 >Zero Friction Kubernetes
 
-Mirantis (Docker) is back; 
-a substantial player in the Kubernetes/container space:
+Deploy and run Kubernetes workloads at any scale on any infrastructure. 
 
-- Docker Enterprise acquisition (2019)
-- Kubernetes services and support provider
-- OpenStack contributor and service provider
-- Lens IDE : A popular Kubernetes IDE
+- Production-ready CNCF-certified Kubernetes Distribution.
+- Distributed as a single binary with zero host OS dependencies besides the host OS kernel. 
 
-k0s (pronounced: "K-zero-ess") was created and is primarily maintained by Mirantis; 
-open-sourced under the Apache 2.0 license. 
+
+```bash
+curl -sSf https://get.k0s.sh | sudo sh
+sudo k0s install controller --single
+sudo k0s start # wait a minute
+sudo k0s kubectl get nodes
+```
 
 It is __a single binary__ containing all the host and container artifacts 
 required to create a production-ready HA K8s cluster.
 
-It has [__`kube-vip`__](https://kube-vip.io/ "kube-vip.io"), 
-and HA LB build of HAProxy and Keepalived, 
-to function as the cluster's external load balancer, 
-yet the LB runs in the cluster (containerized).
+It has [**CPLB**](https://docs.k0sproject.io/head/cplb/ "docs.k0sproject.io") 
+(**C**ontrol **P**lane **L**oadbalancer) option.
+
+The `k0s` tool does nothing to prepare the target host(s). 
+Its preflight will only check and warn/fail on any issues. 
+Hence the `k0sctl` tool.
+
+## [`k0sctl`](https://docs.k0sproject.io/v0.12.0/k0sctl-install/)
+
+A command-line tool for bootstrapping and managing k0s clusters. 
+
+The `k0sctl` tool connects to target hosts using SSH and gathers information. 
+Based on those findings, it proceeds to __configure the hosts__, 
+__deploy k0s__ and __connect those nodes together__ to form a cluster.
 
 ---
 
-## Origin and Ownership
+# [k0smotron](https://k0smotron.io/ "k0smotron.io") | [Docs](https://docs.k0smotron.io/stable/ "docs.k0smotron.io")
+
+**Kubernetes Operator(s)** for creating and managing   
+multiple k0s clusters across local and/or remote hosts.
+
+Depending on how it is installed and the scope of functionality being used, 
+it may act as __1 or 3 operators__.
+
+## Modes
+
+- **Standalone** (**1** Operator):   
+    In its basic form, it is installed as ***a single controller manager*** 
+    that manages the lifecycle of k0s control planes as pods within a management cluster.
+    - A single &#96;`kubectl apply`&#96; command installs the controller, CRDs, and RBAC rules.
+- **Cluster API Integration** (**3** Operators):   
+    When used as a full **CAPI** (**C**luster **API**) provider,  
+    ***a comprehensive provider***, it deploys multiple controllers to handle complex, 
+    multi-cluster environments.
+    In this mode, it has three distinct components:
+    - ControlPlane provider
+    - Bootstrap provider
+    - Infrastructure provider (with k0smotron RemoteMachine)
+
+## Required Outbound Connectivity (from Workers) 
+
+To function across differing CIDRs or firewalls, 
+your remote k0s worker nodes must have outbound access to the following ports 
+on the k0smotron control plane's entry point (e.g., a LoadBalancer or Ingress): 
+
+- 6443/TCP : `kube-apiserver` (Kubelet-to-API communication).
+- 8132/TCP : `konnectivity` (Serving the reverse tunnel used for API-to-Kubelet traffic).
+- 9443/TCP : `k0s` API (Used during join and request processes). 
+
+---
+
+# Origin and Ownership
 
 **k0s was created and is primarily maintained by Mirantis**, which acquired Docker Enterprise in 2019. The project started within Mirantis and was open-sourced under the Apache 2.0 license.
 
-### Mirantis Context
+## Mirantis Context
 
 Mirantis is a substantial player in the Kubernetes/container space:
 
@@ -38,7 +85,7 @@ Mirantis is a substantial player in the Kubernetes/container space:
 - **OpenStack** contributor and service provider
 - **Lens IDE** - popular Kubernetes IDE (also a Mirantis product)
 
-### Why Mirantis Created k0s
+## Why Mirantis Created k0s
 
 Mirantis developed k0s to address several needs:
 
@@ -47,15 +94,15 @@ Mirantis developed k0s to address several needs:
 3. **Air-Gap/Disconnected**: Addressing government and enterprise secure deployment requirements
 4. **Simplified Operations**: Reducing Kubernetes deployment and management complexity
 
-### Project Status
+## Project Status
 
 - **Fully Open Source**: Apache 2.0 licensed
 - **CNCF Alignment**: Not a CNCF project, but follows Cloud Native principles
 - **Vendor-Backed but Community-Driven**: While Mirantis drives development, it has external contributors and is designed to be vendor-neutral
 
-### Why This Matters for Air-Gap/On-Prem
+## Why This Matters for Air-Gap/On-Prem
 
-#### **Advantages:**
+### **Advantages:**
 
 - **Enterprise Backing**: Commercial support available from Mirantis
 - **Stability**: Developed by a company with substantial Kubernetes expertise
@@ -63,12 +110,12 @@ Mirantis developed k0s to address several needs:
 - **Integration**: Works well with other Mirantis tools (like Lens)
 
 
-#### **Considerations:**
+### **Considerations:**
 
 - **Vendor Influence**: Roadmap and priorities influenced by Mirantis business needs
 - **Commercial Optionality**: You can use it completely free, but paid support is available
 
-### Comparison to Other Distributions
+## Comparison to Other Distributions
 
 | Distribution | Primary Vendor | Focus |
 |-------------|----------------|--------|
@@ -78,7 +125,7 @@ Mirantis developed k0s to address several needs:
 | **Tanzu** | VMware | Enterprise, app platform |
 | **EKS Anywhere** | AWS | Hybrid cloud |
 
-### Should You Be Concerned About Vendor Lock-in?
+## Should You Be Concerned About Vendor Lock-in?
 
 For air-gap scenarios, k0s is actually quite safe:
 
@@ -87,7 +134,7 @@ For air-gap scenarios, k0s is actually quite safe:
 - **CNCF Conformant**: Passes all Kubernetes conformance tests
 - **Clean Abstraction**: If you needed to migrate, your applications would run unchanged on any other conformant distribution
 
-### Conclusion
+## Conclusion
 
 k0s comes from **Mirantis** - a legitimate, enterprise-grade vendor with substantial Kubernetes expertise. For private on-prem air-gap networks, this is actually beneficial because:
 
