@@ -19,9 +19,9 @@ exit
     ###########################################################################
     # | Layer | Name      | Unit    | Identifiers     | Tools                 |
     # |-------|-----------|---------|-----------------|-----------------------|
-    # | L2    | Data Link | Frame   | MAC addresses   | `ip link`, `ip neigh` |
-    # | L3    | Network   | Packet  | IP addresses    | `ip addr`, `ip route` |
     # | L4    | Transport | Segment | Ports (TCP/UDP) | `ss`, `netstat`       |
+    # | L3    | Network   | Packet  | IP addresses    | `ip addr`, `ip route` |
+    # | L2    | Data Link | Frame   | MAC addresses   | `ip link`, `ip neigh` |
     ###########################################################################
 
 

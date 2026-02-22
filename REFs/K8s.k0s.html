@@ -20,7 +20,7 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://docs.k0sproject.io/stable/" title="k0sproject.io">k0S</a></h1>
+        <h1><a href="https://k0sproject.io/" title="k0sproject.io">k0S</a> (&quot;<em>K-zero-ess</em>&quot;) | <a href="https://docs.k0sproject.io/stable/" title="docs.k0sproject.io">Docs</a> | <a href="https://github.com/k0sproject/k0s">GitHub</a></h1>
 
 <p><em>The Simple, Solid &amp; Certified Kubernetes Distribution</em></p>
 
@@ -28,34 +28,90 @@
 <p>Zero Friction Kubernetes</p>
 </blockquote>
 
-<p>Mirantis (Docker) is back;
-a substantial player in the Kubernetes/container space:</p>
+<p>Deploy and run Kubernetes workloads at any scale on any infrastructure.</p>
 
 <ul>
-<li>Docker Enterprise acquisition (2019)</li>
-<li>Kubernetes services and support provider</li>
-<li>OpenStack contributor and service provider</li>
-<li>Lens IDE : A popular Kubernetes IDE</li>
-</ul>
+<li>Production-ready CNCF-certified Kubernetes Distribution.</li>
 
-<p>k0s (pronounced: &quot;K-zero-ess&quot;) was created and is primarily maintained by Mirantis;
-open-sourced under the Apache 2.0 license.</p>
+<li><p>Distributed as a single binary with zero host OS dependencies besides the host OS kernel.</p>
+
+<pre><code class="language-bash">curl -sSf https://get.k0s.sh | sudo sh
+sudo k0s install controller --single
+sudo k0s start # wait a minute
+sudo k0s kubectl get nodes
+</code></pre></li>
+</ul>
 
 <p>It is <strong>a single binary</strong> containing all the host and container artifacts
 required to create a production-ready HA K8s cluster.</p>
 
-<p>It has <a href="https://kube-vip.io/" title="kube-vip.io"><strong><code>kube-vip</code></strong></a>,
-and HA LB build of HAProxy and Keepalived,
-to function as the cluster's external load balancer,
-yet the LB runs in the cluster (containerized).</p>
+<p>It has <a href="https://docs.k0sproject.io/head/cplb/" title="docs.k0sproject.io"><strong>CPLB</strong></a>
+(<strong>C</strong>ontrol <strong>P</strong>lane <strong>L</strong>oadbalancer) option.</p>
+
+<p>The <code>k0s</code> tool does nothing to prepare the target host(s).
+Its preflight will only check and warn/fail on any issues.
+Hence the <code>k0sctl</code> tool.</p>
+
+<h2><a href="https://docs.k0sproject.io/v0.12.0/k0sctl-install/"><code>k0sctl</code></a></h2>
+
+<p>A command-line tool for bootstrapping and managing k0s clusters.</p>
+
+<p>The <code>k0sctl</code> tool connects to target hosts using SSH and gathers information.
+Based on those findings, it proceeds to <strong>configure the hosts</strong>,
+<strong>deploy k0s</strong> and <strong>connect those nodes together</strong> to form a cluster.</p>
 
 <hr>
 
-<h2>Origin and Ownership</h2>
+<h1><a href="https://k0smotron.io/" title="k0smotron.io">k0smotron</a> | <a href="https://docs.k0smotron.io/stable/" title="docs.k0smotron.io">Docs</a></h1>
+
+<p><strong>Kubernetes Operator(s)</strong> for creating and managing<br>
+multiple k0s clusters across local and/or remote hosts.</p>
+
+<p>Depending on how it is installed and the scope of functionality being used,
+it may act as <strong>1 or 3 operators</strong>.</p>
+
+<h2>Modes</h2>
+
+<ul>
+<li><strong>Standalone</strong> (<strong>1</strong> Operator):<br>
+In its basic form, it is installed as <strong><em>a single controller manager</em></strong>
+that manages the lifecycle of k0s control planes as pods within a management cluster.
+
+<ul>
+<li>A single &#96;<code>kubectl apply</code>&#96; command installs the controller, CRDs, and RBAC rules.</li>
+</ul></li>
+<li><strong>Cluster API Integration</strong> (<strong>3</strong> Operators):<br>
+When used as a full <strong>CAPI</strong> (<strong>C</strong>luster <strong>API</strong>) provider,<br>
+<strong><em>a comprehensive provider</em></strong>, it deploys multiple controllers to handle complex,
+multi-cluster environments.
+In this mode, it has three distinct components:
+
+<ul>
+<li>ControlPlane provider</li>
+<li>Bootstrap provider</li>
+<li>Infrastructure provider (with k0smotron RemoteMachine)</li>
+</ul></li>
+</ul>
+
+<h2>Required Outbound Connectivity (from Workers)</h2>
+
+<p>To function across differing CIDRs or firewalls,
+your remote k0s worker nodes must have outbound access to the following ports
+on the k0smotron control plane's entry point (e.g., a LoadBalancer or Ingress):</p>
+
+<ul>
+<li>6443/TCP : <code>kube-apiserver</code> (Kubelet-to-API communication).</li>
+<li>8132/TCP : <code>konnectivity</code> (Serving the reverse tunnel used for API-to-Kubelet traffic).</li>
+<li>9443/TCP : <code>k0s</code> API (Used during join and request processes).</li>
+</ul>
+
+<hr>
+
+<h1>Origin and Ownership</h1>
 
 <p><strong>k0s was created and is primarily maintained by Mirantis</strong>, which acquired Docker Enterprise in 2019. The project started within Mirantis and was open-sourced under the Apache 2.0 license.</p>
 
-<h3>Mirantis Context</h3>
+<h2>Mirantis Context</h2>
 
 <p>Mirantis is a substantial player in the Kubernetes/container space:</p>
 
@@ -66,7 +122,7 @@ yet the LB runs in the cluster (containerized).</p>
 <li><strong>Lens IDE</strong> - popular Kubernetes IDE (also a Mirantis product)</li>
 </ul>
 
-<h3>Why Mirantis Created k0s</h3>
+<h2>Why Mirantis Created k0s</h2>
 
 <p>Mirantis developed k0s to address several needs:</p>
 
@@ -77,7 +133,7 @@ yet the LB runs in the cluster (containerized).</p>
 <li><strong>Simplified Operations</strong>: Reducing Kubernetes deployment and management complexity</li>
 </ol>
 
-<h3>Project Status</h3>
+<h2>Project Status</h2>
 
 <ul>
 <li><strong>Fully Open Source</strong>: Apache 2.0 licensed</li>
@@ -85,9 +141,9 @@ yet the LB runs in the cluster (containerized).</p>
 <li><strong>Vendor-Backed but Community-Driven</strong>: While Mirantis drives development, it has external contributors and is designed to be vendor-neutral</li>
 </ul>
 
-<h3>Why This Matters for Air-Gap/On-Prem</h3>
+<h2>Why This Matters for Air-Gap/On-Prem</h2>
 
-<h4><strong>Advantages:</strong></h4>
+<h3><strong>Advantages:</strong></h3>
 
 <ul>
 <li><strong>Enterprise Backing</strong>: Commercial support available from Mirantis</li>
@@ -96,14 +152,14 @@ yet the LB runs in the cluster (containerized).</p>
 <li><strong>Integration</strong>: Works well with other Mirantis tools (like Lens)</li>
 </ul>
 
-<h4><strong>Considerations:</strong></h4>
+<h3><strong>Considerations:</strong></h3>
 
 <ul>
 <li><strong>Vendor Influence</strong>: Roadmap and priorities influenced by Mirantis business needs</li>
 <li><strong>Commercial Optionality</strong>: You can use it completely free, but paid support is available</li>
 </ul>
 
-<h3>Comparison to Other Distributions</h3>
+<h2>Comparison to Other Distributions</h2>
 
 <table>
 <thead>
@@ -147,7 +203,7 @@ yet the LB runs in the cluster (containerized).</p>
 </tbody>
 </table>
 
-<h3>Should You Be Concerned About Vendor Lock-in?</h3>
+<h2>Should You Be Concerned About Vendor Lock-in?</h2>
 
 <p>For air-gap scenarios, k0s is actually quite safe:</p>
 
@@ -158,7 +214,7 @@ yet the LB runs in the cluster (containerized).</p>
 <li><strong>Clean Abstraction</strong>: If you needed to migrate, your applications would run unchanged on any other conformant distribution</li>
 </ul>
 
-<h3>Conclusion</h3>
+<h2>Conclusion</h2>
 
 <p>k0s comes from <strong>Mirantis</strong> - a legitimate, enterprise-grade vendor with substantial Kubernetes expertise. For private on-prem air-gap networks, this is actually beneficial because:</p>
 
