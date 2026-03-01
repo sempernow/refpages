@@ -73,6 +73,7 @@ values=values.yaml
 ## 1. Pull chart for subsequent local install
 helm pull $chart --version $ver --repo $url # Ref remote repo
 helm pull $repo/$chart --version $ver       # Ref local repo @ `helm repo add` 
+helm pull $repo/$chart                      # Latest
 tar -xaf ${chart}-${ver}.tgz # Charts *should* extract to a folder named "$chart"
 ## 2. Copy and edit chart's values.yaml file
 cp $chart/values.yaml .
