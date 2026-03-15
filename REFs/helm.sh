@@ -120,6 +120,23 @@ helm template $chart --values $values --namespace $ns
 # Running state : Capture manifest of the running release from K8s API.
 helm get manifest $release -n $ns # Useful to diff YAMLs: `helm template` v. `helm get manifest`
 
+# Diff declared vs. running state (YAML), per .kind
+diffStates() {
+    type -t yq > /dev/null 2>&1 || { echo "yq not found" >&2; return 1; }
+    [[ -f $1 && -f $2 ]] || { echo "  USAGE: diffStates <template> <manifest>" >&2; return 2; }
+    local template=$1 manifest=$2
+
+    # key on kind+name to handle multiple resources of the same kind
+    while IFS='|' read -r kind name; do
+        [[ -z $kind || $kind == null ]] && continue
+        echo "🔍  KIND: $kind  NAME: $name"
+        diff -u \
+            <(yq 'select(.kind == "'$kind'" and .metadata.name == "'$name'")' "$template") \
+            <(yq 'select(.kind == "'$kind'" and .metadata.name == "'$name'")' "$manifest") \
+        || true
+    done < <(yq -r '"\(.kind)|\(.metadata.name)"' "$template" | grep -v '^null|' | sort -u)
+}
+
 # Show ... {chart,values} are YAML(ish)
 helm show {chart,readme,crds,values,all} $chart
 

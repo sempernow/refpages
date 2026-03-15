@@ -20,7 +20,7 @@
 </head>
 <body>
     <main>
-        <h1><a href="https://www.proxmox.com/en/proxmox-virtual-environment/overview" title="Proxmox.com"><strong>P</strong>roxmox <strong>V</strong>irtual <strong>E</strong>nvironment</a> (PVE)</h1>
+        <h1><a href="https://www.proxmox.com/en/proxmox-virtual-environment/overview" title="Proxmox.com"><strong>P</strong>roxmox <strong>V</strong>irtual <strong>E</strong>nvironment</a> (PVE) | <a href="https://pve.proxmox.com/pve-docs/">Docs</a> | <a href="https://pve.proxmox.com/wiki/Main_Page">Wiki</a> | <a href="https://pve.proxmox.com/pve-docs/pve-admin-guide.html">Admin Guide</a></h1>
 
 <h2>Install</h2>
 
@@ -177,7 +177,7 @@ Plain LVM reports <code>-wi-a-----</code> attributes.</li>
 
 <hr>
 
-<h2>Proxmox VMs</h2>
+<h2>Proxmox VMs (Guests)</h2>
 
 <h3>Create VM (button)</h3>
 
@@ -258,6 +258,89 @@ Rather, use <strong><code>qm</code></strong>-automated <strong><code>cloud-init<
 <p>@ <a href="debian12-template.sh"><strong><code>debian12-template.sh</code></strong></a></p>
 
 <hr>
+
+<h2><a href="https://pve.proxmox.com/wiki/Network_Configuration" title="pve.proxmox.com/wiki">Network Configurations</a></h2>
+
+<p>Proxmox VE uses a bridged networking model.</p>
+
+<h3><a href="https://pve.proxmox.com/wiki/Network_Configuration#_default_configuration_using_a_bridge">Default</a></h3>
+
+<p>VMs behave as if they were directly connected to the physical network. The network, in turn, sees each virtual machine as having its own MAC, even though there is only one network cable connecting all of these VMs to the network.</p>
+
+<p><img src="default-network-setup-bridge.svg" alt="default-network-setup-bridge"></p>
+
+<p><strong>Most hosting providers do not support this setup.</strong> For security reasons, they disable networking as soon as they detect multiple MAC addresses on a single interface.</p>
+
+<h3><a href="https://pve.proxmox.com/wiki/Network_Configuration#sysadmin_network_routed">Routed</a></h3>
+
+<p>For <strong><code>publicly</code> routable IPs</strong>:</p>
+
+<p>Minimal configuration that provides a distinct CIDR for guest VMs, which allows for a VM-based network appliance (<del><a href="https://docs.netgate.com/pfsense/en/latest/">pfSense</a></del> <a href="https://opnsense.org/">OPNsense</a>) to handle DHCP, DNS, etc.</p>
+
+<p><img src="default-network-setup-routed.svg" alt="default-network-setup-routed"></p>
+
+<h3><a href="https://pve.proxmox.com/wiki/Network_Configuration#sysadmin_network_masquerading">Masquerading (NAT) with iptables</a></h3>
+
+<p><strong>NAT Bridge</strong></p>
+
+<p>Masquerading <strong>allows guests having only a private IP address</strong> to access the network by using the host IP address for outgoing traffic. Each outgoing packet is rewritten (NAT) by iptables to appear as originating from the host, and responses are rewritten accordingly to be routed to the original sender.</p>
+
+<h3><del><a href="https://docs.netgate.com/pfsense/en/latest/">pfSense</a></del> <a href="https://opnsense.org/">OPNsense</a> | <a href="https://docs.opnsense.org/index.html">Docs</a></h3>
+
+<p>The OSS fork of pfSense; a small (1CPU/1GB) network appliance (FreeBSD) on a VM; handles DHCP, DNS, etc.</p>
+
+<p>OPNsense is the canonical homelab pattern for Proxmox networking.
+Instead of the bare NAT bridge with <code>iptables MASQUERADE</code> on the PVE host (<code>net-snat-bridge.sh</code>),
+OPNsense becomes the gateway VM.
+Wire it into the same <code>vmbr1</code> and it owns that subnet's services.</p>
+
+<p>The topology is effectively the same as &quot;NAT Bridge&quot; (above):</p>
+
+<pre><code>Internet
+    │
+  vmbr0 (PVE host, 192.168.x.x)
+    │
+ OPNsense VM
+  ├── WAN interface → vmbr0 (gets PVE LAN IP)
+  └── LAN interface → vmbr1 (e.g. 10.0.33.1/24)
+    │
+  vmbr1
+  ├── k0s-cp-1
+  ├── k0s-worker-1
+  └── ...
+</code></pre>
+
+<p>OPNsense then provides on <code>vmbr1</code>:</p>
+
+<ul>
+<li><strong>DHCP</strong> — static leases by MAC for your k0s nodes</li>
+<li><strong>DNS</strong> — Unbound with local overrides (so <code>cp1.k0s.local</code> resolves internally)</li>
+<li><strong>NAT/routing</strong> — replaces your <code>post-up iptables MASQUERADE</code> rules on the host</li>
+<li><strong>Firewall</strong> — inter-VM rules, egress filtering</li>
+<li><strong>NTP</strong> — useful for cluster cert validity</li>
+</ul>
+
+<p>The implication for your current bridge config (<code>net-snat-bridge.sh</code>)
+is that <code>vmbr1</code> becomes a <strong>dumb L2 segment</strong>;
+no <code>address</code>, no <code>post-up</code> iptables rules on the PVE host.
+PVE just provides the wire; OPNsense owns the L3:</p>
+
+<pre><code class="language-ini">auto vmbr1
+iface vmbr1 inet manual
+    bridge-ports none
+    bridge-stp off
+    bridge-fd 0
+</code></pre>
+
+<p>The tradeoff is OPNsense is another VM to maintain and consume resources, but you get a proper network stack with UI, logging, and far more flexibility than bare iptables on the host.</p>
+
+<h3><a href="https://pve.proxmox.com/wiki/Software-Defined_Network">SDN (<strong>S</strong>oftware <strong>D</strong>efined <strong>N</strong>etwork)</a></h3>
+
+<p>The <a href="https://pve.proxmox.com/pve-docs/chapter-pvesdn.html">PVE SDN stack</a> is <strong><em>experimental</em></strong>.</p>
+
+<pre><code class="language-bash">apt update
+apt install libpve-network-perl
+</code></pre>
 
 <h2>K0s on Proxmox</h2>
 
