@@ -203,11 +203,10 @@ kubectl kustomize $folder |kubectl apply -f -
 
 
 # ROLLOUT : https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/
-# Rollback to previous deployment : All having labels subkey 'type' set to 'canary'
 any=deployment/frontend
 # Rolling update of containers mon of ds/ceph
 kubectl set image ds/ceph mon=image:v2
-# Rollback to declared revision 
+# Rollback to declared revision : All deployments having labels subkey 'type' set to 'canary'
 kubectl rollout undo deploy -l type=canary --to-revision=2 
 # Check rolling update status 
 kubectl rollout status $any
