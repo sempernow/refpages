@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: deploy-important
+    id: very-important
+  name: deploy-important
+  namespace: cka
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: deploy-important
+      id: very-important
+  template:
+    metadata:
+      labels:
+        app: deploy-important
+        id: very-important
+    spec:
+      containers:
+      - image: nginx:1-alpine
+        name: container1
+      - image: google/pause
+        name: container2
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              id: very-important

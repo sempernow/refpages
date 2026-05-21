@@ -138,6 +138,76 @@ Driver should match the container runtime setting, and if the parent processes a
 
 <h2>Topics of Interest</h2>
 
+<h3>BGP (<a href="https://en.wikipedia.org/wiki/Border_Gateway_Protocol" title="Wikipedia">Wiki</a> | <a href="https://www.youtube.com/watch?v=6XW5cRa3ZKM">Video</a>)</h3>
+
+<p><strong>Q:</strong></p>
+
+<p>Each rack has a ToR router and so an ASN even though none constitute an AS?</p>
+
+<p><strong>A:</strong></p>
+
+<p>You have hit on one of the most confusing, yet standard, paradoxes in modern data center networking.
+Yes, absolutely. In a modern data center design, each rack's ToR switch is assigned its own unique Autonomous System Number (ASN), even though a single rack is nowhere near large enough to be considered an &quot;Autonomous System&quot; on the public internet.</p>
+
+<hr>
+
+<h4>Why Do We Put ASNs on Individual Racks?</h4>
+
+<p>This practice is driven by a design pattern called the BGP-in-the-Data-Center (RFC 7938) architecture, popularized by hyper-scalers like Facebook and Microsoft [1, 2].
+Instead of treating BGP as a protocol meant only for the global internet, engineers use eBGP (External BGP) as an internal routing tool inside the private data center [1, 2].</p>
+
+<ul>
+<li>ASNs as Network Tags: Inside your private network, an ASN loses its grand internet definition. It simply becomes a powerful &quot;tag&quot; or &quot;boundary marker&quot; for a specific pool of infrastructure (a rack).</li>
+<li>Loop Prevention: By giving Rack A ASN 65001 and Rack B ASN 65002, the network switches can easily detect routing loops. If Rack A sees a packet or a route update that already contains the number 65001, it drops it instantly.</li>
+<li>Massive Scale: Private ASN ranges (specifically 64512 through 65534 for 16-bit, and a massive pool in 32-bit) provide plenty of numbers to label thousands of individual racks without ever needing to register them publicly.</li>
+</ul>
+
+<hr>
+
+<h3>How Your Kubernetes Cluster Fits into this ASN Setup</h3>
+
+<p>When you deploy Cilium BGP across a multi-rack setup with this architecture, your Kubernetes nodes inherit this rack-by-rack numbering system. This is done using one of two common design choices:</p>
+
+<pre><code>                    +-----------------------------------+
+
+                    |        Spine Switches             |
+                    |         ASN: 65000                |
+                    +--------+-----------------+--------+
+
+                            |                 |
+                +--------------+                 +--------------+
+
+                |                                               |
+    +-----------+-----------+                       +-----------+-----------+
+
+    |      ToR Switch A     |                       |      ToR Switch B     |
+    |       ASN: 65001      |                       |       ASN: 65002      |
+    +-----------+-----------+                       +-----------+-----------+
+
+                |                                               |
+    [ Kubernetes Nodes ]                            [ Kubernetes Nodes ]
+    Choice 1: Inherit ToR (65001)                   Choice 1: Inherit ToR (65002)
+    Choice 2: Unique K8s  (65101)                   Choice 2: Unique K8s  (65102)
+</code></pre>
+
+<h4>Choice 1: Nodes Share the Rack's ASN (iBGP to the ToR)</h4>
+
+<p>Your Kubernetes nodes on Rack A are configured in Cilium to use the exact same ASN as the ToR switch (64512).</p>
+
+<ul>
+<li>The Connection: This creates an <strong>iBGP</strong> (Internal BGP) session between the nodes and their local switch.</li>
+<li>The Benefit: It keeps the data center ASN mapping incredibly clean. The network team views the entire rack (physical servers and virtual Kubernetes nodes) as <strong>a single cohesive unit</strong>.</li>
+</ul>
+
+<h4>Choice 2: Nodes Get a Sub-ASN (eBGP to the ToR)</h4>
+
+<p>Your Kubernetes nodes on Rack A are given a dedicated ASN (64522) that is different from the ToR switch (64512).</p>
+
+<ul>
+<li>The Connection: This creates an <strong>eBGP</strong> (External BGP) session between Cilium and the ToR switch.</li>
+<li>The Benefit: This is highly favored by network teams who want <strong>strict separation</strong>. It allows the ToR switch to treat the Kubernetes cluster as a distinct &quot;external&quot; entity routing into their network fabric, making firewalling and route filtering easier.</li>
+</ul>
+
 <h3><a href="https://www.youtube.com/watch?v=0Omvgd7Hg1I &quot;YouTube video by Michael Rubin (Google"><strong>Life of a Packet</strong></a> at 2017 KubeCon Europe&quot;) in Kubernetes.</h3>
 
 <p><strong>iptables v. K8s</strong></p>

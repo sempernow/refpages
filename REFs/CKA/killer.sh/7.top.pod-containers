@@ -1,0 +1,5 @@
+POD                       NAME                   CPU(cores)   MEMORY(bytes)   
+gitea-valkey-cluster-0    gitea-valkey-cluster   14m          12Mi            
+gitea-valkey-cluster-1    gitea-valkey-cluster   12m          8Mi             
+gitea-valkey-cluster-2    gitea-valkey-cluster   11m          8Mi             
+safari-5b674ddb9d-qtj2k   httpd                  1m           4Mi             

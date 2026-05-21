@@ -218,7 +218,7 @@ exit 0
         systemctl status --no-pager --full $service
 
         # Print THE EFFECTIVE CONFIGURATION of a service 
-        systemctl cat $service # Reconning all its config (drop-in) files across all its dirs.
+        systemctl cat $service # Sum of all the service's unit (+drop-in) files across all its dirs.
 
         # Create/ENABLE and then START the service
         systemctl enable --now $service
