@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: ds-important
+    id: ds-important
+    uuid: a9909fd8-3dae-11f1-bee3-00155dd3128a
+  name: ds-important
+  namespace: cka
+spec:
+  selector:
+    matchLabels:
+      app: ds-important
+      id: ds-important
+      uuid: a9909fd8-3dae-11f1-bee3-00155dd3128a
+  template:
+    metadata:
+      labels:
+        app: ds-important
+        id: ds-important
+        uuid: a9909fd8-3dae-11f1-bee3-00155dd3128a
+    spec:
+      containers:
+      - image: httpd:2-alpine
+        name: httpd
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+      tolerations:
+      - key: "node.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"

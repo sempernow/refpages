@@ -3,11 +3,9 @@
     "editor.fontFamily": "'Cascadia Code', 'Fira Code', Consolas, monospace",
     "editor.fontLigatures": true,
 
-    // Indentation : Default for all files (fallback)
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
-    // Indentation : Language-specific overrides
     "[yaml]": {
         "editor.tabSize": 2
     },
@@ -29,6 +27,7 @@
     "files.associations": {
         "*.tpl": "ini",
         "*.yaml.tpl": "yaml",
+        "*.settings": "makefile",
     },
     
     "terminal.integrated.fontFamily": "'Cascadia Code', 'Fira Code', Consolas, monospace",
@@ -64,5 +63,6 @@
     "workbench.startupEditor": "none",
     "git.openRepositoryInParentFolders": "never",
     "explorer.confirmDragAndDrop": false,
+    "workbench.openInAgents.enabled": false,
 
 }

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: api-contact
+  name: api-contact
+  namespace: cka
+spec:
+  #serviceAccountName: gitea
+  containers:
+  - image: nginx:1-alpine
+    name: api-contact

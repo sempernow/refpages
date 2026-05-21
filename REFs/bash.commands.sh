@@ -1479,6 +1479,8 @@ exit
             # OR just one field, e.g., Subject:
             |base64 -d |openssl x509 -subject -noout
             #=> subject=O = kubeadm:cluster-admins, CN = kubernetes-admin
+            # Extract only the most commonly sought info:
+            ...|openssl x509 -noout -issuer -subject -ext subjectAltName -startdate -enddate 
 
     jq|yq # Process JSON to YAML
         # Convert items[] els to "---" delimited YAML docs
@@ -1679,23 +1681,28 @@ exit
             yq '.items | .[]' $yaml |sed '1!s/^apiVersion/---\napiVersion/'
             # E.g., Capture all ConfigMaps (cm) of a Namespace
             yq '.items | .[]' <(kubectl get cm -o yaml) |sed '1!s/^apiVersion/---\napiVersion/'
-        # Filter array elements : Get .secret at array element (object) having .name equal to $name
-            yq '.[] |select(.name == "'$name'").secret' $keys_array_yaml
-        # Extract one YAML document (.kind) from a (K8s) manifest having many documents: 
-            yq 'select(.kind == "'$kind'")' $manifest 
-            # E.g., Compare app versions (blue/green manifests) at a particular resource (kind) 
-                doc(){ yq 'select(.kind == "'$1'")' $2; }
-                diff <(doc $kind $blue) <(doc $kind $green)
-        # Helm chart images
-            template=helm.template
-            helm -n $ns template $chart |tee $template.yaml
-            rm $template.images
-            for kind in DaemonSet Deployment StatefulSet; do
-                yq 'select(.kind == "'$kind'") |.spec.template.spec.containers[].image' $template.yaml |
-                    tee -a $template.images
-                yq 'select(.kind == "'$kind'") |.spec.template.spec.initContainers[].image' $template.yaml |
-                    tee -a $template.images
-            done
+        # Filter array elements 
+            # Extract X.509 of user 'lime-admin' from kubeconfig having many users
+                k config view --raw -o yaml |
+                    yq '.users[] |select(.name=="lime-admin").user.client-certificate-data' |
+                        base64 -d
+            # Get .secret at array element (object) having .name equal to $name
+                yq '.[] |select(.name == "'$name'").secret' $keys_array_yaml
+            # Extract one YAML document (.kind) from a (K8s) manifest having many documents: 
+                yq 'select(.kind == "'$kind'")' $manifest 
+                # E.g., Compare app versions (blue/green manifests) at a particular resource (kind) 
+                    doc(){ yq 'select(.kind == "'$1'")' $2; }
+                    diff <(doc $kind $blue) <(doc $kind $green)
+            # Helm chart images
+                template=helm.template
+                helm -n $ns template $chart |tee $template.yaml
+                rm $template.images
+                for kind in DaemonSet Deployment StatefulSet; do
+                    yq 'select(.kind == "'$kind'").spec.template.spec.containers[].image' $template.yaml |
+                        tee -a $template.images
+                    yq 'select(.kind == "'$kind'").spec.template.spec.initContainers[].image' $template.yaml |
+                        tee -a $template.images
+                done
 
     envsubst # Environment Substitution : Substitutes environment variables contained in a file
         # Use to process templates safely (sans regex) and declaratively.

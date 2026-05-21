@@ -126,6 +126,19 @@ and does so ever more as the project progresses.
     - [LocalStack](https://www.localstack.cloud/) : Mocks cloud-vendor services locally. *Develop and test your AWS applications locally to reduce development time and increase product velocity. Reduce unnecessary AWS spend and remove the complexity and risk of maintaining AWS dev accounts.*
     - [CloudCraft](https://www.cloudcraft.co/) : 
       3D graphic and resource/cost model of a cloud infra
+    - Firebase (GCP) alternatives : serverless app-development platforms:
+        * [**Supabase**](https://supabase.com/) (Most Popular): Often called the "Open Source Firebase," it replaces Firebase's NoSQL database with PostgreSQL.
+            * Pros: Supports complex relational queries, has built-in real-time subscriptions, and offers predictable pricing.
+            * Portability: Built on standard open-source tools (Postgres, GoTrue); you can migrate your data by simply changing a connection string.
+        * [Appwrite](https://appwrite.io/) (Best for Self-Hosting): A developer-centric platform packaged as Docker containers, 
+           making it incredibly easy to deploy on any server.
+            * Pros: Offers authentication, databases, file storage, and serverless functions with a very clean, unified console.
+            * Flexibility: Unlike Firebase, it allows for budget caps on its cloud service to prevent surprise bills.
+        * [PocketBase](https://pocketbase.io/) (Best for Small Projects): An ultra-lightweight backend consisting of a single file that includes a database (SQLite), auth, and file storage.
+            * Pros: Simplest to set up and runs almost anywhere with very low overhead.
+            * Limitation: It is designed for single-server use and does not scale horizontally like Supabase or Firebase.
+        * AWS Amplify (Enterprise Alternative): Amazon's competitor to Firebase. While "superglued" to AWS, it is a viable alternative if you specifically want to move away from Google's ecosystem.
+            * Pros: Deeply integrated with 200+ AWS services, making it a better "escape hatch" when your app outgrows basic backend-as-a-service (BaaS) features.
 - __Service Catalog__ : UI of IDP : built/maintained 
   by GitOps/DevOps vendor/admin, not by end users.
     - Port : SasS only 
@@ -222,6 +235,7 @@ and does so ever more as the project progresses.
                     - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub"), formerly "FluentBit Operator" : 
                         *Manage Fluent Bit and Fluentd the Kubernetes way*.
         - Stacks
+            - [EVK](https://github.com/sempernow/logging) : Elasticsearch + Vector.dev + Kibana
             - [ECK Operator](https://www.elastic.co/guide/en/cloud-on-k8s/current/index.html "Elastic.co")  (Elastic Cloud on K8s) Contains only Elasticsearch and Kibana. Does not include any Collector/Forwarder (Fluentd, Logstash, &hellip;)
                 - Deploy in [air-gap environment](https://chatgpt.com/share/5e27759e-6741-4c72-aed6-1458f3562eba "ChatGPT.com")  : 
             - __EFK Stack__ | [HowTo](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-elasticsearch-fluentd-and-kibana-efk-logging-stack-on-kubernetes "DigitalOcean.com") | [Helm](https://artifacthub.io/packages/helm/elastic/elasticsearch)
@@ -231,6 +245,7 @@ and does so ever more as the project progresses.
     - [Grafana Loki](https://grafana.com/oss/loki/) | [`grafana/loki`](https://github.com/grafana/loki/ "GitHub") ([Install](https://grafana.com/docs/loki/latest/setup/install/)) : "*Prometheus, but for logs*". A lightweight alternative to Elastic stack.
         - __Does not provide full-text indexing__ of logs; indexes only the logs' metadata (__labels__).
         - No viable installation method is available (2024-08), contrary to project claims. 
+    - [**NiFi**](https://nifi.apache.org/)/[MiNiFi](https://nifi.apache.org/projects/minifi/) can function as the collector of a logging stack.
 - __Observability__ : Distributed __Metrics__ and __Tracing__
     - [Prometheus](https://prometheus.io/ "Prometheus.io") : TSDB and monitoring system optimized for telemetry (metrics and tracing). 
     The defacto standard, but does not scale, and has horrible alerts (Alertmanager). So popular that projects provide workarounds to manage scaling. Provision using [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator?tab=readme-ov-file#prometheus-operator-1) :

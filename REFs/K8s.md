@@ -98,6 +98,70 @@ See [`K8s.provision-kubernetes.sh`](K8s.provision-kubernetes.sh)
 
 ## Topics of Interest
 
+### BGP ([Wiki](https://en.wikipedia.org/wiki/Border_Gateway_Protocol "Wikipedia") | [Video](https://www.youtube.com/watch?v=6XW5cRa3ZKM))
+
+**Q:** 
+
+Each rack has a ToR router and so an ASN even though none constitute an AS?
+
+**A:**
+
+You have hit on one of the most confusing, yet standard, paradoxes in modern data center networking.
+Yes, absolutely. In a modern data center design, each rack's ToR switch is assigned its own unique Autonomous System Number (ASN), even though a single rack is nowhere near large enough to be considered an "Autonomous System" on the public internet.
+
+------------------------------
+
+#### Why Do We Put ASNs on Individual Racks?
+
+This practice is driven by a design pattern called the BGP-in-the-Data-Center (RFC 7938) architecture, popularized by hyper-scalers like Facebook and Microsoft [1, 2].
+Instead of treating BGP as a protocol meant only for the global internet, engineers use eBGP (External BGP) as an internal routing tool inside the private data center [1, 2].
+
+* ASNs as Network Tags: Inside your private network, an ASN loses its grand internet definition. It simply becomes a powerful "tag" or "boundary marker" for a specific pool of infrastructure (a rack).
+* Loop Prevention: By giving Rack A ASN 65001 and Rack B ASN 65002, the network switches can easily detect routing loops. If Rack A sees a packet or a route update that already contains the number 65001, it drops it instantly.
+* Massive Scale: Private ASN ranges (specifically 64512 through 65534 for 16-bit, and a massive pool in 32-bit) provide plenty of numbers to label thousands of individual racks without ever needing to register them publicly.
+
+------------------------------
+
+### How Your Kubernetes Cluster Fits into this ASN Setup
+
+When you deploy Cilium BGP across a multi-rack setup with this architecture, your Kubernetes nodes inherit this rack-by-rack numbering system. This is done using one of two common design choices:
+
+                        +-----------------------------------+
+
+                        |        Spine Switches             |
+                        |         ASN: 65000                |
+                        +--------+-----------------+--------+
+
+                                |                 |
+                    +--------------+                 +--------------+
+
+                    |                                               |
+        +-----------+-----------+                       +-----------+-----------+
+
+        |      ToR Switch A     |                       |      ToR Switch B     |
+        |       ASN: 65001      |                       |       ASN: 65002      |
+        +-----------+-----------+                       +-----------+-----------+
+
+                    |                                               |
+        [ Kubernetes Nodes ]                            [ Kubernetes Nodes ]
+        Choice 1: Inherit ToR (65001)                   Choice 1: Inherit ToR (65002)
+        Choice 2: Unique K8s  (65101)                   Choice 2: Unique K8s  (65102)
+
+#### Choice 1: Nodes Share the Rack's ASN (iBGP to the ToR)
+
+Your Kubernetes nodes on Rack A are configured in Cilium to use the exact same ASN as the ToR switch (64512).
+
+* The Connection: This creates an **iBGP** (Internal BGP) session between the nodes and their local switch.
+* The Benefit: It keeps the data center ASN mapping incredibly clean. The network team views the entire rack (physical servers and virtual Kubernetes nodes) as **a single cohesive unit**.
+
+#### Choice 2: Nodes Get a Sub-ASN (eBGP to the ToR)
+
+Your Kubernetes nodes on Rack A are given a dedicated ASN (64522) that is different from the ToR switch (64512).
+
+* The Connection: This creates an **eBGP** (External BGP) session between Cilium and the ToR switch.
+* The Benefit: This is highly favored by network teams who want **strict separation**. It allows the ToR switch to treat the Kubernetes cluster as a distinct "external" entity routing into their network fabric, making firewalling and route filtering easier.
+
+
 ### [__Life of a Packet__](https://www.youtube.com/watch?v=0Omvgd7Hg1I "YouTube video by Michael Rubin (Google) at 2017 KubeCon Europe") in Kubernetes.
 **iptables v. K8s** 
 
