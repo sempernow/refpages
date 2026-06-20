@@ -301,15 +301,25 @@ and does so ever more as the project progresses.
     - Komodor : Troubleshooting
     - Pixie : All in one
     - Groundcover : All in one
-- __Streaming__/__Messaging__ : Run on __dedicated nodes__
-    - [RabbitMQ](https://github.com/rabbitmq/rabbitmq-server) : 
-     A widely used open-source message broker that supports multiple messaging protocols, including AMQP, [MQTT](https://mqtt.org/), and STOMP. It's known for its simplicity, ease of setup, and support for various messaging patterns like work queues, publish-subscribe, and routing. RabbitMQ is a good choice for IoT and other simpler, high-throughput messaging scenarios.
-    - [Strimzi](https://strimzi.io/ "Strimzi.io") : Kafka on K8s : [`strimzi-kafka-operator`](https://github.com/strimzi/strimzi-kafka-operator "GitHub") : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS over TCP. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications. 
-        - Kafka operators to deploy and configure an Apache Kafka cluster on K8s. 
-        - Kafka Bridge provides a RESTful interface for your HTTP clients.
-    - [NATS](https://nats.io/) : A lightweight, high-performance messaging system designed for microservices, IoT, and cloud-native systems. It supports various messaging models including pub-sub, request-reply, and queueing. NATS is known for its simplicity and performance.
-    - [Redpanda](https://docs.redpanda.com/current/home/) : A newer, __Kafka-compatible streaming platform__ designed to offer better performance and easier operation. It is API-compatible with Kafka, which means existing Kafka clients and ecosystem tools work with Redpanda without modification. Redpanda is designed to be simpler to deploy and manage, with a focus on reducing operational overhead.
-        - >Enabling SELinux can result in latency issues. If you wish to avoid such latency issues, do not use this mechanism.
+- __Data Pipelines__
+    - **Analytics** / **OLAP** (**O**n**L**ine **A**nalytical **P**rocessing) systems:  
+        Prepare and structure data for business intelligence, reporting, and **data science**. 
+        Whether you use **ETL** or **ELT**, the ultimate goal is to ***move data away from transactional*** _databases_ (**OLTP**) and _into analytical databases_ (**OLAP**). 
+        - **ETL** (**E**xtract, **T**ransform, **L**oad) / 
+        - **ELT** (**E**xtract, **L**oad, **T**ransform): Data is extracted and loaded immediately into a cloud **data warehouse** in its **raw form**. The transformation happens after loading, using the warehouse's computer power. 
+            - [Apache Snowflake](): a cloud-native data platform recognized for its data warehouse, data lake, and AI/application development capabilities
+        - **Orchestration** [Apache Airflow](https://airflow.apache.org/docs/apache-airflow/stable/start.html)
+    - **Data Replication** / **Migration**: Pipelines that copy data from one database to another exactly as it is, with zero transformation.
+    - __Streaming__ / __Messaging__ / __Real-Time Pipelines__ :   
+        Pipelines that move data continuously ***event-by-event*** (like user clicks on a website or IoT sensor logs) using tools like Apache Kafka, rather than waiting to process data in batches. Run on __dedicated nodes__.
+        - [RabbitMQ](https://github.com/rabbitmq/rabbitmq-server) : 
+        A widely used open-source message broker that supports multiple messaging protocols, including AMQP, [MQTT](https://mqtt.org/), and STOMP. It's known for its simplicity, ease of setup, and support for various messaging patterns like work queues, publish-subscribe, and routing. RabbitMQ is a good choice for IoT and other simpler, high-throughput messaging scenarios.
+        - [Strimzi](https://strimzi.io/ "Strimzi.io") : **Kafka** on K8s : [`strimzi-kafka-operator`](https://github.com/strimzi/strimzi-kafka-operator "GitHub") : For production features such as rack awareness to spread brokers across availability zones, and K8s taints and tolerations to run Kafka on dedicated nodes. Expose Kafka outside K8s using NodePort, Load balancer, Ingress and OpenShift Routes. Easily secured using TLS over TCP. The Kube-native management of Kafka can also manage Kafka topics, users, Kafka MirrorMaker and Kafka Connect using Custom Resources. Allows for using K8s processes and tooling to manage complete Kafka applications. 
+            - Kafka operators to deploy and configure an Apache Kafka cluster on K8s. 
+            - Kafka Bridge provides a RESTful interface for your HTTP clients.
+        - [NATS](https://nats.io/) : A lightweight, high-performance messaging system designed for microservices, IoT, and cloud-native systems. It supports various messaging models including pub-sub, request-reply, and queueing. NATS is known for its simplicity and performance.
+        - [Redpanda](https://docs.redpanda.com/current/home/) : A newer, __Kafka-compatible streaming platform__ designed to offer better performance and easier operation. It is API-compatible with Kafka, which means existing Kafka clients and ecosystem tools work with Redpanda without modification. Redpanda is designed to be simpler to deploy and manage, with a focus on reducing operational overhead.
+            - >Enabling SELinux can result in latency issues. If you wish to avoid such latency issues, do not use this mechanism.
 - __Networking__
     - External Load Balancer
         - `kube-vip` ([GitHub](https://github.com/kube-vip/kube-vip "GitHub.com") | [Docs](https://kube-vip.io/ "kube-vip.io")): 

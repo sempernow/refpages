@@ -3,6 +3,55 @@
 #  Kubernetes tools : kubeadm
 # -----------------------------------------------------------------------------
 
+##################
+# Upgrade Cluster
+sudo su
+. .bashrc
+
+# Create the repo file
+ver=v1.30 # Set major.minor version
+cat << EOF |tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/$ver/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/$ver/rpm/repodata/repomd.xml.key
+EOF
+
+# Update repos
+dnf makecache
+
+# Select RPM version
+dnf list kubeadm.x86_64     # --showduplicates (list all available)
+ver='1.30.14-150500.1.1'    # Declare the RPM version
+
+# Install binaries by RPM method
+dnf install -y \
+  kubeadm-$ver.x86_64 \
+  kubelet-$ver.x86_64 \
+  kubectl-$ver.x86_64
+
+# Show available upgrade path (per kubernetes.repo)
+kubeadm upgrade plan 
+
+# Whilst kubelet is running:
+node=$(hostname)
+export KUBECONFIG=/etc/kubernetes/admin.conf 
+kubectl drain $node --ignore-daemonsets --delete-emptydir-data
+kubectl get pod -A -o wide |grep $node # Verify node is drained
+ver=v1.30.14 # Requires "v" prefix unlike binary installs
+# ONLY at FIRST (CONTROL) NODE upgrade
+/usr/bin/kubeadm upgrade apply $ver 
+# At ALL SUBSEQUENT node upgrades, use:
+/usr/bin/kubeadm upgrade node # Instead of updgrade apply <version>
+
+systemctl restart kubelet
+kubectl get node # Verify version upgrade
+kubectl uncordon $node
+kubectl version # After FINAL-NODE upgrade, should report proper "Server Version"
+
+###################################################
 # @ kubeadm init : Initial/Temp configuration file
 cfg=kubeadm-config.yaml # Default is ConfigMap kubeadm-config.data.ClusterConfiguration 
 

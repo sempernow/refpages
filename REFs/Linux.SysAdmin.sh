@@ -910,14 +910,20 @@ exit 0
 
     # Read systemd journal
         journalctl # CLI for journald (BINARY log files)
+            -n 55       # Number of logs (lines)     
             -u NAME     # Of declared service (unit) NAME
             -e          # Jump to end (most recent)
             -x          # Augment with useful meta info
-            --no-pager  # Full message (else truncates each)
+            -f          # Follow (tail)
+            --full      # Full log messages (else truncates each)
+            --no-pager  # Else scripts hang
             -b                  # boot logs
+            -k                  # kernel messages only
             --system            # System journal
             --user              # User journal
-            --since=yesterday   # Logs since yesterday|today|...
+            --since=yesterday   # |today|'5 minute ago'
+            -p err              # Priority: emerg" (0), "alert" (1), "crit" (2), "err" (3), "warning" (4), "notice" (5), "info" (6), "debug" (7)
+
         # Recent journal messages (all services)
         sudo journalctl -xe --no-pager
         # Recent journal of a service

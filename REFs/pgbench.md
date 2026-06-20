@@ -76,6 +76,81 @@ SQL script 2: bench.sql
  - latency stddev = 41.833 ms
 ```
 
+---
+
+# `pgbench` Basics
+
+You can use pgbench to isolate and target a single, specific SQL query. By passing a custom .sql file using the -f flag and enabling the latency report flag (-r), pgbench will measure the exact response time and latency breakdown for just your targeted query under load. [1, 2, 3] 
+
+## Step-by-Step Guide to Benchmark a Specific Query## 1. Save Your Query to a File
+
+Create a text file containing the exact SQL query you want to optimize. [3] 
+
+# Save this file as `my_query.sql`
+
+```sql
+SELECT user_id, COUNT(*) 
+FROM orders 
+WHERE status = 'pending' 
+GROUP BY user_id;
+```
+
+## 2. Run pgbench targeting the File [4] 
+
+Execute pgbench against your production or staging database using the following precise configuration flags: [2] 
+
+```bash
+pgbench -f my_query.sql -n -c 5 -j 2 -t 500 -r my_database
+```
+
+What these specific flags do for query-level testing:
+
+* `-f my_query.sql`: Bypasses the built-in TPC-B test and forces pgbench to only execute the query inside your file.
+* `-n`: Skips the automatic VACUUM process that pgbench tries to run by default on its native benchmark tables.
+* `-c 5` and `-j 2`: Simulates 5 concurrent application users across 2 threads hitting this exact query simultaneously.
+* `-t 500`: Runs the query 500 times per client (yielding 2,500 total executions for a reliable statistical average).
+* `-r` (Crucial): Stands for "report latencies". It instructs pgbench to calculate and output the exact statement-by-statement average execution response time. [1, 2, 5, 6, 7] 
+
+## Understanding the Output
+
+When the run finishes, the `-r` flag appends a statement latency breakdown to the bottom of the standard summary: [5] 
+
+```plaintext
+...
+number of transactions actually processed: 2500/2500
+latency average = 14.210 ms
+tps = 351.864910 (without initial connection time)
+
+Statement latencies:
+  14.185 ms  SELECT user_id, COUNT(*) FROM orders WHERE status = 'pending'...
+```
+
+
+* latency average: Tells you the global average response time of the entire script file execution.
+* Statement latencies: Pinpoints exactly how many milliseconds your specific SQL statement took to respond on average across those 2,500 stress-test runs. [5, 8] 
+
+## Alternative: Dynamic Variables (Simulating Production Realism)
+
+If running the exact same query creates unrealistically fast speeds due to database caching, you can pass random parameters to your target query file using pgbench scripting syntax: [6] 
+
+```sql
+-- Modified my_query.sql
+\setrandom customer_id 1 100000SELECT * FROM orders WHERE user_id = :customer_id;
+```
+
+[1] [https://andyatkinson.com](https://andyatkinson.com/blog/2021/08/10/pgbench-workload-simulation)
+[2] [https://neon.com](https://neon.com/blog/autoscaling-in-action-postgres-load-testing-with-pgbench)
+[3] [https://www.tangramvision.com](https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well)
+[4] [https://www.tangramvision.com](https://www.tangramvision.com/blog/how-to-benchmark-postgresql-queries-well)
+[5] [https://dev.to](https://dev.to/aws-heroes/custom-sql-scripts-in-pgbench-502i)
+[6] [https://gist.github.com](https://gist.github.com/artemik/3e26ac09208b8d215b421c7221a4ae48)
+[7] [https://www.dbi-services.com](https://www.dbi-services.com/blog/ysql_bench/)
+[8] [https://www.postgresql.org](https://www.postgresql.org/docs/current/pgbench.html)
+[9] [https://vela.simplyblock.io](https://vela.simplyblock.io/articles/best-open-source-postgresql-performance-tuning-tools/)
+[10] [https://dba.stackexchange.com](https://dba.stackexchange.com/questions/42012/how-can-i-benchmark-a-postgresql-query)
+
+
+---
 
 ### &nbsp;
 <!-- 

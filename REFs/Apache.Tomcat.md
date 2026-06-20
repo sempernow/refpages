@@ -1,4 +1,4 @@
-# [Apache Tomcat](https://tomcat.apache.org/ "tomcat.apache.org") | [ChatGPT](https://chatgpt.com/share/681a895c-b8ec-8009-8417-cf83c59485e2)
+# [Apache Tomcat](https://tomcat.apache.org/ "tomcat.apache.org")
 
 Here's a **systemd unit file** to run a Tomcat 10+ instance 
 (installed from tarball, e.g., in `/opt/tomcat`) 
