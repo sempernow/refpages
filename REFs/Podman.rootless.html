@@ -26,6 +26,118 @@
 <p>Provision a Podman environment for unprivileged, non-local (AD) users on RHEL.</p>
 </blockquote>
 
+<h2>UPDATE 2026</h2>
+
+<p>Podman rootless is compatible with Active Directory (AD) domain users,
+but it <strong>requires manual configuration of user mappings</strong>.</p>
+
+<p>Because rootless containers rely on Linux user namespaces to map container IDs to host IDs,
+you must explicitly assign a range of subordinate UIDs and GIDs to each AD user.</p>
+
+<p>Active Directory and LDAP don't natively populate Linux's /etc/subuid and /etc/subgid files upon user login. This requires several specific configuration steps. [5, 6]</p>
+
+<h3>The Problem with Remote Users</h3>
+
+<p>Rootless Podman uses the <code>newuidmap</code> and <code>newgidmap</code> utilities, which look at <code>/etc/subuid</code> and <code>/etc/subgid</code> to allocate ID mappings. Because non-local AD users authenticate dynamically (often via SSSD), their records aren't permanently written to local system files like <code>/etc/passwd</code> or <code>/etc/shadow</code> by default.</p>
+
+<h3>How to Make it Work</h3>
+
+<ol>
+<li><p>Assign Subordinate ID Ranges:
+You must manually create entries in /etc/subuid and /etc/subgid for your domain users. The syntax assigns a range (e.g., $65,536$ IDs) to an AD username:</p>
+
+<pre><code class="language-bash">ad_username:100000:65536
+</code></pre></li>
+
+<li><p>Automating the Setup (Recommended for Scale):
+Manually tracking AD users is unmanageable at scale. Administrators usually automate this by writing scripts to dynamically populate /etc/subuid and /etc/subgid using a PAM (Pluggable Authentication Module) script (like pam_exec.so) when a domain user logs in.</p></li>
+
+<li><p>Using SSSD Central Management (Enterprise Environments):
+If you are using FreeIPA alongside AD, central subordinate ID management is natively available. You can use SSSD plugins to retrieve UID/GID ranges centrally without modifying local /etc/sub* files on every machine. [1, 5, 6, 10, 11, 12]</p></li>
+</ol>
+
+<h3>Key Limitations to Keep in Mind</h3>
+
+<ul>
+<li><p>Network File Systems (NFS) Homes: Network file systems don't generally support Linux user namespaces. If your AD domain users mount home directories from a remote file server (NFS), rootless Podman will fail unless the graphroot is re-configured to local storage.</p></li>
+
+<li><p>The Single-Mapping Fallback: If an AD user isn't assigned ranges in /etc/subuid, Podman will default to a &quot;single mapping into the namespace&quot;. This allows basic commands to work but will throw errors during complex actions (like running images that require container-internal root access or volume ownership changes).</p></li>
+</ul>
+
+<h3>Managing subids</h3>
+
+<p><code>pam_exec.so</code> is a generic execution tool
+that runs a custom script of your choice during user login.</p>
+
+<p>To handle unique subID provisioning,
+the custom script must contain
+the math and logic to calculate unique ranges
+and write them to <code>/etc/subuid</code> and <code>/etc/subgid</code>.</p>
+
+<h4>How to use pam_exec.so for provisioning</h4>
+
+<p>To automate this, you must combine pam_exec.so with a custom script.</p>
+
+<ul>
+<li><ol>
+<li><p>Add <code>pam_exec.so</code> to your PAM stack:
+Add this line to your PAM configuration file
+(such as <code>/etc/pam.d/system-auth</code> or <code>/etc/pam.d/password-auth</code>):</p>
+
+<pre><code class="language-bash">session optional pam_exec.so /usr/local/bin/provision_subids.sh
+</code></pre></li>
+</ol></li>
+
+<li><ol>
+<li>Write a custom provisioning script:
+Your script must read the incoming <code>$PAM_USER</code> variable, ensure they do not already have an entry, calculate a unique starting ID, and append it to the files.</li>
+</ol></li>
+</ul>
+
+<h4>Example Provisioning Script</h4>
+
+<p>This basic script calculates a unique subID range
+based on the user's existing Active Directory UID
+to guarantee uniqueness across the domain.</p>
+
+<pre><code class="language-bash">#!/bin/bash
+
+# Exit if the user is root or already has subuids configured
+if [ &quot;$PAM_USER&quot; = &quot;root&quot; ] || grep -q &quot;^${PAM_USER}:&quot; /etc/subuid; then
+    exit 0
+fi
+
+# Get the user's AD/SSSD UID
+USER_UID=$(id -u &quot;$PAM_USER&quot; 2&gt;/dev/null)
+if [ -z &quot;$USER_UID&quot; ]; then
+    exit 0
+fi
+
+# Math formula: Use a large offset to prevent overlapping local IDs
+# e.g., UID 10005 becomes SubUID 1000500000 (allocating 65,536 IDs)
+SUB_ID_START=$(( USER_UID * 100000 ))
+RANGE=65536
+
+# Append uniquely to both files
+echo &quot;${PAM_USER}:${SUB_ID_START}:${RANGE}&quot; &gt;&gt; /etc/subuid
+echo &quot;${PAM_USER}:${SUB_ID_START}:${RANGE}&quot; &gt;&gt; /etc/subgid
+</code></pre>
+
+<h4>Better Alternative: Modern Linux Solutions</h4>
+
+<p>Instead of writing custom scripts with <code>pam_exec.so</code>,
+newer systems offer <strong>cleaner ways to handle remote users</strong>:</p>
+
+<ul>
+<li><code>shadow-utils</code> with SSSD (Modern RHEL/Fedora/Ubuntu):
+Modern versions of <code>newuidmap</code> can query SSSD directly if configured.</li>
+<li><code>systemd-homed:</code> Dynamically manages user namespaces and subIDs for users on demand.</li>
+</ul>
+
+<hr>
+
+<h1>Prior Work</h1>
+
 <h2>Overview</h2>
 
 <p>There are many corners to this envelope:</p>

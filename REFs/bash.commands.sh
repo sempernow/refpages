@@ -1127,8 +1127,10 @@ exit
                 find -type f -printf "%T@ %p\n" |sort -n |tail -n 1 |cut -f2- -d' '
             
             # -atime, -mtime, -ctime 
-            find -atime +5 # OLDER; find all accessed more than 5 DAYS ago
-            find -mtime -5 # NEWER; find all modified (content) less than 5 DAYS old
+            find -atime +5 # OLDER; accessed MORE THAN 5 DAYS ago
+            find -atime 5  # EXACTLY; accessed EXACTLY 5 DAYS ago
+            find -mtime -5 # NEWER; modified (content) LESS THAN 5 DAYS old
+            find -mtime 0  # LESS THAN than 24 HOURS old
 
             # reset mtime of *.sh to that of its *.7z sibling, at all dirs hereunder 
             find . -iname '*.7z' -exec /bin/bash -c 'touch -r "$@" "$( find "${@%/*}" -iname '*.sh')"' _ {} \;

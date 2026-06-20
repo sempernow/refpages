@@ -159,6 +159,17 @@ exit
                         # https://github.com/HewlettPackard/netperf
             iptraf      # Ncurses-based monitoring tool
             cbm         # Color Bandwidth Meter (graph)
+            sar         # sysstat pkg
+
+            # Examples:
+            ip -s link show eth0
+            sar -n DEV 1   # Real-time tx/rx and packet rates of ntwk DEVice : rxkB/s, txkB/s
+            iftop -i eth0  # Real-time bandwidth usage stored by IP pairs + connections 
+            nload eth0     # ASCII graph of tx/rx bandwidth
+            ss -t -i       # Socket Stats; critical metrics; round-trip time (rtt); congestion window (cwnd)
+            nstat -az |grep -Ei 'drop|retrans|overflow' # Errors and Drops
+            ethtool -S eth0 # HW/low-level counters
+            mpstat -P ALL 1 # CPU-dependent stats; interrupts (%soft)
 
         # Latency benchmarks of Unix IPC mechanisms
             ipc-bench
@@ -535,9 +546,10 @@ exit
     whois HOSTNAME # regsitry ID, registrar, registrar server, update/creation/expiration dates
 
     nslookup
-        nslookup HOSTNAME|FQDN              # returns IP Address
-        nslookup -type=CNAME HOSTNAME|FQDN  # returns IP and canonincal name (Apex record to which CNAME point)
-        nslookup IP                         # returns FQDN aka "Domain Name"
+        nslookup FQDN               # returns IP Address
+        nslookup -type=CNAME FQDN   # returns IP and canonincal name (Apex record to which CNAME point)
+        nslookup FQDN NAMESERVER    # returns IP; resolves using declared nameserver
+        nslookup IP                 # returns FQDN aka "Domain Name"
         
             # @ OCI Container
                 nslookup $(hostname)
