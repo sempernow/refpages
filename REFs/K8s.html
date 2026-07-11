@@ -138,6 +138,157 @@ Driver should match the container runtime setting, and if the parent processes a
 
 <h2>Topics of Interest</h2>
 
+<h3>Pod Scheduling / Preemption / Eviction</h3>
+
+<p>Pod Scheduling, Preemption, and Eviction are foundational Kubernetes mechanisms that ensure critical workloads get the compute resources they need. Scheduling finds a suitable node; Preemption kills lower-priority Pods so high-priority Pods can be scheduled; Eviction terminates running Pods to protect node stability.</p>
+
+<ul>
+<li><strong>Scheduling</strong>: When a Pod is created, the <code>kube-scheduler</code> evaluates node taints, resource limits, and affinity rules to assign it to a physical or virtual machine.</li>
+<li><strong>Preemption</strong>: If no node has enough free resources, the scheduler initiates preemption. It checks if evicting running, lower-priority Pods on a node can free up enough space to fit the new, higher-priority Pod. Preemption is controlled using cluster-level <code>PriorityClass</code> resources.</li>
+<li><strong>Eviction</strong>: Eviction is generally triggered by the <code>kubelet</code> when a node experiences resource pressure (e.g., high memory, CPU, or disk). The kubelet terminates running Pods starting with <code>BestEffort</code> workloads until the node's resource usage falls within safe thresholds.</li>
+</ul>
+
+<blockquote>
+<p>To avoid unexpected disruptions and protect your most critical applications in production, you should combine <code>PriorityClass</code> with strict resource requests. Setting a high priority without resource limits can cause high-priority Pods to starve a node.</p>
+</blockquote>
+
+<p>In Kubernetes, <strong>PriorityClass</strong> determines which pods start running first,
+while <strong>QoSClass</strong> determines which pods get evicted first under resource pressure.</p>
+
+<p>They are two independent mechanisms managed by different parts of the Kubernetes control plane to keep your cluster stable.</p>
+
+<p>Requests and limits heavily influence scheduling, but they also dictate eviction and runtime enforcement. Meanwhile, <strong>PriorityClass is primarily a scheduling tool</strong> (influencing queue order and preemption), but it is also consulted during specific evictions. The responsibilities are split between the <code>kube-scheduler</code> (which places pods onto nodes) and the <code>kubelet</code> (which manages resources and evictions on individual nodes).</p>
+
+<h3>1. Resource Requests and Limits (QoSClass)</h3>
+
+<ul>
+<li>Scheduling: Requests act as a strict threshold. The scheduler will only place a pod on a node if the node has enough unallocated capacity to satisfy the pod's requested CPU and memory.</li>
+<li>Eviction: Limits define the maximum resources a container can consume. If it attempts to use more memory than its limit, the Linux kernel triggers an Out-Of-Memory (OOM) kill. If it tries to use more CPU, the kernel throttles the container.</li>
+<li>Quality of Service (QoS): Requests and limits group pods into QoS tiers (Guaranteed, Burstable, BestEffort). When a node experiences severe memory pressure, the kubelet uses these QoS tiers to decide which pods to evict first.</li>
+</ul>
+
+<h3>2. PriorityClass</h3>
+
+<ul>
+<li>Scheduling: PriorityClass determines where a pod sits in the scheduling queue. Pods with higher priority values get placed ahead of lower-priority pods.</li>
+<li>Preemption (Scheduling Eviction): If a high-priority pod cannot be scheduled because a node lacks resources, the scheduler will forcibly evict (preempt) lower-priority running pods to make room for the higher-priority one.</li>
+<li>Node Pressure Eviction: During standard node pressure (like a shortage of disk or memory), the kubelet primarily bases eviction decisions on QoS. However, PriorityClass is used as a tie-breaker: if two pods have the same QoS class, the kubelet will evict the pod with the lower priority value first.</li>
+</ul>
+
+<h4>Core Overview</h4>
+
+<table>
+<thead>
+<tr>
+<th><strong>Feature</strong></th>
+<th><strong>PriorityClass</strong> (<code>kind</code>)</th>
+<th><strong>QoSClass</strong> (<code>pod.status</code>)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Primary Purpose</td>
+<td>Controls <strong>scheduling</strong> queue order and triggers pod <strong>preemption</strong>.</td>
+<td>Governs node-pressure <strong>evictions</strong> and Linux <strong>OOM-killer</strong> scores.</td>
+</tr>
+
+<tr>
+<td>Managed By</td>
+<td>(Cluster level).</td>
+<td>(Node level).</td>
+</tr>
+
+<tr>
+<td>How It's Defined</td>
+<td>Declared at <code>pod.spec.priorityClassName</code></td>
+<td>Inferred from Pod's aggregate requirements under <code>pod.spec.containers[].resoures</code> (<code>.requests</code>, <code>.limits</code>).</td>
+</tr>
+
+<tr>
+<td>Core Values</td>
+<td>User-defined integer values (e.g., <code>-1000000000</code> to <code>1000000000</code> ).</td>
+<td><code>BestEffort</code> (default), <code>Burstable</code>, or <code>Guaranteed</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<h4>Tasks for App Developers</h4>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/">Configure Pods and Containers</a>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/assign-pod-level-resources/">Assign Pod-level CPU and memory resources</a></li>
+<li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/">Configure QoS Class</a></li>
+</ul></li>
+</ul>
+
+<h4>What is <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass">PriorityClass</a>?</h4>
+
+<p>A Kubernetes <strong>PriorityClass</strong> resource maps a user-defined string to a 32-bit integer value.
+The larger the number, the higher the priority.</p>
+
+<p>It impacts workloads in two main phases:</p>
+
+<ol>
+<li><strong>Scheduling Queue</strong>: When pods are waiting to be deployed, the scheduler processes higher-priority pods before lower-priority ones.</li>
+<li><strong>Preemption</strong>: If a high-priority pod cannot be scheduled due to a lack of cluster resources, the scheduler will intentionally kill (<code>preempt</code>) lower-priority pods to free up space.<br></li>
+</ol>
+
+<p>This is delcared in the Pod resource: <strong><code>pod.spec.priorityClassName</code></strong></p>
+
+<blockquote>
+<p>A malicious user could create Pods at the highest possible priorities, causing other Pods to be evicted/not get scheduled. An administrator can use <a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/#limit-priority-class-consumption-by-default"><code>ResourceQuota</code></a> to prevent users from creating pods at high priorities.</p>
+</blockquote>
+
+<h4>What is QoS (Quality of Service) Class?</h4>
+
+<p>You do <em>not explicitly configure</em> a <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/">Pod QoS Class</a> in any manifest.
+Instead, the <code>kubelet</code> automatically <em>evaluates</em> the <code>pod.spec.containers[].resources</code> block
+<strong>of all containers inside a pod</strong> and assigns one of three <strong>tiers</strong>:</p>
+
+<ul>
+<li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed"><code>Guaranteed</code></a>: CPU and memory <code>requests</code> strictly equal <code>limits</code> for every single container in the pod.</li>
+<li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-burstable"><code>Burstable</code></a>: At least one container has a request or limit defined, but they do not match.</li>
+<li><a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-besteffort"><code>BestEffort</code></a>: No CPU or memory requests or limits are defined anywhere in the pod spec.</li>
+</ul>
+
+<p>This is reported in <strong><code>pod.status.qosClass</code></strong></p>
+
+<pre><code class="language-yaml">spec:
+  containers:
+    ...
+    resources:
+      limits:
+        cpu: 700m
+        memory: 200Mi
+      requests:
+        cpu: 700m
+        memory: 200Mi
+    ...
+status:
+  qosClass: Guaranteed
+</code></pre>
+
+<p><strong>When a physical node runs completely out of memory (OOM) or disk space</strong>,
+the <code>kubelet</code> relies on these tiers to determine what to kill first.
+It follows a strict eviction hierarchy:
+BestEffort pods are terminated first, followed by Burstable, and finally Guaranteed.</p>
+
+<h4>How They Interact (The Hidden Rule)</h4>
+
+<p>While they are technically independent, the <strong>kubelet</strong> evaluates both <strong>QoSClass</strong> and <strong>PriorityClass</strong> simultaneously during Node-Pressure Evictions.
+When a node experiences a resource crunch, the <strong>kubelet</strong> filters pods through these specific layers:</p>
+
+<ol>
+<li>It identifies pods whose actual consumption exceeds their declared resource .</li>
+<li>It breaks ties among those over-consuming pods by sorting them by their .</li>
+<li>If priorities are identical, it uses the pod's relative consumption of the starved resource to make the final kill choice.</li>
+</ol>
+
+<p>⚠️ <strong>Production Danger Zone</strong>: A common anti-pattern is assigning a very high PriorityClass to a pod but giving it a BestEffort QoS class (no resource limits). Under node pressure, the  will ruthlessly evict it first despite its high priority because it has no guaranteed boundaries. For mission-critical workloads, you must combine a high PriorityClass with a Guaranteed QoS class. If you would like to map out a resource protection strategy, tell me:</p>
+
 <h3>BGP (<a href="https://en.wikipedia.org/wiki/Border_Gateway_Protocol" title="Wikipedia">Wiki</a> | <a href="https://www.youtube.com/watch?v=6XW5cRa3ZKM">Video</a>)</h3>
 
 <p><strong>Q:</strong></p>
