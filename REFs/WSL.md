@@ -26,7 +26,24 @@ wsl --set-default Ubuntu-22.04
 wsl
 ```
 
-### Configure a WSL2 distro 
+## Upgrade
+
+```powershell
+# Update WSL itself
+wsl --upgrade
+wsl --shutdown
+
+# Upgrade Ubuntu
+wsl 
+sudo apt update
+sudo apt upgrade -y
+sudo apt --purge autoremove
+exit
+wsl --shutdown
+wsl
+```
+
+## Configure a WSL2 distro 
 
 1. Edit `/etc/wsl.conf` to configure mount points as `/<DRIVE>` instead of `/mnt/<DRIVE>` .  
     ```plaintext

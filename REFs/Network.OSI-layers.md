@@ -92,6 +92,17 @@ In the Windows w32time behavior discussed previously, the values are still stric
 * OS Routing: When the client OS receives the response, it uses the reversed destination port to find the exact application socket that generated the original request.
 
 
+---
+
+The **O**pen **S**ystems **I**nterconnection (__OSI__) 
+model is a *conceptual framework* created by the 
+International Organization for Standardization (ISO).
+
+ISO is an abbreviation of the Greek word "ίσος" (**iso**s), meaning "___equal___".
+
+ISO was formed by a UN commitee, UNSCC, as the post-war inheritor of
+the International Federation of the National Standardizing Associations (ISA),
+which began in 1926. 
 
 <!-- 
 

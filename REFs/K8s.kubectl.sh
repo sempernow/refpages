@@ -39,6 +39,35 @@ kubectl cluster-info dump # TMI though
 # - Display cluster endpoints and services 
 kubectl -n kube-system get ep,svc -l 'kubernetes.io/cluster-service=true'
 
+# DEBUG : App performance degradation
+## Step 1: Identify the Bottleneck
+#### Check Pod Status:** Look for `OOMKilled` or high restart counts.
+kubectl describe pod $name
+#### View Real-time Usage : current metrics
+kubectl top pod $name               # Pod
+kubectl top pod $name --containers  # Each container
+## Step 2: Investigate High Memory Usage
+#### Check cgroup stats:** Connect to the pod to see detailed memory breakdown.
+kubectl exec -it <pod-name> -- cat /sys/fs/cgroup/memory.stat
+#### - High slab / file values often mean Linux page cache is growing due to heavy disk I/O (backups, file reads).
+#### - High anon (anonymous) values usually point to app-level memory leak
+#### - Check for Kernel Cache: If slab is huge, the kernel is using memory for caching. 
+####   This isn't a true leak but can cause evictions. 
+####   Dropping caches temporarily in a debug pod can confirm.
+## Step 3: Check for CPU Throttling
+#### Check Throttling Metrics: A high throttling ratio means the pod is hitting its CPU limit and being paused each cycle, causing delays
+#### PromQL:
+rate(container_cpu_cfs_throttled_seconds_total[5m]) / rate(container_cpu_cfs_periods_total[5m]) * 100
+#### Check Node Pressure: The problem might be other pods on the same node (noisy neighbors). Check the overall node health.
+kubectl describe node $name
+## Step 4: Look for Runtime & Configuration Issues
+#### Cgroup v2: Upgrading Kubernetes may have switched to cgroup v2. 
+#### Some apps (older Java, Node.js) don't handle it well, causing memory issues.
+#### Resource Limits: Misconfigured `requests` (scheduling guarantee) and `limits` (hard cap) are the top culprits. Limits set too low cause throttling or OOM kills.
+## Step 5: Use Automated Tools
+# Collect a snapshot and run analysis
+kube-slowwhy collect --since 30m --out snapshot.json
+
 # LOGS : Examine container logs
 kubectl logs $any # If multi-container pod, TAB/select for (required) ctnr name  
 kubectl -n kube-system logs pod/etcd-a1 --since=20m |jq '. |select(.level != "info")'

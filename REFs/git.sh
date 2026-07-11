@@ -15,6 +15,12 @@ exit
 ## any or all of which may be pushed to the repo's common data store (origin) at any time.
 
 #############################
+## Fork source to ours
+git clone https://$srcHost/$srcAcct/$srcPrj.git
+git remote rename origin upstream
+git remote add origin git@$ourHost:$ourAcct/$ourPrj.git
+
+#############################
 ## COMMON COMMANDs @ workflow
     mkdir ${REPONAME}          # create repo container                
     git init                   # create local repo
