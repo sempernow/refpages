@@ -16,7 +16,7 @@ A 503 means the Ingress controller is active, but it **cannot find any healthy p
 
 A 502 means the Ingress controller **successfully reached a pod, but the network connection was refused or dropped instantly**. [8] 
 
-* Audit **Port Configurations**: Verify that the `service.port.number` in your Ingress matches the containerPort in your Pod template. A mismatch causes immediate connection refusal. [9, 10, 11] 
+* Audit **Port Configurations**: Verify that the `service.port.number` in your Ingress matches the `containerPort` in your Pod template. A mismatch causes immediate connection refusal. [9, 10, 11] 
 * Review **Controller Logs**: Run `kubectl logs -n <ingress-namespace> <ingress-controller-pod>` to see the exact upstream connection error. [12] 
 * Test **Internal Connectivity**: Launch a temporary curl pod inside the cluster to test if you can reach the backend Service IP directly bypass-passing the Ingress. [13] 
 * Check **Scheme Mismatch**: If your backend application expects HTTPS but the Ingress controller is trying to talk to it via HTTP (or vice versa), the handshake will fail.
@@ -34,7 +34,7 @@ A 504 means the Ingress controller successfully routed the request to the pod, b
 
 A 404 means the Ingress controller is working, but it **does not recognize the Host or Path** specified in your request. [20] 
 
-* Validate Ingress Class: Run `kubectl get ingress` and verify that the CLASS column matches your cluster's controller (e.g., nginx). If blank, add the `spec.ingressClassName` field.
+* Validate **Ingress Class**: Run `kubectl get ingress` and verify that the CLASS column matches your cluster's controller (e.g., nginx). If blank, add the `spec.ingressClassName` field.
 * Verify **Host Header**: Ensure your curl request or browser matches the `spec.rules[].host` defined in your Ingress YAML exactly.
 * Check **Path Formatting**: Verify the `spec.rules[].http.paths[].pathType`. If using `Exact`, ensure trailing slashes match perfectly; if using `Prefix`, verify your application can handle the sub-paths. [21, 22, 23, 24, 25] 
 

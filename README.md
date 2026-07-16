@@ -267,6 +267,7 @@
 ## [K8s.traefik.md](./REFs/K8s.traefik.md)
 ## [K8s.users.and.groups.sh](./REFs/K8s.users.and.groups.sh)
 ## [K8s.Volumes.md](./REFs/K8s.Volumes.md)
+## [K8s.VPA.md](./REFs/K8s.VPA.md)
 ## [Keycloak.md](./REFs/Keycloak.md)
 ## [LearnXinYmin.js](./REFs/LearnXinYmin.js)
 ## [LearnXinYmin.md](./REFs/LearnXinYmin.md)
