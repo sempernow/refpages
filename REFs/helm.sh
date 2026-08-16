@@ -14,14 +14,14 @@
 # Install
 ## Option 1. Latest release binary by trusted script:
 ok(){
-    url=https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    url=https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
     curl -sSL $url |/bin/bash 
     which helm &&
         helm version
 }
 ## Option 2. Declared version binary if not already (idempotent)
 ok(){
-    ver=v3.18.6
+    ver=v4.2.3
     arch=linux-amd64
     url=https://get.helm.sh/helm-$ver-$arch.tar.gz
     type -t helm >/dev/null 2>&1 &&
@@ -37,26 +37,40 @@ ok(){
 
 #######
 # Repos
-## Add repo of ArtifactHUB.io 
+## Add repo, e.g., ArtifactHUB.io 
 helm repo add hub $url
 ## Update repos list (cache)
 helm repo update
 # List Helm's environment variables/settings
 helm env
-## List installed repos
+## List cached repos
 helm repo list 
-## List releases (installed charts) of all namespaces
-helm list -A # --all-namespaces
+## List all charts of all repos in cache
+helm search repo
 
 #######################
 # Repos/Charts : Search
 repo=bitnami
 chart=nginx
-## Search for chart LOCALLY : Against all repos of `help repo list`
-helm search repo $chart 
+## Search for chart (latest version) : Against all repos of `help repo list`
+helm search repo $repo/$chart   # --versions (all versions)
+## OR
+helm search repo $chart         # --versions (all versions)
 ## Search for chart at ArtifactHub.io (hub)
 helm search hub $repo -o yaml 
 helm search hub $repo |grep $chart
+
+#################
+# Show chart info
+helm show --help
+    ## Available Commands:
+    ##   all         show all information of the chart
+    ##   chart       show the chart's definition
+    ##   crds        show the chart's CRDs
+    ##   readme      show the chart's README
+    ##   values      show the chart's value
+## Show chart's Chart.yaml file 
+helm show chart $repo/$chart
 
 ########################################
 # Charts : Install/Upgrade : Methods (*)
@@ -113,6 +127,9 @@ helm status $release
 
 # Test and get useful info on an installed chart (release).
 helm test $release
+
+# List all installed charts (releases) across all namespaces
+helm list -A # --all-namespaces
 
 # Declared state : Render chart templates locally per $values, and print resulting manifest (YAML). 
 helm template $chart --values $values --namespace $ns
