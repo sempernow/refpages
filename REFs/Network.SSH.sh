@@ -34,14 +34,14 @@ man ssh_config
 
         # Generate key pair : Default type (-t) is 'rsa' : No passphrase prompt (-N '')
             # Instead of using default key names (id_rsa, id_ecdsa, id_ed25519),
-                # Use a naming convention that allows for rotations per context (domain, account)
+                # Use a naming convention that allows for *rotations per context* (domain, account)
                 # E.g., ~/.ssh/local_$(id -un) for a key to all hosts on an RFC1918 (local) network:
-                key=~/.ssh/${domain}_$account
+                key=~/.ssh/${domain}_$account #... limits the blast radius to this context.
 
             # Elliptical
-                # Use ed25519 variant; best, though not yet FIPS-compliant
+                # Use ed25519 variant; best, though *not yet* FIPS-compliant
                 ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f $key
-                # Else use NIST-approved & FIPS compliant : bits: 256, 384 or 521
+                # Else use ECDSA; NIST-approved & FIPS compliant (Note ECDSA bits options: 256, 384 or 521)
                 ssh-keygen -t ecdsa -b 521 -C "$(id -un)@$(hostname)" -N '' -f $key
 
             # RSA : use bit length option with at least 2048 (OpenSSL default) else 4096
@@ -494,7 +494,7 @@ man ssh_config
                         ca_host_key=~/.ssh/$(hostname)_${algo}_key
                         ssh-keygen -t $algo -f $ca_host_key                                 # Private key
                         ssh-keygen -s $ca_host_key -I $(hostname) -h -f $ca_host_key.pub    # Public key
-                            -s ca_key # Certify (sign) a public key using the specified CA key.
+                            -s ca_key # Sign (certify) a public key using the specified CA key.
                             -I # Certificate identity (host or user name, depanding on type of cert)
                             -h # When signing a key, create host cert instead of user cert.
 
@@ -520,8 +520,6 @@ man ssh_config
                 # To avoid the warning about an unknown host, users' systems must trust 
                 # the CA's public key ($ca_host_key.pub) that was used to sign the HOST certificate.
 
-                #...
-
         # SSH Tunnel : Local Forwarding
             # Establish a local port (localhost:PORT) as a PROXY for a remote (IP:PORT) box
             # USE CASE: 
@@ -541,10 +539,23 @@ man ssh_config
                 -T    # disable pseudo-tty allocation
                 -vvvE # Log all connection details to file; `... -vvvE /tmp/ssh_session_log`
 
-            ssh -fNTL 2222:$ip_pvt:22 ${user}@$ip_jump 
-            #... access pvt box ($ip_jump:22) locally @ http://localhost:2222
-            ssh -fNTL 4444:want.com:80 user@jump.domain 
-            #... access want.com:80 locally @ http://localhost:4444
+            # Local clients access pvt box ($ip_jump:22) locally at http://localhost:2222
+                ssh -fNTL 2222:$ip_pvt:22 ${user}@$ip_jump 
+            # Local clients access pub want.com:443 locally at http://localhost:4444
+                ssh -fNTL 4444:want.com:443 user@jump.domain 
+                # /etc/hosts or C:\Windows\System32\drivers\etc\hosts
+                127.0.0.1 want.com
+                # Solutions to Virtual Hosting problem, where request fails 
+                # because Host header is localhost, not want.com
+                    # Option 1: Set Host header manually
+                    curl -H "Host: want.com" http://localhost:4444
+                    # Option 2: Use --resolve to fake DNS
+                    curl --resolve want.com:4444:127.0.0.1 http://want.com:4444
+                    # Option 3: Add to /etc/hosts
+                    echo "127.0.0.1 want.com" >> /etc/hosts
+                    # Now use: http://want.com:4444
+                    # Option 4: Use -L flag to follow redirects
+                    curl -L -H "Host: want.com" http://localhost:4444
 
             # @ ProxyCommand (ssh -W) : all KEYS are LOCAL (pvt key NOT UPLOADED to jump box)
                 # per ProxyCommand : all KEYS are LOCAL
@@ -596,45 +607,40 @@ man ssh_config
             ssh -p 2222 -R 80:localhost:8088 user@host2.domain
             #... access host2.domain:80 locally @ http://localhost:8088
 
-
-        # SOCKS[5] : local proxy server per SSH tunnel (dynamic port-forwarding).
+        # SOCKS[5] : local proxy server in SSH tunnel (dynamic port-forwarding).
             # SSH acts as a SOCKS5 server at a local port to dynamically route traffic 
             # of various protocols to remote destinations/ports based on client(s) requests, 
             # without the need for predefined port forwarding rules for each service.
+            # The ssh client (CLI) host is running the SOCKS server, but firewall rules etal is on its target host.
             # USE CASE: Local node has no web access, or restricted web access, 
-            # but has access to a remote node that has (better) web access.
+            # but has SSH access to a remote node that has (better) web access.
+            # DO NOT bind to 0.0.0.0, else maximally vulnerable.
             # Configure (OS/App) PER APPLICATION https://wiki.archlinux.org/index.php/OpenSSH#Encrypted_SOCKS_tunnel
-                ssh -D 5555 -fNqTCv $user@$host #... tunnel from localhost:5555 to remote host
+            # IANA SOCKS5 port is 1080, but use whatever.
+                ssh  -CfND 1080 $user@$host #... tunnel from localhost:1080 to remote host
                     # Options:
                         -D [$bind_address:]$port  # Dynamic APPLICATION-LEVEL port forwarding; 
-                            # Create SOCKS5 server listen on local port (1025-65536).
+                            # Create local SOCKS5 server listen on local port (1025-65536).
                             # The APPLICATION PROTOCOL determines destination IP:PORT;
-                            # A $bind_address of localhost would indicate listening port bound FOR LOCAL USE ONLY, 
-                            # whereas an empty address or "*"" indicates that port should be available from all interfaces.
                         -f  # fork process to background
                         -N  # No commands; not interactive once tunnel is up.
-                        -q  # quiet mode; suppress messages
-                        -T  # disable pseudo-tty allocation; establish a tunnel-only connection
                         -C  # compress all data 
-                        -v  # verbose (optional); use for debugging.
-                # So (local) client apps use the local entry point : localhost:5555
-                # Optionally set binding address (network interface) "-D $BIND:$PORT",
-                # else SOCKS5 server listens on ALL network interfaces.
+
+                # So (local) client apps use the local entry point : localhost:1080
                 # More detailed description ...
                 # https://en.wikibooks.org/wiki/OpenSSH%2FCookbook%2FProxies_and_Jump_Hosts#SOCKS_Proxy
                 #
                 # In a setup where back-end data stores are protected in a private subnet having no direct internet access, 
-                # a SOCKS proxy server RUNNING ON THE JUMP BOX would allow for time sync and other controlled internet access.
-                    ssh -D $jump_box_ip:$jump_box_port  ...
+                # a local SOCKS proxy server proxies the JUMP BOX to allow for time sync and other controlled internet access.
+                    ssh -i /path/to/jump/key.pem -CfND $port $jump
                     # - Security and Isolation: 
                         # The primary role of the "jump box" AKA "bastion host" 
                         # is to act as a secure gateway between different network zones, 
                         # particularly between a less secure zone and a secure zone. 
-                        # Running the SOCKS proxy on the jump box aligns with this purpose 
-                        # because it centralizes access control and monitoring.
+                        # Running the SOCKS proxy from our local "ssh -D ..." (client) to the jump box 
+                        # aligns with this purpose because it centralizes access control and monitoring.
                     # - Reduced Exposure: 
-                        # By running the SOCKS proxy on the jump box, 
-                        # the back-end data stores remain isolated 
+                        # The back-end data stores remain isolated 
                         # and their exposure to the network is minimized. 
                         # This configuration helps in maintaining the principle of least privilege, 
                         # reducing the attack surface by not adding additional services on the data store servers themselves.
@@ -644,91 +650,195 @@ man ssh_config
                         # This setup also makes it easier to enforce consistent security policies and to audit access logs.
                     # - Flexibility and Efficiency: 
                         # The jump box can handle requests from multiple back-end servers in a centralized manner, 
-                        # making network management more efficient. It also simplifies the network architecture by avoiding the need for each back-end server 
-                        # to run its own instance of the proxy software.
+                        # making network management more efficient. It also simplifies the network architecture 
+                        # by avoiding the need for each back-end server to run its own instance of the proxy software.
 
-                # APPLICATIONS MUST BE CONFIGURED to use SOCKS proxy server, e.g., 
-                    # Firefox > Options > Advanced > Network > Settings 
-                    # > "Manual proxy config" > "SOCKS Host:" > `localhost`, port
-                    # https://www.digitalocean.com/community/tutorials/how-to-route-web-traffic-securely-without-a-vpn-using-a-socks-tunnel
+            # USE CASEs
+                # Gateway : Local apps use local proxy at localhost:1080 to access destination servers via remote gateway.
+                ssh -i /path/to/gateway/key.pem \
+                    -o ServerAliveInterval=15 \
+                    -o ServerAliveCountMax=3 \
+                    -o TCPNoDelay=yes \
+                    -o ExitOnForwardFailure=yes \
+                    -o StrictHostKeyChecking=yes \
+                    -o UserKnownHostsFile=/dev/null \
+                    -o LogLevel=VERBOSE \
+                    -CfN -D 1080 \
+                    user@gateway_ip
+                    #... SSH server listens on 127.0.0.1:1080 ONLY; okay/better to declare explicitly
 
-                    # http_proxy (Linux env var) : normally set to configure HTTP(S)
-                        export http_proxy=http://$_SERVER:$_PORT/
-                        export http_proxy=http://$_USERNAME:$_PASSWORD@$_SERVER:$_PORT/
+                    # Additional opts : handle multiple concurrent sessions
+                    opts='-o ControlMaster=auto -o ControlPath=~/.ssh/socks-%r@%h:%p -o ControlPersist=600'
+                    
+                    # autossh for resiliency : reconnnect on fail
+                    autossh -M 0 -i /path/to/key.pem $opts -CfN -D 1080 user@gateway_ip
 
-                    # Example
-                        # From pvt box having NO WEB ACCESS (subnet deny comms to/from anywhere outside VPC), 
-                        # establish jump box (that has web access) as SOCKS server, to proxy for pvt box:
-                        user='ubuntu'
-                        ip_jump_pvt='10.0.101.194' # Private IP of jump box
-                        key_jump=/home/ubuntu/.ssh/cluster-aws.pem 
+                    # Rate limit using iptables
+                    iptables -A INPUT -p tcp --dport 1080 -m connlimit --connlimit-above 50 -j REJECT
 
-                        # Establish jump box as web proxy (server), accessible from 127.0.0.1:5128
-                        ssh -D 5128 -f -C -q -N ${user}@$ip_jump_pvt -i $key_jump # 3128 is IANA proxy; 5128 no IANA
-                        
-                        # Validate the tunnel is up
-                        ps aux |grep ssh
+                    # Or, as a systemd service
+                    # /etc/systemd/system/socks5-gateway.service
+                    [Unit]
+                    Description=SOCKS5 Gateway Proxy
+                    After=network.target
 
-                        export http_proxy='socks5h://127.0.0.1:5522'
-                        curl -sI keycloak.local             # HTTP/1.1 200 OK ...
-                        export https_proxy='socks5h://127.0.0.1:5522'
-                        curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
+                    [Service]
+                    Type=simple
+                    User=proxyuser
+                    ExecStart=/usr/bin/ssh ...# Add the full statement here
+                    Restart=always
+                    RestartSec=10
+                    LimitNOFILE=65535
 
-                        # Configure the box (All The Things) to use SOCKS
+                    [Install]
+                    WantedBy=multi-user.target
 
-                            # Declare proxy params : current shell (cofigures OS and some utilities @ this shell)
-                            export port='5128'
-                            export forward=127.0.0.1:$port
-                            export http_proxy=socks5h://$forward
-                            export https_proxy=socks5h://$forward
-                            #... socks5h is 'SOCKS5 with remote DNS resolution' (@ man apt-transport-http)
+                # Bridge to Jump Box : Wi-Fi clients use proxy $bridghIP:1080 to access jump box
+                    bridgeIP=192.168.1.100
+                    ssh -i /path/to/jump/key.pem $opts -CfND "$bridgeIP:1080" user@jump_box
+                    # WiFi Client (192.168.1.50) 
+                    #     ↓
+                    # Bridge Machine (192.168.1.100) [runs SSH with -D 192.168.1.100:1080]
+                    #     ↓
+                    # Jump Box (10.0.0.10)
 
-                            # Declare proxy params : all shells (persistent) (idempotently append to config)
-                            conf='/etc/profile'
-                            [[ -f $conf ]] || sudo touch $conf
-                            [[ "$(cat /etc/profile |grep 'http_proxy')" ]] || {
-                                echo "export http_proxy=socks5h://$forward" \
-                                    |sudo tee -a $conf
-                            }
-                            [[ "$(cat /etc/profile |grep 'https_proxy')" ]] || {
-                                echo "export https_proxy=socks5h://$forward" \
-                                    |sudo tee -a $conf
-                            }
+                # Harden
+                    # Method 1. Restrict to Specific Local User
+                        # Create dedicated proxy group and user
+                        sudo groupadd -r proxyuser  # -r creates system group (GID < 1000)
+                        # Create user and assign to group
+                        sudo useradd -m -s /bin/false -g proxyuser proxyuser
+                        # Run SSH as proxyuser
+                        sudo -u proxyuser ssh -CfN -D 1080 user@gateway_ip
+                        # Use filesystem permissions
+                        sudo chown proxyuser:proxyuser /path/to/key.pem
+                        sudo chmod 600 /path/to/key.pem
 
-                            # Declare proxy params : apt-get application (idempotently append to config)
-                            conf='/etc/apt/apt.conf.d/proxy.conf'
-                            [[ -f $conf ]] || sudo touch $conf
-                            [[ "$(cat $conf |grep "socks5h://$forward/")" ]] || {
-                                echo "Acquire::https::Proxy \"socks5h://$forward/\";" \
-                                    |sudo tee -a $conf
-                                echo "Acquire::http::Proxy \"socks5h://$forward/\";" \
-                                    |sudo tee -a $conf
-                            } 
-                            #... apt-get reads neither http_proxy nor https_proxy
+                    # Method 2. Firewall Local Access
+                        # Restrict localhost:1080 to specific users via iptables
+                        iptables -A OUTPUT -o lo -p tcp --dport 1080 -m owner --uid-owner proxyuser -j ACCEPT
+                        iptables -A OUTPUT -o lo -p tcp --dport 1080 -j DROP
 
-                            # Declare proxy params : docker.service.d (idempotently append to config)
-                            conf='/etc/systemd/system/docker.service.d/http-proxy.conf'
-                            [[ -f $conf ]] || { 
-                                sudo mkdir -p '/etc/systemd/system/docker.service.d'
-                                sudo touch $conf 
-                            }
-                            [[ "$(cat $conf |grep '[Service]')" ]] || {
-                                echo "[Service]" |sudo tee -a $conf
-                            }
-                            [[ "$(cat $conf |grep "socks5://$forward/")" ]] || {
-                                echo "Environment=\"HTTP_PROXY=socks5://$forward/\"" |sudo tee -a $conf
-                                export docker_reconfig_flag=1
-                            }
+                    # Method 3. SELinux/AppArmor Policies
+                        # SELinux policy to restrict proxy access
+                        # Only proxyuser can connect to port 1080
+                        semanage port -a -t ssh_port_t -p tcp 1080
+                        # Create policy module for proxyuser
 
-                        # Test : SUCCESS
-                        curl -I http://google.com
-                        curl -I https://google.com
+                    # Method 4. Use Unix Socket Instead of TCP
+                        # Create Unix socket proxy (safer than TCP)
+                        socat UNIX-LISTEN:/tmp/proxy.sock,fork SOCKS5:localhost:1080
+                        # Now only processes with filesystem access can use it
+                        curl --socks5 /tmp/proxy.sock http://example.com
 
-                        # Test : SUCCESS
-                        sudo apt-get update 
+                    # Method 5. Isolate with ControlMaster
+                        # Create isolated proxy session
+                        ssh -i /path/to/gateway/key.pem \
+                            -o ServerAliveInterval=15 \
+                            -o ServerAliveCountMax=3 \
+                            -o TCPNoDelay=yes \
+                            -o ExitOnForwardFailure=yes \
+                            -o StrictHostKeyChecking=yes \
+                            -o UserKnownHostsFile=/dev/null \
+                            -o LogLevel=VERBOSE \
+                            -o ControlMaster=auto \
+                            -o ControlPath=/tmp/proxy-%r.sock \
+                            -CfN -D 1080 \
+                            user@gateway_ip
+                        #... Only processes that can access /tmp/proxy-user.sock can use it
 
-                        kill -9 $_PID 
-                        #... terminate the tunnel; does not survive the session, regarldess
+                # REVERSE SOCKS (native) command : -R
+                    # Here we want a PUBLIC client 
+                    # (home laptop or a cloud Jump Box) 
+                    # to have full access to private host(s) AKA the target.
+                    # The target's firewall need allow only OUTBOUND SSH.
+                    # Run this from the Private Host:
+                    ssh -R 1080 $user@$jump
+                    # SSH automatically spawns a dynamic SOCKS engine inside the tunnel. 
+                    # The Jump Box port 1080 instantly becomes a dynamic gateway into the private host's network.
+
+            # APPLICATIONS MUST BE CONFIGURED to use SOCKS proxy server, e.g., 
+                # Firefox > Options > Advanced > Network > Settings 
+                # > "Manual proxy config" > "SOCKS Host:" > `localhost`, port
+                # https://www.digitalocean.com/community/tutorials/how-to-route-web-traffic-securely-without-a-vpn-using-a-socks-tunnel
+
+                # http_proxy (Linux env var) : normally set to configure HTTP(S)
+                    export http_proxy=http://$_SERVER:$_PORT/
+                    export http_proxy=http://$_USERNAME:$_PASSWORD@$_SERVER:$_PORT/
+
+                # Example
+                    # From pvt box having NO WEB ACCESS (subnet deny comms to/from anywhere outside VPC), 
+                    # establish jump box (that has web access) as SOCKS server, to proxy for pvt box:
+                    user='ubuntu'
+                    ip_jump_pvt='10.0.101.194' # Private IP of jump box
+                    key_jump=/home/ubuntu/.ssh/cluster-aws.pem 
+
+                    # Establish jump box as web proxy (server), accessible from 127.0.0.1:1080
+                    ssh -D 1080 -f -C -q -N ${user}@$ip_jump_pvt -i $key_jump
+                    
+                    # Validate the tunnel is up
+                    ps aux |grep ssh
+
+                    export http_proxy='socks5h://127.0.0.1:5522'
+                    curl -sI keycloak.local             # HTTP/1.1 200 OK ...
+                    export https_proxy='socks5h://127.0.0.1:5522'
+                    curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
+
+                    # Configure the host (all apps abiding those params) to use SOCKS
+
+                        # Declare proxy params : current shell (cofigures OS and some utilities @ this shell)
+                        export port='1080'
+                        export forward=127.0.0.1:$port
+                        export http_proxy=socks5h://$forward
+                        export https_proxy=socks5h://$forward
+                        #... socks5h is 'SOCKS5 with remote DNS resolution' (@ man apt-transport-http)
+
+                        # Declare proxy params : all shells (persistent) (idempotently append to config)
+                        conf='/etc/profile'
+                        [[ -f $conf ]] || sudo touch $conf
+                        [[ "$(cat /etc/profile |grep 'http_proxy')" ]] || {
+                            echo "export http_proxy=socks5h://$forward" |
+                                sudo tee -a $conf
+                        }
+                        [[ "$(cat /etc/profile |grep 'https_proxy')" ]] || {
+                            echo "export https_proxy=socks5h://$forward" |
+                                sudo tee -a $conf
+                        }
+
+                        # Declare proxy params : apt-get application (idempotently append to config)
+                        conf='/etc/apt/apt.conf.d/proxy.conf'
+                        [[ -f $conf ]] || sudo touch $conf
+                        [[ "$(cat $conf |grep "socks5h://$forward/")" ]] || {
+                            echo "Acquire::https::Proxy \"socks5h://$forward/\";" |
+                                sudo tee -a $conf
+                            echo "Acquire::http::Proxy \"socks5h://$forward/\";" |
+                                sudo tee -a $conf
+                        } 
+                        #... apt-get reads neither http_proxy nor https_proxy
+
+                        # Declare proxy params : docker.service.d (idempotently append to config)
+                        conf='/etc/systemd/system/docker.service.d/http-proxy.conf'
+                        [[ -f $conf ]] || { 
+                            sudo mkdir -p '/etc/systemd/system/docker.service.d'
+                            sudo touch $conf 
+                        }
+                        [[ "$(cat $conf |grep '[Service]')" ]] || {
+                            echo "[Service]" |sudo tee -a $conf
+                        }
+                        [[ "$(cat $conf |grep "socks5://$forward/")" ]] || {
+                            echo "Environment=\"HTTP_PROXY=socks5://$forward/\"" |sudo tee -a $conf
+                            export docker_reconfig_flag=1
+                        }
+
+                    # Test : SUCCESS
+                    curl -I http://google.com
+                    curl -I https://google.com
+
+                    # Test : SUCCESS
+                    sudo apt-get update 
+
+                    kill -9 $_PID 
+                    #... terminate the tunnel; does not survive the session, regarldess
 
 
         # SSH-based VPN 

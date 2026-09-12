@@ -368,6 +368,7 @@
 ## [Security.FIPS.STIG.md](./REFs/Security.FIPS.STIG.md)
 ## [SELinux.md](./REFs/SELinux.md)
 ## [server.benchmark.md](./REFs/server.benchmark.md)
+## [server.SOCKS5.sh](./REFs/server.SOCKS5.sh)
 ## [SMTP.md](./REFs/SMTP.md)
 ## [sockets.UNIX.TCP.md](./REFs/sockets.UNIX.TCP.md)
 ## [Standards.Protocols.2009.txt](./REFs/Standards.Protocols.2009.txt)
