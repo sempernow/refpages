@@ -7,6 +7,11 @@ Get-DiskImage
 ## OR
 Get-Volume 
 
+## Format FAT32
+Format-Volume -FileSystem FAT32 -Force -DriveLetter X
+## OR
+format /FS:FAT32 /Q X:
+
 # Mount/Unmount ISO file
 Mount-DiskImage -ImagePath C:\TEMP\a.iso
 Dismount-DiskImage -ImagePath C:\TEMP\a.iso
