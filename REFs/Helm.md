@@ -82,6 +82,9 @@ k -n ${ns:-default} get deploy -l app.kubernetes.io/name=$release \
     -o yaml |tee k-n.${ns:-default}.get.deploy.${release}.yaml
 ```
 
+---
+
+# Charts
 
 ### Install [GitLab](https://artifacthub.io/packages/helm/gitlab/gitlab) 
 
@@ -181,6 +184,8 @@ k get pv -A |grep gitlab |awk '{print $1}' |xargs -I{} kubectl delete pv {}
   so needn't bother with those.
 - May not need to delete PV/PVCs
 
+---
+
 ### Install [Kiali Operator](https://artifacthub.io/packages/olm/community-operators/kiali)
 
 #### TL;DR 
@@ -237,6 +242,8 @@ helm upgrade --install $release $chart \
     > helm.install.${ns-default}.$release.log 
 
 ```
+
+---
 
 ### Install [Jaeger](https://artifacthub.io/packages/helm/jaegertracing/jaeger)
 
@@ -339,6 +346,7 @@ k exec $abox -- curl -s $svc_name.${ns:-default}.svc.cluster.local
 #=> <a href="/graph">Found</a>.
 ```
 
+---
 ### Install [Prometheus](https://artifacthub.io/packages/helm/prometheus-community/prometheus)
 
 #### TL;DR 
@@ -453,6 +461,7 @@ k exec $abox -- curl -s $svc_name.${ns:-default}.svc.cluster.local
 #=> <a href="/graph">Found</a>.
 ```
 
+---
 ### Install [Grafana](https://artifacthub.io/packages/helm/grafana/grafana)
 
 #### TL;DR 
@@ -539,6 +548,7 @@ k exec $abox -- curl -sLI $svc_name.$ns.svc.cluster.local
 ```
 - `curl -L ...` to follow redirects (here: 302)
 
+---
 ### Install [OpenLDAP](https://artifacthub.io/packages/helm/helm-openldap/openldap-stack-ha)
 
 ```text
@@ -602,7 +612,8 @@ k -n ${ns:-default} get $all |grep $release
 - `helm.install.ldap.log`
 
 
-### Install [`gaffer/hdfs`](https://artifacthub.io/packages/helm/gaffer/hdfs) Chart | [GitHub](https://github.com/gchq/Gaffer)
+---
+### Install HDFS : [`gaffer/hdfs`](https://artifacthub.io/packages/helm/gaffer/hdfs) Chart | [GitHub](https://github.com/gchq/Gaffer)
 
 #### TL;DR 
 
@@ -613,7 +624,8 @@ as well as its read/write methods by push/pull between HDFS and local FS.
 
 #### See `DevOps/.../Hadoop/LOG.md`
 
-### Install [`bitnami/keycloak`](https://artifacthub.io/packages/helm/bitnami/keycloak) Chart
+---
+### Install Keycloak : [`bitnami/keycloak`](https://artifacthub.io/packages/helm/bitnami/keycloak) Chart
 
 >Keycloak SSO server runs as an overlay on top of Wildfly (AKA JBoss; Java EE; Java EAP) application server. RedHat project. Latest: `22.0.0`
 
@@ -705,7 +717,8 @@ curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
 ```
 
 
-### Install [`sonatype/nexus`](https://artifacthub.io/packages/helm/sonatype/nexus-repository-manager) Chart
+--- 
+### Install NXRM : [`sonatype/nexus`](https://artifacthub.io/packages/helm/sonatype/nexus-repository-manager) Chart
 
 #### TL;DR 
 
@@ -750,6 +763,7 @@ replicaset.apps/nex-nexus-repository-manager-76dc6d5fb9   1         1         1 
 ```
 
 
+---
 ### Install [`stevehipwell/nexus3`](https://artifacthub.io/packages/helm/stevehipwell/nexus3) Chart
 
 #### TL;DR 
@@ -792,7 +806,8 @@ replicaset.apps/my-nexus3-69d49695b8   1         1         1       26m
 
 
 
-### Install [`bitnami/jenkins`](https://artifacthub.io/packages/helm/bitnami/jenkins) Chart
+---
+### Install Jenkins : [`bitnami/jenkins`](https://artifacthub.io/packages/helm/bitnami/jenkins) Chart
 
 #### TL;DR 
 
@@ -801,7 +816,8 @@ Success!
 See `DevOps/.../minikube/jenkins/LOG.md`
 
 
-### Install [`bitnami/mysql`](https://artifacthub.io/packages/helm/bitnami/mysql) Chart
+---
+### Install MySQL : [`bitnami/mysql`](https://artifacthub.io/packages/helm/bitnami/mysql) Chart
 
 #### TL;DR 
 

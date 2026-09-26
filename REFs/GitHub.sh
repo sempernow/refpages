@@ -51,13 +51,13 @@ ssh -T git@github.com
             #=> origin  https://github.com/USERNAME/OTHERREPOSITORY.git (push)
 
     # (re)set|add : ssh protocol  
-    git remote set-url origin ${sshKeyUser}@${sshKeyHost}:${_USERNAME}/${PWD##*/}.git
+    git remote set-url origin ${sshKeyUser}@${sshKeyHost}:${username}/${PWD##*/}.git
     git remote add origin ${sshKeyUser}@${sshKeyHost}:${githubUser}/${githubRepo}.git 
     # E.g., 
     git clone ssh://git@github.com/f06ybeast/test-ignores
     
   # (re)set protocol [to https] and/or repo ...  
-    git remote set-url origin https://github.com/$_USERNAME/OTHERREPOSITORY.git
+    git remote set-url origin https://github.com/$username/OTHERREPOSITORY.git
 
 # basic maintenance ops whilst @ local repo
 git init|status|add|commit|log
@@ -67,17 +67,17 @@ git init|status|add|commit|log
   gitk HEAD..FETCH_HEAD  # visualize fetch vs. local head
       
 # Clone
-  # per https
-  git clone https://github.com/$_USERNAME/$_REPONAME.git
-  # per ssh
-  git clone git@github.com:$_USERNAME/${PWD##*/}.git
+  # HTTPS mode
+  git clone https://github.com/$username/$reponame.git
+  # SSH mode
+  git clone git@github.com:$username/${PWD##*/}.git
   git clone git@github.com:$( git config --global user.name )/${PWD##*/}.git
 
 # Change remote associated with local repo; remote must exist
   
-  # per https 
+  # HTTPS mode
   git remote add origin https://github.com/USERNAME/REPONAME.git
-  # per ssh
+  # SSH mode
   git remote add origin git@github.com:USERNAME/REPONAME.git # private
   
     # ??? solution to bogus "fatal: remote origin already exists." msg ???
@@ -112,17 +112,16 @@ git init|status|add|commit|log
   # https://pages.github.com/ 
   # https://jekyllrb.com/docs/quickstart/
   git init # start fresh project/repo [local @ PWD]
-  # clone new repo per REPONAME = USERNAME.github.io
-  git clone https://github.com/$_USERNAME/$_REPONAME
+  # clone new repo : REPONAME = USERNAME.github.io
+  git clone https://github.com/$username/$reponame
   # add index.html
-  pushd "$_USERNAME.github.io"
+  pushd "$username.github.io"
   echo 'GitHub Pages foo' > 'index.html'
   git add .  # or `-A` 
   git commit -m 'initial'
-  # URL @ ... 
-  https://$_USERNAME.github.io/
+  # URL @ https://$username.github.io/
 
-  `gh-pages` # SPECIAL BRANCH NAME 
+  # `gh-pages` # SPECIAL BRANCH NAME 
   # if `gh-pages` @ `repoName`, 
   # then `username.github.io/repoName` is the associated GitHub Pages
   # So, @ new local/remote repo
@@ -146,33 +145,18 @@ git init|status|add|commit|log
 
 
   # SSH Key-pair Naming Convention
-  /c/Users/${USERNAME}/.ssh/github_${_USERNAME}
-  /c/Users/${USERNAME}/.ssh/github_${_USERNAME}.pub
+  /c/Users/${USERNAME}/.ssh/github_${username}
+  /c/Users/${USERNAME}/.ssh/github_${username}.pub
 
   # Generate SSH key pair
-  ssh-keygen -t ed25519 -C  $_USER_EMAIL_ADDRESS # use GitHub user/email account
-    # Enter file in which to save the key; ~/.ssh/PVT_KEY_FNAME
-    # Next, you'll be asked to enter a passphrase.
+  ssh-keygen 
     # https://help.github.com/articles/working-with-ssh-key-passphrases/
-    #=> Enter passphrase (empty for no passphrase): [Type a passphrase] # LEFT IT BLANK
-    #=> Enter same passphrase again: [Type passphrase again]
-    # @ GitHub : https://github.com/settings/keys
-        # Copy content of the public key file (.pub) we just generated into the apropos box @ GitHub
-        # GitHub will display its title and FINGERPRINT as a reference:
-            # 2023-05-14
-            # SHA256:40rMcBvUa2Zi/tDfO8PCIeLTdoK8oLiQeRgMBPCa3IQ 
-  
+    # https://github.com/settings/keys
+
   # Get fingerprint of public/private ssh key ... 
     # sans -E, output is in SHA256; -B for blather
     ssh-keygen -lf  FILE_PATH         # SHA256
-    ssh-keygen -E md5 -lf FILE_PATH   # md5
-    ssh-keygen -t ecdsa -lf FILE_PATH # specify key type ecdsa = elip-rsa
-    ssh-keygen -E md5 -lf /c/Users/USERNAME/.ssh/id_rsa   # public/private are same
-    ssh-keygen -t ecdsa -lf /c/Users/USERNAME/.ssh/id_rsa # specify key type ecdsa = elip-rsa
-
-  # Add public key to GitHub account; paste @ account admin 'SSH KEYS'
-    cat $_PUBLIC_SSH_KEY_PATH
-    #=> ssh-rsa AAAAB3QzaC1ycQ ... ss8AtZd8UgoU= user@host.domain
+    #... Copy/Paste the public key into form at your GitHub account
     
   # Connect [automatically]; @ 1st try [unknown_hosts], asks; yes/no verification
     # (OR use script @ ~/.bin/github)
@@ -181,20 +165,20 @@ git init|status|add|commit|log
     eval "$(ssh-agent -s)" # ssh-agent handles passphrase entry
     #=> Agent pid {#}
     # Add private key identities to the authentication agent
-    ssh-add $_PRIVATE_SSH_KEY_PATH
+    ssh-add $private_key_path
     ssh -T git@github.com # '-i' :: identity [private-key] file; default [v.2] is 'id_rsa'
 
-# Create new REMOTE REPO from command line per HTTPS
+# Create new REMOTE REPO from command line
 # UPDATE : FAILs ...
-  # per GitHub API [uses JSON]  https://developer.github.com/v3/repos/#create
+  # use GitHub API [uses JSON]  https://developer.github.com/v3/repos/#create
   # OR
-  # per Curl
-  curl -u 'USER:PASS' https://api.github.com/user/repos -d '{"name":"REPONAME", "description":"New repo per Curl."}'
+  # use Curl
+  curl -u 'USER:PASS' https://api.github.com/user/repos -d '{"name":"'$reponame'", "description":"'$description'"}'
 
   # AFTER created ... 
   git init
   git commit -m "first commit"
 
-  git remote add origin git@github.com:$_USERNAME/$_REPONAME.git  # ssh mode
+  git remote add origin git@github.com:$username/$reponame.git  # ssh mode
   git push -u origin master  # publish local repo to new GitHub repo [default; remember: -u]
 

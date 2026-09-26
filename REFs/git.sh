@@ -309,6 +309,19 @@ git remote add origin git@$ourHost:$ourAcct/$ourPrj.git
     # SSH login sans creds prompts : User is *always* "git", not your username
     ssh -T -i $keypath git@${server} # Must use -T (no TTY), else exit code 255
 
+    # Git host user's FPRs (used to validate)
+    curl -s https://$host/$account.keys |ssh-keygen -lf -
+        # Git host user's public keys 
+        curl https://$host/$account.keys
+        # @ GitHub
+        curl https://github.com/$account.keys
+        curl https://api.github.com/users/$account/keys    # API : JSON response body
+        #> {id: number, key: string, created_at: string, last_used: string}
+        # @ GitLab
+        curl https://gitlab.com/$account.keys
+        curl https://gitlab.com/api/v4/users/$account/keys # API : JSON response body
+        # [{id: number, title: string, created_at: string, expires_at : string, last_used_at: string, key: string, usage_type: string}]
+
     # Push (securely)
     git push -u origin main # initial : -u, --set-upstream
     git push    

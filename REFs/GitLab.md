@@ -323,8 +323,25 @@ ssh gitlab
 ```
 
 
+## GitLab User's SSH Keys and fingerprints
+
+```bash
+host=gitlab.com
+
+# Git host user's FPRs 
+curl -s https://$host/$account.keys |ssh-keygen -lf -
+
+# Git host user's keys 
+curl https://$host/$account.keys
+
+# @ GitLab
+curl https://gitlab.com/$account.keys
+curl https://gitlab.com/api/v4/users/$account/keys # API : JSON response body
+# [{id: number, title: string, created_at: string, expires_at : string, last_used_at: string, key: string, usage_type: string}]
+```
 
 ### &nbsp;
+
 <!-- 
 
 # Markdown Cheatsheet
