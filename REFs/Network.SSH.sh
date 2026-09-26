@@ -19,7 +19,7 @@ man ssh_config
     # SSH : TL;DR
 
         # Launch a login shell through an SSH tunnel
-            ssh -i $_KEY_PATH ${user}@${hostname_OR_ip}
+            ssh -i $key_path ${user}@${hostname_OR_ip}
             ## If host is Git server (GitHub/GitLab), then user is 'git' *not* the ssh user.
             ssh -T -i ~/.ssh/gitlab git@gitlab.com # -T to DISABLE tty/pty allocation.
             ## Manage per-host connections DECLARATIVELY at ~/.ssh/config : man ssh_config
@@ -36,37 +36,36 @@ man ssh_config
             # Instead of using default key names (id_rsa, id_ecdsa, id_ed25519),
                 # Use a naming convention that allows for *rotations per context* (domain, account)
                 # E.g., ~/.ssh/local_$(id -un) for a key to all hosts on an RFC1918 (local) network:
-                key=~/.ssh/${domain}_$account #... limits the blast radius to this context.
+                key=~/.ssh/${target_host}_$account # Limits blast radius to this context.
 
+            # Default : Generates an ED25519 pair at ~/.ssh/id_ed25519 
+                ssh-keygen # Queries for target location (verify[,overwrite]) and passphrase
             # Elliptical
                 # Use ed25519 variant; best, though *not yet* FIPS-compliant
-                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f $key
+                ssh-keygen -t ed25519 -C "$(id -un)@$(hostname)" -N '' -f $key_path
                 # Else use ECDSA; NIST-approved & FIPS compliant (Note ECDSA bits options: 256, 384 or 521)
-                ssh-keygen -t ecdsa -b 521 -C "$(id -un)@$(hostname)" -N '' -f $key
-
+                ssh-keygen -t ecdsa -b 521 -C "$(id -un)@$(hostname)" -N '' -f $key_path
             # RSA : use bit length option with at least 2048 (OpenSSL default) else 4096
-                ssh-keygen -t rsa -b 2048 -C "$(id -un)@$(hostname)" -N '' -f $key 
+                ssh-keygen -t rsa -b 2048 -C "$(id -un)@$(hostname)" -N '' -f $key_path 
 
             # Re(Set) key's passphrase (local security)
-                ssh-keygen -p -P $old -P $new -f $_KEY_PATH 
-
+                ssh-keygen -p -P $old -P $new -f $key_path 
             # Re(Set) key's comment : user's email address or $(id -un)@$(hostname)
-                ssh-keygen -c -C "$(id -un)@$(hostname)" -f $_KEY_PATH
+                ssh-keygen -c -C "$(id -un)@$(hostname)" -f $key_path
 
             # Show fingerprint (FPR) of keypair : either key of a pair have same FPR
-                ssh-keygen -l[v] -f $_KEY_PATH # -v : show visual in addition to the hash.
-
-            # Show fingerprint(s) of KNOWN (remote) HOST(s) 
+                ssh-keygen -l[v] -f $key_path # -v : show visual in addition to the hash.
+            # Show FPRs of KNOWN (remote) HOST(s) 
                 ssh-keygen -lf ~/.ssh/known_hosts
 
         # Push PUBLIC key to remote (SSH server)
-            ssh-copy-id -i $key ${user}@$host
+            ssh-copy-id -i $key_path ${user}@$host
 
         # @ PUSH KEY TO HOST (ssh-copy-id) SECURELY 
             # 1. List FPRs of host : scan a host's key(s) and print the fingerprint(s)
                 ssh-keyscan $host 2>/dev/null |ssh-keygen -lf -
             # 2. Push key on query ONLY IF host CLAIM VALIDATES AGAISNT the SCAN above (1).
-                ssh-copy-id -i $key ${user}@$host
+                ssh-copy-id -i $key_path ${user}@$host
                 #... Answer prompt w/ 'yes' if host claim is valid.
                 # Host then prompts for password if sshd config allows that,
                 # lest host ~/.ssh/authorized_keys file contains another of your keys 
@@ -172,7 +171,7 @@ man ssh_config
         /tmp/home/root/.ssh/authorized_keys 
 
             # Push PUBLIC key to remote by referencing PRIVATE key "identity file" (-i)
-            ssh-copy-id -i PRIVATE_KEY_ID_FILE -p PORT_NUMBER USER@HOST.DOMAIN 
+            ssh-copy-id -i $key_path -p $number $user@$host 
             #... only if remote already has client's key, or password login is available, 
             # else must use some out-of-band process to insert key into remote's authorized_keys file.
 
@@ -180,8 +179,20 @@ man ssh_config
         # Show fingerprints of a host's keys gathered from a scan
         # Public and private keys (of a pair) have the SAME fpr.
         # RUN THIS prior to 1st connect : validate host's claim against it.
-            ssh-keyscan $host |ssh-keygen -lf -             # Includes comments
-            ssh-keyscan $host 2>/dev/null |ssh-keygen -lf - # Sans cruft
+            ssh-keyscan $host |ssh-keygen -lf -             # Includes host-response text
+            ssh-keyscan $host 2>/dev/null |ssh-keygen -lf - # Sans 
+        # Git host user's FPRs 
+            curl -s https://$host/$account.keys |ssh-keygen -lf -
+            # Git host user's public keys 
+                curl https://$host/$account.keys
+                # @ GitHub
+                curl https://github.com/$account.keys
+                curl https://api.github.com/users/$account/keys    # API : JSON response body
+                #> {id: number, key: string, created_at: string, last_used: string}
+                # @ GitLab
+                curl https://gitlab.com/$account.keys
+                curl https://gitlab.com/api/v4/users/$account/keys # API : JSON response body
+                # [{id: number, title: string, created_at: string, expires_at : string, last_used_at: string, key: string, usage_type: string}]
 
         # RUN THIS on any subsequent connection to validate
             # Default hash AKA "Encryption" (-E) shown is SHA256 
@@ -215,7 +226,7 @@ man ssh_config
     # CONNECT/login [local client to remote server]
 
         # BYOC (Bring your own creds)
-        ssh -i ${_KEY_PATH} ${user}@${hostname_OR_ip} #... e.g., ...
+        ssh -i ${key_path} ${user}@${hostname_OR_ip} #... e.g., ...
         ssh -i ~/.docker/machine/machines/${_VM}/id_rsa ubuntu@kvpairs.com
         #... If `-i ...` is ommitted, then ALL KEYS @ ~/.ssh/ are tried,
         #    unless $user@$host matches a configuration @ ~/.ssh/config .
@@ -256,6 +267,24 @@ man ssh_config
                     # ... then can ...
                         ssh localhost -p 8822  # connects to REMOTE_IP_FOO
                         ssh localhost -p 9922  # connects to REMOTE_IP_BAR 
+
+                # Reverse/Remote Forwarding (R) : Use cases
+                    # Forward a web server from your machine to the remote
+                    ssh -CfNR 8080:localhost:80 $user@$remote
+                    # remote:8080 → your-machine:80 (a web server)
+
+                    # Forward a database
+                    ssh -CfNR 3306:localhost:3306 user@remote
+                    # remote:3306 → your-machine:3306 (a database)
+
+                    # Forward to a specific internet host from your side
+                    ssh -CfNR 8080:internal-wiki.corp:80 user@remote
+                    # remote:8080 → your-machine → internal-wiki.corp:80
+
+                    # On jump box, forward a specific service to the RDBMS
+                    ssh -CfNR 123:ntp.example.com:123 $user@rdbms_ip
+                    # RDBMS now has localhost:123 → ntp.example.com:123
+
 
         # CACHE key PASSPHRASE for one-time entry 
             # Use case is key (for human CLI user) created/secured with a passphrase.
@@ -370,7 +399,7 @@ man ssh_config
         # CONFIG per user [@ client machine]
             # overrides system-wide; `config` overrides `ssh_config`
             #  allows for different keys per host [server]
-            ~/.ssh/config # more general than identity file 
+            ~/.ssh/config # See: man ssh_config
 
                 # overrides per host ...
                 # server1
@@ -607,155 +636,171 @@ man ssh_config
             ssh -p 2222 -R 80:localhost:8088 user@host2.domain
             #... access host2.domain:80 locally @ http://localhost:8088
 
-        # SOCKS[5] : local proxy server in SSH tunnel (dynamic port-forwarding).
-            # SSH acts as a SOCKS5 server at a local port to dynamically route traffic 
-            # of various protocols to remote destinations/ports based on client(s) requests, 
-            # without the need for predefined port forwarding rules for each service.
-            # The ssh client (CLI) host is running the SOCKS server, but firewall rules etal is on its target host.
-            # USE CASE: Local node has no web access, or restricted web access, 
-            # but has SSH access to a remote node that has (better) web access.
-            # DO NOT bind to 0.0.0.0, else maximally vulnerable.
-            # Configure (OS/App) PER APPLICATION https://wiki.archlinux.org/index.php/OpenSSH#Encrypted_SOCKS_tunnel
+        # SOCKS[5] : local proxy server in SSH tunnel (dynamic port-forwarding) to remote host.
+            # SSH acts as a SOCKS5 server at a local port (-D) to *dynamically* route 
+            # (local) traffic of *any* TCP/UDP *protocol* to (exiting at) remote host (gateway), 
+            # which opens apropos connnection to destinations/ports based on those requests, 
+            # all without predefined port-forwarding rules for each service.
+            #
+            # Each ssh client (CLI) node runs its SOCKS server (as background process; -f), 
+            # yet firewall rules etal are centralized; 
+            # configured on the target (bastion/gateway) host.
+            # 
+            # Common use case is a local node having no web access, or restricted web access, 
+            # but has SSH access to a remote node (gateway) that has (better) web access.
+            #
+            # Must configure each app to use the SOCKS proxy. (See "APPLICATIONS ..." below.)
+            # Ref: https://wiki.archlinux.org/index.php/OpenSSH#Encrypted_SOCKS_tunnel
             # IANA SOCKS5 port is 1080, but use whatever.
-                ssh  -CfND 1080 $user@$host #... tunnel from localhost:1080 to remote host
-                    # Options:
-                        -D [$bind_address:]$port  # Dynamic APPLICATION-LEVEL port forwarding; 
-                            # Create local SOCKS5 server listen on local port (1025-65536).
-                            # The APPLICATION PROTOCOL determines destination IP:PORT;
-                        -f  # fork process to background
-                        -N  # No commands; not interactive once tunnel is up.
-                        -C  # compress all data 
+                ssh -CfND 1080 $user@$host #... tunnel from localhost:1080 to remote host
+                # Options:
+                    -D [$local_bind_addr:]$port # Dynamic APPLICATION-LEVEL port forwarding; 
+                        # Create local SOCKS5 server listening on local $port (1025-65536).
+                        # The APPLICATION PROTOCOL determines the *destination* IP:PORT .
+                        # SECURITY regarding optional local_bind_addr :
+                        #   DO NOT bind to 0.0.0.0 (all interfaces), 
+                        #   else is available to EVERY machine on the LAN/Wi-Fi/VPN/... .
+                        #   Use 127.0.0.1 (default) AKA localhost, 
+                        #   else that of another (private/local-only) network interface.
+                    -f  # fork process to background (optional).
+                    -N  # No commands; not interactive once tunnel is up (optional).
+                    -C  # compress all data (optional).
 
-                # So (local) client apps use the local entry point : localhost:1080
+                # So (local) client apps use the local entry point, localhost:1080,
+                # but (remote) destination hosts see request Origin as that of $host (gateway).
+                # Unlike VPNs, the proxy is not visible to destination hosts.
+                # 
                 # More detailed description ...
                 # https://en.wikibooks.org/wiki/OpenSSH%2FCookbook%2FProxies_and_Jump_Hosts#SOCKS_Proxy
                 #
-                # In a setup where back-end data stores are protected in a private subnet having no direct internet access, 
-                # a local SOCKS proxy server proxies the JUMP BOX to allow for time sync and other controlled internet access.
-                    ssh -i /path/to/jump/key.pem -CfND $port $jump
-                    # - Security and Isolation: 
-                        # The primary role of the "jump box" AKA "bastion host" 
-                        # is to act as a secure gateway between different network zones, 
-                        # particularly between a less secure zone and a secure zone. 
-                        # Running the SOCKS proxy from our local "ssh -D ..." (client) to the jump box 
-                        # aligns with this purpose because it centralizes access control and monitoring.
-                    # - Reduced Exposure: 
-                        # The back-end data stores remain isolated 
-                        # and their exposure to the network is minimized. 
-                        # This configuration helps in maintaining the principle of least privilege, 
-                        # reducing the attack surface by not adding additional services on the data store servers themselves.
-                    # - Ease of Management: 
-                        # Managing network configurations, access rules, and monitoring on a single jump box is simpler and more secure 
-                        # than managing these settings across multiple back-end servers. 
-                        # This setup also makes it easier to enforce consistent security policies and to audit access logs.
-                    # - Flexibility and Efficiency: 
-                        # The jump box can handle requests from multiple back-end servers in a centralized manner, 
-                        # making network management more efficient. It also simplifies the network architecture 
-                        # by avoiding the need for each back-end server to run its own instance of the proxy software.
+            
+            # REVERSE SOCKS (-R) : Reverse port forward to an *existing* SOCKS server  
+
+                # Forwarding a remote TO your *existing* SOCKS proxy server
+                    # You have a SOCKS proxy already running locally at 1080
+                    # (created earlier with -D, or by some other tool)
+                    # Run this locally to expose your SOCKS proxy to the remote machine:
+                    ssh -CfNR 1080:localhost:5555 $user@$remote
+                    # Result: Remote listens on 5555, which is mapped to your 127.0.0.1:1080
+                    #   remote:5555  →  tunnel  →  your-machine:1080 (SOCKS server)
+                    #
+                    #... AVOID; This relay pattern adds a second trust boundary 
+                    #    and doubles crypto cost without any benefit.
+                    #    Use only if no SSH outbound at client.
 
             # USE CASEs
-                # Gateway : Local apps use local proxy at localhost:1080 to access destination servers via remote gateway.
-                ssh -i /path/to/gateway/key.pem \
-                    -o ServerAliveInterval=15 \
-                    -o ServerAliveCountMax=3 \
-                    -o TCPNoDelay=yes \
-                    -o ExitOnForwardFailure=yes \
-                    -o StrictHostKeyChecking=yes \
-                    -o UserKnownHostsFile=/dev/null \
-                    -o LogLevel=VERBOSE \
-                    -CfN -D 1080 \
-                    user@gateway_ip
-                    #... SSH server listens on 127.0.0.1:1080 ONLY; okay/better to declare explicitly
 
-                    # Additional opts : handle multiple concurrent sessions
-                    opts='-o ControlMaster=auto -o ControlPath=~/.ssh/socks-%r@%h:%p -o ControlPersist=600'
+                # Gateway : Local apps use local proxy at localhost:1080 
+                          # to access destination servers via remote gateway.
+                    ssh -i /path/to/gateway/key.pem \
+                        -o ServerAliveInterval=15 \
+                        -o ServerAliveCountMax=3 \
+                        -o ExitOnForwardFailure=yes \
+                        -o StrictHostKeyChecking=yes \
+                        -o UserKnownHostsFile=/dev/null \
+                        -o LogLevel=VERBOSE \
+                        -CfN -D 1080 \
+                        $user@$gateway 2> ~/.ssh/socks.log
+                        #... local SOCKS proxy server is listening on 127.0.0.1:1080
                     
-                    # autossh for resiliency : reconnnect on fail
-                    autossh -M 0 -i /path/to/key.pem $opts -CfN -D 1080 user@gateway_ip
+                        # Local apps make requests via proxy:
+                            curl --socks5 localhost:1080 http://example.com
+                            # Else
+                            export http_proxy='socks5h://127.0.0.1:1080'
+                            curl -s http://$web_domain     
+                            export https_proxy='socks5h://127.0.0.1:1080'
+                            curl -s https://$web_domain  
 
-                    # Rate limit using iptables
-                    iptables -A INPUT -p tcp --dport 1080 -m connlimit --connlimit-above 50 -j REJECT
+                        # autossh for resiliency : reconnnect on fail
+                        autossh -M 0 -i /path/to/key.pem $opts -CfN -D 1080 user@gateway_ip
 
-                    # Or, as a systemd service
-                    # /etc/systemd/system/socks5-gateway.service
-                    [Unit]
-                    Description=SOCKS5 Gateway Proxy
-                    After=network.target
+                        # Rate limit using iptables
+                        iptables -A INPUT -p tcp --dport 1080 -m connlimit --connlimit-above 50 -j REJECT
 
-                    [Service]
-                    Type=simple
-                    User=proxyuser
-                    ExecStart=/usr/bin/ssh ...# Add the full statement here
-                    Restart=always
-                    RestartSec=10
-                    LimitNOFILE=65535
+                        # Or, as a systemd service
+                        # /etc/systemd/system/socks5-gateway.service
+                        [Unit]
+                        Description=SOCKS5 Gateway Proxy
+                        After=network.target
 
-                    [Install]
-                    WantedBy=multi-user.target
+                        [Service]
+                        Type=simple
+                        User=proxyuser
+                        ExecStart=/usr/bin/ssh ...# Add the full statement here
+                        Restart=always
+                        RestartSec=10
+                        LimitNOFILE=65535
 
-                # Bridge to Jump Box : Wi-Fi clients use proxy $bridghIP:1080 to access jump box
-                    bridgeIP=192.168.1.100
-                    ssh -i /path/to/jump/key.pem $opts -CfND "$bridgeIP:1080" user@jump_box
+                        [Install]
+                        WantedBy=multi-user.target
+    
+                # Bridge to Jump Box : LAN/Wi-Fi clients use proxy: $bridge:1080 
+                    # to access jump box having access to internet gateway
+                    # Create SOCKS on the bridge host
+                    bridge=192.168.1.100 # LAN address bound to an interface
+                    ssh $opts -CfND "$bridge:1080" $user@$jump
+                    # Else
+                    ssh $opts -CfND "0.0.0.0:1080" $user@$jump
+                    # Now all other machines on the network can use:
+                    curl --socks5 $bridge:1080 http://example.com
                     # WiFi Client (192.168.1.50) 
                     #     ↓
                     # Bridge Machine (192.168.1.100) [runs SSH with -D 192.168.1.100:1080]
                     #     ↓
                     # Jump Box (10.0.0.10)
+                    #
+                    # Additional opts : handle multiple concurrent sessions
+                    opts='-o ControlMaster=auto -o ControlPath=~/.ssh/sockets/socks-%r@%h-%p -o ControlPersist=600'
+                    
+                # Proxy through multiple hops : Your PC → jump1 → jump2 → internet
+                    ssh -J user@jump1 -D 1080 user@jump2
+                    # SOCKS server: localhost:1080 (YOUR PC)
+                    # Traffic: localhost:1080 → jump1 → jump2 → internet
+                    # (Neither jump1 nor jump2 have a SOCKS server)
 
-                # Harden
-                    # Method 1. Restrict to Specific Local User
-                        # Create dedicated proxy group and user
-                        sudo groupadd -r proxyuser  # -r creates system group (GID < 1000)
-                        # Create user and assign to group
-                        sudo useradd -m -s /bin/false -g proxyuser proxyuser
-                        # Run SSH as proxyuser
-                        sudo -u proxyuser ssh -CfN -D 1080 user@gateway_ip
-                        # Use filesystem permissions
-                        sudo chown proxyuser:proxyuser /path/to/key.pem
-                        sudo chmod 600 /path/to/key.pem
+            # Harden
+                # Method 1. Restrict to Specific Local User
+                    # Create dedicated proxy group and user
+                    sudo groupadd -r proxyuser  # -r creates system group (GID < 1000)
+                    # Create user and assign to group
+                    sudo useradd -m -s /bin/false -g proxyuser proxyuser
+                    # Run SSH as proxyuser
+                    sudo -u proxyuser ssh -CfN -D 1080 user@gateway_ip
+                    # Use filesystem permissions
+                    sudo chown proxyuser:proxyuser /path/to/key.pem
+                    sudo chmod 600 /path/to/key.pem
 
-                    # Method 2. Firewall Local Access
-                        # Restrict localhost:1080 to specific users via iptables
-                        iptables -A OUTPUT -o lo -p tcp --dport 1080 -m owner --uid-owner proxyuser -j ACCEPT
-                        iptables -A OUTPUT -o lo -p tcp --dport 1080 -j DROP
+                # Method 2. Firewall Local Access
+                    # Restrict localhost:1080 to specific users via iptables
+                    iptables -A OUTPUT -o lo -p tcp --dport 1080 -m owner --uid-owner proxyuser -j ACCEPT
+                    iptables -A OUTPUT -o lo -p tcp --dport 1080 -j DROP
 
-                    # Method 3. SELinux/AppArmor Policies
-                        # SELinux policy to restrict proxy access
-                        # Only proxyuser can connect to port 1080
-                        semanage port -a -t ssh_port_t -p tcp 1080
-                        # Create policy module for proxyuser
+                # Method 3. SELinux/AppArmor Policies
+                    # SELinux policy to restrict proxy access
+                    # Only proxyuser can connect to port 1080
+                    semanage port -a -t ssh_port_t -p tcp 1080
+                    # Create policy module for proxyuser
 
-                    # Method 4. Use Unix Socket Instead of TCP
-                        # Create Unix socket proxy (safer than TCP)
-                        socat UNIX-LISTEN:/tmp/proxy.sock,fork SOCKS5:localhost:1080
-                        # Now only processes with filesystem access can use it
-                        curl --socks5 /tmp/proxy.sock http://example.com
+                # Method 4. Use Unix Socket Instead of TCP
+                    # Create Unix socket proxy (safer than TCP)
+                    socat UNIX-LISTEN:/tmp/proxy.sock,fork SOCKS5:localhost:1080
+                    # Now only processes with filesystem access can use it
+                    curl --socks5 /tmp/proxy.sock http://example.com
 
-                    # Method 5. Isolate with ControlMaster
-                        # Create isolated proxy session
-                        ssh -i /path/to/gateway/key.pem \
-                            -o ServerAliveInterval=15 \
-                            -o ServerAliveCountMax=3 \
-                            -o TCPNoDelay=yes \
-                            -o ExitOnForwardFailure=yes \
-                            -o StrictHostKeyChecking=yes \
-                            -o UserKnownHostsFile=/dev/null \
-                            -o LogLevel=VERBOSE \
-                            -o ControlMaster=auto \
-                            -o ControlPath=/tmp/proxy-%r.sock \
-                            -CfN -D 1080 \
-                            user@gateway_ip
-                        #... Only processes that can access /tmp/proxy-user.sock can use it
-
-                # REVERSE SOCKS (native) command : -R
-                    # Here we want a PUBLIC client 
-                    # (home laptop or a cloud Jump Box) 
-                    # to have full access to private host(s) AKA the target.
-                    # The target's firewall need allow only OUTBOUND SSH.
-                    # Run this from the Private Host:
-                    ssh -R 1080 $user@$jump
-                    # SSH automatically spawns a dynamic SOCKS engine inside the tunnel. 
-                    # The Jump Box port 1080 instantly becomes a dynamic gateway into the private host's network.
+                # Method 5. Isolate with ControlMaster
+                    # Create isolated proxy session
+                    ssh -i /path/to/gateway/key.pem \
+                        -o ServerAliveInterval=15 \
+                        -o ServerAliveCountMax=3 \
+                        -o ExitOnForwardFailure=yes \
+                        -o StrictHostKeyChecking=yes \
+                        -o UserKnownHostsFile=/dev/null \
+                        -o LogLevel=VERBOSE \
+                        -o ControlMaster=auto \
+                        -o ControlPath=~/.ssh/sockets/proxy-%r.sock \
+                        -CfND 1080 \
+                        user@gateway_ip
+                        #... Only processes that can access ControlPath file can use it
 
             # APPLICATIONS MUST BE CONFIGURED to use SOCKS proxy server, e.g., 
                 # Firefox > Options > Advanced > Network > Settings 
@@ -768,21 +813,21 @@ man ssh_config
 
                 # Example
                     # From pvt box having NO WEB ACCESS (subnet deny comms to/from anywhere outside VPC), 
-                    # establish jump box (that has web access) as SOCKS server, to proxy for pvt box:
+                    # Create SOCKS tunnel to jump box (that has web access), which acts as proxy for pvt box:
                     user='ubuntu'
                     ip_jump_pvt='10.0.101.194' # Private IP of jump box
                     key_jump=/home/ubuntu/.ssh/cluster-aws.pem 
 
-                    # Establish jump box as web proxy (server), accessible from 127.0.0.1:1080
-                    ssh -D 1080 -f -C -q -N ${user}@$ip_jump_pvt -i $key_jump
+                    # Web accessible from pvt box at 127.0.0.1:1080
+                    ssh -i $jump_key -CfND 1080 ${user}@$jump
                     
                     # Validate the tunnel is up
                     ps aux |grep ssh
 
                     export http_proxy='socks5h://127.0.0.1:5522'
-                    curl -sI keycloak.local             # HTTP/1.1 200 OK ...
+                    curl -sI http://$web_domain     # HTTP/1.1 200 OK ...
                     export https_proxy='socks5h://127.0.0.1:5522'
-                    curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
+                    curl -skI https://$web_domain   # HTTP/1.1 200 OK ...
 
                     # Configure the host (all apps abiding those params) to use SOCKS
 
@@ -837,7 +882,7 @@ man ssh_config
                     # Test : SUCCESS
                     sudo apt-get update 
 
-                    kill -9 $_PID 
+                    kill -15 $_PID || kill -9 $_PID
                     #... terminate the tunnel; does not survive the session, regarldess
 
 

@@ -103,6 +103,10 @@ k -n ${ns:-default} get deploy -l app.kubernetes.io/name=$release \
     -o yaml |tee k-n.${ns:-default}.get.deploy.${release}.yaml
 </code></pre>
 
+<hr>
+
+<h1>Charts</h1>
+
 <h3>Install <a href="https://artifacthub.io/packages/helm/gitlab/gitlab">GitLab</a></h3>
 
 <h4><a href="https://docs.gitlab.com/charts/installation/">Installing GitLab using Helm</a></h4>
@@ -220,6 +224,8 @@ so needn't bother with those.</p></li>
 <li><p>May not need to delete PV/PVCs</p></li>
 </ul>
 
+<hr>
+
 <h3>Install <a href="https://artifacthub.io/packages/olm/community-operators/kiali">Kiali Operator</a></h3>
 
 <h4>TL;DR</h4>
@@ -272,6 +278,8 @@ helm upgrade --install $release $chart \
     &gt; helm.install.${ns-default}.$release.log 
 
 </code></pre>
+
+<hr>
 
 <h3>Install <a href="https://artifacthub.io/packages/helm/jaegertracing/jaeger">Jaeger</a></h3>
 
@@ -376,6 +384,8 @@ k exec $abox -- curl -sLI $svc_name.${ns:-default}.svc.cluster.local
 k exec $abox -- curl -s $svc_name.${ns:-default}.svc.cluster.local
 #=&gt; &lt;a href=&quot;/graph&quot;&gt;Found&lt;/a&gt;.
 </code></pre>
+
+<hr>
 
 <h3>Install <a href="https://artifacthub.io/packages/helm/prometheus-community/prometheus">Prometheus</a></h3>
 
@@ -495,6 +505,8 @@ k exec $abox -- curl -s $svc_name.${ns:-default}.svc.cluster.local
 #=&gt; &lt;a href=&quot;/graph&quot;&gt;Found&lt;/a&gt;.
 </code></pre>
 
+<hr>
+
 <h3>Install <a href="https://artifacthub.io/packages/helm/grafana/grafana">Grafana</a></h3>
 
 <h4>TL;DR</h4>
@@ -588,6 +600,8 @@ k exec $abox -- curl -sLI $svc_name.$ns.svc.cluster.local
 <li><code>curl -L ...</code> to follow redirects (here: 302)</li>
 </ul>
 
+<hr>
+
 <h3>Install <a href="https://artifacthub.io/packages/helm/helm-openldap/openldap-stack-ha">OpenLDAP</a></h3>
 
 <pre><code class="language-text">bitnami/openldap:2.6.3                 15a5a8aaff11   5 months ago    155MB
@@ -651,7 +665,9 @@ k -n ${ns:-default} get $all |grep $release
 <li><code>helm.install.ldap.log</code></li>
 </ul>
 
-<h3>Install <a href="https://artifacthub.io/packages/helm/gaffer/hdfs"><code>gaffer/hdfs</code></a> Chart | <a href="https://github.com/gchq/Gaffer">GitHub</a></h3>
+<hr>
+
+<h3>Install HDFS : <a href="https://artifacthub.io/packages/helm/gaffer/hdfs"><code>gaffer/hdfs</code></a> Chart | <a href="https://github.com/gchq/Gaffer">GitHub</a></h3>
 
 <h4>TL;DR</h4>
 
@@ -662,7 +678,9 @@ as well as its read/write methods by push/pull between HDFS and local FS.</p>
 
 <h4>See <code>DevOps/.../Hadoop/LOG.md</code></h4>
 
-<h3>Install <a href="https://artifacthub.io/packages/helm/bitnami/keycloak"><code>bitnami/keycloak</code></a> Chart</h3>
+<hr>
+
+<h3>Install Keycloak : <a href="https://artifacthub.io/packages/helm/bitnami/keycloak"><code>bitnami/keycloak</code></a> Chart</h3>
 
 <blockquote>
 <p>Keycloak SSO server runs as an overlay on top of Wildfly (AKA JBoss; Java EE; Java EAP) application server. RedHat project. Latest: <code>22.0.0</code></p>
@@ -753,7 +771,9 @@ curl -skI https://keycloak.local    # HTTP/1.1 200 OK ...
 
 </code></pre>
 
-<h3>Install <a href="https://artifacthub.io/packages/helm/sonatype/nexus-repository-manager"><code>sonatype/nexus</code></a> Chart</h3>
+<hr>
+
+<h3>Install NXRM : <a href="https://artifacthub.io/packages/helm/sonatype/nexus-repository-manager"><code>sonatype/nexus</code></a> Chart</h3>
 
 <h4>TL;DR</h4>
 
@@ -799,6 +819,8 @@ NAME                                                      DESIRED   CURRENT   RE
 replicaset.apps/nex-nexus-repository-manager-76dc6d5fb9   1         1         1       56m
 </code></pre>
 
+<hr>
+
 <h3>Install <a href="https://artifacthub.io/packages/helm/stevehipwell/nexus3"><code>stevehipwell/nexus3</code></a> Chart</h3>
 
 <h4>TL;DR</h4>
@@ -831,7 +853,9 @@ replicaset.apps/my-nexus3-69d49695b8   1         1         1       26m
 
 </code></pre>
 
-<h3>Install <a href="https://artifacthub.io/packages/helm/bitnami/jenkins"><code>bitnami/jenkins</code></a> Chart</h3>
+<hr>
+
+<h3>Install Jenkins : <a href="https://artifacthub.io/packages/helm/bitnami/jenkins"><code>bitnami/jenkins</code></a> Chart</h3>
 
 <h4>TL;DR</h4>
 
@@ -839,7 +863,9 @@ replicaset.apps/my-nexus3-69d49695b8   1         1         1       26m
 
 <p>See <code>DevOps/.../minikube/jenkins/LOG.md</code></p>
 
-<h3>Install <a href="https://artifacthub.io/packages/helm/bitnami/mysql"><code>bitnami/mysql</code></a> Chart</h3>
+<hr>
+
+<h3>Install MySQL : <a href="https://artifacthub.io/packages/helm/bitnami/mysql"><code>bitnami/mysql</code></a> Chart</h3>
 
 <h4>TL;DR</h4>
 

@@ -436,14 +436,11 @@ exit
         dd if=/dev/zero of=/dev/null 
                 
         # Generate ENTROPY @ BKGND PROCESS ...
-        dd if=/dev/sda of=/dev/null &
-        TASK_PID=$!
-        # ... and do whatever requires that entropy.
-        # Afterwards, kill the bkgnd entropy-generator process.
-        kill $TASK_PID
-            # 1 (HUP)   - Reload a process.
-            # 9 (KILL)  - Kill a process.
-            # 15 (TERM) - Gracefully stop a process.
+            dd if=/dev/sda of=/dev/null &
+            pid=$!
+            # ... and do whatever requires that entropy.
+            # Afterwards, kill the bkgnd entropy-generator process.
+            kill $pid # Defaults to SIGTERM : kill -15 $pid
 
         # Generate 32-bit base64 key, bit-by-bit; e.g., for ChaCha20 Encryption Algo
         dd status=none if=/dev/urandom of=/dev/stdout bs=1 count=32 |base64 -w 0 - # or use base32
@@ -2650,19 +2647,30 @@ exit
     env    # Env. Vars.  
     printenv  # Env. Vars.
 
-    ps -A    # all processes ???
-    ps -aux  # all processes on the system
-    pstree   # process tree
+    ps -A       # all processes ???
+    ps -aux     # all processes on the system
+    pstree      # process tree
 
-    ps -aux        # Show all processes on the system
-    jobs           # Show background processes
-    fg    %$n      # Bring background process (job) to foreground
-    kill  $pid     # Kill a process by its PID
-    kill -9 $pid   # Hard kill 
-    kill  %$n      # Kill a background process by its job number (see jobs)
-    pkill $ps      # Kill a process by its name ($ps) 
-    killall $ps    # Kill all processes named $ps
-    killall -0 $ps # Test if any process named $ps is running : $? is 0 if any; 1 if none.
+    ps -aux     # Show all processes on the system
+    CTRL+Z      # Pause current foreground process and send to background
+    jobs [-l]   # Show background processes (numbered; $n); long (verbose) list
+    bg   [%$n]  # Continue background process (e.g., stopped by CTRL+Z); by job number else most recently sent to background
+    fg   [%$n]  # Toggle background process to foreground; by job number else most recently sent to background
+    kill %$n    # Kill a background process by its job number (see jobs)
+    kill $pid   # Kill PID process using SIGTERM (15) 
+
+    kill -1  $pid   # SIGHUP    1  Reload:      Legacy "Signal Hangup"; Some server apps implement as hot reload, else Linux kills process.
+    kill -2  $pid   # SIGINT    2  Interrupt:   Stop right not, but safely (CTRL+C). 
+    kill -15 $pid   # SIGTERM  15  Terminate:   Shutdown gracefully; inform app, close files, connections, etc. Default of Linux and Docker.
+    kill -9  $pid   # SIGKILL   9  Kill:        Immediately delete the process; don't even inform the app. 
+    #... Prefer SIGTERM lest application documents otherwise.
+
+    pkill $ps       # Kill a process by its name ($ps) 
+    killall $ps     # Kill all processes named $ps
+    killall -0 $ps  # Test if any process named $ps is running : $? is 0 if any; 1 if none.
+
+    disown [%$n]    # Delete job from bash tracker instantly (by job number else last bg); 
+                    # job keeps running after terminal and/or SSH session is closed. The new nohup.
 
     service $name start  # service : start / stop
 
@@ -2799,8 +2807,13 @@ exit
     /bin/bash $command $args &
     # Sans STDOUT and STDERR
     /bin/bash -c "$command $args" >/dev/null 2>&1 &
-    # Alternative, but quirky; shell-specific behavior:
+
+    # Also (quirky shell-specific behavior)
     nohup $command $args & # Ignore HANGUP signal(s) (SIGHUP)
+    
+    # Modern nohup replacement:
+    disown [%$n]    # Delete job from bash tracker instantly (by job number else last bg); 
+                    # job keeps running after terminal and/or SSH session is closed. 
 
     rbash # RESTRICTED SHELL; forbid dir change, redirects, ...; see `man rbash`
         /bin/rbash 
