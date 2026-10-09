@@ -1,31 +1,38 @@
 exit
-# AWS CLI 
-# =======
+# aws (CLI) : AWS API Client for remote access to AWS account
+# v1 is Python : botocore (low-level) and boto3 (high-level) app
+# v2 is binary having an embedded Python runtime and based on boto3
+# =================================================================
 # Reference           https://docs.aws.amazon.com/cli/latest/index.html
 # CLI v2              https://awscli.amazonaws.com/v2/documentation/api/latest/reference/index.html
 # User Guide          https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html   
 # GitHub              https://github.com/aws/aws-cli
-# cheatsheet          https://github.com/toddm92/aws/wiki/AWS-CLI-Cheat-Sheet  
-# 10 useful commands  https://cloudacademy.com/blog/aws-cli-10-useful-commands/  
+# cheatsheet          https://gist.github.com/apolloclark/b3f60c1f68aa972d324b
 # AWS Dev Tools/SDKs  https://aws.amazon.com/tools/  
 # AWS LABS GitHub  https://github.com/awslabs/awscli-aliases
-# aws-cli :: app for comms/ctrl between AWS and, EITHER remote-machine, OR a running EC2 Instance 
 # In this context, the remote-machine is you, the user of the AWS account.
 # - Automation through scripting; infrastructure per code; 
 # - Command set & services; similar to Dev SDKs; JS, Python, ...  
 # - Both Highl-level and API-level commands, e.g., `aws s3 ...` and `aws s3api ...`
     aws [options] <command> <subcommand> [parameters]  
 
-# INSTALL/UPDATE aws-cli  [pip/choco/msi]
+# INSTALL/UPDATE aws CLI
+    # Update
+    aws update
+    # Install
+    # - v1
     pip install awscli    # Python 2 @ XPC; FAILed at Python 3 @ HTPC
     pip install awscli --upgrade --user  # Update
+    # - v2
+        # - Linux
+        sudo yum remove awscli
+        curl -fsSL https://awscli.amazonaws.com/v2/install.sh | bash
+        # - Windows 
+        irm https://awscli.amazonaws.com/v2/install.ps1 | iex
+        choco install awscli  # https://chocolatey.org/packages?q=aws 
 
-    choco install awscli  # https://chocolatey.org/packages?q=aws 
-    # Windows cmd [AWSCLI64.msi]  https://s3.amazonaws.com/aws-cli/AWSCLI64.msi 
     # Autocomplete
         complete -C aws_completer aws  # command completion; test ... `aws s<TAB>`
-    # aws-shell 
-        pip install aws-shell  # https://github.com/awslabs/aws-shell  
     # CONFIG/CRED 
         # per user & profile
             ~/.aws
@@ -69,24 +76,6 @@ exit
                 # Requires user input: Access Key ID, Secret Access Key, region name   
                 # if resource has assumed the proper ROLE(s), then use this config utility only to enter 'Default region', bypassing 'AWS Access Key ID' and 'AWS Secret Access Key' queries (press enter).
 
-    # Case 1. Remote AWS-CLI to AWS Management Console/Services
-
-        # {remote-machine + AWS-CLI}  <==[HTTPS-API]==>  {AWS}  
-
-            # - install AWS-CLI on Windows, Mac or Linux PC  
-            # - Windows PowerShell Tools for AWS  
-            # - Optionally +AWS-Shell; GitHub project   https://github.com/aws/aws-cli  
-
-    # Case 2. Remote SSH into EC2 Instance
-
-        # {remote-machine}  <==[SSH]==>  {EC2 + AWS-CLI}<=>{AWS}   
-
-            # - EC2 must have AWS-CLI installed; is pre-installed @ Amazon Linux AMI
-            # - Manually install AWS CLI onto any other Linux distro, per PIP  
-              pip install awscli --upgrade --user  
-              aws --version  # validate install  
-            # IAM roles; EC2 instance must have authorization; either IAM role or credentials (`aws configure`); use (assumed) roles, so no creds embedded in instance, i.e., roles are more secure.
-
 # DryRun 
     aws COMMAND ... --dry-run  # as implied; no real effect; very useful
                     --dry-run 2>&1 | grep -v 'DryRun flag'
@@ -106,7 +95,8 @@ exit
     date "+%F_%H.%M.%S"
     # generate 32 random alphanum (ASCII) 
     $(cat /dev/urandom |tr -dc 'a-zA-Z0-9' |fold -w 32 |head -n 1)
-
+    # Pseudo-random 16-bit integer between 0 and 32,767 
+    $RANDOM 
 # JSON QUERY (--query) / FILTERS (--filters)
     # https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-filter.html#cli-usage-filter-client-side-identifiers
     # JMESPath : JSON Query Language : http://jmespath.org/  
@@ -115,10 +105,71 @@ exit
     --query 'Volumes[*].{ID:VolumeId,InstanceId:Attachments[0].InstanceId,AZ:AvailabilityZone,Size:Size}'
     --filters "Name=status,Values=available"
 # OUTPUT : json (default)|table|text|yaml 
-    --output json  # https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-output.html
+    --output yaml # https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-output.html
 
-# EKS  https://docs.aws.amazon.com/cli/latest/reference/eks/index.html
-    aws eks create-cluster ... --profile $EKS_USER
+# IAM  https://docs.aws.amazon.com/cli/latest/reference/iam/index.html  
+    # Policy elements (keys): https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
+    # Create User
+        aws iam create-user --user-name 'USERNAME'  # returns JSON user-info
+    # Delete User
+        aws iam delete-user --user-name 'USERNAME'  # no return if successful
+    # Get User policy [JSON]  (can't get per Role, nor per Group) 
+        aws iam get-user-policy --user-name 'USERNAME' --policy-name 'POLICYNAME'  
+    # List all users: UserName, UserID, and ARN vals (of Users key)
+        aws iam list-users --query 'Users[].[UserName,UserId,Arn]'   
+    # ROLEs 
+        # List roles:
+            aws iam list-roles --query 'Roles[*].[{Name:RoleName,ID:RoleId,ARN:Arn}]' --output json 
+        # Get Role 
+            aws iam get-role --role-name $_ROLE
+        # Update role 
+            update-role
+                --role-name <value>
+                [--description <value>]
+                [--max-session-duration <value>]
+                [--cli-input-json <value>]
+                [--generate-cli-skeleton <value>]
+            # E.g., set max-session-duration to 12 hrs (max allowed)
+            aws iam update-role --role-name 'admin' --max-session-duration 43200 
+# KMS
+
+    # Create symmetric key
+    aws kms create-key --description "My secure master key" --key-usage ENCRYPT_DECRYPT --customer-master-key-spec SYMMETRIC_DEFAULT
+
+    # Create alias
+    aws kms create-alias --alias-name alias/my-app-key --target-key-id <key-id-or-arn>  
+
+    aws kms list-keys
+
+    aws  kms list-aliases
+
+    # Encrypt to binary blob
+    aws kms encrypt --key-id alias/my-app-key --plaintext fileb://plaintext.txt --output text --query CiphertextBlob > ciphertext.bin
+
+    # Encrypt to base64 (PEM)
+    aws kms encrypt \
+      --key-id alias/my-app-key \
+      --plaintext fileb://plaintext.txt \
+      --query CiphertextBlob \
+      --output text > ciphertext.pem
+
+    # Decrypt if binary blob
+    aws kms decrypt --ciphertext-blob fileb://ciphertext.bin --output text --query Plaintext | base64 --decode > decrypted.txt
+
+    # Decrypt if base64-encoded
+    aws kms decrypt \
+      --ciphertext-blob fileb://<(base64 -d ciphertext.pem) \
+      --query Plaintext \
+      --output text | base64 -d
+
+    # Enable annual automatic rotation:
+    aws kms enable-key-rotation --key-id <key-id-or-arn>   
+
+    # Disable key rotation:
+    aws kms disable-key-rotation --key-id <key-id-or-arn>
+
+
+
 # ACM (AWS Certificate Manager) :: HTTPS (SSL/TLS)  
     # https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-request-public.html  
     # - validates by adding its generated cert CNAME to DNS record of the target domain 
@@ -372,7 +423,9 @@ exit
         aws cloudfront delete-distribution \
             --id $DISTRO_ID \
             --if-match E2QWRUHEXAMPLE
-# EC2   https://docs.aws.amazon.com/cli/latest/reference/ec2/  
+# EC2   
+    # Docs  https://docs.aws.amazon.com/ec2/
+    # Ref   https://docs.aws.amazon.com/cli/latest/reference/ec2/  
     # Configure, e.g., running aws-cli in SSH session @ EC2 instance (but don't)
         aws configure  # SECURITY ISSUE; don't store credentials in EC2 instance; use Roles instead.
         #=> AWS Access Key ID [None]:   
@@ -834,30 +887,7 @@ exit
                     --port-range 'From=80,To=80' \
                     --cidr-block '0.0.0.0/0' \
                     --rule-action 'allow'  
-# IAM  https://docs.aws.amazon.com/cli/latest/reference/iam/index.html  
-    # Policy elements (keys): https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
-    # Create User
-        aws iam create-user --user-name 'USERNAME'  # returns JSON user-info
-    # Delete User
-        aws iam delete-user --user-name 'USERNAME'  # no return if successful
-    # Get User policy [JSON]  (can't get per Role, nor per Group) 
-        aws iam get-user-policy --user-name 'USERNAME' --policy-name 'POLICYNAME'  
-    # List all users: UserName, UserID, and ARN vals (of Users key)
-        aws iam list-users --query 'Users[].[UserName,UserId,Arn]'   
-    # ROLEs 
-        # List roles:
-            aws iam list-roles --query 'Roles[*].[{Name:RoleName,ID:RoleId,ARN:Arn}]' --output json 
-        # Get Role 
-            aws iam get-role --role-name $_ROLE
-        # Update role 
-            update-role
-                --role-name <value>
-                [--description <value>]
-                [--max-session-duration <value>]
-                [--cli-input-json <value>]
-                [--generate-cli-skeleton <value>]
-            # E.g., set max-session-duration to 12 hrs (max allowed)
-            aws iam update-role --role-name 'admin' --max-session-duration 43200 
+
 # STS  https://docs.aws.amazon.com/cli/latest/reference/sts/index.html#cli-aws-sts  
     # whoami 
         aws sts get-caller-identity
@@ -883,8 +913,8 @@ exit
 
 # RDS  https://docs.aws.amazon.com/cli/latest/reference/rds/index.html 
 # DynamoDB  
-    # Ref  https://docs.aws.amazon.com/cli/latest/reference/dynamodb/index.html
-    # UG   https://docs.aws.amazon.com/cli/latest/userguide/cli-dynamodb.html  
+    # Ref   https://docs.aws.amazon.com/cli/latest/reference/dynamodb/index.html
+    # Guide https://docs.aws.amazon.com/cli/latest/userguide/cli-dynamodb.html  
 
 # CloudFormation  https://docs.aws.amazon.com/cli/latest/reference/cloudformation/index.html
     # Test/Validate a template 
@@ -897,13 +927,45 @@ exit
     # list-stacks (yours)
         aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
 
-# ECS (Docker)  
-    # ECS CLI Installation  https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI_installation.html
-    # Ref  https://docs.aws.amazon.com/cli/latest/reference/ecs/index.html  
-    # DG   https://docs.aws.amazon.com/AmazonECS/latest/developerguide/
+# ECS : Elastic Container Service (Docker/CNCF/OCI /v2 Registry)  
+    # Ref   https://docs.aws.amazon.com/cli/latest/reference/ecs/index.html  
+    # Guide https://docs.aws.amazon.com/AmazonECS/latest/developerguide/
     aws ecs list-clusters 
     # push docker image to ECR
     aws ecr create-repository --repository-name $DOCKER_IMAGE_NAME
+
+# EKS : Elastic Kubernetes Service https://docs.aws.amazon.com/cli/latest/reference/eks/index.html
+
+    # Create cluster
+    aws eks create-cluster ... --profile $EKS_USER
+
+    # Get kubeconfig
+    aws eks update-kubeconfig --region <region> --name <cluster-name> --dry-run
+
+    # List clusters
+    aws eks list-clusters --region <region>
+
+    # Describe cluster
+    aws eks describe-cluster --region <region> --name <cluster-name>
+
+    # Manage node groups
+    aws eks list-nodegroups --region <region> --cluster-name <cluster-name>
+
+    # Scale Node Group
+    aws eks update-nodegroup-config --region <region> --cluster-name <cluster-name> --nodegroup-name <nodegroup-name> --scaling-config minSize=2,maxSize=5,desiredSize=3 
+
+    # List Add-ons
+    aws eks list-addons --region <region> --cluster-name <cluster-name>
+
+    # Describe Add-ons
+    aws eks describe-addon-versions --kubernetes-version <version>
+
+    # List Access / IAM
+    aws eks list-access-entries --region <region> --cluster-name <cluster-name>
+
+    # List OIDC Provider 
+    aws eks describe-cluster --region <region> --name <cluster-name> --query
+    "cluster.identity.oidc.issuer" --output text
 
 # CLI sans AWS-CLI
     # SSH (connect) to a running EC2 instance
@@ -1077,3 +1139,10 @@ exit
             # ... or in debug mode [debug info @ stdout] ...    
             DEBUG=node-js-sample:* npm start 
             # ... then browse to its Public IP to see the served website/app. 
+
+
+
+# --------------------------------------------------------------------------
+# … ⋮ ︙ • ● – — ™ ® © ± ° ¹ ² ³ ¼ ½ ¾ ÷ × ₽ € ¥ £ ¢ ¤ ♻ ⚐ ⚑ ✪ ❤  \ufe0f
+# ☢ ☣ ☠ ¦ ¶ § † ‡ ß µ Ø ƒ Δ ☡ ☈ ☧ ☩ ✚ ☨ ☦ ☓ ♰ ♱ ✖  ☘  웃 𝐀𝐏𝐏 🡸 🡺 ➔
+# ℹ️ ⚠️ ✅ ⌛ 🚀 🚧 🛠️ 🔧 🔍 🧪 👈 ⚡ ❌ 💡 🔒 📊 📈 🧩 📦 🥇 ✨️ 🔚

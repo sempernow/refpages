@@ -1,31 +1,47 @@
 # YAML is a data-representation (only) language.
-# Document begin : declared by line of 3 consecutive hyphens. 
-## Use it to combine multiple documents into a single stream.
+# Document begin : "---". 
+# Use it to combine multiple *documents* into a single *stream*.
 --- 
-# Document end (optional) : delcared by line of 3 consecutive dots
+# Document end (optional) : "..."
 ...
 # Null is null or empty line
 null
 ---
-# List (Array) : canonical : One member (element) per line
-## Hyphen (-) denotes a member (element) 
-- first member AKA element
-- 2nd_element
---- 
-# List (AKA Array) : alternate syntax : JSON-like
+# Sequence AKA List AKA Array : canonical : One member (element) per line.
+# Hyphen (-) denotes a member (element) 
+arr1:
+- 0th member AKA element (el)
+- 1st el 
+- 2nd_el_has_arr:
+  - "Sat"
+  - "Sun"
+- 3rd_el_has_obj:
+    a: 201
+# Alternate array syntax (is JSON-ish)
 - [curl, -sSLIX, GET, http://yaml.org] 
+---
+# YAML document *root* may consist *entirely* of *1* array (IIF 1 array)
+- 1
+- 2
+- a:
+    b: [1, 2]
 --- 
-# Dictionary (Map AKA Associative Array) : object/struct of k-v pairs 
+# Map AKA Dictionary AKA Associative Array : object/struct of k-v pairs.
 is_true: true         # Boolean (values of dictionary keys)
 is_true_too: True     # true
 is_true_too_2: Yes    # true
 is_true_too_3: FALSE  # false
 is_true_too_4: NO     # false
-not_bool: "true"      # String (literal)
+not_bool_1: "true"    # String (literal)
+not_bool_2: True oops # String (literal)
 is_null: null         # null
 is_null_too: ~        # null
+map_has_map:
+  2nd_lvl_k1: 1
+  2nd_lvl_k2: 
+    3rd_lvl_k1: "Hi"
 --- 
-# YAML to JSON
+# YAML to JSON:
 ## Dictionary translates to JSON Object, {}.
 ## List translates to JSON Array, [].
 --- 
@@ -112,12 +128,13 @@ preserve_newlines: |
   as you see them here.
 same_but_remove_final_newline: |-
   foo
-## Fold (>) : ALL lines of SAME INDENTATION are interpreted as ONE LINE.
+## Fold (>) : ALL lines of SAME (initial) INDENTATION are interpreted as ONE LINE.
 fold_newlines: >
-        These four lines
-        will appear as one.
-        Split here for legibility 
-        or whatever.
+      These two lines
+      are compiled to line one.
+      
+      And these two 
+      are compiled to line two.
 reference_preserve: |
   a b
   c d
@@ -154,3 +171,17 @@ graphic_equivalent_to_above:
 - Instrument1: *id003        # Reference by *<label>
   #... 
 - Instrument7: *id003 
+---
+# YAML is a *superset* of JSON,
+# but don't use these clever constructs.
+# Parsers (yq) tend to fail on them. KISS.
+#
+# Key indicator ("?")
+# A sequence (array) as a key
+? [foo, bar]
+: value
+# Multiline (folded) string as a key
+? >
+  This is a
+  multi-line key
+: value
