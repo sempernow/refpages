@@ -12,22 +12,26 @@ exit
     git bundle verify $repo.bundle # Working at root of source repo
     # 1.c List bundle content (from anywhere) : Smoke test the bundle
     git bundle list-heads $repo.bundle 
-    # 2. Clone (Extract from) bundle and push to destination host.
+    # 2. Clone (Extract from) bundle 
     git clone $repo.bundle $repo # Creates $repo folder
+    # 3. Push to destination hostt 
     cd $repo
+    # 3.a Configure comms mode
     git remote add origin git@$new_host/$repo.git       # SSH mode
     git remote add origin https://$new_host/$repo.git   # HTTP mode
-    
+    # 3.b Push to destination host.
     git push -u origin --all
     git push origin --tags
 
     # Other git operations on a *.bundle
-    # Clone a repo from local bundle (instead of from remote origin)
+    # Clone (extract) a repo from local bundle (instead of from remote origin)
     git clone $repo.bundle $repo  # Clone a repo from bundle
-    # Fetch (not merge) updates from bundle
-    git fetch ../$repo_updates.bundle main
-    # Pull latest from bundle's main; merging it into current branch.
-    git pull ../$repo_updates.bundle main
+    # Capture anything in bundle not yet committed at source branch of extracted repo
+    cd $repo 
+    # 1. Fetch (not merge) updates from source branch of bundle to current branch
+    git fetch ../$repo_updates.bundle $source_branch
+    # 2. Pull latest from bundle's source branch and merge it into current branch.
+    git pull ../$repo_updates.bundle $source_branch
 
 ###################################################################
 ## MIRROR : git clone --mirror : Use to mirror, sync, backup a repo
