@@ -126,7 +126,7 @@ preserve_newlines: |
   These three lines
   will appear exactly
   as you see them here.
-same_but_remove_final_newline: |-
+preserve_and_strip_final_newline: |-
   foo
 ## Fold (>) : ALL lines of SAME (initial) INDENTATION are interpreted as ONE LINE.
 fold_newlines: >
@@ -135,6 +135,10 @@ fold_newlines: >
       
       And these two 
       are compiled to line two.
+fold_and_strip_final_newline: >-
+      These two lines
+      ...
+
 reference_preserve: |
   a b
   c d

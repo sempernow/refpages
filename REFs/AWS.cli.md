@@ -1,5 +1,24 @@
 # `aws` v2 CLI
 
+## Meta
+
+```bash
+# SSO AuthN 
+aws sso login --profile sbx-dev
+# Verify
+aws sts get-caller-identity --profile sbx-dev
+
+
+# Role Manager : Enable/Disable
+aws iam put-account-properties --properties RoleManager/Enabled=true
+aws iam put-account-properties --properties RoleManager/Enabled=false
+# View current setting
+aws iam get-account-properties
+
+# List all AWS Regions : https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html
+aws ec2 describe-regions --query "Regions[].RegionName" --output yaml
+```
+
 ## EKS
 
 ```bash

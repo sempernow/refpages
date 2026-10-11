@@ -1,4 +1,15 @@
-# [LINK](https://# "___")
+# Brave browser 
+
+
+## Turn off Brave "Password Manager", 
+
+which automatically steals your passwords 
+whenever you type them in and then "asks" 
+if you want their cartel to keep them:
+
+### brave://password-manager/settings
+
+... and toggle everything to OFF.
 
 
 ---
