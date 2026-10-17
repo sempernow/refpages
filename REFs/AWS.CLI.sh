@@ -32,49 +32,57 @@ exit
         choco install awscli  # https://chocolatey.org/packages?q=aws 
 
     # Autocomplete
+
         complete -C aws_completer aws  # command completion; test ... `aws s<TAB>`
-    # CONFIG/CRED 
-        # per user & profile
-            ~/.aws
-                /config        
-                /credentials  
 
-            # Session Tokens [1hr] @ 
-            ~/.aws/cache/$_PROFILE_NAME.json
+# CONFIGURE
+    aws configure help                 # command help
+    aws configure list-profiles        # List profiles of ~/.aws/config
+    aws configure list --profile $name # List profile settings
+    
+    # Get all creds params of current session
+    aws configure export-credentials --profile $name --format env
+    export AWS_ACCESS_KEY_ID=ASI...
+    export AWS_SECRET_ACCESS_KEY=6fF...
+    export AWS_SESSION_TOKEN=IQo... # This is *not* an (IAM) Access Token
+    export AWS_CREDENTIAL_EXPIRATION=2024-01-10T21:13:42+00:00
 
-            # Assume Role / MFA 
-            # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html#cli-configure-role-mfa
+    # Configure current shell by sourcing those environment variables
+    source <(aws configure export-credentials --profile master-admin --format env)
+    #... overrides/conflicts with any future/refreshed SSO creds: 
+    unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_CREDENTIAL_EXPIRATION
+    
+    # per user & profile
+        ~/.aws
+            /config        
+            /credentials  
 
-        # PROFILEs
-            aws ... --profile foo  # defaults to `default`
+        # Session Tokens [1hr] @ 
+        ~/.aws/cache/$_PROFILE_NAME.json
 
-            /config  # @ ~/.aws/
-            #-----------------------
-            [profile foo-bar]  # convention: NAME-ROLE
-            region = us-east-1
-            role_arn = arn:aws:iam::NNNNNNNNNNNN:role/bar
-            source_profile = foo
-            mfa_serial = arn:aws:iam::NNNNNNNNNNNN:mfa/foo
-            duration_seconds =  43200 # 12 hrs; if =< MaxSessionDuration; (1 hr default) 
+        # Assume Role / MFA 
+        # https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html#cli-configure-role-mfa
 
-            /credentials  # @ ~/.aws/
-            #----------------------
-            [foo]
-            aws_access_key_id = aZ09...20
-            aws_secret_access_key = aZ09...40
+    # PROFILEs
+        aws ... --profile foo  # defaults to `default`
 
-        # config PER TERMINAL/SESSION
-            export AWS_PROFILE=foo
-            export AWS_ACCESS_KEY_ID=aZ09...20
-            export AWS_SECRET_ACCESS_KEY=aZ09...40
-            export AWS_DEFAULT_REGION=us-east-1
-            # OR
-            # authenticate; config per command/query; used @ EC2 instance, 
-            # (use ROLEs @ resource (EC2) instead of embedding credentials.)
-            aws configure  # queries for access-key-id, secret-access-key, region  
-                # ... launchs process to authenticate against this EC2 instance   
-                # Requires user input: Access Key ID, Secret Access Key, region name   
-                # if resource has assumed the proper ROLE(s), then use this config utility only to enter 'Default region', bypassing 'AWS Access Key ID' and 'AWS Secret Access Key' queries (press enter).
+        ~/.aws/config 
+        #-----------------------
+        [profile foo-bar]  # convention: NAME-ROLE
+        region = us-east-1
+        role_arn = arn:aws:iam::NNNNNNNNNNNN:role/bar
+        source_profile = foo
+        mfa_serial = arn:aws:iam::NNNNNNNNNNNN:mfa/foo
+        duration_seconds =  43200 # 12 hrs; if =< MaxSessionDuration; (1 hr default) 
+
+        ~/.aws/credentials
+        #----------------------
+        [foo]
+        aws_access_key_id = aZ09...20
+        aws_secret_access_key = aZ09...40
+
+    # config current shell 
+        source <(aws configure export-credentials --profile master-admin --format env)
 
 # DryRun 
     aws COMMAND ... --dry-run  # as implied; no real effect; very useful
@@ -106,6 +114,22 @@ exit
     --filters "Name=status,Values=available"
 # OUTPUT : json (default)|table|text|yaml 
     --output yaml # https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-output.html
+
+# Organizations
+    aws organizations list-accounts
+
+# STS  https://docs.aws.amazon.com/cli/latest/reference/sts/index.html#cli-aws-sts  
+    aws sts get-caller-identity # --debug --profile $name
+
+# SSO
+    aws sso logout # On refresh, else CLI bug results in silent fail due to stale cache 
+    aws sso login --profile $name
+
+    # Useless in practice for all other commands:
+    # List all roles of current sso user (param values are not easily acquired)
+    aws sso list-account-roles --access-token "$accessToken" --account-id $id
+    # Access Tokens are cached locally:
+    jq -Mr '.accessToken' ~/.aws/sso/cache/*.json
 
 # IAM  https://docs.aws.amazon.com/cli/latest/reference/iam/index.html  
     # Policy elements (keys): https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
@@ -887,29 +911,6 @@ exit
                     --port-range 'From=80,To=80' \
                     --cidr-block '0.0.0.0/0' \
                     --rule-action 'allow'  
-
-# STS  https://docs.aws.amazon.com/cli/latest/reference/sts/index.html#cli-aws-sts  
-    # whoami 
-        aws sts get-caller-identity
-    # Assume Role  https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html 
-    # @ ~/config https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-role.html#cli-configure-role-mfa
-        assume-role
-            --role-arn <value>
-            --role-session-name <value>
-            [--policy <value>]
-            [--duration-seconds <value>]  # 3600-43200 sec; 1-12 hr
-            [--external-id <value>]
-            [--serial-number <value>]
-            [--token-code <value>]
-            [--cli-input-json <value>]
-            [--generate-cli-skeleton <value>]  
-    # Get Session Token  
-        get-session-token
-            [--duration-seconds <value>]
-            [--serial-number <value>]
-            [--token-code <value>]
-            [--cli-input-json <value>]
-            [--generate-cli-skeleton <value>]
 
 # RDS  https://docs.aws.amazon.com/cli/latest/reference/rds/index.html 
 # DynamoDB  
