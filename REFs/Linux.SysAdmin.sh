@@ -748,7 +748,9 @@ exit 0
     (sleep 2 && tail --pid=$( pidof $_program ) -f /dev/null && rm ./$_program &)
     go build -o $_program && ./$_program
 
-    stress  # stress test; artificial load
+    # Stress (Load) Test
+    stress-ng --cpu "$(nproc)" --cpu-load 100 --timeout 100s # apt update && apt install -y stress-ng
+    stress  # (legacy) stress test; artificial load
         -c, --cpu N      # spawn N workers spinning on sqrt()
         -i, --io N       # spawn N workers spinning on sync()
         -m, --vm N       # spawn N workers spinning on malloc()/free()
@@ -758,7 +760,15 @@ exit 0
         strace -o COMMAND.strace -f COMMAND ARGs
         strace -c COMMAND  # stats
 
-    top # Dynamic real-time view of a running linux system : processes/threads
+    # Better (lower level) than top : Captures what is invisible to top
+    pstat 1 5 # 1s intervals for 5s : apt update && apt install -y sysstat
+
+    top # Dynamic real-time (snapshots) of processes running on a linux system
+        # Order by RESidentMemory (SHIFT+)M (RES === RSS)
+        # Order by Percent(%)CPU (SHIFT+)P
+        # WARNING: some processes hogging 99% CPU may show 0% CPU:
+        #   If a program spawns hundreds of short-lived threads or a few massive ones, 
+        #   top's default view can drastically misrepresent or hide the load.
         # Memory units in MiB at Task (-e) and Summary (-E) areas : Sort by Resident Set Size (RES)
         top -em -Em -oRES
     htop    # Newer/nicer top
@@ -788,11 +798,11 @@ exit 0
             logger $1 has stopped.  # send to syslog; `/var/log/messages`
 
         ps -ejH # Process tree
-        ps fax # processes AND their child processes
-        ps -ag # processes by group name or session
-        ps ax | grep 'process-str'
-        ps -ef | grep ssh | grep -v grep # all ssh session processes
-        ps -eo user,pid,cpu,nice,comm # format [-o]; show only ...
+        ps -efx # Processes AND their child processes
+        ps -eg  # Processes by group name or session
+        ps -ef | grep 'ssh' | grep -v grep # all ssh session processes (Linux syntax)
+        ps -ax | grep 'ssh' | grep -v grep # all ssh session processes (BSD syntax)
+        ps -eo user,pid,cpu,nice,command # format [-o]; show only declared columns; 'comm' for command only; 'command' for entire statement.
 
     pstree # all processes per parent-child tree [graph]
 
