@@ -13,7 +13,17 @@ exit
         #  https://www.freedesktop.org/wiki/Software/systemd/PredictableNetworkInterfaceNames/
         #  https://github.com/systemd/systemd/blob/master/src/udev/udev-builtin-net_id.c#L20
         # e.g., eth0 => enp1s0 : en=Ethernet, p1=PCI-bus1, s0=slot-0
+    
+    ip link         # Show MAC, mtu, ... of all devices (interfaces)
 
+    ethtool $dev    # Device info
+    ethtool -i $dev # Device driver info
+    
+    mii-tool        # media-independent interface [MII] status [OBSOLETE; use ethtool]
+
+    lshw -class network # Get info of all network devices (interfaces)
+    # Get bandwidth of a network interface
+    lshw -class network |grep -A 10 eth0 |grep size # size: 10Gbit/s
 
 # Network Layer vs. tool
     ###########################################################################
@@ -599,8 +609,9 @@ exit
 
 # NETWORKs / SUBNETs
 
-    traceroute -n -T -p $port $ip # TCP
-    sudo traceroute -I $ip # Use ICMP instead
+    traceroute $ip  # Route from local host to remote ($ip), per hop, using UDP
+    sudo traceroute -n -T -p $port $ip  # using TCP; allows port declaration; requires sudo
+    sudo traceroute -I $ip              # using ICMP instead
 
     mtr # My Traceroute : combine traceroute + ping
         # https://en.wikipedia.org/wiki/MTR_(software)
@@ -659,14 +670,6 @@ exit
 
     ipcalc  # Get network address, CIDR, mask,... all the things
         ipcalc -pnmb --minaddr --maxaddr --geoinfo --addrspace 193.92.150.0/27
-
-    mii-tool     # media-independent interface [MII] status [OBSOLETE; use ethtool]
-    ethtool NIC  # get info on NIC, e.g., 'ethtool eth0'
-            -i NIC   # driver info
-
-    # Get bandwidth of a network interface
-    lshw -class network |grep -A 10 eth0 |grep size # size: 10Gbit/s
-
 
 
     ss # Socket Statistics; IP:PORT; like netstat : L4 (Transport Layer)
@@ -962,9 +965,12 @@ exit
 # CONFIGURE
 
     # Ubuntu
-        netplan # Changes PERSIST
+        netplan # Configure STATIC ROUTEs; changes PERSIST
+        /etc/netplan/*.yaml # Config file per device; declares device properties; auto-applied on boot
         netplan --debug apply
-        /etc/netplan/... # Config files auto-applied on boot
+
+    # RHEL
+        nmcli conn modify ens33 +ipv4.routes "10.0.0.0/24 192.168.29.50"
 
     ip # iproute2 Libary/utilities for configuring Linux : http://www.policyrouting.org/iproute2.doc.html
         # ip, ss, bridge, rtacct, rtmon, tc, ctstat, lnstat,
@@ -1003,9 +1009,9 @@ exit
                 # Manage physical and logical device settings (MAC address)
                 # Device AKA adapter AKA interface AKA connection AKA NIC
             man ip-link                 # Network device configuration
-            ip link                     # Show MAC of all devices
-            dev=ens192                  # Common: eth0, ens192, wlan0, docker0, cni*
-            ip -s link dev show $dev    # Show link statistics
+            ip link                     # Show MAC, mtu, ... of all devices (interfaces)
+            dev=ens192                  # eth0, ens192, eno1, wlan0, docker0, cni*
+            ip -s link show dev $dev    # Show link statistics RX/TX : bytes, packets, errors, ...
                 # Path MTU Discovery (PMTUD) may cause a transitory,
                 # per-connection change MTU setting (nominally 1500) of a device,
                 # e.g., to account for tunnel protocol (VPN, SSH, ...),
@@ -1027,8 +1033,8 @@ exit
             ip addr                # show IP and MAC of all devices/interfaces
             ip addr show dev $dev  # show IP and MAC of device (eth0 or whatever)
 
-            sudo ip addr add dev $dev 10.0.0.10/24  # add an IP address to NIC; always include subnet
-                                               # ifconfig FAILs to see this newly added IP Address
+            sudo ip addr add dev $dev 10.0.0.10/24  # EPHEMERAL add an IP address to device; use CIDR notation
+                                                    # ifconfig FAILs to see this newly added IP Address
 
             sudo ip -6 addr del $ipv6_cidr dev $dev
             sudo ip [-4] addr del $ipv4_cidr dev $dev
@@ -1045,7 +1051,7 @@ exit
                 # Shows node's public IP address:
                 #... scope link  src 192.168.1.183 ...
             ip -r route  # Resolve your public IP address to name of Gateway
-            sudo ip route add $cidr via $gateway_ip
+            sudo ip route add $cidr via $gateway_ip       # added routes are EPHEMERAL
             sudo ip route add 20.0.0.0/8 via 192.168.1.1  # add a route
             sudo ip route add default via 192.168.50.100  # add default gateway
 
