@@ -1,5 +1,15 @@
 # Window 11
 
+
+## [Coreutils for Windows](https://github.com/microsoft/coreutils)
+
+UNIX-style core utilities for Windows.  
+The same commands and pipelines you use on Linux, macOS, and WSL - natively.
+
+```powershell
+winget install Microsoft.Coreutils
+```
+
 ## RDC hijacks keyboard
 
 __Recover host keyboard__ when Remote Desktop Connect (RDC) hijacks it:
