@@ -65,6 +65,17 @@ wsl --shutdown
 wsl
 </code></pre>
 
+<h2>Configure WSL 3</h2>
+
+<p>After upgrade, &quot;<code>wsl --update</code>&quot;, to WSL 3, Ubuntu launch reports:
+&quot;<code>wsl: Failed to detect nested virtualization support, error: ERROR_INVALID_DATA</code>&quot;</p>
+
+<p>Fix: Add this file at <code>%USERPROFILE%\.wslconfig</code></p>
+
+<pre><code class="language-ini">[wsl2]
+nestedVirtualization=false
+</code></pre>
+
 <h2>Configure a WSL2 distro</h2>
 
 <ol>

@@ -117,19 +117,29 @@ exit
 
 # Organizations
     aws organizations list-accounts
+    
+    # Examine org structure and hierarchy layer by layer
+    id='r-w6rt'
+    aws organizations list-organizational-units-for-parent --output yaml --parent-id $id |
+        tee aws.organizations.list-organizational-units-for-parent.$id.yaml
+
+
+# SSO : Most commands of aws sso are useless in practice, except for these:
+    aws sso logout # On refresh, else CLI bug results in silent fail due to stale cache 
+    # Authenticate : `wslu` utility needed for browser auto-start
+    aws sso login # --no-browser Then click on the link
+    # If profiles configured
+    aws sso login --profile $name
+
+    # List all roles of current sso user (PARAM VALUES ARE NOT EASILY ACQUIRED)
+    aws sso list-account-roles --access-token "$accessToken" --account-id $id
+    # Access Tokens are cached locally:
+    accessToken="$(jq -Mr '.accessToken' ~/.aws/sso/cache/*.json)"
+
 
 # STS  https://docs.aws.amazon.com/cli/latest/reference/sts/index.html#cli-aws-sts  
     aws sts get-caller-identity # --debug --profile $name
 
-# SSO
-    aws sso logout # On refresh, else CLI bug results in silent fail due to stale cache 
-    aws sso login --profile $name
-
-    # Useless in practice for all other commands:
-    # List all roles of current sso user (param values are not easily acquired)
-    aws sso list-account-roles --access-token "$accessToken" --account-id $id
-    # Access Tokens are cached locally:
-    jq -Mr '.accessToken' ~/.aws/sso/cache/*.json
 
 # IAM  https://docs.aws.amazon.com/cli/latest/reference/iam/index.html  
     # Policy elements (keys): https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements.html
@@ -157,37 +167,46 @@ exit
             aws iam update-role --role-name 'admin' --max-session-duration 43200 
 # KMS
 
+    # Get the KEY POLICY object for a key ($id)
+    # - Use yq to strip unnecessary backslashes from JSON response body.
+    id=mrk-a8c3bd3901ce4061905186d92aaffa03
+    aws kms get-key-policy --key-id $id |
+        yq '.Policy |= from_json' -o json |
+            tee aws.kms.get-key-policy.key_$id.json
+    # Print its policy
+    jq .Policy aws.kms.get-key-policy.key-id_$id.json
+
     # Create symmetric key
     aws kms create-key --description "My secure master key" --key-usage ENCRYPT_DECRYPT --customer-master-key-spec SYMMETRIC_DEFAULT
 
     # Create alias
-    aws kms create-alias --alias-name alias/my-app-key --target-key-id <key-id-or-arn>  
+    aws kms create-alias --alias-name alias/my-app-key --target-key-id <key-id-or-arn>  
 
     aws kms list-keys
 
-    aws  kms list-aliases
+    aws kms list-aliases
 
     # Encrypt to binary blob
     aws kms encrypt --key-id alias/my-app-key --plaintext fileb://plaintext.txt --output text --query CiphertextBlob > ciphertext.bin
 
     # Encrypt to base64 (PEM)
     aws kms encrypt \
-      --key-id alias/my-app-key \
-      --plaintext fileb://plaintext.txt \
-      --query CiphertextBlob \
-      --output text > ciphertext.pem
+      --key-id alias/my-app-key \
+      --plaintext fileb://plaintext.txt \
+      --query CiphertextBlob \
+      --output text > ciphertext.pem
 
     # Decrypt if binary blob
     aws kms decrypt --ciphertext-blob fileb://ciphertext.bin --output text --query Plaintext | base64 --decode > decrypted.txt
 
     # Decrypt if base64-encoded
     aws kms decrypt \
-      --ciphertext-blob fileb://<(base64 -d ciphertext.pem) \
-      --query Plaintext \
-      --output text | base64 -d
+      --ciphertext-blob fileb://<(base64 -d ciphertext.pem) \
+      --query Plaintext \
+      --output text | base64 -d
 
     # Enable annual automatic rotation:
-    aws kms enable-key-rotation --key-id <key-id-or-arn>   
+    aws kms enable-key-rotation --key-id <key-id-or-arn>   
 
     # Disable key rotation:
     aws kms disable-key-rotation --key-id <key-id-or-arn>
@@ -319,8 +338,9 @@ exit
             --storage-class 'REDUCED_REDUNDANCY'|'STANDARD_IA'  # ('IA'; infrequent access)
             # Grant permissions:  Permission=Grantee_Type=Grantee_ID
             --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=emailaddress=user@example.com  
-    # Upload ALL files in SOURCE to S3
-        aws s3 cp $SOURCE s3://$_BUCKET/ --recursive --content-type 'text/html'
+    # Upload all files in SOURCE to S3, and set their content (MIME) type. S3 content-type default is "binary/octet-stream".
+        # Declare content type if to be distributed by CDNs, which set Content-Type header.
+        aws s3 cp $SOURCE/ s3://$_BUCKET/ --recursive --content-type 'text/html'
     # Copy S3 objects from bucket1 to bucket2  
         aws s3 cp s3://$BUCKET_1/ s3://$BUCKET_2/ --recursive --region 'REGION-of-bucket1'
             --acl public-read-write  # set ACLs on copy; REQUIRES policy: `s3:PutObjectAcl`  
@@ -953,7 +973,7 @@ exit
     aws eks list-nodegroups --region <region> --cluster-name <cluster-name>
 
     # Scale Node Group
-    aws eks update-nodegroup-config --region <region> --cluster-name <cluster-name> --nodegroup-name <nodegroup-name> --scaling-config minSize=2,maxSize=5,desiredSize=3 
+    aws eks update-nodegroup-config --region <region> --cluster-name <cluster-name> --nodegroup-name <nodegroup-name> --scaling-config minSize=2,maxSize=5,desiredSize=3 
 
     # List Add-ons
     aws eks list-addons --region <region> --cluster-name <cluster-name>
@@ -964,7 +984,7 @@ exit
     # List Access / IAM
     aws eks list-access-entries --region <region> --cluster-name <cluster-name>
 
-    # List OIDC Provider 
+    # List OIDC Provider 
     aws eks describe-cluster --region <region> --name <cluster-name> --query
     "cluster.identity.oidc.issuer" --output text
 
