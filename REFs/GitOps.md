@@ -222,7 +222,7 @@ and does so ever more as the project progresses.
         - __Argo Rollouts__: Advanced deployment strategies like canary and blue/green. Similar to Flagger
 - __Multi-tenancy__
     - [__vCluster__](https://github.com/loft-sh/vcluster "GitHub") Virtual clusters for better isolation than Namespace offers. OSS and Enterprise editions.
-- __Logging__ : Cluster-level logging, AKA __Log Aggregation__ AKA __Unified Loggging__, so that logs survive their (ephemeral) generator, be that of any host or container process.
+- __Logging__ : Cluster-level logging, AKA __Log&nbsp;Aggregation__ AKA __Unified&nbsp;Logging__, so that logs survive their (ephemeral) generator, be that of any host or container process.
     - __Elastic stack__ : to collect, store, query, and visualize log data. 
         - Composed of:
             1. __Backend__ : [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html "Elastic.co") : A search &amp; analytics engine, with an integral storage scheme. Elasticsearch uses a __distributed document-oriented database model__ where it stores data in indices. These __indices are persisted__ to disk in a data directory, typically managed by Elasticsearch nodes. The storage and retrieval of data are handled internally by Elasticsearch using its own mechanisms, such as the [Lucene](https://en.wikipedia.org/wiki/Apache_Lucene "Wikipedia") library for indexing and searching.
@@ -231,7 +231,8 @@ and does so ever more as the project progresses.
                 - [Logstash](https://www.elastic.co/logstash "Elastic.co") : Elastic's native solution
                 - [Fluentd](https://www.fluentd.org/architecture "Fluentd.org") : Data collector (not limited to logs, metrics and tracing).
                     - [Fluent Bit](https://fluentbit.io/) : 
-                    *Lightweight forwarder for Fluentd* for environments having limited resources 
+                    *Lightweight forwarder for Fluentd* for environments having limited resources.   
+                    **Amazon CloudWatch Observability EKS Add-on** uses Fluent Bit as the collector.
                     - [Fluent Operator](https://github.com/fluent/fluent-operator "GitHub"), formerly "FluentBit Operator" : 
                         *Manage Fluent Bit and Fluentd the Kubernetes way*.
         - Stacks

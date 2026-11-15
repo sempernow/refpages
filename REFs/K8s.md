@@ -144,6 +144,43 @@ See [`K8s.provision-kubernetes.sh`](K8s.provision-kubernetes.sh)
 
 ## Topics of Interest
 
+---
+
+### K8s on Bare Metal
+
+
+Running Kubernetes on bare metal versus inside virtual machines involves a core trade-off between raw hardware performance and cost efficiency on one side, and operational flexibility and strong isolation on the other.
+Here is how the two approaches compare across key architectural areas:
+
+|Feature / Dimension|Kubernetes on Bare Metal|Kubernetes on VMs (Traditional Hypervisor)|
+|-------------------|------------------------|------------------------------------------|
+|Performance & Latency|Maximum performance. Zero hypervisor overhead and direct access to CPU, NVMe storage, and NICs.|Slight overhead (typically 2%–10%). Extra translation layers for virtualized I/O and networking.|
+|Hardware Licensing & Cost|Lower software cost. Eliminates expensive third-party hypervisor licenses (e.g., VMware).|Higher software cost. Requires paying for and maintaining a separate virtualization layer underneath K8s.|
+|Workload Isolation|Process-level isolation. Pods on the same node share one host Linux kernel (unless using sandboxes like gVisor).|Hardware-level isolation. Each VM node has its own guest OS kernel, reducing "noisy neighbor" and kernel-exploit risks.|
+|Node Provisioning & Scaling|Slower and coarser. Adding capacity means booting physical servers; nodes are sized to fixed physical hardware.|Fast and granular. You can spin up new VM nodes in seconds and carve one giant server into right-sized nodes.|
+|Lifecycle & Maintenance|Harder hardware management. OS upgrades, firmware patches, and hardware failures require physical or out-of-band management (IPMI/iDRAC).|Easier node operations. Features like VM snapshots, cloning, and live migration make host maintenance seamless.|
+
+
+#### What You Gain on Bare Metal
+
+- Peak I/O and GPU Throughput: Workloads like AI/ML training, high-frequency databases, and real-time edge processing get unthrottled access to GPUs, smart NICs, and local NVMe drives without virtualization bottlenecks.
+- Simplified Stack (No Double Virtualization): You avoid managing two separate orchestration systems (one for VMs, one for containers) and eliminate the "virtualization tax" on your hardware resources.
+- Lower Total Cost of Ownership: Removing commercial hypervisor licensing saves substantial budget, especially at scale or across many edge locations.
+
+What You Lose on Bare Metal
+
+- Granular Resource Slicing: If you buy massive physical servers (e.g., 128 cores and 1 TB of RAM), a single bare-metal Kubernetes node becomes a large failure domain. With VMs, you can slice that physical machine into four smaller, isolated Kubernetes nodes.
+- Live Migration of Nodes: If a physical server needs a firmware update or shows signs of hardware degradation, a traditional hypervisor can live-migrate the entire VM node to another host without interrupting running apps. On bare metal, Kubernetes must drain and reschedule pods onto other physical servers.
+- Strict Multi-Tenant Boundaries: Because all containers on a bare-metal node share the underlying host Linux kernel, strict multi-tenant environments often have to add extra isolation layers (like gVisor or Kata Containers) to match the security boundary of a VM.
+
+#### Summary Recommendation
+
+- Choose Bare Metal (like Google Distributed Cloud) when you want maximum hardware performance, run GPU-heavy or latency-sensitive edge workloads, and want a single unified platform without paying for a traditional hypervisor.
+- Choose K8s on VMs when you already have a mature virtualization team, need strict multi-tenant isolation, or want the ability to dynamically carve large physical servers into smaller, easily snapshotable cluster nodes.
+Are you designing this for an on-premises data center or edge/air-gapped locations, and what types of workloads (e.g., AI/GPUs, databases, or general web apps) will run on it?
+
+---
+
 ### Pod Scheduling / Preemption / Eviction
 
 Pod Scheduling, Preemption, and Eviction are foundational Kubernetes mechanisms that ensure critical workloads get the compute resources they need. Scheduling finds a suitable node; Preemption kills lower-priority Pods so high-priority Pods can be scheduled; Eviction terminates running Pods to protect node stability. 
@@ -164,20 +201,17 @@ They are two independent mechanisms managed by different parts of the Kubernetes
 Requests and limits heavily influence scheduling, but they also dictate eviction and runtime enforcement. Meanwhile, **PriorityClass is primarily a scheduling tool** (influencing queue order and preemption), but it is also consulted during specific evictions. The responsibilities are split between the `kube-scheduler` (which places pods onto nodes) and the `kubelet` (which manages resources and evictions on individual nodes).
 
 
-### 1. Resource Requests and Limits (QoSClass)
+#### 1. Resource Requests and Limits (QoSClass)
 
 - Scheduling: Requests act as a strict threshold. The scheduler will only place a pod on a node if the node has enough unallocated capacity to satisfy the pod's requested CPU and memory.
 - Eviction: Limits define the maximum resources a container can consume. If it attempts to use more memory than its limit, the Linux kernel triggers an Out-Of-Memory (OOM) kill. If it tries to use more CPU, the kernel throttles the container.
 - Quality of Service (QoS): Requests and limits group pods into QoS tiers (Guaranteed, Burstable, BestEffort). When a node experiences severe memory pressure, the kubelet uses these QoS tiers to decide which pods to evict first.
 
-### 2. PriorityClass
+#### 2. PriorityClass
 
 - Scheduling: PriorityClass determines where a pod sits in the scheduling queue. Pods with higher priority values get placed ahead of lower-priority pods.
 - Preemption (Scheduling Eviction): If a high-priority pod cannot be scheduled because a node lacks resources, the scheduler will forcibly evict (preempt) lower-priority running pods to make room for the higher-priority one.
 - Node Pressure Eviction: During standard node pressure (like a shortage of disk or memory), the kubelet primarily bases eviction decisions on QoS. However, PriorityClass is used as a tie-breaker: if two pods have the same QoS class, the kubelet will evict the pod with the lower priority value first.
-
-
-
 
 #### Core Overview 
 
@@ -253,6 +287,7 @@ When a node experiences a resource crunch, the **kubelet** filters pods through 
 
 ⚠️ **Production Danger Zone**: A common anti-pattern is assigning a very high PriorityClass to a pod but giving it a BestEffort QoS class (no resource limits). Under node pressure, the  will ruthlessly evict it first despite its high priority because it has no guaranteed boundaries. For mission-critical workloads, you must combine a high PriorityClass with a Guaranteed QoS class. If you would like to map out a resource protection strategy, tell me: 
 
+---
 
 ### BGP ([Wiki](https://en.wikipedia.org/wiki/Border_Gateway_Protocol "Wikipedia") | [Video](https://www.youtube.com/watch?v=6XW5cRa3ZKM))
 
@@ -278,7 +313,7 @@ Instead of treating BGP as a protocol meant only for the global internet, engine
 
 ------------------------------
 
-### How Your Kubernetes Cluster Fits into this ASN Setup
+#### How Your Kubernetes Cluster Fits into this ASN Setup
 
 When you deploy Cilium BGP across a multi-rack setup with this architecture, your Kubernetes nodes inherit this rack-by-rack numbering system. This is done using one of two common design choices:
 
@@ -317,6 +352,7 @@ Your Kubernetes nodes on Rack A are given a dedicated ASN (64522) that is differ
 * The Connection: This creates an **eBGP** (External BGP) session between Cilium and the ToR switch.
 * The Benefit: This is highly favored by network teams who want **strict separation**. It allows the ToR switch to treat the Kubernetes cluster as a distinct "external" entity routing into their network fabric, making firewalling and route filtering easier.
 
+---
 
 ### [__Life of a Packet__](https://www.youtube.com/watch?v=0Omvgd7Hg1I "YouTube video by Michael Rubin (Google) at 2017 KubeCon Europe") in Kubernetes.
 **iptables v. K8s** 
@@ -437,6 +473,8 @@ Settings are applied by default on `kubeadm init`/`join`. Modifying this after i
 - system-node-critical
 - 2000001000
 ```
+
+---
 
 ---
 

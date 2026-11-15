@@ -12,8 +12,6 @@ aws sts get-caller-identity --profile sbx-dev
 # Role Manager : Enable/Disable
 aws iam put-account-properties --properties RoleManager/Enabled=true
 aws iam put-account-properties --properties RoleManager/Enabled=false
-# View current setting
-aws iam get-account-properties
 
 # List all AWS Regions : https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html
 aws ec2 describe-regions --query "Regions[].RegionName" --output yaml
@@ -52,6 +50,8 @@ aws eks describe-cluster --region <region> --name <cluster-name> --query
 ```
 
 ## KMS
+
+Customer-Managed Keys ***accrue monthly costs***
 
 ```bash
 # Create symmetric key

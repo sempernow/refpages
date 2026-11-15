@@ -43,6 +43,18 @@ wsl --shutdown
 wsl
 ```
 
+## Configure WSL 3
+
+After upgrade, "`wsl --update`", to WSL 3, Ubuntu launch reports: 
+"`wsl: Failed to detect nested virtualization support, error: ERROR_INVALID_DATA`"
+
+Fix: Add this file at `%USERPROFILE%\.wslconfig`
+
+```ini
+[wsl2]
+nestedVirtualization=false
+```
+
 ## Configure a WSL2 distro 
 
 1. Edit `/etc/wsl.conf` to configure mount points as `/<DRIVE>` instead of `/mnt/<DRIVE>` .  
