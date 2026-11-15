@@ -90,6 +90,7 @@ The anti-pattern to avoid is a branch per environment (`dev`, `test`, `staging`,
 
 
 Those `deploy_*` jobs **push**. That is, `deploy.sh` talks to the cluster directly. 
+
 If instead we use GitOps (ArgoCD or Flux) you **switch to a pull model**, 
 and the CI jobs stop deploying anything. 
 They shrink into **promote** jobs whose only output is a Git commit (or MR) to the deploy repo. 
@@ -97,7 +98,7 @@ Argo or Flux never reads CI; it reads the repo.
 
 So there are two separate places:
 
-**1. The deploy repo holds the environment definition**, and it's more than env vars:
+**1. Deploy Repo : Holds the environment definition**, and it's more than env vars:
 
 ```
 deploy/
@@ -128,7 +129,10 @@ configMapGenerator:
 Each overlay is the environment's config (replicas, resources, hosts, config maps, secret references) plus one pinned digest. 
 Most promotions change only that digest line.
 
-**2. The (GitLab) CI promote jobs are thin writers:**
+**2. App Repo : CI `promote` jobs are thin writers:**
+
+The promote job clones the deploy repo so it can edit the overlay, commit the new digest and push. 
+It’s a write path that happens to start with a clone. The only reader in normal operation is Argo or Flux.
 
 ```yaml
 .promote:
@@ -145,6 +149,13 @@ promote_dev:     { extends: .promote, environment: dev }
 promote_staging: { extends: .promote, environment: staging, when: manual }
 promote_prod:    { extends: .promote, environment: prod,    when: manual }
 ```
+- Scope of `ops/deploy` is a design choice, and there are four common ways to draw it:
+    1. Per app `ops/deploy/app-x`
+    2. Per team `ops/deploy/team-abc`
+    3. Per cluster/fleet `ops/deploy/k8s-07`
+    4. Platform vs. Workloads: 
+        - `ops/deploy/platform`
+        - `ops/deploy/apps`
 
 Argo or Flux sees the commit, reconciles, and reports health.
 
@@ -160,6 +171,7 @@ Argo or Flux sees the commit, reconciles, and reports health.
 | Secrets | Vault or ESO; the repo holds references only |
 
 **Some refinements:**
+
 - **You can drop CI promotion for dev.** Flux image automation or Argo CD Image Updater can watch the registry and bump dev's digest itself. Keep the higher environments as explicit MRs so there's a human-approved record.
 - **Keep GitLab Environments anyway.** They're cheap, and they give you a "what's deployed where" view and deployment approvals. Argo or Flux can post sync status back through notifications.
 - **For compliance, the deploy-repo MR is your change record.** Who approved it, exactly what changed (one digest) and when are all in Git. Argo or Flux shows that the cluster matches, and that's the evidence an assessor wants.
@@ -168,6 +180,53 @@ So yes: the per-environment targets end up as nearly static config plus a digest
 They just live in the deploy repo (ArgoCD/Flux) as manifests rather than as CI variables.
 
 ---
+
+## Deploy Repo(s)
+
+The scope of a deploy repo is a design choice, and there are four common ways to draw it:
+
+| Scope | Layout | Good for | Watch out for |
+|---|---|---|---|
+| **Per app** | `ops/deploy/app-x` | Strong isolation, simple permissions | Repo sprawl, hard to see a whole environment at once |
+| **Per team** | `ops/deploy/team-a` holding that team's apps | Matches ownership and approvals | Shared dependencies between teams need coordination |
+| **Per cluster or fleet** | `ops/deploy/eks-03` holding everything that runs on a cluster | One place that answers "what's in prod" | Big blast radius; needs CODEOWNERS by path |
+| **Platform vs. workloads** | `ops/deploy/platform` + `ops/deploy/apps` (either of which can be split further) | Separates cluster infrastructure from tenant apps | Ordering between them (CRDs before the apps that use them) |
+
+A common mature setup is the last one: a **platform repo** owned by the platform team and one or more **workload repos** owned by app teams.
+
+```yaml
+ops/platform/                      # cluster plumbing, platform team approves
+  clusters/
+    prod-east/                     # what's installed on this cluster
+    staging/
+  infrastructure/
+    ingress-nginx/
+    cert-manager/
+    external-secrets/
+    kube-prometheus-stack/
+    gitlab-runner/
+
+ops/apps/                          # tenant workloads, app owners approve by path
+  myapp/
+    base/
+    overlays/{dev,test,staging,prod}/
+  otherapp/
+    base/
+    overlays/{dev,test,staging,prod}/
+```
+
+**How the deployer finds things:**
+
+- **Argo CD:** an "app of apps" root Application per cluster, or better an **ApplicationSet** with a Git directory generator that creates one Application per `apps/*/overlays/<env>` automatically. Adding an app is then just adding a directory.
+- **Flux:** a `Kustomization` per path, chained with `dependsOn` so the platform (CRDs, controllers) reconciles before the workloads.
+
+**Making a shared repo safe:**
+
+- Put CODEOWNERS on each path (`/myapp/overlays/prod/ @myapp-release-managers`) so one team can't change another team's prod pins.
+- Use Argo CD **AppProjects**, or Flux with per-tenant service accounts, to limit which namespaces and resource kinds each app's manifests may touch. Repo permissions control who can *write*, and these control what the manifests are *allowed to do* on the cluster.
+- Run validate-only CI on the repo (`kustomize build`, schema checks with kubeconform, policy checks with Conftest or Kyverno) so a broken manifest fails in the MR, not during reconciliation.
+
+**Subset vs. all:** it's fine for a cluster to be fed by several repos. For example, `ops/platform` and `ops/apps` might both target prod while a vendor-supplied app comes from its own repo. The rule that keeps it sane is that **each resource on the cluster has exactly one owning repo and path**. Two repos managing the same object will fight, and Argo or Flux will flap between them.
 
 <!-- 
 
