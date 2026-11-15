@@ -375,6 +375,7 @@
 ## [rust.md](./REFs/rust.md)
 ## [SAN.md](./REFs/SAN.md)
 ## [SDcard.md](./REFs/SDcard.md)
+## [SDLC.md](./REFs/SDLC.md)
 ## [Secrets.age.md](./REFs/Secrets.age.md)
 ## [Secrets.Vault.md](./REFs/Secrets.Vault.md)
 ## [Security.EMS.IAM.ZTA.ABAC.md](./REFs/Security.EMS.IAM.ZTA.ABAC.md)
