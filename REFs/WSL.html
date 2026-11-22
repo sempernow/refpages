@@ -422,6 +422,11 @@ $ ipconfig.exe | grep IPv4 | cut -d: -f2
 
 <ul>
 <li><code>PATH</code> environment variable is <strong><em>automatically shared</em></strong> between Windows and WSL, so <em>needn't bother with</em> <code>WSLENV</code>.</li>
+
+<li><p>So for <code>md2html</code>:</p>
+
+<pre><code class="language-cmd">setx WSLENV &quot;MD2HTML_BASE_URL&quot; /m
+</code></pre></li>
 </ul></li>
 
 <li><p>Mount (removable) <code>NTFS</code> volume</p>

@@ -454,6 +454,11 @@ exit
     # https://trac.ffmpeg.org/wiki/Encode/MP3
     # https://trac.ffmpeg.org/wiki/AudioChannelManipulation#a5.1stereo  
 
+    # VBR : Spend bits only as needed; out-file size is about 40% smaller than CBR 320k
+    ffmpeg -i IN.mp4 -vn -c:a libmp3lame -q:a 2 OUT.mp3
+    # CBR : Highest quality MP3 : Every frame gets 320kbps regardless.
+    ffmpeg -i IN.mp4 -vn -c:a libmp3lame -b:a 320k OUT.mp3
+
     # FLAC => MP3 [PRESERVE METADATA]
     ffmpeg -i IN.flac -b:a 320k -map_metadata 0 -id3v2_version 3 OUT.mp3
 
@@ -469,7 +474,7 @@ exit
         ' _ {} \+
 
         -c:a  # aac, libmp3lame, ...; list @ `ffmpeg -codecs`
-        -q:a  # VBR QUALITY; 0-9; 0 is highest; aka `-qscale:a 2`
+        -q:a  # VBR QUALITY; 0-9; 0 is highest; aka `-qscale:a 2`; send bits only when needed.
         -b:a  # CBR [kbps]; 8, 16, ..., 128 [DEFAULT], 160, 192, 224, 256, or 320
         -ar   # audio sampling rate, e.g., 44100, 48000; DEFAULTs to that of IN.
         -ac   # number of OUT audio channels; e.g., 5.1 => stereo
@@ -509,9 +514,16 @@ exit
             -vbr 3  # 1-5; 1 ~ 20-32 kbps/ch; 5 ~ 96-112 kbps/ch
 
 # EXTRACT an ATTACHED cover/poster IMAGE from its video file
-        ffmpeg -i IN.mkv -map 0:v -map -0:V -c copy cover.jpg  
-        # ... searches and extracts; output file can be any name.
-        # ... maps all video streams (regular + attached pictures) and then use a negative mapping to disable all regular video streams (-0:V), leaving only the attached pictures mapped. MP4s can have attached pictures with codec JPEG, PNG or BMP. Check which one your file has, and correct the extension.
+    ffmpeg -i IN.mkv -map 0:v -map -0:V -c copy OUT.jpg  
+    # ... searches and extracts; output file can be any name.
+    # ... maps all video streams (regular + attached pictures) 
+    # and then use a negative mapping to disable all regular video streams (-0:V), 
+    # leaving only the attached pictures mapped. 
+    # MP4s can have attached pictures with codec JPEG, PNG or BMP. 
+    # Check which one your file has, and correct the extension.
+
+    # Extract 1 frame at a point-in-time (5 seconds in), decode, then re-encode to JPEG:
+    ffmpeg -ss 00:00:05 -i IN.mp4 -frames:v 1 -q:v 2 OUT.jpg
 
 # EXTRACT AUDIO (m4a) from VIDEO (mp4) FILEs
     find -iname '*.mp4' -execdir /bin/bash -c \
