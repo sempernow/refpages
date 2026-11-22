@@ -1,0 +1,111 @@
+AWS RDS (Relational Databases) 
+==============================
+    RDS    
+        Relational Database Service; OLTP; Manages SQL Databases (provisioning, backups, failover handling, etal); requires its own EC2 instance, e.g., 'db.t2.micro'; OPTIONAL Multi-AZ (auto-replicate across AZs), highly available, fault-tolerant deployment; OPTIONALL Read Replicas (<=5); can simulate failover by rebooting primary instance.  
+        Supports most database engines: 
+            Amazon Aurora (us-east), MySQL, MariaDB, PostgreSQL, Oracle, SQL Server, ... 
+
+            Aurora     
+                MySQL-compatible RDS; Enterprise Scale (db.r3.large - db.r3.8xlarge); 1/10th cost of Oracle; 5x faster than MySQL; scales in 10 GB increments; autoscales to 64TB; compute resources scales (quickly) up to 32vCPU + 244GB memory; Redundant with 2 copies across 3 availability zones (6 copies); self-healing; 2 types of replicas: Aurora Replicas (15), MySQL Read Replica (5)   
+                    
+        Designed for OLTP; MAX VOLUME SIZE of RDS Provisioned IOPS storage is 6 TB, and MAX provisioned IOPS is 30,000, with MySQL and Oracle database engines;    
+        
+        AWS RDS CLI  https://docs.aws.amazon.com/cli/latest/reference/rds/index.html
+
+        alt: Heroku Postgres  https://www.heroku.com/postgres    
+
+        Aurora     
+            MySQL-compatible RDS; Enterprise Scale; 1/10th cost of Oracle; 5x faster than MySQL; scales in 10 GB increments; autoscales to 64TB; compute resources scales (quickly) up to 32vCPU + 244GB memory; Redundant with 2 copies across 3 availability zones (6 copies); self-healing; 2 types of replicas: Aurora Replicas (15), MySQL Read Replica (5)   
+
+## [@ AWS RDS](https://docs.aws.amazon.com/cli/latest/reference/rds/describe-db-engine-versions.html) :: [Managed RDBMS Engine per AMI Instance](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html#PostgreSQL.Concepts)
+
+```bash
+# Versions list
+aws rds describe-db-engine-versions \
+    --engine 'postgres' \
+    | jq -r '.DBEngineVersions[].EngineVersion'
+```
+- `9.4.7, ..., 9.6.17, 10.1, ..., 11.7, ..., 12.2` (2020-06-09)
+
+
+```bash
+# Versions list
+aws rds describe-db-engine-versions --engine postgres \
+    | jq '.DBEngineVersions | .[].EngineVersion'
+```
+- `"9.4.7", ..., "9.6.17", "10.1", ..., "11.7", ..., "12.2"` (2020-06-09)
+
+
+# LAB - 067. Launching an RDS Instance
+    - MySQL / PHP / ELB / EC2 / Route53 
+
+    > RDS > Launch database engine > Select engine > MySQL
+    > Next (button) 
+    > Choose use case > dev/test 
+    > Specify DB details 
+        DB Instance Class: db.t2.micro
+        Multi-AZ Deployment: No
+    > Settings 
+        Free tier: check-box
+        DB Instance Identifier: db1
+        Master Username: (whatever)
+        Master Password: (alpha-num; >= 8 char)
+        Confirm Password:
+        > Next (button)  
+    > Configure Advanced Settings 
+        Database Name: db1
+        > Create database        
+    > Instances > db1
+        Details  
+            Security groups: rds-launch-wizard (link) > link (to EC2)
+                # Make db available to all in its security group, not just one IP
+                Security Group > Inbound > Type: MYSQL/Aurora > Edit  
+                    Source: sg-....WebDMZ (type for dropdown menu) 
+                    (default is specific IP, e.g., 69.143.188.12/32)
+
+            # NOTE separate SGs for EC2 and RDS
+                - EC2 has WebDMZ SG; RDS has rds-launch-wizard SG
+
+    > EC2 > Launch ...
+        Advanced Details: 'rds.sh'
+            #!/bin/bash
+            yum install httpd php php-mysql -y
+            yum update -y
+            chkconfig httpd on
+            service httpd start
+            echo "<?php phpinfo();?>" > /var/www/html/index.php
+            cd /var/www/html
+            wget https://s3.amazonaws.com/sempernow-test-1/connect.php 
+            
+            # 'connect.php'; upload it to s3; set wget link above
+                <?php 
+                $username = "devops"; 
+                $password = "12345678"; 
+                $hostname = "ENDPOINT-of-RDS_DB_INSTANCE"  (db1.cqzog4iglvjq.us-east-1.rds.amazonaws.com)
+                $dbname = "db1";
+                //connection to the database
+                $dbhandle = mysql_connect($hostname, $username, $password) or die("Unable to connect to MySQL"); 
+                echo "Connected to MySQL using username - $username, password - $password, host - $hostname<br>"; 
+                $selected = mysql_select_db("$dbname",$dbhandle)   or die("Unable to connect to MySQL DB - check the database name and try again."); 
+                ?>
+        > Next (button)
+        > Tags > Name: db1-test
+        > Launch
+
+    > EC2 > Load Balancer (classic) > Attached db1-test (EC2 instance) 
+        > Route53 > Created Alias Record for '8659010.xyz' w/ ELB as target endpoint
+
+     SUCCESS!!!
+        @ 8659010.xyz :: responds with the PHP Info page.
+
+        @ 8659010.xyz/connect.php ... responds with the php-scripted echo string...
+        "Connected to MySQL using username - devops, password - 12345678, host - db1.cqzog4iglvjq.us-east-1.rds.amazonaws.com"
+
+    # IF Connection Issues "Waiting for 8659010.xyz ..."
+        > VPC > (select vpc of RDS instance) 
+        > Security Groups > (select, e.g., rds-launch-wizard)
+            Inbound Rules > Edit
+                Type: MySQL/Aurora (3306) 
+                Protocol: TCP (6) 
+                Source: (WebDMZ security group)
+

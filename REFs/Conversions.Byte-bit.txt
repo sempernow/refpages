@@ -1,0 +1,53 @@
+For disks, NOT communication rates ...
+---------------------------------------
+2^10 = 1024
+
+1024 bits  = 1 Kb [kilobit] 
+1024 bytes = 1 KB [kiloBYTE]
+
+1024 KB = 1 MB
+1024 MB = 1 GB  [ 1073741824 bytes ]
+1048576 MB = 1 TB [1024*1024]
+
+So, do the math in base 2.
+1KB = 1024 bytes
+
+For ex., 
+5 GB in bytes 5120 MB
+5*(2^30)
+In MB: 5*(2^30)/(2^20), or 5*(2^10)
+
+2^8  = 256
+2^10 = 1024
+2^16 = 65,536
+2^20 = 1,048,576
+2^24 = 16,777,216
+2^30 = 1,073,741,824
+2^32 = 4,294,967,296
+
+256
+1024
+65536
+1048576
+16777216
+1073741824
+4294967296
+--------------------------------------------------
+
+    * 1 byte = 8 bits
+    * 1 kilobyte (K / KB) = 2^10 bytes = 1,024 bytes
+    * 1 megabyte (M / MB) = 2^20 bytes = 1,048,576 bytes
+    * 1 gigabyte (G / GB) = 2^30 bytes = 1,073,741,824 bytes
+    * 1 terabyte (T / TB) = 2^40 bytes = 1,099,511,627,776 bytes
+    * 1 petabyte (P / PB) = 2^50 bytes = 1,125,899,906,842,624 bytes
+    * 1 exabyte (E / EB) = 2^60 bytes = 1,152,921,504,606,846,976 bytes
+
+	Without commas [ for cut-n-paste ] ...
+	
+	* 1 byte = 8 bits
+    * 1 kilobyte (K / KB) = 2^10 bytes = 1024 bytes
+    * 1 megabyte (M / MB) = 2^20 bytes = 1048576 bytes
+    * 1 gigabyte (G / GB) = 2^30 bytes = 1073741824 bytes
+    * 1 terabyte (T / TB) = 2^40 bytes = 1099511627776 bytes
+    * 1 petabyte (P / PB) = 2^50 bytes = 1125899906842624 bytes
+    * 1 exabyte (E / EB) = 2^60 bytes = 1152921504606846976 bytes

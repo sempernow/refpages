@@ -1,0 +1,489 @@
+Digital Audio/Video
+
+Interface/Connectors
+
+S/PDIF – Sony / Philips Digital InterFace – A digital data protocol & hardware interface. The data protocol is universal across all S/PDIF devices, and the data rate is 5-6 Mbps. S/PDIF is not designed for long-distance transmission. It is not a balanced signal. There are THREE hardware interfaces. Adapters are available.
+
+Coax / RCA – Used on most A/V recievers. spec is 75 ohm coax cable with RCA connectors and should be terminated with 75 ohms on the receiving end (termination is built into coax inputs); however, regular RCA cable is okay for short distances. The signal is +/-0.5V 
+
+Optical (TOSLink) – modules which optical fibre cables plug into. BEST for LONG distances.  TOSlink (TOshiba & Sharp) modules transduce to/from TTL electrical signal. Modules are active devices, and are available as a 3-pin, “FET type” thu-hole device. There are 2 styles of TOS-Link cable connectors, with converters between the two available. 
+
+TOS-link (square) – found on A/V recievers.
+
+Mini Plug (round) – same dimensions as an electrical mini-plug (3.5mm). Used purely for compactness in small devices; found on portable MD recorders, and usually doubles as an analog line input. 
+
+TTL - used in most computer audio devices; sound cards, CD players, DVD players, etc. TTL is 5V/0V on/off pulses. Creative Labs sells converters for TTL ßà Coax  &  TTL  ßà TOSLINK. 
+
+Look out for oddballs, e.g., SoundBlaster: The SB Live! Platinum and SB Live! Player 1024 have a digital out (yellow 3.5mm mini jack connector ) - connect with a standard cable which converts the 3.5mm stereo to left/right RCA. Connect the left (white) connector which carries the AC3 stream to the AC3 decoder.The right (red) cable carries no signal.
+
+AES/EBU – Used by professionals; another standardized format for sending digital audio between devices. 
+
+Digital Audio Formats
+
+DTS - Digital Theater Systems, Inc  - digital surround audio technology by the company DTS. Founded in 1990 by scientist Terry Beard (also a DTS director), the company received funding from Universal Pictures in 1993 and used that relationship to debut its sound system with the studio's film Jurassic Park.
+
+AC-3 / Dolby Digital  5.1 – Dolby's third generation audio codec. A perceptual coding algorithm, like MP3, but for noise reduction instead of bandwidth reduction. Exploits human auditory masking in that it divides the audio spectrum of each channel into narrow frequency bands of different sizes optimized with respect to the frequency selectivity of human hearing. This makes it possible to sharply filter coding noise so that it is forced to stay very close in frequency to the frequency components of the audio signal being coded. By reducing or eliminating coding noise wherever there are no audio signals to mask it, the sound quality of the original signal can be subjectively preserved. In this key respect, a coding system like AC-3 is essentially a form of very selective and powerful noise reduction.
+
+AC ’97 – Intel’s Audio Codec & component interface spec (current version: AC97 v2.2, has 5.1 ch w/ SPDIF optical In/Out);  20-bit audio architecture for the PC that is used in the majority of today's desktop platforms. Next evolution will be AC '97 v2.3.
+
+
+MPEG
+
+MPEG - Moving Picture Experts Group - develops standards for digital video and digital audio compression. It operates under the auspices of the International Organization for Standardization (ISO). The MPEG standards are an evolving series, each designed for a different purpose.  See MPEG FAQ  MPEG Tools  MPEG.org
+
+MPEG-1 – file & compression standard optimized for CD-ROM (1.5 Mbps bitstreams); Used for 
+coding audio & low quality video:
+
+Audio: MPEG standard 1 - Layers 1, 2, and 3 (MPA, MP2, and MP3) 
+
+MP3 (MPEG-1 audio layer-3) 11x compression is typical. Constant or Variable bit rates (CBR or VBR). 128kbps & 160kbps CBR are popular.  256kbps considered indistinguishable from CD source. Note that MP3 (file suffix .mp3) indicate MPEG-1 audio layer-3 files, not MPEG-3 standard files.
+
+CD-ROM – Stores about 600 MB of data. CD-Audio bit stream is about 1.4 Mbps.
+Uncompressed Audio (example): 44,100 samples/sec x 16 bits x 2 ch = 1.4 Mbps.
+
+
+Video: progressive video. Video-CD and CD-i media..
+
+	.MPG – MPEG-1 file. Various compression ratios,  formats & bit rates.
+
+
+
+MPEG-2 – file & compression standard designed for coding interlaced images. Designed for DVD & digital TV broadcast.  Various formats & resolutions. An MPEG-2 player can handle MPEG-1 data as well.
+
+	.MP2 – MPEG-2 file. Various compression ratios, formats & bit rates.
+
+DVDs can be recorded in any of three formats, variously optimized for: video (for example, continous movies) audio (for example, long-playing music), or a mixture (for example, interactive multimedia presentations). See DVD Glossary   More DVD info.  Movies are DVD-9, DVD-10.
+
+DVD player  aka DVD-ROM player. Player Speed: A x1,500 rpm.  
+For example:  4x Speed is 6,000 rpm (spindle speed).
+1x = 1,500 rpm
+1x = 1.385 MB/s   See ThroughPut worksheet
+
+DVD-ROM – readable disks. 
+DVD-RAM – read/writeable disks. Currently available in DVD-5; 1-side, 1-layer (4.7 GB).
+
+DVD-5		One-Sided, One-Layer	4.7 GB		writeables
+DVD-9		One-Sided, Dual-Layer	8.5 GB		Most DVD Movies
+DVD-10		Two-Sided, One-Layer	8.5 GB/side   	Full Screen & WS Movie on One Disk
+DVD-18		Two-Sided, Dual-Layer	17 GB/side   	rare
+
+DVD-Audio – Format under consideration. Hopes to replace CD. Fighting w/ SACD (SuperAudio CD). 
+
+DVD-Video – The DVD film/video format, a subcategory of DVD spec’s. MPEG-1 or MPEG-2 (DVD Glossary), but typically, the HIGHER quality, MPEG-2.
+
+Uncompressed Souce (about): 
+125 Mbps for video source (720x480x12x30 or 720x576x12x25)   NSTC or PAL
+100 Mbps for film source   (720x480x12x24 or 720x576x12x24)   NSTC or PAL
+
+Video bit rate:  (compression ratio’s are about 25:1 or 31:1 depending on source)
+9.8 Mbps    Max
+4.0 Mbps    Ave       See ThroughPut worksheet
+
+Frames – one still image. Human eye can’t distinquish individual frame if frame/sec (fps) greater ~ 24 fps
+2 fields are interlaced to make 1 frame.  60 fields/sec = 30 frames/sec (fps)
+
+NTSC – 525 Lines/frame	 60 Hz vertical refresh rate,  frame rate = 30 fps  (29.97 fps exactly)
+PAL   –  625  Lines/frame   50 Hz vertical refresh rate,  frame rate = 25 fps
+
+Typical frame rate (fps):  
+30 fps 	  interlaced from NTSC video	720x480	525/60	  (Lines/refresh Hz)
+25 fps 	  interlaced from PAL video	720x576	625/50   (Lines/refresh Hz)
+
+Allowable Picture Resolutions (NTSC):
+MPEG-2, 525/60: 720x480, 704x480, 352x480, 352x240
+MPEG-1, 525/60: 		    352x480, 352x240
+
+Allowable Picture Resolutions (PAL):
+MPEG-2, 625/50: 720x576, 704x576, 352x576, 352x288
+MPEG-1, 625/50: 		    352x576, 352x288
+
+Horizontal Resolution Metric: (Relative to 720 horizontal pixels - See DVD Glossary)
+540	  4:3  (Full Screen)
+405	16:9  (Widescreen)
+
+NOTE:  All NTSC Video formats (DVD, VHS, TV) have about same number of Vertical Scan Lines (480); therefore, Horizontal Resolution is the big difference in picture quality.
+
+Comparisons:
+330	Broadcast TV
+Broadcast TV (Widescreen)
+230 	VHS
+172 	VHS (Widescreen)
+
+
+
+HDTV	Resolution	format	all are 16:9 aspect ratio
+720i 	1280 x 720  	interlaced
+720p 	1280 x 720 	progressive
+1080i 	1920 x 1080	interlaced
+1080p 	1920 x 1080	progressive
+
+
+Computer Video; Represented as Pixels x Scan Lines ( ie 1024 x 768)
+all are 4:3 aspect ratio. VGA = Video Graphic Adapter.
+TrueColor: 32bit (4B colors), High: 24bit (16M colors)
+
+ 
+VGA	XGA	   
+640 x 480
+800 x 600	      1024 x 768
+      1152 x 864
+      1280 x 768
+      1280 x 960
+      1280 x 1024
+      1600 x 1200	   
+	Strkthru’s are NOT 4:3	 
+
+
+DVD rip – Files made from ripped DVD. Common formats: DivX/MPEG-4 or SVCDs/MPEG-2.
+MPEG-1 & -2 define techniques for compressing digital video by factors varying from 25:1 to 50:1. 
+
+The compression is achieved using 5 different compression techniques:
+
+Discrete Cosine Transform (DCT) - frequency-based transform.  Used in JPEG file compression.
+
+Quantization – lossy compression technique.  Used in JPEG file compression. 
+
+Huffman coding – lossless compression…uses code tables based on statistics on encoded data. 
+Used in JPEG file compression.
+
+Motion Compensated Predictive Coding - differences in what has changed between an image and its preceding image are calculated and only the differences are encoded. 
+
+Bi-directional prediction - some images are predicted from the pictures immediately preceding and following the image. 
+
+JPEG compression uses first three techniques – lossless & lossy.
+
+MPEG-3 – Has merged with MPEG-2 standard when it became apparent that the MPEG-2 standard met the HDTV requirements – it was a proposed standard, intended for High Definition TV (HDTV).
+
+MPEG-4 (incl. DivX)– more efficient video encoding standard, adopted by enthusiasts everywhere. Tom’s HardWare: Encoding MPEG-4 Videos has become a cult. All over the world, hundreds of thousands of users are turning DVD movies & DV camera video into the space-saving MPEG-4 format so that they can then burn them onto one or two CD-Rs. 
+
+MPEG-4 ASP - Simple Profile & Advanced Simple Profile (ASP) are encoding layers of MPEG-4.
+Popular MPEG-4 codecs such as DivX , XviD & RealVideo 9 use Simple Profile and ASP for video encoding.
+
+Flask 4.1 & DivX 4.01 Codec - most frequently used tool for making MPEG-4 files is Flask Mpeg. The software, available on the Internet as freeware, relies on the MPEG-4 Codec "DivX" - which is a trademark of DivXNetworks, Inc - in which parameters, settings, and special CPU register settings are transferred. The programmers succeeded in making significant advances with the new Flask 4.1 version, which is now also called Xmeg. We tested the most current version together with the DivX-4.01-codec, which is also new. All software can be downloaded at DivXVIDEO. First and foremost, we can confirm that Flask 4.1 has become considerably more stable than past versions - there are fewer sudden program crashes. 
+
+MPEG-4 AVC (Advanced Video Coding) / H.264, or just AVC - a video compression standard that offers significantly greater compression than its predecessors & image quality improvements. The standard is expected to offer up to twice the compression of the current MPEG-4 ASP (Advanced Simple Profile), in addition to improvements in perceptual quality. DVD quality video at under 1 Mbps, and is considered promising for full-motion video over wireless, satellite, and ADSL Internet connections. 
+
+MPEG-21 provides a larger, architectural framework for the creation and delivery of multimedia. It defines seven key elements: 
+Digital item declaration 
+Digital item identification and declaration 
+Content handling and usage 
+Intellectual property management and protection 
+Terminals and networks 
+Content representation 
+Event reporting 
+The details of various parts of the MPEG-21 framework are in various draft stages. 
+
+
+
+
+DVD/CD Disk Formats
+
+ISO 9660 – Most widely used. ISO 9660 have been used as the main CD format for many years now. Most of the CD nowsdays still use this format, the benefit of this format is that it is readable by all CD drive or CD player, and can be shared between PC and MAC.
+
+UDF (Universal Disk Format) - a newer file system for CD and DVD. Developed and managed by OSTA, the Optical Storage Technology Association, as the successor to the ISO 9660 standard. UDF overcomes limitations of ISO 9660 and redirectors such as CDFS. UDF is used to ensure compatibility across platforms, as well as among various CD and DVD applications. UDF is required for DVD Video, and is used by DVD to contain MPEG audio/video streams, UDF is also used by CD-R and CD-RW in a process called packet writing that makes CD writing more efficient in terms of the time and disk space required. 
+
+UDF 1.02 - the most compatible version, and is specified for use by DVD drives.
+
+MPV - the lasted file system developed and promoted by OSTA. MPV enables PCs and consumer electronics products like DVD players to exchange and playback collections of digital photos, video, and music, it supports browsing, playing, and printing multimedia collections. For more info, check out OSTA's website.
+CPU
+
+CPU [MHz] = MULTIPLIER x { System (External) Clock } [MHz]
+
+P4: 
+
+FSB [MHz] = 4 x {System (External) Clock} [MHz]	“Quad Pumped” … Two Ch’s DDR
+
+Ex: 2.6 GHz P4C (800 MHz FSB) à Ext.Clock = 200 MHz à MULTiplier = 2.6/.200 = 13
+
+Abit nomenclature:
+FSB = PSB
+Ext.Clock = CPU
+N/B Strap CPU as … 	PSB:	400	533	667	800
+			CPU: 	100	133	166	200
+
+CPU:DRAM Ratios…		3:4	1:1	5:4	3:2
+					4:5	1:1	5:4
+							1:1
+
+		   P4 [GHz]:	1.7	1.7	1.7	1.7
+							2.6
+
+
+IF DRAM=PSB & 
+CPU=Ext.Clock, THEN P4:	  1.7	
+
+CPU’s  FSB		System Clock
+
+400MHz 		100MHz 	(Pentium 4) 
+533MHz 		133MHz 	(Pentium 4) 
+800MHz 		200MHz 	(Pentium 4)
+
+PCI [MHz] = (DIVIDER x FSB )  [MHz]
+
+AGP [MHz] = 2 x PCI  [MHz]
+
+Common Dividers:
+
+Pre P4: System Clock is “Bus Speed”
+
+FSB [MHz] = System Clock [MHz]  aka “Bus Speed”
+
+CPU’s  FSB		System Clock
+
+66MHz 		66MHz		(Various Celeron and older)
+100MHz 		100MHz 	(Pentium II / Pentium III / K6) 
+133MHz 		133MHz 	(Pentium II / Pentium III / K6) 
+200MHz 		100MHz 	(Athlon, Duron, Thunderbird) 
+266MHz 		133MHz 	(Thunderbird, XP) 
+333MHz 		166MHz 	(XP) 
+400MHz 		200MHz 	(AMD XP)
+
+
+	    FSB				PCI		AGP
+
+1/5	@ 166 MHz clock		33		66
+1/4	@ 133 MHz clock		33		66
+1/3 	@ 100 MHz clock		33		66
+
+
+
+I/O
+
+ISA - Industry Standard Architecture - 16 bit standard bus architecture for expansion slot cards and its associated device(s). Embedded systems use same acronym, but stands for Instruction Set Architecture.
+
+EISA - Extended Industry Standard Architecture - 32 bit standard bus architecture; extension of ISA. It was developed in part as an open alternative to the proprietary Micro Channel Architecture (MCA) that IBM introduced in its PS/2 computers.
+
+IDE (ATA) - Integrated Drive Electronics – 16 bit standard interface between ISA bus and disk storage devices. … based on ISA 16-bit bus standard, but it is also used in computers that use other bus standards. 
+The ANSI name for IDE is Advanced Technology Attachment (ATA). 
+
+EIDE (ATA-2) - Enhanced/Extended IDE – 16MB/s burst. 32 bit standard interface between EISA bus and disk storage devices. ANSI calls it ATA-2 , Advanced Technology Attachment-2, (a.k.a.  "Fast ATA").
+EIDE's enhancements:
+Faster access to the hard drive
+Support for Direct Memory Access (DMA)
+Support for CD-ROM and tape devices through ATAPI (AT Attachment Packet Interface). 
+Address a hard disk larger than 528 MB.  Using LBA, up to 8.4 GB
+To access larger than 528 Mbyte drives, EIDE (or the BIOS) uses a 28-bit Logical Block Address (LBA) to specify the actual cylinder, head, and sector location of data on the disk. The 28 bits of the LBA provide enough information to specify unique sectors for a device up to 8.4 GB in size. 
+
+EIDE (ATA-2) is now just called ATA/IDE or IDE/ATA
+
+See IDE/ATA History
+
+DMA - Direct Memory Access – a protocol for ATA/IDE interface moving data from storage directly to RAM, without using the microprocessor. 16 MB/s burst rate. Usually a specified portion of memory is designated as an area to be used for direct memory access. 
+ISA allows access up to 16 MB of memory. 
+EISA allows access to the full range of memory addresses (assuming they're addressable with 32 bits). 
+PCI accomplishes DMA by using a bus master (with the microprocessor "delegating" I/O control to the PCI controller). 
+
+DMA Modes (ATA/IDE spec’s):
+ATA-1	DMA mode 0
+ATA-1	DMA mode 1
+ATA-1	DMA mode 2
+ATA-1	Multiword DMA 0
+ATA-2	Multiword DMA 1
+ATA-2	Multiword DMA 2  @ 16.6 MB/s
+
+PIO - Programmed Input/Output – protocol for ATA/IDE interface; an alternative to DMA in which all data transmitted between devices goes through the processor.  PIO is dying out to Ultra DMA.
+PIO Modes (ATA/IDE spec’s):
+ATA-1	PIO mode 0  @ 3.3 MB/s
+ATA-1	PIO mode 1  @ 5.2 MB/s
+ATA-1	PIO mode 2  @ 8.3 MB/s 
+ATA-2	PIO mode 3  @ 11.1 MB/s
+ATA-2	PIO mode 4  @ 16.6 MB/s
+
+UltraDMA/33 - Newer DMA protocol for ATA/IDE interface; transfers data in burst mode at 33 MB/s. Hard drives that come with Ultra DMA/33 also support PIO modes 1, 3, and 4, and multiword DMA mode 2. UltraDMA can be added with PCI adapter card. Ultra DMA/33 uses the same 40-pin IDE interface cable as PIO and DMA.  Also called UltraATA/33 or UDMA Mode 2
+
+CRC (Cyclical Redundancy Checking) – Error Checking introduced by ATA/ATAPI-4.
+
+ATA/ATAPI – 4	UltraDMA mode 0  ß NEVER implemented
+ATA/ATAPI – 4	UltraDMA mode 1  ß NEVER implemented
+ATA/ATAPI – 4	UltraDMA mode 2  @ 33 MB/s à Became known as UltraATA/33
+
+UltraDMA/66  - Newer DMA protocol for ATA/IDE interface. 66 MB/s burst.  
+Requires 80-pin flat cable, 60 cm max. Also called UltraATA/66, or UDMA Mode 4
+
+ATA/ATAPI – 5	UltraDMA mode 3  @ 44 MB/s
+ATA/ATAPI – 5	UltraDMA mode 4 @ 66 MB/s  à Became known as UltraATA/66
+
+UltraDMA/100 - 100 MB/s burst. Requires 80-pin cable, 60 cm max. LBA extended - 28 bits to 48 bits. Also, Accoustic Mgmnt included – throttle down when not in use.  Also called UltraATA/100, or UDMA Mode 5
+
+ATA/ATAPI – 6	UltraDMA mode 5  @ 100 MB/s   à Became known as UltraATA/100
+
+UltraDMA/133 - 133 MB/s burst. Requires 80-pin flat cable, 60 cm max. Also called UltraATA/133.
+
+SATA – Serial ATA I – 150 MB/s.  4-pin cable !!!       150 MB/s is faster than Hard Disks, currently.
+
+PCI 2.0 - Peripheral Component Interconnect – I/O bus & Interface; 33/66 MB/s  w/ burst  133/266 MB/s. Supports bus mastering DMA protocol.  …supports ISA.  Design is independent of microprocessor (intel, mac, etc).  PCI is designed to be synchronized with CPU clock. Variations of PCI, include CompactPCI, Mini PCI, Low-Profile PCI, concurrent PCI, and PCI-X.   Two main configurations & card lengths:
+
+Full-size – 64 bit, 312 mm, 188-pin configuration
+
+Half-Size - 32 bit, 119-167 mm, 124-pin .  Most current PCI cards are half-sized or smaller.
+
+AGP - Accelerated Graphics Port – I/O bus & Interface specification enabling high quality 3-D graphics on a PC. 
+1x AGP bus speed is 2x PCI bus speed (66 MB/s); but AGP cards run at 2x/4x/8x rates. Includes high speed, dynamic use of system RAM, restoring memory when not needed.  AGP employs eight sideband address lines, so multiple data transfers can take place concurrently. 
+
+SCSI - Small Computer System Interface – 40 MB/s interface, but requires address preassignment and a device terminator on the last device in a chain.
+
+USB - Universal Serial Bus is a peripheral bus & interface protocol; a plug-and-play interface between a computer and add-on devices (peripherals)… a new device can be added to your computer while the computer is on (Hot Plug), and without having to add an adapter card. USB devices can access any of the four sub-protocols: bulk, control, interrupt and isochronous… help allocate the "attention span" (read: bandwidth) a device needs to operate. No matter what else happens, 10% of the bandwidth is reserved for the control protocol, which directs all the transfers. Audio or video devices such as webcams or speaker systems work isochronously ("in real time") because they always need a minimum amount of bandwidth. Most external storage devices use the bulk protocol, while USB keyboards or mice avail themselves of the interrupt protocol. 
+
+USB Hub – Hub connects to USB port on MB… USB devices connect to the hub, and SHARE bandwidth. 
+
+Performance Problem: Performance lowers when multiple devices operate at the same time. Whenever you connect two USB devices that both use the isochronous protocol and take up a certain amount of bandwidth, you'll have very little left over for any other devices. USB is a first-come-first-served standard, so if you connect a third or a fourth device to the hub, you may not have enough bandwidth left over to operate it.
+
+USB 1.1 - 12 Mbps Serial Bus standard. 
+
+USB 2.0 – 480 Mbps Serial Bus standard. All USB 2.0 hubs have at least one built-in Transaction Translator (TT) so that they can be downwards compatible. The TT automatically recognizes which USB category is connected on a particular port and translates any USB 1.1 signals to USB 2.0. Backwards compatible.
+
+Single TT - only 1 TT for all ports, which keeps the bandwidth to the system down to 12 Mbps.
+
+Multi TT – each port on the hub has its own TT. No longer do the devices on the hub have to wait their turn for some free bandwidth; the TTs optimally embed all the separate data streams in the USB 2.0 data stream. NO Difference, except for large loads – using several devices w/out a hub.
+
+IEEE 1394 -  400 Mbps Serial bus standard & peer-to-peer interface protocol …single plug-and-socket connection on which up to 63 devices can be attached, up to 16 devices can be connected in a single chain, each within 4.5 meter of a bus socket - theoretically you could have a device as far away as 72 meters from the computer. The serial bus functions as though devices were in slots within the computer sharing a common memory space. A 64-bit device address allows a great deal of flexibility in configuring devices in chains and trees from a single socket. Hot-plug and Plug and Play capability without disrupting your computer. 
+
+IEEE 1394 has 2 Levels:
+Backplane Bus - within the computer; supports 12.5, 25, or 50 Mbps data transfer.
+
+Cable Interface - between device and computer on the serial cable; 
+supports 100, 200, or 400 Mbps.
+
+A simple bridge connects the two environments. Each of these interfaces can handle any of the possible data rates and change from one to another as needed. 
+
+
+IEEE 1394 has 2 types of data transfer: 
+Asynchronous is for traditional load-and-store applications where data transfer can be initiated and an application interrupted as a given length of data arrives in a buffer.
+
+Isochronous data transfer ensures that data flows at a pre-set rate so that an application can handle it in a timed way. For multimedia applications, this kind of data transfer reduces the need for buffering and helps ensure a continuous presentation for the viewer. 
+
+IEEE 1394 may replace and consolidate today's serial and parallel interfaces, including 
+Centronics parallel, RS-232C, and SCSI. 
+
+Two popular implementations of IEEE 1394 are Apple's FireWire and Sony's i.LINK. 
+
+FireWire -  400 Mbps  Apple Computer's version of IEEE 1394. The first products to be introduced with FireWire include digital cameras, digital video disks (DVDs), digital video tapes, digital camcorders, and music systems. Because IEEE 1394 is a peer-to-peer interface, one camcorder can dub to another without being plugged into a computer. FireWire can work with PCI, but higher data transfer rates may require special design considerations to minimize undesired buffering for transfer rate mismatches. 
+
+
+Networks
+
+Ethernet - most widely-installed LAN. A protocol specified in a standard, IEEE 802.3. 
+Typically uses coaxial cable or special grades of twisted pair wires….also used in wireless LANs. 
+
+Ethernet Connectors – Ethernet network interface card (NIC) typically support both USB & 10BASE-T a.k.a. 8P8C , a.k.a. “RJ45” connectors.  The RJ45 term is often used but is a misnomer.
+
+10BASE-T  - “Ethernet over twisted-pair” the most commonly installed Ethernet systems and provide transmission speeds up to 10 Mbps. Devices are connected to the cable (T stands for Twisted Pair) and compete for access using a Carrier Sense Multiple Access with Collision Detection (CSMA/CD) protocol.  Uses 8P8C (RJ45) connector.
+
+Fast Ethernet or 100BASE-T - 100 Mbps Ethernet, typically used for LAN backbone systems, supporting workstations with 10BASE-T cards. 
+
+Gigabit Ethernet - 1,000 Mbps Ethernet.
+
+
+
+Wireless LANs
+
+IEEE 802.11 – Family of specifications for WLAN’s – (Wireless LAN). There are currently four specifications in the family: 802.11, 802.11a, 802.11b, and 802.11g. All four use the Ethernet protocol and CSMA/CA (carrier sense multiple access with collision avoidance) for path sharing. The standard includes the WEP algorithm, an encryption method. 
+
+802.11g – a WLAN – 5x Wi-Fi data rate (54 Mbps) over relatively short distances (meters indoors). Soon to be IEEE standard.
+
+Wi-Fi – IEEE 802.11b – a WLAN at 2.4 GHz. Data rates up to 11 Mbps over relatively short distances (meters indoors).
+
+IEEE 802.15 – Family of specifications for Wireless PAN’s – (Personal Area Network). There are currently four specifications in the family: 802.11, 802.11a, 802.11b, and 802.11g. All four use the Ethernet protocol and CSMA/CA (carrier sense multiple access with collision avoidance) for path sharing. The standard includes the WEP algorithm, an encryption method. 
+Bluetooth - IEEE 802.15.1 
+UWB - IEEE 802.15.3a 
+ZigBee - IEEE 802.15.4 
+
+Bluetooth – WLAN (/PAN) 2.45 GHz specification for short range, 10m, communication (1-2 Mbps) that describes how mobile phones, computers, and PDAs can easily interconnect. To include coordination/synchronizatioon of data across devices, and allow for voice (3 channels). Each device contains a transceiver chip, has a unique 48 bit address. Connections can be point-to-point or multipoint. A frequency hop scheme allows devices to communicate even in areas with a great deal of electromagnetic interference. Built-in encryption & verification is provided.
+
+Class 3 (1 mW) - the rarest , max 1m
+Class 2 (2.5 mW) - most common,  10m 
+Class 1 (100 mW) – readily available, up to 100m 
+
+
+WAP – Wireless Application Protocol
+WAP – Wireless Access Point
+
+
+Security
+
+WEP - Wired Equivalent Privacy is a security protocol, specified in Wi-Fi, IEEE 802.11b standard, that is designed to provide a WLAN with a level of security and privacy comparable to what is usually expected of a wired LAN. …by encrypting data transmitted over the WLAN. Data encryption protects the vulnerable wireless link between clients and access points; once this measure has been taken, other typical LAN security mechanisms such as password protection, end-to-end encryption, virtual private networks (VPNs), and authentication can be put in place to ensure privacy. 
+
+Unless adequately protected, a Wi-Fi wireless LAN can be susceptible to access from the outside by unauthorized users, some of whom have used the access as a free Internet connection. (The activity of locating and exploiting security-exposed wireless LANs is commonly known as war driving and an identifying iconography has developed that is known as warchalking.) Companies that have a wireless LAN are urged to add security safeguards such as WEP, and use a virtual private network (VPN) or IPsec, and a firewall or DMZ. 
+
+U.C. Berkeley recently published a report citing "major security flaws" in WEP that left WLANs using the protocol vulnerable to attacks (called wireless equivalent privacy attacks). …they were able to intercept and modify transmissions and gain access to restricted networks. The Wireless Ethernet Compatibility Alliance (WECA) claims that WEP - which is included in many networking products - was never intended to be the sole security mechanism for a WLAN, and that, in conjunction with traditional security practices, it is very effective. 
+
+VPN – Virtual Private Network: a way to use a public telecommunication infrastructure, such as the Internet, to provide remote offices or individual users with secure access to their organization's network. A virtual private network can be contrasted with an expensive system of owned or leased lines that can only be used by one organization. The goal of a VPN is to provide the organization with the same capabilities, but at a much lower cost. 
+
+A VPN works by using the shared public infrastructure while maintaining privacy through security procedures and tunneling protocols such as the Layer Two Tunneling Protocol (L2TP). In effect, the protocols, by encrypting data at the sending end and decrypting it at the receiving end, send the data through a "tunnel" that cannot be "entered" by data that is not properly encrypted. An additional level of security involves encrypting not only the data, but also the originating and receiving network addresses.
+
+
+Home Network (LAN)
+
+There are five types of home networks, two that use wire connections and three that use wireless connections: 
+
+Direct Cable Connection: This allows you to connect both computers with a $10 null modem that plugs into both computers' serial, parallel, or Universal Serial Bus port. You simply configure the Windows 9x/NT Direct Cable Connection feature and you're ready to go. You lose your printer's parallel port if you use a parallel port connection. USB is faster than both serial and parallel, but you must make sure you are using Windows 95B or Windows 98 when using a USB network. This is a possible choice when two computers are in the same room. 
+
+Traditional Ethernet: A peer-to-peer Ethernet network requires installing network interface cards (NIC) inside each computer and interconnecting them with a coaxial cable cable or a twisted pair cable. You have to install driver and configure Windows 9x/NT. The drawback to an Ethernet network is the difficulty of hardware installation. Will your computers recognize the new cards? If your computers have several cards installed already, you might run into hardware conflicts. This type of network is suitable for use with two to twelve computers. You can have your computers scattered throughout your house, but you will have to wire each room that has a computer. Beginning cost of an Ethernet network is $100. 
+
+AC network: An AC (alternating current) network is a possibility when computers are in different locations in your house. You don't need to drill any holes or wire any rooms. You simply plug one end of an adapter into the parallel port of your computer and plug the other end into an outlet. You do the same for each computer. Your data is transmitted through the power lines. You can have a ready-made network anywhere in the house at any time. When purchasing the equipment and software for your AC network, make sure it includes extra outlet strips and an adapter for your printer. The software setup can be difficult for AC networks. The cost of an AC network is $200 for two computers. 
+
+Phoneline network This type of wireless network was developed by the Home Phoneline Networking Alliance (HomePNA) to offer an easy and inexpensive (starting at $150 for two computers) solution that uses existing phone lines. For example, Action Tec's ActionLink Home Networking Kit provides PCI card that share a single registered jack with your modem and telephone. The HomePNA technology is designed to not interfere with your voice and data transmissions. This means that you can talk on the phone and use your Internet connection at the same time without any noticeable decrease in modem speed. A phoneline network does require you to install PCI cards and software drivers. The data transfer rate of a phoneline network is 10 Mbps. 
+
+Radio Free (RF) network: This type of wireless network uses radio frequency (RF) waves to transmit through walls and floors up to 800 feet. The only hardware is a special card inserted into each computer or a transceiver plugged into each computer's parallel port. If you purchase an RF network that uses transceivers, make sure equipment is included for connecting your printer. The problem with an RF network is interference from other wireless communication devices. Some RF network packages promise no interference from other wireless devices. RF networks start at $100. 
+
+
+
+Internet Protocols
+
+TCP/IP - Internet protocols:
+Transmission Control Protocol (TCP) message exchange rules at the information packet level 
+Internet Protocol (IP) message exchange rules at the internet address level 
+Additional protocols that are usually packaged with a TCP/IP suite, each with defined sets of rules to use with corresponding programs elsewhere on the Internet: 
+Hypertext Transfer Protocol (HTTP) 
+File Transfer Protocol (FTP) 
+Border Gateway Protocol (BGP) 
+Dynamic Host Configuration Protocol (DHCP). 
+
+
+
+SATA/RAID
+
+AUG 02
+Tom’s Hardware Recommends:
+HighPoint RocketRAID 404: Conventional but with 4 Channels 
+The RocketRAID 404 is currently the most highly recommended controller. Not only does the chip used (HPT374, developed and manufactured by HighPoint) master UltraATA/133, it also comes with four full-fledged IDE channels. Consequently, the controller is able to handle eight drives de facto. 
+Four channels for up to two drives per channel 
+UltraATA/133 
+supports RAID modes 0, 1, 1+0 
+32-bit PCI card 
+
+
+
+Parallel ATA (PATA); UltraATA/66/100/133      16 bits, up to 133MB/s.
+80-conductor flat cable of a max 60 cm in length …lets two drives be run on each controller. One of the two assumes the lead and is thus the "master", while the other one is dubbed the slave.
+
+Serial ATA (SATA)       150 MB/s
+4-wire cable, up to 1 meter length …. One drive per cable…. supports hot swapping (ground wires touch first). Small Form Factor users love the SATA drives because they fit much nicer in these small systems than a more bulky, wide cable.
+
+RAID (Redundant Array of Independent Disks):
+…some people refer to it as Redundant Array of Inexpensive Disks. RAID controllers are now commonly found integrated onto motherboards and there are several companies that make add-in cards that allow you to use a RAID array in your computer.
+
+RAID 0: Striping. Best Performance, but no redundancy. Requires N disks of equal size.
+ 
+
+RAID 1: Mirrored Pairs. Drives must be installed in pairs.  Redundancy, not faster, and Lots of overhead.
+ 
+
+RAID 0+1: Mirroring/Striping: Striped Pairs that are mirrored….requires at least 4 drives. …creates a striped set like RAID 0 on two disks, and then mirrors that to two other disks.  Again data is written in blocks like the other RAID levels.  Write & read performance is increased due to striping.  RAID 0+1 is fault-tolerant like RAID 1.  
+ 
+
+RAID Level 5 dominates in today's high-end server segment. If you're using four to seven drives, such an array is a real performer and, if the drives are large, allows accordingly large partitions. Unlike RAID 3, the parity data are integrated in the stripes on all drives and are distributed in a way that will have a positive impact on performance. Consequently, RAID 5 offers a high level of performance for all kinds of applications. 
+
+RAID Level 50 (5+0) 
+The performance of a RAID 5 with several drives is not good enough for you? Then simply create a stripe set consisting of two identical RAID 5 arrays. Though data security is no longer a given now (an array is to be considered a drive in this case), performance can theoretically be doubled once more. In reality, you'll now be faced with the limits of what PCI and network connections will allow. 
+
+The Key to Success: Block Size 
+In RAID arrays, the block size generally also determines the stripe size (not in RAID 1). The principles concerning block size and wasted memory space apply equally to RAID configurations: if, for example, the blocks have a size of 64 KB, then at least 64 KB are written at all times - even if there's only a text file with 2 KB. So, the smaller the average file size, the smaller the block size should be.  
+
+But block size is also significant in terms of the performance to be expected, as the smallest unit also determines when a file can be distributed to two or more drives. This would mean that with a block size of 64 KB, files with less than 64 KB would be written to only one hard drive. This does not happen any faster in a RAID array than on a single hard drive. 
+On the other hand, a file with 150 KB would be distributed to three hard drives (if available): 64 + 64 + 22 KB. The controller is now able to read from all three drives simultaneously, which reduces the read operation immensely. 
+
+RAID 0 is, without a doubt, the fastest system, yet it harbors risks. Only one single defect means it's all over. 
+Only with RAID 3 or 5 will you get good performance along with high data security, but several hundred dollars for the right controller, plus several hard drives, is something most of us cannot afford. 
+At this point we have to take IDE RAID's ranking down a notch or two, because, in addition to the costs, disadvantages include the increased administrative efforts as well as the higher temperature and operating noise caused by the number of hard drives. 
+Furthermore, IDE currently has to deal with a few handicaps: the drives have not been designed for continuous operation (which is important for server applications), and the ATA cabling is downright cumbersome, especially when you're using several drives; it causes the heat to be trapped in the cabinet and blocks the view to the interior. Be that as it may, Serial ATA is on its way to finally putting the 40-pin cable into a well-deserved retirement. 

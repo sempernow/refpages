@@ -1,0 +1,114 @@
+# CIDR Notation
+
+    Classless Inter-Domain Routing (CIDR), 
+    is an IP addressing scheme for subnets that replaces 
+    the older (1981-1993) system based on 
+    [classes A, B, C, D and E](https://en.wikipedia.org/wiki/Classful_network).
+
+    A CIDR defines the subnet's IP address range, the network part (Netmask) shared by all subnet addresses (hosts), 
+    and the host part (Wildcard) that is unique. The CIDR has two values. 
+    First is the first IP address of its range. Second, after the slash, is the number of bits in the Netmask. 
+    The more bits in the mask, the fewer IP addresses (hosts) for the subject subnet. 
+    E.g., `192.168.0.100/32` is a single IP address.
+
+
+    |CIDR         |IP Address Range           |Netmask    |Wildcard    |Hosts    |
+    |-------------|---------------------------|-----------|------------|---------|
+    |10.10.0.0/16 |10.10.0.0 - 10.10.255.255  |255.255.0.0|0.0.255.255 |65,536   |
+    |172.16.0.0/12|172.16.0.0 - 172.31.255.255|255.240.0.0|0.15.255.255|1,048,576|
+
+    |Class|CIDR        |
+    |-----|------------|
+    |A    |0.0.0.0/8   |
+    |B    |128.0.0.0/16|
+    |C    |192.0.0.0/24|
+    |D    |224.0.0.0/4 | (Multicast)
+    |E    |240.0.0.0/? | (Reserved)
+
+# RFC-1918
+
+    Address Allocation for Private Internets
+    https://www.ietf.org/rfc/rfc1918.txt
+    ...
+    
+    3. Private Address Space
+
+       The Internet Assigned Numbers Authority (IANA) has reserved the
+       following three blocks of the IP address space for private internets:
+
+         10.0.0.0        -   10.255.255.255  (10/8 prefix)
+         172.16.0.0      -   172.31.255.255  (172.16/12 prefix)
+         192.168.0.0     -   192.168.255.255 (192.168/16 prefix)
+
+
+# TCP/IP Subnet Addressing
+
+    Subnet is a range of IP addresses in a network;    
+    IP Address is typically a DECIMAL REPRESENTATION thereof; 
+    DOT NOTATION: a 32 bit binary number separated into four sets of bytes (octets); DECIMAL <==> BINARY  
+    {0-255}.{0-255}.{0-255}.{0-255}  <==>  {00000000-11111111}.{00000000-11111111}....   
+
+    SUBNET  https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html
+        CIDR (Classless Inter-Domain Routing); 1993  https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing 
+            https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing#IPv4_CIDR_blocks   
+            A method for allocating IP addresses and IP routing;  
+            IPv4 CIDR BLOCK range notation: ADDR.ADDR.ADDR.ADDR/BITS  (all in DECIMAL) 
+
+            SUBNET MASK (`/dd`) a.k.a. NETMASK; the NUMBER OF BITS in the NETWORK ADDRESS, in DECIMAL 
+                ON (1)  bits represent NETWORK  
+                OFF (0) bits represent HOSTS (allowable nodes on the subnet)   
+
+                E.g., '/20', a 20 bit (8+8+4) NETMASK
+                    11111111.11111111.11110000.00000000  <==>  FF.FF.F0.00  <==>  255.255.240.0
+                    |<------ 20 -------->|< --- 12 -->|
+
+            WILDCARD MASK; bit-inverted subnet mask; bits NOT of the Nework ID; those for host addresses
+                E.g., '/20' has 12 (32-20) WILDCARD BITS; 4,096 (2^12) host addresses:
+                    00000000.00000000.00001111.11111111  <==>  00.00.0F.FF  <==>  0.0.15.255
+                I.e., a 12 bit Wildcard Mask.
+
+            CIDR block calc helper @ http://www.tuxgraphics.org/toolbox/network_address_calculator_add.html  | http://cidr.xyz/  |  https://www.ipaddressguide.com/cidr  
+
+        PRIVATE Addresses
+                     CIDR Block      Network Ranges   Network IDs  Hosts; 2^(32-('/dd'))  bits@Mask
+            Class A  10.d.d.d/8      10.d.d.d         10           2^24  16,777,216        /8
+            Class B  172.16.d.d/12   172.{16-31}.d.d  172.{16-31}  2^20   1,048,576       /12
+            Class C  192.168.d.d/16  192.168.d.d      192.168      2^16      65,536       /16
+
+            E.g., 172.31.32.0/20  
+                Calculate # Hosts: 2^(32-20) => 2^12 = 4,096
+                Calculate Netmask: 20 = 16+4 => 255.255.(255-(4 bits)); Address range 
+                of 4 bits, 2^4=16, is 0-15 => 255 - 15 = 240 
+                    Subnet Mask: 255.255.240.0
+                    Wildcard Bits:  0.0.15.255 (bit-inverted mask)
+                So, host address range is 172.31.32.0 - 172.31.47.255; 4,096 addresse
+
+                CIDR Block      Network Ranges      Network IDs     # Hosts; 2^(32-('/dd'))
+                172.31.32.0/20  172.31.{32-47}.d.d  172.31.{32-47}  2^12  4,096 
+
+            - IP Addresses (nodes) available @ /dd subet: n = 32-(dd) bits; 2^n  
+            - Class scheme is from 1981-1993; pre CIDR; less efficient allocation; lingers @ default subnet addr 
+            - Though Classless, CIDR Block addressing having default/standard subnet masks may be referred to as CLASSFUL.  https://en.wikipedia.org/wiki/Classful_network#Classful_addressing_definition
+                           Address Range           Subnet Mask     CIDR notation
+                Class A    0.0.0.0-127.0.0.0        255.0.0.0        /8
+                Class B    128.0.0.0-191.255.0.0    255.255.0.0     /16
+                Class C    192.0.0.0-223.255.255.0  255.255.255.0 	/24            
+
+        @ CIDR Range            172.31.32.0/20      12 bits for hosts; 32 - 20; 4096 addresses
+            Netmask             255.255.240.0       240 = 256 - 16; 256 - 2^(12-8
+            Wildcard Bits            0.0.15.255     addresses, NOT bits!
+            Network ID:         172.31.32.0    
+            First host IP       172.31.32.0         per CIDR Block range
+            Last host IP        172.31.47.255       47 = 32 + 15
+            Total Hosts         4096    
+
+        @ CIDR Range            192.168.1.0/24      leaves 8 bits for hosts; 256
+            Subnet Mask:        255.255.255.0    
+            Network ID:         192.168.1.0    
+            Private Addresses:  192.168.1.{0-255}   256 hosts    
+            Private Addresses:  192.168.1.{4-254}   251 hosts @ AWS; 5 reserved per subnet
+
+    
+    (See REF.AWS.VPC.txt)
+
+    

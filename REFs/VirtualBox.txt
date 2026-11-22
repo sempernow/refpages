@@ -1,0 +1,31 @@
+2015-11-07
+Installed VirtualBox-5 @ HTPC 
+OpenSuse installed; very slow VM
+VMs stored @ default "%USERPROFILE%/VirtualBox VMs"
+
+Hostkey									Right Ctrl
+Menu Bar								Host+Home
+View Mode - scaled/windowed				Host+C [distorted/unviewable]
+View Mode - seamless/windowed 			Host+L [fatal]
+View Mode - fullscreen/windowed 		Host+F [fatal]
+
+View - Auto Resize 						Host+G
+View - Adjust 							Host+A
+
+2014-10-14
+	- Downloaded/Installed [VirtualBox-4.3.18-96516-Win.exe]
+	- Added/Ran per Machine > Add > LMDE-64 
+		- 1st attempt failed @ "VT-x disabled in bios"; reset bios param & rebooted.
+		- 2nd attempt succeeded, but Machine crashed @ logon [after entered password] 
+		- 3rd attempt succeeded, but window too tiny; View >"scaled mode" caused window to disappear; Win "Maximize" brought back, but only @ host OS; window is now distored and unviewable; Host+C switched back from "Scale Mode" to Windowed
+		- 4th, 5th, ... attempt; try to fix View issue;
+		  * Settings > Display > Video > unchecked "Enable 3D Acceleration" -- fail. 
+		  * on boot, in "Windowed Mode" [default], Adjust [click/drag] window to usable size.
+		- nth attempt; logged in w/ window size remaining as user set per click/drag; previous attempts, window collapsed to tiny rectangle and would snap-back when user click/drag to larger/viewable size. 
+
+	Android
+	OS			Linux 2.6/3 - 32-bit
+	Storage		IDE  => android-x86-4.4-r1.iso
+	Start		Run/Install
+	If install ... Create Partition /Bootable/ Format/ ext3 / Write ...
+	

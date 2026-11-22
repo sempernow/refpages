@@ -1,0 +1,31 @@
+Checks a disk and displays a status report.
+
+ex.  ... 
+CHKDSK c: /F /R /B
+
+CHKDSK [volume[[path]filename]]] [/F] [/V] [/R] [/X] [/I] [/C] [/L[:size]] [/B]
+
+
+  volume          Specifies the drive letter (followed by a colon),
+                  mount point, or volume name.
+  filename        FAT/FAT32 only: Specifies the files to check for fragmentation.
+  /F              Fixes errors on the disk.
+  /V              On FAT/FAT32: Displays the full path and name of every file
+                  on the disk.
+                  On NTFS: Displays cleanup messages if any.
+  /R              Locates bad sectors and recovers readable information
+                  (implies /F).
+  /L:size         NTFS only:  Changes the log file size to the specified number
+                  of kilobytes.  If size is not specified, displays current
+                  size.
+  /X              Forces the volume to dismount first if necessary.
+                  All opened handles to the volume would then be invalid
+                  (implies /F).
+  /I              NTFS only: Performs a less vigorous check of index entries.
+  /C              NTFS only: Skips checking of cycles within the folder
+                  structure.
+  /B              NTFS only: Re-evaluates bad clusters on the volume
+                  (implies /R)
+
+The /I or /C switch reduces the amount of time required to run Chkdsk by
+skipping certain checks of the volume.

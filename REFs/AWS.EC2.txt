@@ -1,0 +1,673 @@
+EC2
+===
+    Amazon Elastic Compute Cloud; virtual server; EC2 Instance is a launched AMI; AMI is the machine's definition/template; AMIs are REGIONAL; cannot be launched from different region, but CAN be copied to another region; resizable compute capacity; attaches to VPC; defaults @ VPC (Network) and Subnet (one AZ, i.e., one Data Center); includes Local Instance Storage, which does NOT survive instance termination; AutoScale; unlimited, to whatever the demand; Free Tier: 735 hrs (per month?) on certain micro instances    
+
+    - EC2 Classic MAY allow for EC2 outside VPC  
+    - EC2 VPC are always launched inside a VPC  
+
+    On Demand        - fixed rate per hour (sec); no committment
+    Reserved         - 1-3 yr committment; 
+    Spot             - per availability; intance SPIN UP/DOWN per preset-bid price ; 
+                       2-min-NOTICE; client-terminated pays for hour; AWS-terminated hour is free
+    Dedicated Hosts  - HW EC2 Server; existing server-bound SW license (reused)
+
+    AWS EC2    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html    
+    Wikipedia  https://en.wikipedia.org/wiki/Amazon_Elastic_Compute_Cloud    
+
+    # Instance Lifecycle  http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html  
+        STOP/START    
+            Only @ EBS-Backed AMI instances (Instance-Store-Backed data does NOT PERSIST); restarted instance may run on different (host) hardware; 
+            - @ EC2-VPC: maintains SAME private IPv4/IPv6 and EIP association; 
+            - @ EC2-Classic: recieves NEW private IPv4 address; loses EIP association.    
+        REBOOT    
+            Equivalent to rebooting an OS; instance remains on same host (hardware); maintains public DNS name, private IP address, and any data on instance store volume(s); typically takes a few minutes, but varies per instance configuration.    
+        TERMINATE     
+            A normal shutdown is performed, then EBS volume(s) are DELETED, EXEPT those with `deleteOnTermination` attribute set to `false`, then instance itself is deleted; EIP dissassociated; is permanent and unrecoverable.    
+
+
+    # EC2 Instance Families 2019  https://www.cloudhealthtech.com/blog/aws-instance-types-and-comparison
+
+        General Purpose (T2, T3, M5, M4)
+        Compute Optimized (C4, C5)
+        Memory Optimized (R4, R5, X1, X1e, Z1d)
+        Accelerated Computing (P2, P3, F1, G3)
+        Storage Optimized (D2, H1, I3)
+
+        # EC2 Network BENCHMARK  (iperf3) 2018 https://cloudonaut.io/ec2-network-performance-cheat-sheet
+        # Benchmark scripts [CloudFormation] https://github.com/widdix/ec2-network-benchmark  
+        # Network Utilization of EC2 instances [article] https://marbot.io/blog/monitoring-ec2-network-utilization.html  
+
+            INSTANCE TYPE 	Baseline (Gbit/s) 	Burst (Gbit/s)
+             t2.nano 	    0.03 	            0.28
+             t3.nano 	    0.03 	            5.06
+             t3.medium 	    0.25 	            4.98
+
+        # EC2 Network MONITOR
+            # @ CloudFormation Template  https://marbot.io/blog/monitoring-ec2-network-utilization.html 
+            # @ AWS GUI (Manually) 
+                 CloudWatch > Alarms 
+                 > Create Alarm (button)
+                    > Select metric (button)
+                        - NetworkIn
+                        - NetworkOut
+                    > Graphed metrics (tab)
+                        > Add a math expression
+                            > id out @ NetworkOut
+                            > id in @ NetworkIn
+                            > Expression: (in+out)/300/1000/1000/1000*8
+                                - Divide by 300 :: converts 5 minutes to 1 second.
+                                - Divide by 1000/1000/1000*8 :: converts Byte in Gbit.
+                        > Select the math expression
+                        > Select metric (button)
+                > Set up the alarm.
+                    Type in a name and description. Define the threshold, e.g., 80% of the baseline network performance listed in the EC2 Network Performance Cheat Sheet. To avoid alarms from short network utilization spikes configure 8 out of 12 datapoints. Which translates to 45 minutes within an hour.
+                    > Create Alarm (button)
+
+    # EC2 Types (Obsolete?; 2018)   Description/Use-Cases   https://aws.amazon.com/ec2/instance-types/    
+    
+        - a1  Arm;                  
+        - t4g Arm;
+        - t3a Arm;
+        
+        - m6g Arm;
+    
+        - t2; Low Cost, General     Burstable Performance [2014]; Web Servers, small DBs    
+        - m4; General Purpose;      Application servers    
+        - c4; Compute Optimized;    CPU intensive Apps/DBs     
+        - r4; Memory Optimized;     Memory intensive apps/DBs     
+        - x1; Memory Optimized;     Apache Spark, SAP HANA    
+        - g2; GPU Intensive;        Video encoding/streaming, 3D apps    
+        - p2; GPU Intensive;        Machine Learning, Bitcoin    
+        - d2; Dense Storage;        Hadoop/Fileservers/Data Warehousing        
+        - i2; IOPs HS Storage;      NoSQL DBs, Data Warehousing    
+        - f1; FPGAs                 HW Acceleration    
+
+        Previous Generation  https://aws.amazon.com/ec2/previous-generation/  
+
+            c3.2xlarge  @ NSQ :: 'cheapest instance type that supports 1gbit links'
+
+            c5.2xlarge  $0.34/hr  $245/mo  (CPU: 8, RAM: 16); current gen equiv.
+
+    # Types of Machine Images (AMI)
+        HVM - Hypervisor Virtual Machine 
+        PV  - Para-virtual
+
+        Amazon Linux AMI 2018.03.0 (HVM), SSD Volume Type - ami-0ff8a91507f77f867
+            EBS-backed, AWS-supported image; includes ...
+            - AWS command line tools, Python, Ruby, Perl, and Java
+            - Repositories include Docker, PHP, MySQL, PostgreSQL, and other packages.
+
+    # EC2 Storage Options  (root device volumes)
+
+        1. Instance-Store-Backed AMI (Ephemeral-Store-Backed)
+            use instance stores for the root device; instance store VOLUMES are AUTOMATICALLY AVAILABLE; survives REBOOT, but NOT STOP nor TERMINATE; configured at launch time with BLOCK DEVICE MAPPING, with one serving as the ROOT device volume; "Instance Storage" a.k.a. "EC2 Instance Store" a.k.a. "Local Storage" a.k.a. "Ephemeral Storage"; TEMPORARY BLOCK STORAGE/MAPPING @ EC2 instance;
+            
+            Instance-Store-Backed AMI can be converted to EBS-Backed AMI, but can NOT be stopped, only terminated; can NOT take snapshot, so can NOT store/save instance; does NOT survive/persist EC2 termination nor underlying (HW) failure; does NOT attach/detach, so bound to its instance; HW subsystem physically attached (local) to the machine hosting the instance; survives/persists REBOOT, but NOT instance stop/termination nor underlying (HW) failure; one or more instance store volumes are available (exposed as block devices), per instance type; the number, quantity, size, type, and performance optimizations of volumes and devices are set by AWS per instance type; volume(s) are named `ephemeral[0-23]`; NVMe volume(s) are named `/dev/nvme[0-7]n1`; was AWS' first and only storage when EC2 was launched; ideal for temporary, frequently-changing storage, e.g., buffers, caches, scratch data, OR for data replicated (NOT shared) across a cluster of instances, e.g., a load-balanced pool of web servers;     
+            
+            http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/InstanceStorage.html    
+
+            - Can ONLY Reboot/Terminate, but NOT Start/Stop; NO snapshots; NO recovery from hypervisor fail
+            - Can attach more Instance Store volumes on creation/launch
+            - Can attach EBS, but not more Instance Store, volume(s) after launch
+            - INITIALIZE (Pre-warm) with a write (the first one is slow)    
+                Initialization can take a long time (8 hrs for m2.xlarge)    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html    
+                To initialize a volume, first UNMOUNT, then ...    
+
+                    $ dd if=/dev/zero bs=1M    
+
+                    ... all vols, ...    
+
+                    $ dd if=/dev/zero bs=1M | tee /dev/sdb | tee /dev/sdc | tee /dev/sde > /dev/sdd     
+
+        2. EBS Backed AMI 
+            Elastic Block Storage backed; Instance can be stopped; can take snapshot of AMI, which is saved to EBS; EBS is replicated within instance AZ; many such optimized EBS instance types available; volume(s) attach/detach to/from EC2 instances; by default, instance creation attahes a root volume (options: GP2|IO1|Magnetic), /dev/xvda, and can add other volumes during/after instance creation/launch.    
+            - Can Start/Stop reprovisions, perhaps on new hypervisor; so can recover from hypervisor fail
+            - Root volume: 3 (bootable) types; GP2|IO1|Magnetic    
+            - EBS vols PERSIST once created, INDEPENDENT of EC2 instance STATUS, UNLESS "Delete on Termination" [default] is checked    
+            - All EBS vols and    EC2 Instance to which they are attached MUST be in SAME AZ.
+            - When EC2 instance is terminated, EBS vol is ...    
+                - DELETED if attached at launch    
+                - NOT DELETED if attached AFTER launch    
+            - To move EC2 from one AZ to another; first create/copy snapshot ...
+                    of EBS Vol:    
+                        EC2 > Snapshots, then use that to create new EBS vol in the target AZ, 
+                        EC2 > Snapshots > Actions > Create Image; stores @ EC2 > AMI
+                    or of EC2 directly:    
+                        EC2 > Instances > Actions > Image > Create Image; AMI (select/delete whatever EBS vols you want to copy)
+                        AMI > Actions > Copy AMI 
+            - Snapshots exist on S3; differential/incremental per snapshot; first snapshot takes several minutes; 
+                best practice is to stop EC2 instance before snapshot; if vol is encrypted, then snapshot is encrypted; encrypted cannot be shared
+            - if ENCRYPTED root, then LIMITED EC2 types; none of the cheap ones available 
+
+    # Bash scripts ("User Data" @ EC2/"Advanced Details")
+    # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html
+        # Auto runs @ EC2 launch; "text file" (.txt), (gets base64 encoded); 
+        # SG of EC2 must allow SSH (port 22), HTTP (port 80), and HTTPS (port 443) connections;
+        # use to bootstrap AWS SDKs etc.
+            # RUNs ONLY DURING the FIRST BOOT, @ EC2 launch, by default
+            # Change to every boot: https://aws.amazon.com/premiumsupport/knowledge-center/execute-user-data-ec2/    
+        # cloud-init app by Canonical, modified by AWS, specifies boot Linux images @ cloud environ.; 
+            # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html#amazon-linux-cloud-init
+            /etc/cloud/cloud.cfg.d  # cloud-init config
+
+        "If you have to SSH into your servers, then your automation has failed."    https://wblinks.com/notes/aws-tips-i-wish-id-known-before-i-started/
+
+    # Security Groups 
+        FIREWALL controlling traffic; per EC2 Instance; default SG exists per VPC;  
+        Rules per Type, Protocol, Port Range, and Source   
+        https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html  
+
+        - STATEFUL; Outbound mirrors Inbound Rules; unlike (N)ACLs  
+        - Allow-rule(s) ONLY; no Deny-rule(s)  
+        - ALL Inbound traffic is BLOCKED by default  
+        - ALL Outbound traffic is ALLOWED by default  
+        - Multiple EC2s under one SG  
+        - Multiple SG can apply to one EC2; rules are ADDITIVE; most permissive applies  
+        - Rule changes apply INSTANTLY, even whilst running   
+        - CANNOT block specific IP addresses; use (N)ACLs for that   
+
+        To ADD Security Group to an EC2 Instance:
+            @ EC2 Dashboard > Instances > (select instance) 
+            > Actions (button) > Networking > Change Security Groups
+    
+        E.g., Inbound Rules (tab) ...
+
+            Type            Protocol   Port Range   Source              Description  
+
+            SSH             TCP        22           69.143.188.12/32    from 1 remote node  
+            HTTPS           TCP        443          10.0.0.0/24         from Public subnet  
+            HTTP            TCP        80           0.0.0.0/0           from ANYWHERE  
+            MYSQL/Aurora    TCP        3306         sg-07c7e...         from WebDMZ SG  
+
+        @ Default SG (sg-30c64f7c) of default VPC, inbound rules are ...
+
+            All traffic     All        All          sg-30c64f7c (default)
+
+        ... note "Source" is itself, i.e., 
+        allow inbound traffic from any resource (EC2 instance) in this SG. 
+
+    # Placement Group    
+        A logical grouping of INSTANCES within 1 AZ; recommended for apps needing LOW NETWORK LATENCY, HIGH NETWORK THROUGHPUT, or both; 10Gbps network; CHOOSE an EC2 instance TYPE that supports ENHANCED NETWORKING.    
+
+            - unique name per account 
+            - homogenous (size/family) instances recommended; all limited by slowest therein 
+            - only certain types allowed; optimized types    
+            - cannot move or merge instance in PG    
+            - can create AMI from instance, then launch instance therefrom into same placement group
+
+        A placement group is created first, then EC2 instances are launched into it; recommended to use one type for all instances therein, and launch all per 1 launch request, else "insufficient capacity error"; no added fees  http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html    
+
+    # Autoscaling (Group)   
+        Redundancy; Create a group (cluster) of (identical) configured EC2 instances; 
+        The creation process mimics that of creating/launching an EC2, but it doesn't launch; only configures the group 
+
+        1. Create Launch Configuration - EC2 Instance configuration
+        2. Create AutoScaling Group    - Number of instances and triggers etc
+
+            "Launch Configurations" > "Create Autoscaling Group"    
+
+                # can NOT edit a Launch Configuration; must recreate anew.
+
+            @ Create Auto Scaling Group >
+                Group size: 3
+                Subnet: add # (same as "Group size") of AZs in Region, for redundancy 
+
+                Advanced Details >    
+                    Load Balancing: (check) "Receive traffic from Elastic Load Balancer"
+                    Classic Load Balancers: WebDMZ (created earlier)
+                    Health Check Type: ELB (check)    # DNS Name is public IP; will return one of three instances
+                    Health Check Grace Period > 150 sec; allow time for User Data (batch script) to run
+
+                    Next ... 2 options    
+                        - Keep this gropu at its initial size    
+                        - Use scaling policies to adjust the capacity of this group    
+                            Scale between: 1 - 5 instances    
+                            Scale Group Size ... alarms ...    
+                    Next ... Send a notification ... With these recipients (email address)    
+                    Next ...
+
+            Test by visiting public-ip of any instance;     
+            or @ ELB DNS name, e.g., http://webdmz-473212952.us-east-1.elb.amazonaws.com/    
+            ... terminate one or more to see AutoScale in action, respawning instances.    
+
+    # ELB (Elastic Load Balancer)  
+
+        - COSTS if left on; do NOT leave on; add Tags to notify per "Resource Groups"
+        - 3 types
+            Classic      Layer-4  Transport Level    EC2 Classic
+            Network      Layer-3  Connection Level   Ultra-high performance; static IP
+            Application  Layer-7  Request Level 
+
+    # EIP (Elastic IP)
+        @ EC2 > Elastic IPs > Allocate new address (returns EIP Address)  
+            EIP Address > (select one) > Actions 
+            > Associate address 
+                Resource type: Instance (check-box)  
+                Instance: (select; i-...)
+                Private IP: (select)
+
+            > AWS Command Line Interface command 
+                (info; generated aws cli code; copy/use to perform per AWS CLI)  
+
+            (if "Resource type" is "Network Interface", then enter subnet of EC2; eni-...)
+        
+        @ Route53 > Domain name (select) > Create Record (button)  # To associate EIP with Domain Name 
+            Alias: No  (only for S3 or ELB)
+            Value: (enter EIP Address)
+
+    # 3 Billing Options:    
+        - On Demand: fixed rate per hr; no commitment    
+        - Reserved: discount for 1-3 yr contract    
+        - Spot: intance SPIN UP/DOWN per preset-bid price ; NO WARNING    
+        
+        Dedicated Hosts:    
+            a physical server with EC2 instance capacity; addresses compliance requirements; customer pays for server-bound software licences.    
+
+ECS 
+===
+    EC2 Container Service; Docker => EC2    
+    EC2 Container Registry (ECR); handles ELB;    
+    run/manage containers across a cluster of EC2 instances.    
+    CodeCommit (Git) => Docker CLI => ECR => ECS => EC2 Instance[(s)    
+
+EBS
+===
+    Elastic Block storage [persistent]; ATTACH to EC2 instance (one only); 1 GB - 1 TB; a storage option for EC2; can create FS or DB thereon; faster than S3; can store snapshots of EBS volumes AND snapshots of EBS-Backed AMIs; volumes can be created from snapshots for subsequent attach to EC2 instance (then mounted @ running instance thereof); root-volume of DEFAULT EBS-backed AMIs can NOT be encrypted, but CAN encrypt it by/during copying it;    
+
+    - DELETED on TERMINATION of EC2 Instance by default (check-box)
+    - EBS Volumes SIZE/TYPE can be MODIFIED on-the-fly, except for standard/magnetic,    
+        but must wait 6 HOURS between such changes; Best Practice is to first stop EC2, take snapshot of EBS,    
+        then change
+    - EBS can be scaled UP only.    
+    - EBS volumes must be in same AZ as EC2 instance it's attached to.    
+    - `pre-warming` a VOLUME CREATED FROM a SNAPSHOT; write to all blocks on the volume; to ensure optimal performance; else long write latency.
+
+    # Snapshots 
+        - snapshots are stored on S3    
+        - incremental; changes only    
+        - first shapshot takes time to create    
+        - snapshots of encrypted vols are encryted    
+        - volumes restored from encrypted snapshots are encrypted    
+        - cannot share encrypted snapshots    
+        - snapshots can be made public in the marketplace; recieve PRODUCT CODE, 
+          which prevents recipient from remarketing.    
+        - stop EC2 instance before taking snapshot of EBS vol that serves as root device    
+
+    PRICING  https://aws.amazon.com/ebs/pricing/    
+        AWS specs IOPS per device block-size    
+
+    # EBS Types [EBS Storage Options]; more options than root volume, which is limited to bootable; GP2|IO1|Magnetic 
+
+        - GP2; SSD, "General Purpose"    
+            $0.10/GB-month    
+            -- 99.9999% availability;    
+            -- up to 10,000 IOPS    
+            -- bursts up to 3000 IOPS, but ~ 100 IOPS nominal;     
+            -- Ratio of 3 IOPS/GB offer single-digit milisecond latencies;    
+            roughly that of 1 7200rpm SATA HDD
+
+        - IO1; SSD , "Provisioned IOPS"     
+            $0.125/GB-month    
+            $0.065/IOPS-month     
+            -- more than 10,000 IOPS; to 20,000 IOPS;     
+                but ~ 4,000 IOPS nominal
+            -- for intensive I/O; large DBs        
+            -- 4GiB – 16 TiB
+
+        - ST1; HDD, "Throughput Optimized"    
+            $0.045/GB-month    
+            -- NOT bootable    
+
+        - SC1; HDD, "Cold"    
+            $0.025 per GB-month    
+            -- NOT bootable    
+        
+        - Magnetic (Standard); HDD    
+            -- bootable    
+            -- Lowest cost per GB
+
+        - Snapshots    
+            $0.05/GB-month 
+
+    # CREATE SNAPSHOT of VOLUME    
+        EC2 > ELASTIC BLOCK STORAGE > Volumes > Actions > Create Snapshot    
+        > Volume > shows volname    
+            Name/Description/Encrypted > enter data    
+
+    # CREATE VOLUME from SNAPSHOT    
+        EC2 > ELASTIC BLOCK STORAGE > Snapshots > Actions > Crete Volume    
+        > Snapshot ID    
+        "Volume Type"/Size (GiB)/IOPS/"Throughput (MB/s)"/"Availability Zone"/Encryption    
+
+    # CREATE IMAGE from SNAPSHOT
+        EC2 > ELASTIC BLOCK STORAGE > Snapshots > Actions > Crete Image 
+        See @ EC2 > AMI    (Takes several minutes to create AMI from Snapshot) 
+
+    # DELETE AMI (and its snapshot)
+        EC2 > IMAGES > AMIs > Actions > Deregister 
+        EC2 > ELASTIC BLOCK STORAGE > Snapshots > Actions > Delete (snapshot backing the AMI)
+
+    # RAID volume    
+        for better IO 
+        EBS > Add Storage > Type > ... add EBS volumes 
+        the rest is handled by the OS/server @ its instance
+        RAID 0 (stripped), RAID 1 (mirrored); do NOT use RAID 5 on AWS, RAID 10 stripped+redundant    
+
+        Example RAID 0 @ EC2 of Windows Server 2012; 
+            attach 4 EBS vols to EC2; 
+            RDP into Windows Server (See below); 
+            Use Windows Disk Management to create RAID ) of the 4
+
+        How to snapshot RAID?
+            An APPLICATION-CONSISTENT SNAPSHOT required; 
+            prevent app from writing to the disk, else data in cache is lost;
+            3 methods:
+                - Freeze the FS
+                - Unmount RAID array
+                - Shut down the EC2 instance (easiest)
+
+EFS 
+===
+    Elastic File System; virtual NAS; auto-scaling BLOCK storage volume/FS; for EC2     
+    1 EFS is accessible by all EC2 instances, per mount[s], unlike EBS; NEWER (2017)    
+
+    - Network File System v4 (NFSv4)     
+    - No pre-provisioning needed; pay for storage only    
+    - Scales to Petabytes    
+    - Supports THOUSANDS of CONCURRENT connections    
+    - Stored across multiple AZ's within its region    
+    - Read After Write Consistency     
+
+    # Pricing    
+        $0.30/GB    
+
+    1. Create EFS
+    2. Create Load Balancer (if multiple instances) 
+    3. EC2 Security Group MUST be same as that of EFS 
+
+    # MOUNT EFS 
+        @ EFS > File Systems > File system access :: EC2 mount instructions  ...  
+        # https://docs.aws.amazon.com/efs/latest/ug/mounting-fs.html
+        ssh ...  # into EC2 instance 
+            # helpers, per AMI
+            yum install -y amazon-efs-utils  # Amazon Linux 
+            yum install -y nfs-utils         # RHEL
+            apt-get install nfs-common       # Ubuntu 
+        # E.g., File System ID: fs-4c6d1c07
+        mkdir efs                              # Create new dir (mount point), e.g., "efs"
+        mount -t efs fs-4c6d1c07:/ efs         # Using EFS mount helper
+        mount -t efs -o tls fs-4c6d1c07:/ efs  # Using EFS mount helper AND encryption of data in transit  
+        # Using the NFS client (Udemy Tutorial used THIS method):
+        sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-4c6d1c07.efs.us-east-1.amazonaws.com:/ efs
+        # ... can change mount point, e.g., from `/efs` to `/var/www/html`  
+
+        SUCCESS @ all filesystem mounts; efs, efs+tls, and nfs4; 
+        @ mount points (dirs) existing (/var/www/html) and new (/efs, /efs2)
+
+
+Launch EC2 (Generic)
+==================== 
+    @ EC2 > Instances > Launch Instance   
+
+        > Choose an Amazon Machine Image (AMI)    
+            Quick Start (tab)
+                Amazon Linux AMI 2018.03.0 (HVM), SSD Volume Type - ami-0ff8a91507f77f867
+        > Choose an Instance Type     
+            t2.micro   
+        > Configure Instance Details    
+            Number of Instances: 1     
+            Purchasing option: (default unchecked; 'Request Spot instance')    
+            Network: (default VPC)    
+            Subnet: No preference (default subnet) 
+            Auto-assign Public IP:  (default;'Use subnet setting')   
+            IAM role: 'S3-Admin-Access' (created earlier)    
+            Shutdown behavior: Stop (default)    
+            Advanced Details > User data  
+                #!/bin/bash
+                yum update -y         # Update kernel 
+                yum install httpd -y  # install Apache Web Server
+                service httpd start   # start Apache Web Server
+                chkconfig httpd on    # start Apache Web Server on boot, henceforth 
+                service httpd status  # server status check
+                #aws s3 cp s3://sempernow-static-site-1 /var/www/html --recursive
+                # OR ...
+                cd /var/www/html      # go to public web server folder
+                echo '<html>' > index.html
+                echo '<h1>Apache Web Server</h1>' >> index.html
+                echo -e "<h2><pre>\n$(date)\n</pre></h2>" >> index.html
+                echo "<h2><code>$( curl http://169.254.169.254/latest/meta-data/public-hostname )</code></h2>" >> index.html
+                echo "<h2><code>$( curl http://169.254.169.254/latest/meta-data/public-ipv4 )</code></h2>" >> index.html
+                echo '</html>' >> index.html
+        > Next  
+        > Tags   
+            Name: 'NAT'  (Optionally add tags, per key-val pair) 
+        > Next  
+        > Add Storage   
+            Options: Volume Type, Device, Snapshot, Size (GiB), IOPS, 
+                     Throughput (MB/s), Delete on Termination, Encrypt    
+            E.g., 
+                Root, /dev/xvda, snap-0a933..., 8, ...  (default; adds root volume)
+
+            - "Delete on Termination" IS enabled by default for ROOT,  
+               but is NOT enabled by default for any added volume(s),  
+               (Added vols typically contain generated/valuable data.)  
+            - CAN select from existing (snapshot) EBS volume.
+            - CAN change default, and/or add more; `/dev/xvdb`.
+
+        > Next  
+        > Configure Security Group  
+            Select an existing security group: (select Public subnet, e.g., WebDMZ)  
+        > Review and Launch   
+        > Launch  
+
+    NOTE: "Launch More Like This" wizard ONLY REPLICATES SOME CONFIG DETAILS; uses default storage config, shutdown/termination, no User data (bash script). To create a copy of your instance, first create an AMI (EC2 snapshot) of it, then launch more instances from that AMI.    
+
+CREATE NAT Server    
+=================
+    (See REF.AWS.VPC.txt)
+
+Key Pair (Create and Download)  
+==============================
+    .pem  @ Mac/Linux/Cygwin/MSYS/MINGW [ssh]    
+    .ppk  @ Windows/PuTTY; `puttygen` converts .pem => .ppk    
+        - The .ppk holds BOTH public and private keys; PuTTY proprietary;    
+        - PuTTY can also convert back to .pem format ...    
+            puttygen id_dsa.ppk -O private-openssh -o id_dsa   
+
+    @ Linux AMIs: SSH into instance per (user's) private key.
+    @ Windows AMIs: AWS generates a password per (user's) private key.
+
+AMI Save/Copy  
+=============
+    # SAVE an AMI [snapshot]; creates a snapshot of the EC2 instance    
+        EC2 > Instances > Actions > Image > Create Image    
+            Image ID/name/description > view/set    
+            "Permissions" tab > by default, it is 'private'    
+
+        ... can sell/give AMIs @ AWS Marketplace    
+
+    # COPY AMI to another REGION    
+        EC2 > Images > Actions > Copy AMI    
+            Destination region > select from menu    
+            Name/Description/Encryption: > enter/select    
+        > Copy AMI [button]    
+
+RDC access To Window Instance  
+=============================    
+    Utilizes MSTSC.exe (Microsoft Terminal Services Client)
+    Remote Desktop Connect (RDC) uses RDP Protocol; TCP 3389
+
+    Create/Launch Windows Server EC2 Instance
+    Attach SG that includes RDP, TCP/3389 
+    Then ...
+
+    # FROM AWS Console: @ EC2 > Instances 
+    1. Create/Download Access Key Pair    
+    2. EC2 > Actions > "Get Windows Password"    
+         > "Retrieve Default Windows Administrator Password" [popup]    
+         ... cut/paste, or file/upload per menu, PRIVATE key [downloaded prior]    
+         "Decrypt Password" [button]    ...    
+         ... shows: Public IP, Username, Password for use @ mstsc.exe [Windows RDP app]    
+         default USERNAME: Administrator    
+
+    # FROM Windows machine ...    
+    3. @ Windows RDP app [mstsc.exe @ local machine], config per ...    
+        PC Name: > enter the server name [HOST.DOMAIN]; find @ AWS EC2 "Public DNS"    
+        "User Account:" > enter info (from Step 2.)    
+
+    # FROM Mac OS machine ...    
+    3. @ Mac OS > CoRD [RDP Client app]    
+        Servers >    
+            Label: > enter whatever 
+            Address: > enter EC2 public URL [HOST.DOMAIN]    
+            Username/Password: > enter info    (from Step 2.)    
+            Domain: > leave blank    
+
+CREATE NodeJS Server  
+====================
+    IAM > Create Group    
+        > Attach Policy: 'AdministratorAccess'    
+        > Add Users to Group    
+        > Roles > Create New Role > 'ec2-admin'    
+        > Select Role Type: Amazon EC2 >    
+        > Attach Policy: 'AdministratorAccess'    
+            Role ARN: (generated ... 'arn:aws:iam::802...')   
+        "Create Role" (button)  
+
+    EC2 > NETWORK & SECURITY > "Security Groups"    
+        > "Create Security Group"    
+            "Security group rules" > Inbound    
+                HTTP, HTTPS, SSH(@limit IPs)    
+    
+    EC2 > Launch Instance    
+        Get/Create AMI having Node.js, AWS Node.js SDK, Express, Git     
+        "Advanced Details" > "User data"  
+            (See Node.js example @ 'REF.AWS.CLI.txt')
+
+FileZilla (SFTP)  
+================
+    File > Site Manager > New Site >
+        Host: > enter Public IP of target EC2 
+        Port: > enter '22', for ssh 
+        Porotocol: > select 'SFTP ...'
+        Logon Type: > select 'Key file'
+        Key file: > browse and select the private key [.pem] file
+        User: enter 'ec2-user' # if Ubuntu AMI, user is 'ubuntu' 
+    
+    Connect.
+
+    # ... other ...
+    Edit > Settings > Connection >    FTP > SFTP    
+    > Add keyfile, in .pem OR .ppk format    
+
+LOAD BALANCING (ELB)     
+====================  
+    - COSTS if left on; do NOT leave on; add Tags to notify per "Resource Groups"
+    
+    EC2 > "Load Balancers" > "Create Load Balancer"    
+    - 3 types
+        Classic      Layer-4  Transport Level    EC2 Classic
+        Network      Layer-3  Connection Level   Ultra-high performance; static IP
+        Application  Layer-7  Request Level 
+        
+    Classic ELB
+        > Security Group set to that of EC2s to be load-balanced
+        > Configure Health Check
+            HTTP / 80 / Ping Path: /helthy.html (user supplies)
+            > Advanced Details
+            Response Timeout:     2 
+            Interval:             5
+            Unhealthy threshold:  2  (to fail)
+            Healthy threasold:   10  (before healthy again)
+
+        > Tags
+            Key: ELB-1, Value: ON
+
+        - AWS gives LBs their own DNS name; NEVER given in IP address.    
+        - test is per ping of whatever target file was specified @ config/setup    
+        - Reports 'InService' or 'OutofService'    
+
+    Application ELB (ALB)
+        Name: (whatever)
+        ...   (defaults)
+        VPC: (select); shows AZ/subnets thereunder; must select at least 2
+
+EC2 :: CREDENTIALs vs ROLE
+===========================
+    TL;DR: Use ROLEs not credentials
+
+    # `aws` CLI utility available from inside any EC2 instance    
+    http://docs.aws.amazon.com/cli/latest/reference/ec2/index.html    
+        E.g., `aws ec2 describe-instances`     
+
+    # SSH into EC2 instance    
+
+        ssh ec2-user@52.56.56.176 -i MyEC2KeyPair.pem    
+        # => ECDSA ... SHA256 ...    
+
+    # ACCESS per CREDENTIALs 
+        aws s3 ls  # s3 is global, so should show ALL    
+
+        aws configure    # if credentials not stored @ ~/.aws/credentials
+        # => 'AWS Access Key ID [None]:'    
+        # See downloaded Access Key file [.CSV]    
+        # => 'AWS Secret Access Key [None]:'    
+        # => 'Default region name [None]:'    
+        # See http://docs.aws.amazon.com/general/latest/gr/rande.html    
+        > "Amazon API Gateway"  
+            Region Name            Region     Endpoint                            Protocol  
+            US East (N. Virginia)  us-east-1  apigateway.us-east-1.amazonaws.com  HTTPS'      
+
+            aws s3 help  # => AVAILABLE COMMANDS ... cp ls mb mv presign rb rm    
+
+        Credentials @ EC2 instance ... is BAD PRACTICE !!!    
+            Careless developers use such embedded credentials, and upload EC2 snapshots etc to GitHub, where auto-bots scan for AWS credentials, take over their account to spin up costly servers, and mine Bitcoin etc    
+
+        ~/.aws     
+            /config    
+            /credentials  # vim ...    
+                aws_access_key_id = AKIA....    
+                aws_secret_access_key = eruCK...    
+
+        ... so, use ROLEs instead.    
+
+        Terminate Instance    
+
+            aws ec2 describe-instances  # shows JSON    
+            # copy target instance value @ "InstanceId:"    
+            aws ec2 terminate-instances --instance-ids $INSTANCE_ID    
+
+    # ACCESS per ROLEs [IAM]  
+    
+        IAM > Roles > "Create new role"    
+
+        - ALL Roles are GLOBAL    
+
+        "Role for identity provider access"    
+            allows Federated Users to access app on your EC2-based server,    
+            i.e., Web Identity Federation; Google, Facebook, etc    
+
+        "AWS service role" > Amazon EC2 > Select     
+            > Filter: "Policy Type" type 's3'    
+            Select "AmazonS3FullAccess"    
+            "Set role name and review"    
+                Name it ... 'S3-Admin-Access'    
+
+        EC2 > Launch instance > "Setp 3. Configure Instance Details"    
+            > "IAM role"  ... enter role name: 'S3-Admin-Access'    
+
+            Now, SSH into EC2, and ...    
+
+                $ aws s3 ls  # => ... works ...    
+
+            ... works straight away, unlike before/above @ credentials-based    
+            where we had to install credentials into EC2.    
+            ~/.aws  # does NOT even exist [yet]     
+
+                $ aws configure  # ... [None] ...    
+
+            But CAN set "Default region name" here.    
+
+        ALSO, can Attach/Remove IAM role to RUNNING EC2 instance ...    
+
+            EC2 > Instances > Actions > Instance Settings > Attach/Remove IAM Role    

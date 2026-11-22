@@ -1,0 +1,48 @@
+
+* USB app; SAMBA server allows no drive-root access. Also, network device-name, e.g., 'SMB', is set/same for BOTH ports. That is, USB#1 & USB#2, are both seen by network under '\\SMB'; all first-child folders of both drives share the same namespace, e.g., '\\SMB\foo'.
+
+* WPS button; when set to toggle Wireless Radio power, requires press-and-hold for a second or two.
+
+* Disabling WAN connection loses everything; nothing stored/recovered. Initialization process may fail in many ways.
+
+* AiCloud screws you seven ways from Sunday ...
+
+	URL:		http://192.168.1.1 | http://router.asus.com
+		"
+		Settings have been updated. Web page will now refresh.
+		Changes have been made to the IP address or port number. You will now be disconnected from RT-AC66U.
+		To access the settings of RT-AC66U, reconnect to the wireless network and use the updated IP address and port number.
+		"
+		
+		Recovery: Was able to get Web logon by power off of everything, and then connecting Router to Cable Modem, exclusively. From there, restarted WAN connection. 
+
+
+OEM Firmware [3.0.0.4.376_1123] Issues
+--------------------------------------
+* WPS button set to "Toggle Radio" does not work, regardless of selection and regardless of WPS "ON"/"OFF"
+
+	Fix: 	None.
+	
+* User Guide [2013] doesn't match selections available @ Web UI/Admin [firmware v.3.0.0.4.376_1123]
+	
+	Fix: 	None.
+	
+* Wireless > 5.0 > Wireless Mode > "N + AC"; fails entirely; no SSID seen by NIC/adapter. Only "Auto" mode works, but that defaults to Legacy [a/b/g], even with n/ac capable NIC/adapter.
+
+	Fix: 	None.
+	
+
+Integration Issues @ Windows 7 / Apps 
+
+* Remote Desktop Connect [RDC] fails; NSlookup <client/computername> fails to show domain, "HTPC.Uzer_here".
+
+	Fix:	Change Workgroup/Domain name to alpha-num chars ONLY
+			
+			- Enter LAN Domain Name @ WebUI/admin [192.168.1.1] ...
+			   LAN > DHCP Server > RT-AC66U's Domain Name 
+			- Change Win7 Workgroup name to match router's Domain Name.
+			
+* Lastpass OVERWRITES wireless SSID/password with router adimin login user/pass, of either 2.4GHz or 5GHz, whichever is current top-tab @ login page [whichever was last viewed?]. Worse still, the overwrite is "applied" [written to memory] as part of login process.
+
+	Fix:	Delete fields @ Lastpass entry; enter user/pass manually
+	

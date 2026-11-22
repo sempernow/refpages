@@ -1,0 +1,91 @@
+2017-08-13
+==========
+
+	MINGW64 [MinGW-64.org]; the current, viable MinGW project; separated from mingw.org per GNU's fanatical mandates madness [REF:Linus Torvalds complaint]; MinGW-64 repos/tools are included in MSYS2 project, Git-for-Windows [SDK], and others; MINGW64 is Cygwin-compatible per 'mingw64-'* packages.
+	
+	http://mingw-w64.org/doku.php
+	http://www.msys2.org/
+	https://www.cygwin.com/
+
+2016-11-15
+
+	Use MSYS2 
+	
+	MSYS2; an environment for building native Windows software. MSYS2 provides a large collection of packages containing such software, and libraries for their development. As a large portion of the software uses GNU build tools which are tightly coupled to the unix world, this environment is also POSIX-compatible, and is in fact based on Cygwin. 	
+
+	MSYS2 uses Pacman (of Arch Linux) to manage its packages, and comes with 
+	3 different package REPOSITORIES:
+		
+		- msys2: Containing MSYS2-dependent software
+		- mingw64: Containing 64-bit native Windows software (compiled w/ mingw-w64 x86_64 toolchain)
+		- mingw32: Containing 32-bit native Windows software (compiled w/ mingw-w64 i686 toolchain)
+			
+	http://msys2.github.io/ [1-click-installer]
+	https://github.com/msys2/msys2.github.io
+	https://sourceforge.net/p/msys2/wiki/How%20does%20MSYS2%20differ%20from%20Cygwin/
+	
+2016-11-10
+
+	MinGW Project, and sister projects, 
+	are GNU/bash build tools ported to Windows
+	
+		http://www.mingw.org/ 
+		https://sourceforge.net/projects/mingw/
+		
+		- Bundled/Distributed as ...
+
+			'MinGW' 		- gcc compiler
+			'MSYS'  		- make and many bash utilities; ls, grep, ...
+			'binutils'	- hardcore compiler related tools 
+
+		- MinGW.org version is NOT bundled w/ mintty.exe; 
+		  CLI is @ Windows cmd.exe terminal 
+		
+		- MinGW64 bundled w/ mintty.exe, and used by ...
+		
+			- Git-for-Windows [github.io]; SDK uses Msys2
+			
+				git-bash.exe  [ .bash_profile @ %USERPROFILE% ]
+			  
+			- GitHub Desktop [GitHub-for-Windows] [GitHub.com]
+			
+				GitHub.appref-ms" --open-shell 
+
+		
+2016-11-09 
+
+	Downloaded/Installed/Tried several [below];
+	Currently using MinGW + MSYS packages from MinGW.org
+
+	# MinGW.org [32 bit]
+		
+		gcc 5.3.0	[mingw-get-setup.exe]
+
+		'mingw-get install' ...
+		
+			mingw-developer-toolkit		installs MSYS
+
+			mingw32-base				installs gcc, make etal
+
+			mingw32-binutils			installs binutils
+
+		
+		make.exe and other bash uttils are @ MSYS [.\msys subfolder], 
+		so BOTH \bin paths need to be added to PATH ... 
+
+			C:\MinGW\bin
+			C:\MinGW\msys\1.0\bin
+			
+			(See MinGW.bat @ UzerX cmd-library)
+
+		
+	# Win-Builds 		[win-builds-1.5.0.exe]
+
+		v.1.5.0 installed gcc 4.x
+
+		
+	# MinGW-builds	[mingw-w64-install.exe]
+
+		gcc v.4.8.3
+		
+		

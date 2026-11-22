@@ -1,0 +1,132 @@
+Diskpart.exe
+
+diskpart /s scriptname.txt
+
+REF: https://technet.microsoft.com/en-us/library/dn614984.aspx
+
+
+  if UEFI machine
+
+    SELECT DISK 1
+    CLEAN
+    CONVERT GPT
+    CREATE PARTITION PRIMARY
+    ACTIVE
+    FORMAT FS=FAT32 QUICK 
+    ASSIGN
+    EXIT
+
+  if not UEFI machine
+
+    SELECT DISK 1
+    CLEAN
+    CONVERT MBR
+    CREATE PARTITION PRIMARY
+    ACTIVE
+    FORMAT FS=NTFS QUICK 
+    ASSIGN
+    EXIT
+
+
+Common Commands
+---------------
+	list disk
+	select disk <X>
+
+	list partition
+	select partition
+	
+	list volume
+	select volume
+
+	clean [all]
+    
+    convert [gpt|mbr]
+
+	create partition primary [size=N] in MB [offset=X] in KB [align=Y] in KB
+
+	select partition 1 
+
+	active 
+	
+	inactive
+
+	format [fs=fat32] [fs=ntfs] [recommended] [label="this label"] quick
+
+	assign [letter=X] -  drive letter / mount point of selected volume
+
+	remove NOTE: removes the drive letter / mount point of selected volume
+
+
+
+Commands
+--------
+	list [disk] [partition] [volume]
+	select [disk] [partition] [volume] <#>
+	detail [disk] [partition] [volume]
+
+	filesystems
+	attributes [disk] [volume] 
+	attributes volume [set | clear] [hidden] [readonly] [shadowcopy]
+	shrink desired=XXXX 	{in MB}
+	shrink querymax
+	delete [partition] [volume]
+	
+	uniqueid disk 	{e.g., "6063431F"}
+	uniqueid disk ID=<new_signature> 
+
+	exit
+	
+	... @ partition ...
+
+	clean [all]
+	create partition primary [size=N] in MB [offset=X] in KB [align=Y] in KB
+	active
+	inactive
+	shrink
+	extend
+	format
+
+	... @ volume ...
+
+	format [fs=fat32] [fs=ntfs] [recommended] [label="this label"] quick
+
+	assign [letter=X] 		{drive letter / mount point of selected volume}
+
+	remove 		{removes the drive letter / mount point of selected volume}
+	
+NOTEs
+-----
+	SIZE is in MB
+
+		1 GB = 1024 MB
+		10 GB = 10240 MB
+		60 GB = 61440 MB
+	
+		1024 bytes = 1 Kb [kiloBYTE]
+		1073741824 bytes = 1 MB
+	
+	* remove
+	
+		A volume is a mounted partition. 
+		The assigned [assign] drive letter can be removed [remove]; 
+		does NOT affect volume/partition/data, only how its handled @ current OS/environment.
+		An active volume "removed" will still be bootable. 
+		
+		The 'remove' command hides the volume/partition from the booted OS; 
+		however, the volume can still be found on boot, and from elsewhere.
+
+		Use to create "hidden" bootable recovery partition on second physical disk, 
+		so BIOS selection can be used to boot from it for recovery.
+		
+		Use on External, removable drives. Create small (1GB) partition ahead
+		of main parittion, and install Win PE/RE on it. Don't assign (remove) drive
+		letter. Then it's usable/bootable all on its own. No (other) OS required.
+	
+	* attrib volume set hide
+
+		Don't use this. 
+
+		Hiding a volume/partition on a simple volume will hide all 
+		volume/partitions on that disk.
+-------------------------------------------------------------------------

@@ -1,0 +1,1425 @@
+REFs
+====
+    10-Minute Tutorials  https://aws.amazon.com/getting-started/tutorials/
+    AWS Documentation    https://aws.amazon.com/documentation/ 
+    AWS CLI              http://docs.aws.amazon.com/cli/latest/reference
+    AWS Dev Tools/SDKs   https://aws.amazon.com/tools/    
+    AWS WhitePapers      https://aws.amazon.com/whitepapers/    
+    AWS Explained        https://www.expeditedssl.com/aws-in-plain-english    
+
+    AWS Toolkit for VScode  http://docs.aws.amazon.com/toolkit-for-visual-studio/latest/user-guide/getting-set-up.html    
+
+    AWS is infrastructure as code; IaaS; from the command line  https://aws.amazon.com/lambda/    
+
+    Cloud History     
+        Data Centre > IasS > PaaS > Containers > Serverless 
+
+        IaaS; EC2 (2006)); must manage servers     
+        PaaS; Elastic Beanstalk; must manage the OS and apps/language 
+        Containers; must manage apps/language
+        FaaS; Serverless (Lambda, S3, DynamoDB, ...)
+
+    AWS History  
+        Amazon.com migrated to AWS in 2010.    
+        SQS was its first service.    
+        Lambda launched 2014/2015.   
+
+TERMS 
+=====
+    AMI  
+        Amazon Machine Image; virtual machine description, e.g., Amazon Linux; template containing the machine configuration, e.g., OS, app server, and apps; an EC2 "instance" is a copy of its specified AMI, and runs, is "launched", as a virtual server in a VPC; included in an AMI's definition is its TYPE of ROOT DEVICE (either EBS or Instance Store), and the two have significant differences.    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html
+
+        - AKI  
+            Amazon Kernel Image; the kernel of an AMI    
+
+        - Bookmark    
+            a URL/LINK; created for a public or shared AMI; allows users to access AMI and launch instance in their own account.  https://console.aws.amazon.com/ec2/v2/home?region=AMI_REGION#LaunchInstanceWizard:ami=AMI_ID    
+
+        - Virtualization Types    
+            paravirtual (PV) or hardware virtual machine (HVM); main difference is boot method, and special hardware extensions; for best performance, use HVM and "current generation" AMIs.    
+
+    AZ    
+        Availability Zone; DATA CENTER; 42 @ 2017; 2+ per Region
+
+    ARN    
+        Amazon Resource Name    
+        Identifies a User (person or service accessing account)
+        arn:aws:iam::account-ID-w-out-hyphens:user/uzerName 
+
+    Region    
+        Geographic Location with 2+ data centers (AZs); 16+ @ 2017    
+    
+    Edge Location 
+        AWS Endpoints for caching content; CloudFront (CDN) distribution endpoints; 50+ @ 2017; 96 @ 2018; more Edge Locations than Regions.     
+
+    EIP    
+        Elastic IP; a public IP address associated with the private IP address of an instance; 1 EIP address associated WITH A RUNNING INSTANCE at NO CHARGE, but charged if NOT running; each additional EIP associated with that instance per hour;  https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html
+
+    HVM    
+        Hardware Virtual Machines; many, but not all,    
+        AMIs are HVMs, e.g., RHEL, SUSE, Amazon Linux AMI     
+
+    IaC    
+        Infrastructure as Code    
+    
+    IOPS    
+        input/output operations per second; AWS specs IOPS per device block-size    
+
+        - Standard/Magnetic EBS: ~ 100 IOPS; roughly that of 1 7200rpm SATA HDD    
+
+        - Provisioned IOPS: ~ 4,000 IOPS    
+
+    LP    
+        Least privilege principle     
+    
+    SRM    
+        Shared Responsibility Model;     
+        CUSTOMER security IN the cloud; account resources;     
+        AWS security OF the cloud; underlying infrastructure    
+
+    MFA    
+        Multi-factor Authentication     
+        
+    IaaS - Infrastructure as a Service; VPC, EC2, EBS     
+    PaaS - Platform as a Service; RDS, EMR, ElasticSearch    
+    SaaS - Software as a Service; App as a Service; gMail, Salesforce.com     
+    FaaS - Function as a Service; "Serverless"; S3, SNS, Lambda, DynamoDB    
+
+    Deployment Models: Cloud, Hybrid, On-Premises a.k.a. "Private Cloud"    
+
+    RTO - Recovery Time Objective (time)    
+    RPO - Recovery Point Objective; acceptable data loss (time)    
+
+DISASTER RECOVERY (DR)
+======================
+    Orchestration tools to recover; meet RTO/RPO times    
+    DR Plans:     
+        - Backup/Restore; Main DB + Read-only Replica, within AWS    
+        - Pilot Light; more DR mechanisms    
+        - Warm Standby; separate infrastructure    
+        - Multi-site; up and running concurrently    
+
+DATA INTEGRITY and ACCESS CONTROLS
+==================================
+    Storage Decommissioning; AWS follows DoD 5220.22-M + NIS 800-88    
+    SSL, IPSec, Isolation, DDoS Protection    
+
+BEST PRACTICES (5 PILLARS)
+==========================
+    Security: tracability; logs, auditing, LP, SRM, Automation    
+        - MFA for root access    
+        - Create privileged admin group    
+        - MFA for privileged users    
+        - Least Privilege    
+        - Default Deny    
+        - Use policy templates    
+        - Where possible, use roles not credentials; e.g., for    
+            - cross-account access    
+            - intra-account delegation    
+            - Federated users    
+
+    Reliability              Automate/Test recovery operations    
+    Performance Efficiency   Regions; Service APIs; Mechanical Sympathy    
+    Cost Optimization        Consumption Model; Services (per APIs) vs. Servers    
+    Operational Excellence   Automate/Test; code vs. GUI/human    
+
+        - Automate formation of resources; CloudFormation; stack, cli, sdk, json    
+        - Game Day testing; simulate loads    
+
+STANDARD ENVIRONMENT (BUILD)
+============================
+    Overview: filesystems (EBS), and therefore any code/data required/created (EBS,S3), and databases too (RDS), are all SEPARATE from the server (EC2/AMI instance). E.g., a minimal Wordpress site would require 2 instances and 2 stores. Additionally, services such as CloudFront, and ELB if multiple instances, would be required.    
+
+        Minimal Wordpress Site:    
+        - EC2 instance as server    
+        - RDS (EC2 instance) as database    
+        - S3 private bucket for code    
+        - S3 public bucket, linked to CDN, for server assets    
+    
+    EC2    
+        Elastic Compute Cloud; Virtual Server; Virtual Machine build per AMI    
+        
+        AMI
+            Amazon Machine Image; the image upon which EC2 instance is built     
+            AKI
+                Amazon Kernel Image; kernel of AMI    
+    
+    API - AWS APIs for scripting/command-line admin; vs GUI (Web Console)    
+    VPC - Virtual Private Cloud; VLAN; Virtual Local Rack(s), per account    
+    ACL - Access Control List; secures account/resources    
+
+    IAM    
+        "Identity & Access Management" @ GUI console; control access;    
+        Manage user accounts to interact with AWS services    
+
+    S3    
+        Simple Storage Service; OBJECT store; bucket; stable, redundant, slow;     
+        global namespace, so bucket NAMES MUST BE UNIQUE, globally;    
+        e.g., can store AMIs there, but that's not from where they run; too slow    
+
+    EBS    
+        Elastic Block Store; block storage for EC2;    
+        S3 + Ephemeral Storage etal for EC2 AMIs    
+        Faster than S3; permanently stores AMI, unlike ephemeral     
+
+    ELB    
+        Elastic Load Balancing; balance VMs and/or Applications    
+
+    CloudWatch    
+        Monitor it all    
+
+LAB: BULLETPROOF HTML5 WEBSITE 
+==============================
+    @ "AWS Cert. Assoc. (2017)" > "02 Bulletproof HTML5 Websites with AWS"    
+
+    # Route 53  (DNS)     
+        > Hosted zones > click on domain-name
+            # Default records are NS + SOA    
+            > Create Record Set 
+                Name: (www)|(blank)
+                Type: A - IPv4 address 
+                Alias Target: Yes (check-box) 
+                TTL: (default) 
+                Value: (CloudFront|S3; names-at-dropdown-menu)   
+                Routing Policy: Simple (|Latency|Failover; if multiple/redundant endpoints)  
+    # S3    
+        > Create (per GUI|CLI)
+            - BUCKET_NAME === DOMAIN_NAME
+            - Upload per GUI or CLI (better) 
+            - TWO buckets per bucket; 
+                1. DOMAIN_NAME w/ contents; 
+                2. www.DOMAIN_NAME w/out content; redirect request only 
+                    S3 > (select bucket) > Properties > Static website hosting > Redirect requests (check-box)
+    # CloudFront CDN    
+            Default TTL  > 86400   # refresh from S3 every 24 hrs; can invalidate    
+            Alternate Domain Name (CNAMEs) > example.com    
+            Default Root Object > index.html    
+    # Certificate Manager  HTTPS (SSL/TLS)    
+        - validates by ADDING Cert CNAME @ Route53, or by email notification process    
+        - handle multiple domain names by adding a wildcard domain name, e.g.,    
+            '*.example.com'; handles, 'cdn.example.com', 'www.example.com', ...    
+
+ALL SERVICES
+============
+    Admin per GUI or CLI/API (per scripts; commandline)    
+
+    NETWORK
+    -------
+
+        # VPC    
+            Virtual Private Cloud; isolated section of AWS, per account, within which virtual networks and subnets can be created and managed, including IP address ranges routing tables and network gateways; whereof (EC2-based) web stacks are built; secured by subnet ACLs and EC2 instance Security Groups; some account resources lie OUTSIDE the VPC, e.g., S3, EFS, Glacier, ...; Prior to VPC, "EC2 Classic" was the original scheme; no longer used or advised    
+
+            Restrictions per VPC    
+
+                - 5 VPCs per region (can request increase)    
+                - 5 Elasitc IP addresses    
+                - 5 Internet Gateways    
+                - 100 Security Groups; 50 Rules per Security Group    
+
+            Restrictions per Region    
+
+                - 50 VPN connections    
+                - 50 Customer Gateways    
+                - 200 Route tables    
+
+            Default VPC (config)    
+                6 subnets (one for each AZ) and an Internet Gateway; additional/customizable CAPABILITIES: router, VPC Endpoints, Virtual Private Gateway, NAT Gateway, Egress-only Internet Gateway (IPv6-out-only);    
+                
+            - DO NOT DELETE the Default VPC.    
+
+            - Default VPC has it's own private IP Address; "IPv4 CIDR",     
+                e.g., 172.31.0.0/16; private (Class B) IP Address;     
+                Note 2 octet (16-bit) submask, so up to (65,534) hosts    
+
+            Default Internet Gateway given name, e.g., `igw-ef3c5a89`,    
+                'Destination' is by default `0.0.0.0/0`, ie., EVERYWHERE    
+            
+            Private Subnet endpoints can be made public, by     
+                setting up a NAT (EC2) instance, @ VPC console.    
+
+            Namespace - use ALL-CAPS to distinguish your custom names from those of AWS    
+
+            Hardware VPN     
+                Direct Connect; "Box" connecting AWS VPC to On-premises VPN; uses IPSec + BGP;    
+                 is actually a managed network of such; high availability;    
+                "Virtual Private Gateway" <=>    "HW VPN"    <=> "Customer Gateway"    
+            
+                VPN CloudHub    
+                    Hub and spoke model to connect many customer sites to one VPN using     
+                    perhaps both HW VPNs and Direct Connect.     
+
+            Sofware VPN     
+                Software designed implementation, customer designed, of the HW VPN.    
+
+            VPC Peering     
+                star configuration (1-to-1) of connecting VPCs (at same or different acounts) by direct network route using private IP addresses; can configure which resources are accessible at each endpoint; "Local VPC" <=> "VPC Peering" <=> "Peer VPC"    
+
+            Software Remote-Access VPN    
+                Set up an EC2 instance as a "Remote Access Server"; EC2 runing SW    
+                such as Microsoft RAS, Checkpoiont, OpenVPN, Sophos, Vyatta    
+        
+        # CloudFront
+            CDN; content delivery; see STORAGE 
+
+        # Route 53    
+            DNS and Domain Name Registration service (DNS is on Port 53); 50 domain names allowed by default.        
+
+            alt: DNSimple, GoDaddy, Gandi 
+
+        # API Gateway 
+            Create APIs for AWS services 
+        
+        # Direct Connect 
+            Dedicated line from you to AWS; Connect to AWS without an ISP; Dark Fibre connection; Dedicated leased line to AWS; Pay telco + AWS    
+
+        # ENA 
+            Elastic Network Adapter (ENA) based Enhanced Networking; Sep 2017; provides EC2 instances max bandwidth of 25 Gbps @ types: M4, X1, P2, R4, I3, F1, and G3; a custom networking interface; ENA driver is installed in the AMIs @ Amazon Linux, Ubuntu 14.04 and 16.04, RHEL 7.4, SLES 12, Windows Server 2008R2, 2012, 2012R2 and 2016    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enhanced-networking-ena.html    
+
+        # ELB    
+            Elastic Load Balancing; Network AND Compute;    
+            - per DOMAIN NAME, NOT IP Address; 
+            - ELB domain names resolve to PRIVATE IP Addresses, internal to AWS infrastructure
+            - Auto Scaling; rebalance as instances spinup/down    
+            - CloudWatch; rebalance per health checks    
+            - Route 53; handles the DNS part of it     
+            
+            - 3 Types of ELB     
+                1. Application; App Targets, Target Group (newer; preferred)
+                2. Network    
+                3. Classic; Layer 4; Fault Tolerance; multiple instances; if Cross AZ (multiple AZs) is DISABLEd, then balancing is across AZs EQUALLY, Round Robin (RR), regardless of their relative resources/capabilities; Config per protocol/listeners; HTTP, RDC, ...    
+
+                - Health Check: InService, OutofService
+                - COST IF LEFT ON; Add Tag, key:ProductELB, val:ON, to track with Resource Groups    
+                - Always use Domain Name of ELB, not IP; IP may change over time    
+
+        # PrivateLink  
+            VPC endpoint (ENI; Private IP), per resrouce therein, to privately access AWS services from the VPC, without using public IPs, and without requiring the traffic to traverse across the Internet; services available: EC2, ELB, Kinesis Streams, Service Catalog, and EC2 Systems Manager  
+
+    COMPUTE 
+    -------
+        # EC2    
+            Elastic Compute Cloud; virtual server; an EC2 instance is an AMI @ S3; larger/costlier types have better machine AND network performance; resizable compute capacity; attached to VPC per EC2 console; up to 5000 key pairs per region; AutoScale; unlimited, to whatever the demand; Free Tier: 735 hrs on certain micro instances    
+    
+            AWS EC2    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html    
+            Wikipedia  https://en.wikipedia.org/wiki/Amazon_Elastic_Compute_Cloud    
+
+            EC2 Types    
+
+            - General Purpose    
+            - Compute Optimized; computaionally intensive     
+            - Memory Optimized; database     
+            - GPU Instances; Hadoop; concurrent    
+            - Storage Optimized    
+                E.g., "10 Gigabit Network Instances"    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-ec2-config.html
+
+            EC2 Storage Options    
+
+                - Instance Store Backed AMI    
+                    "Instance Storage" a.k.a. "EC2 Instance Store" a.k.a. "Local Storage" a.k.a. "Ephemeral Storage"; block storage @ EC2 instance; can NOT be stopped, only terminated; can NOT take snapshot, so can NOT store/save AMI; does NOT survive/persist EC2 termination nor underlying (HW) failure; does NOT attach/detach, so bound to its instance; launch time is longer than that of EBS-backed AMI, since all the parts have to be retrieved from S3.    
+
+                    NOT AVAILABLE @ types, e.g., @ t2.nano; available @ t2 m3.medium (1x4 SSD)    
+
+                - EBS Backed AMI    
+                    EBS is faster than EFS; AMI (EC2 instance) can be stopped; can take snapshot of AMI, which is saved to EBS; EBS is replicated within instance AZ; many such optimized EBS instance types available; volume(s) attach/detach to/from EC2 instances; launch faster than Instance-Store-Backed AMIs, since only the parts required to boot the instance need to be retrieved from its snapshot    
+                    
+                    When EC2 instance is terminated, EBS vol is ...    
+                    - DELETED if attached AT launch    
+                    - NOT DELETED if attached AFTER launch; detached with data intact    
+
+                    I.e., by default, an EBS-backed AMI has its root volume `DeleteOnTermination` flag set to `true`.     
+
+            AMI    
+                Consists of all the info required to launch an instance; AMIs and snapshots are stored on S3 in the standard storage class; AWS users cannot access this area of S3 directly, only via the service web interface or APIs;    
+                - template for instance root volume; OS/Apps    
+                - permissions    
+                - block device mapping    
+
+                AWS Marketplace; can buy/sell/give AMIs    
+
+                AMI Types, selectable by:     
+                    - Region     
+                    - Operating system    
+                    - Architecture (32-bit or 64-bit)    
+                    - Launch Permissions    
+                    - Storage of root device (Ephemeral or EBS)    http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ComponentsAMIs.html#storage-for-the-root-device    
+
+                        1. Instance Store Backed AMI ; charges per:    
+                            - AMI + usage    
+                            - AMI stored on S3    
+                        2. EBS Backed AMI ; charges per:    
+                            - AMI + usage    
+                            - AMI stored on S3    
+                            - EBS + usage    
+                            - AMI snapshots    
+
+                        Instance-Store-Backed AMIs are EITHER `running` or `terminated`; can NOT be `stopped`, unlike EBS-Backed AMIs     
+
+                        AMIs of both are stored @ S3, HOWEVER:     
+                            @ Instance-Store-Backed AMI, a FULL COPY is stored for each change.    
+                            @ EBS-Backed AMI, incrementally stored; changes only.    
+
+                    SHOW Type     
+                        @ GUI: EC2 > AMI > Details > "Root Device Type"    
+                        @ CLI: `aws describe-image`    
+                 
+                http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ComponentsAMIs.html    
+
+            Placement Group (PG)    
+                a logical grouping of EC2 instances within 1 AZ; recommended for apps needing low network latency, high network throughput, or both; 10Gbps network; CHOOSE an EC2 instance TYPE that supports ENHANCED NETWORKING.    
+
+            3 Billing Options:   
+            - On Demand: Fixed price per hr; NO COMMITMENT    
+            - Reserved:  Discount per 1-3 yr CONTRACTs    
+            - Spot:      Price per PRESET-BID PRICE, per availability;  
+                         Intance spin-up/down per 2 min termination notice, per meta-data @ URL:  http://169.254.169.254/latest/meta-data/spot/termination-time    
+
+            - Add BASH SCRIPT (such as a web server) on EC2 LAUNCH ...    
+
+                @ GUI; "Advanced Details" >  As text / As file / Input is already base64 encoded    
+                    a.k.a. "User Data"; `aws ec2 ... --user-data file://aScript.txt`    
+
+                @ CLI; inject a bash script per TEXT file; 1st line: `#!/bin/bash`    
+                    $ aws ec2 run-instances ... --user-data file://aScript.txt    
+
+            ELB   
+                Elastic Load Balancing; 3 types: Application, Network, Classic; monitor w/ CloudWatch
+                Can AUTHENTICATE users too.    
+
+        # Elastic Beanstalk (EB)  
+            PaaS for DevOps; app container; handles all underlying AWS infrastructure configuration, requirements, and deployment; (capacity provisioning, load balancing, auto-scaling, application health monitoring); can upload/update code; EB is sort of a GUI version of CloudFormation   
+
+            alt: Heroku  https://www.heroku.com/ ; BlueMix (IBM)   
+
+            - Precursor of ECS (Docker) and OpsWorks (Chef/Puppet).  
+
+            - Apps are updatable  
+            - Apps can be modularized into multiple EB apps  
+            - Apps can have multiple environments; Prod, Staging, Dev, V1, V2, ...
+            - Environments can be single instance or scalable  
+            - Environments can be web server or worker  
+                @ Worker environment: on-demand workloads or scheduled tasks; msg per SQS/POST   
+            - Apps are uploaded as .zip or .war file  
+
+            - PLATFORMS available:  
+                - Preconfigured    
+                    Node.js (Nginx|Apache), PHP (Apache), Python (Apache), Ruby (Passenger|Puma), Tomcat (Java), .NET (IIS), Java, Go, Packer    
+                - Preconfigured - Docker    
+                    GlassFish (Java EE App Server), Go, Python    
+                - Generic    
+                    Docker  
+                    Multi-container Docker  
+
+            - @ EB > Create ...  
+                Application information  
+                    Application name:  
+                Base configuration  
+                    Platform (dropdown-menu)
+                        - Preconfigured    
+                        - Preconfigured - Docker    
+                        - Generic    
+                    Application code: 
+                        - Sample application (check-box)  
+                        - Upload your code   (check-box)  
+                > Configure more options | Create application  (buttons)  
+                > Configure more options  
+                    Configuration presets  
+                        - Low cost (Free Tier eligible)  (check-box)
+                        - High availability  (check-box)
+                        - Custom confguration  (check-box)
+
+                    Change platform configuration 
+                    (Also available @ EB Dashboard, post-creation)
+                       Tags, Software, Capacity, Load balancer, Security, Monitoring, Instances, Rolling updates and deployments, Notifications
+
+            - @ EB > Configuration
+                > Security
+                    - Service role
+                    - Virtual machine permissions
+                        EC2 key pair: (add key-pair for SSH access)
+                        IAM instance profile: (default)
+
+                > Rolling updates and deployments: 
+                    Deployment policy:   "all at once" | immutable  
+                    Rolling update type: "all at once" | immutable  
+                
+                > Database  
+                    AWS Recommendation: Provision separately (@ RDS), 
+                    then connect to EB, else deleting EB app deletes database too.    
+
+            - SSH into per normal EC2 method 
+                ssh ec2-user@IP_ADDR -i ~/.ssh/KEYNAME.pem  
+
+            - AWS EB CLI  
+                DevGuide  https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html  
+                Ref       https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb3-cmd-commands.html  
+
+                - awsebcli; is NOT aws-cli (separate app)
+                - Requires Python 2.7/3.4
+                    $ pip install awsebcli --upgrade --user
+
+                    $ mkdir HelloWorld
+                    $ cd HelloWorld
+                    $ eb init -p PHP
+                    $ echo "Hello World" > index.html
+                    $ eb create dev-env
+                    $ eb open
+                    $ eb deploy ENVIRONMENT_NAME  # deploy
+
+        # ECS (Docker)  
+            Elastic Container Service; Docker => EC2;    
+            Elastic Container Registry (ECR); handles ELB;    
+            run/manage containers across a cluster of EC2 instances.  
+            DevGuide  https://docs.aws.amazon.com/AmazonECS/latest/developerguide/docker-basics.html  
+            CLI Ref   https://docs.aws.amazon.com/cli/latest/reference/ecs/index.html  
+
+            CodeCommit (Git) => Docker CLI => ECR => ECS => EC2 Instance(s)  
+
+            ECS > Launch Wizard (Fargate) ... FAILed  
+
+            # EKS (Kubernetes)  
+                Managed Kubernetes; service that handles scaling, upgrades and all of the management of the Kubernetes service and its clusters.  https://aws.amazon.com/eks/  
+
+            # FarGate 
+                Managed service for running Docker containers; handles all the underlying infrastructure; like EC2, but "instances" are containers, not VMs.  
+
+        # Lambda    
+            Run code in response to events; VERY EFFICIENT; manages/scales the required compute resources/environment; LAMBDA FUNCTION, at AWS, is NOT merely some defined function within a program/script file, but rather refers to THE ENTIRE SET OF CODE, supporting libraries (e.g., ImageMagick), and config files; launched 2014; Fee per execution memory-time only   
+
+            DevGuide  https://docs.aws.amazon.com/lambda/latest/dg/welcome.html  
+            API Ref   https://docs.aws.amazon.com/lambda/latest/dg/API_Reference.html  
+
+        # Lightsail  https://lightsail.aws.amazon.com/ls/webapp/home/instances  
+            PaaS for DEVELOPERs; a Virtual Private Server (VPS), including VM (EC2), SSD-based storage (EBS), data transfer, DNS mngmnt, and a static IP; SSH or RDP access; Lightsail console is NOT @ AWS console; 
+            
+            - Stacks available:  
+                Wordpress: publishing platform  
+                Magneto: eCommerce platform  
+                Node.js: Node.js dev. env.  
+                Nginx: phpMyAdmin, SQLite, ImageMagick, FastCGI, Memcache, GD, CURL, PEAR, PECL  
+                MEAN: mongoDB, Express, Angular, Node.js, Git, PHP and RockMongo  
+                LAMP: Apache, MySQL, PHP and phpMyAdmin   
+                Joomla: CMS  
+                Drupal: CMS, publishing, Email  
+                Redmine: Project Management platform  
+                GitLab CE: self-hosted Git mngmnt & CI; based on Ruby on Rails
+
+        # Batch  https://docs.aws.amazon.com/batch/latest/userguide/Batch_GetStarted.html
+            Managed service for batch computing workloads; auto-PROVISIONS RESOURCES per:  
+            - Job; shell script, Linux executable, or Docker container image  
+            - Job Definition; blueprint for the resources  
+            - Job Queue; scheduler    
+            - Compute Environment; a set of (un)managed compute resources  
+
+    STORAGE    
+    -------
+        # S3    
+            Simple Storage Service; SERVERLESS; NOT a filesystem; key-value OBJECT store; Buckets; flat FILEs only; stable, redundant, slow (use CloudFront CDN); 1 byte - 5 TB per bucket; max 5 GB/object; multi-part upload if larger than 100 MB; 100 buckets per acct; PER OBJECT: tier/version/encryption/ACLs; encryption; lifecycle management;    
+
+        # EBS    
+            Elastic Block Store; 1 GB - 1 TB; persistent block storage, per EC2 instance (mounts to ONE instance ONLY); faster than S3; permanently stores EC2 AMIs, unlike "Ephemeral Storage";    
+
+            - Standard/Magnetic EBS: ~ 100 IOPS; roughly that of 1 7200rpm SATA HDD    
+
+            - Provisioned IOPS: ~ 4,000 IOPS        
+
+            Types    
+                General Purpose SSD    
+                    99.9999% availability; Ratio of 3 IOPS per GB offer single-digit milisecond latencies; bursts up to 3000 IOPS    
+                Magnetic (HDD)    
+                    Lowest cost per GB    
+
+            BACKUP EC2 Instance; snapshot, stored @ S3    
+                EC2 > Instances > "Block devices" > click on link   (EC2 device)    
+                "EBS ID" >  click on link                           (EBS volume)    
+                EBS > Volumes > Actions > "Create Snapshot"         (@EBS)    
+
+            RESTORE EC2 Instance (from snapshot)    
+                1. ec2-create-volume (CLI command); using that snapshot    
+                2. Unmount EC2 instance volume     
+                3. ec2-detach-volume (CLI command)    
+                4. ec2-attach-volume (CLI command)    
+                5. Remount EC2 instance volume    
+
+            CREATE new EC2 instance (from snapshot)    
+                EBS > Snapshots > Actions > "Create Image"    
+
+        # EFS     
+            Elastic File System (share); slower than EBS; NAT; managed FS; virtual NAS; storage volume/FS; is NOT cross-region; more complicated to provision than S3 or EBS; 1 EFS is accessible by all EC2 instances within a region, per mount(s), whereas EBS is limited to 1 EC2 instance; fe per storage used; auto-scales    
+            
+            Mount Target(s)    
+                the mount point of an EFS; per subnet; a VPC NFS Endpoint; MT has IP Address and DNS name, e.g., mountable per Linux command(s), but NOT recommended to use that; rather, access (from EC2) using DNS name of the EFS (share)    
+            
+            Security        
+                - IAM user permissions for create/update/delete    
+                - EC2 Security Groups    
+                - (N)ACLs    
+                - Linux/Unix file root-only perms per `chown`, `chmod`     
+
+        # CloudFront    
+            CDN; distribute content to end users; low latency, DDoS protection, etc; origins needn't be an AWS resource; ASSIGNS domainname (CNAME) to the distribution; (re)fetched from origin whereof it is cached for the life of (settable) TTL; allows read/write; writes upstreamed to origin; can clear (invalidate) Edge cache (to update content sooner than TTL timeout), but charged per (1,000/mo free; $0.005 per path thereafter); Multiple origins per distribution are allowed, e.g., serveral folders; CAN SECURE by restricting access per SIGNED URLs/Cookies; can add/use firewall; can restrict origin (S3) to require all thru CDN; can use geo-restrictions; caches STATIC only; caches GET and HEAD requests ONLY; others, e.g., PUT (writes), are proxied back to origin server too.    
+
+            If a requested asset does NOT exist at its 'CloudFront distribution', then CloudFront fetches it from its origin, which is declared upon creation of that CloudFront distribution.
+
+            Delivery methods: Web | RTMP (video; Adobe Flash streaming)  
+
+            alt: MaxCDN  https://www.maxcdn.com/ ; Akamai  https://www.akamai.com/ ; CloudFlare (political commissars)  
+
+            Edge Location    
+                CloudFront (CDN) Endpoints; location where content is CACHED; separate from AWS Region/AZ; 50+ @ 2016; cached per TTL per Edge.    
+
+                Origin    
+                    the source (origin) of a (CDN) Distribution; the original content location from which the CDN copies/caches content; can be S3, EC2 Instance, ELB, or Route53 (origin needn't be @ AWS); MULTIPLE ORIGINs are okay.     
+
+                Distribution    
+                    The CDN, including all its Edge Locations, as a unit; two types: Web - origin is a website; RTMP - Media streaming per Adobe Flash Media Server PROTOCOL.  
+
+            (See LAB @ "REF.AWS.S3.txt")  
+
+        # Glacier    
+            very slow, low-cost data store ARCHIVE; 4-5 hr recal;     
+            cheap to store, but EXPENSIVE retrieval; one-way storage for data archiving and backup    
+
+        # Storage Gateway    
+            a software appliance (gateway) running on a VM @ customer (local) datacenter; download/install/run the image on VMWare ESXi or Microsoft Hyper-V; configured/managed from AWS console; integrates on-premises storage with S3 object storage; configurable as hybrid storage, backup and disaster recovery, etc; 3 TYPES:    
+
+                - Gateway Stored Volumes    
+                    Entire data set STORED LOCALLY; Backup (asynch) @ AWS S3    
+
+                - Gateway Cached Volumes    
+                    Frequently accessed data CACHED LOCALLY; Entire data set STORED at AWS S3    
+
+                - Gateway Virtual Tape Library (VTL)     
+                    limitless collection of Virtual Tapes;    
+                    VTL @ S3; "Virtual Tape Shelf" @ Glacier    
+                    iSCSI interface; supported by NetBackup, Backup Exec,    
+                    Veam, etc; supplants physical tape backup    
+
+        # Import/Export    
+            - Disk    
+                customer's physical storage device (HDD) sent to AWS, whereof data is up/down loaded to/from AWS storage; bypass the internet; IMPORT from HDD to EBS/S3/Glacier ; EXPORT to HDD from S3    
+
+            - Snowball     
+                a secure HW appliance (rented) for petabyte data transfer; 50TB currently; tamper-resistent enclosure; TPM HW, 256-bit encryption; IMPORT/EXPORT to/from S3 only; @ USA only    
+
+    DATABASES    
+    ---------
+        Major Biz-process Categories:    
+            1. Online TRANSACTION Processing (OLTP) 
+                Quickly process a record  
+            2. Online ANALYTICS Processing   (OLAP)  
+                Process large number of records
+                Data Warehouses are designed to handle this.
+
+        # RDS    
+            Relational Database Service; OLTP; Manages SQL Databases (provisioning, backups, failover handling, etal); requires its own EC2 instance, e.g., 'db.t2.micro'; OPTIONAL Multi-AZ (auto-replicate across AZs), highly available, fault-tolerant deployment; OPTIONALL Read Replicas (<=5); can simulate failover by rebooting primary instance.  
+            Supports most database engines: 
+                Amazon Aurora (us-east), MySQL, MariaDB, PostgreSQL, Oracle, SQL Server, ... 
+
+                Aurora     
+                    MySQL-compatible RDS; Enterprise Scale (db.r3.large - db.r3.8xlarge); 1/10th cost of Oracle; 5x faster than MySQL; scales in 10 GB increments; autoscales to 64TB; compute resources scales (quickly) up to 32vCPU + 244GB memory; Redundant with 2 copies across 3 availability zones (6 copies); self-healing; 2 types of replicas: Aurora Replicas (15), MySQL Read Replica (5)   
+                        
+            Designed for OLTP; MAX VOLUME SIZE of RDS Provisioned IOPS storage is 6 TB, and MAX provisioned IOPS is 30,000, with MySQL and Oracle database engines;    
+            alt: Heroku Postgres  https://www.heroku.com/postgres    
+            
+            Aurora vs RDS  https://aws.amazon.com/blogs/database/is-amazon-rds-for-postgresql-or-amazon-aurora-postgresql-a-better-choice-for-me/
+            "Amazon RDS for PostgreSQL" and "Aurora PostgreSQL" are both fully managed open-source database services.
+
+        # ElastiCache    
+            a web service good for read-heavy database use; fast, IN-MEMORY CACHING system; high-speed buffer/queue for databases; cache most consistently queried data; lower latency.     
+
+            Supports 2 Open Source CACHING ENGINEs:    
+                1. Memcached    
+                2. Redis    
+
+            alt:  Memcached  https://memcached.org/ ; Redis  https://redis.io/    
+
+            @ ElasticCache > Redis > Create  
+                "Create ... cluster"  
+                      Cluster engine: Redis (check-box; Redis|Memcached) 
+                Cluster Mode enabled: UNcheck (check-box)  
+                                Name: multi-docker-redis  
+                           Node type: t2 > cache.t2.micro 
+                                      > Save
+                        Subnet group: "Create new" (dropdown menu)
+                                Name: Redis 
+                              VPC ID: (same as RDS and EB resrouces)
+                             Subnets: (select one or more)
+                     Security groups: (default; change later)  
+
+                ... defaults for all others ...
+
+                > Create (button)
+
+        # DynamoDB    
+            SERVERLESS; NoSQL; key-value data store; tables/items/attributes, manages distributed replicas of your data for high availability; "Eventual Consistent Reads" (default), ~ 1 second; optionally pay for "Strongly Consistent Reads", which converges faster    
+
+            - on SSDs    
+            - Spread across 3 "geographically distinct data centers"    
+
+            alt: MongoLab    https://mlab.com/    
+
+            # Security Groups    
+                - DB Security Group    controls access to DB instance OUTSIDE a VPC    
+                - VPC Security Group   controls access to DB instance INSIDE a VPC    
+                - EC2 Security Group   controls access to EC2 instance; CAN use @ DB instance.    
+
+            # Pricing:    
+            - Provisioned Throughput Capacity    
+                - Write Throughput @ $0.0065/hr /10 units    
+                - Read  Throughput @ $0.0065/hr /50 units    
+
+            - Storage; first 25 GB is free    
+                - $0.25/GB /month thereafter    
+
+            "Unit" :: 1 "Write Capacity Unit" = 1 write/second    
+
+        # Red Shift    
+            DATA WAREHOUSE; OLAP (Analytics); 160 GB/node; 1-128 nodes (1 leader node + compute nodes); a fast, fully managed, petabyte-scale; PostgresSQL based; analyze data using standard SQL and Business Intelligence (BI) tools; Advanced Compression, automatically; columnar (all of one data-type) vs. row-based, so selects compression scheme per data-type; Massive Parallel Processing (MP); Encrypted in transit per SSL; Encrypted at rest per AES-256; handles key-management through HSM or AWS KMS. 
+
+            alt: Cognos, Jaspersoft, SQL Server Reporting Services, Oracle Hyperioin, SAP NetWeaver   
+
+        # DMS    
+            Database Migration Service; migrate (costly, legacy) databases to the cloud; from, e.g., Oracle, to OPEN SOURCE Database; schema conversion tools    
+
+    ANALYTICS 
+    ---------
+        
+        # EMR  
+            Elastic Map Reduce; Hadoop as a service; BIG DATA; tasks such as web app search/indexing, data mining, and log file analysis; distributed processing of large data sets across clusters of EC2 instances; for OLAPprocessing; https://aws.amazon.com/emr/features/   
+            - Distributed processing frameworks: Hadoop MapReduce, Spark, HBase, Presto, Hive   
+            - Data stores: Amazon S3, the Hadoop Distributed File System (HDFS), EMR File System (EMRFS), DynamoDB.  
+
+            alt: Apache Hadoop  http://hadoop.apache.org/    
+ 
+        # Kinesis   
+            Amazon's Kafka; handle real-time streaming data;    
+            ingest/queue huge amounts of realtime 'messages' (small data),    
+            from many sources, for (later/slower/distributed) processsing; 
+            DISTRIBUTED STREAMING PLATFORM    
+
+            alt: Apache Kafka  https://kafka.apache.org/    
+
+            - Kinesis Streams  
+                Shards (buffer) containing the realtime streaming data  
+                - 24 hrs - 7 day retention; default is 24 hrs  
+                - Reads: 5 TPS up to 2 MB/s  
+                - Writes: 1000 records/sec up to 1 MB/s  
+                - Data capacity is sum of Shards' capacity  
+
+               Producers        =>  Kinesis Streams  =>  Consumers     =>  Storage  
+               (EC2,Mobile,IoT)     (Shards)             (EC2 cluster)     (DynamoDB,S3,EMR,Redshift)  
+
+            - Kinesis Video Streams  
+                Kinesis Streams for videos  
+
+            - Kinesis Analytics  
+                SQL queries @ Kinesis Streams|Firehose  
+
+                Kinesis Streams|Firehose  =>  Storage (S3|Redshift|ElasticSearch-cluster)  
+
+            - Kinesis Firehose  
+                Fully automated/managed version of Kinesis Streams + Consumers  
+                - immediately analyzed or stored  
+               
+               Producers  =>  Kinesis Firehose  =>  Storage  
+                                                    S3 => Redshift (in that order)  
+                                                    ElasticSearch-cluster  
+
+        # Data Pipeline    
+            Concurrently Extract, Transform, Load (ETL) data from elsewhere in AWS.    
+            Schedule when it happens and get alerts when they fail;    
+            BIG DATA ANALYTICS orchestration    
+
+            alt: Treasure Data  https://www.treasuredata.com/    
+
+        # Glue 
+            ETL service
+
+        # ElasticSearch    
+            as a service; real-time distributed search and analytics engine; popular; open-source; data sources: S3, Kinesis Streams, DynamoDB Streams, CloudWatch logs, CloudTrail API call logs; for OLAP processing  
+
+        # CloudSearch     
+            Full-text search on various account resources (S3, RDS, etal);    
+
+        # Machine Learning    
+            Predictive analytics and machine learning with visualization tools and wizards; build smart applications; data sources: S3, RedShift RDS (MySQL); NOT for large data sets      
+
+        # QuickSite     
+            Business Intelligence; Data Visualization; integrates with Kinesis; Super-fast Parallel In-memory Calculation Engine (SPICE)      
+
+        # Athena 
+            SQL against S3; serverless 
+
+    SECURITY and IDENTITY 
+    ---------------------
+        # IAM     
+            Identity & Access Management; service for managing users and user PERMISSIONS; manage (millions of) clients' credentials/access per "Federated User" concept; IAM entities support ASCII chars ONLY; can meet corporate-client compliance requirements ( See "AWS Compliance Reports and Agreements" > "Artifact" docs )    
+
+                Users
+                Groups 
+                Roles 
+                Policy Documents 
+
+            - IAM is UNIVERSAL; per account, NOT per region.    
+            - Centralized control    
+            - Granular Permissions     
+            - Shared Access to AWS account    
+            - Secure access to AWS resources    
+            - Identity Federation; grant perms to users OUTSIDE of AWS     
+                AD (Microsoft), and WEB: Facebook, LinkedIn, ... etc.    
+            - Multifactor Auth (MFA); HW or Virtual 
+            - Allows for Temporary Access    
+            - Allows setup of password rotation policy    
+            - Access log auditing using CloudTrail    
+            - Integrates with other AWS services    
+            - Pyment Card Industry (PCI) Data Security Standard (DSS) compliant    
+            - Eventually Consistent    
+            - Free to use    
+
+            BEST PRACTICES  https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html
+
+            ROOT ACCOUNT    
+                is that of email-addr used to signup/pay; given complete access, by default; Best Practice: utilize MFA, e.g., Google Authenticator; use only to setup/change billing arrangements; NEVER use root acct to administer; create user(s) for account access/admin thereafter; fine-grained access control; 
+
+            MFA (Virtual)
+                Enable a Virtual MFA Device for Your AWS Account Root User (Console) 
+                https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html    
+                Google Authenticator - installed @ smartphone; timed six-digit code(s)
+
+            IDENTITY FEDERATION     
+                - handle Externally Identified (Federated) Users by establishing trust     
+                    with an external (OAuth) service; roles used to specify permissions     
+                - bypasses the max 5000 users per account;     
+                
+                METHODS:    
+                    - Amazon Cognito    
+                    - Identity Provider (IdP) service or app    
+                        1. OpenID Connect (OIDC); authentication per OAuth 2.0    
+                             https://en.wikipedia.org/wiki/OpenID_Connect    
+                             a.k.a. "Public Identity Service Providers"    
+                             a.k.a. "Web Identity Federation"    
+                            - Facebook, Google, LinkeIn, Amazon, ...    
+                        2. SAML 2.0    
+                            - AWS Directory Service for AD (per SAML)    
+                            - Custom ID broker app per LDAP or AD    
+
+            USERs/GROUPs/ROLEs/POLICY(ies)    
+
+            - USER/Fed User    
+                a newly created user is given NO PERMISSIONS by default; new user assigned "Access Key ID" and "Secret Access Key", which are OpenSSH keys; IAM accepts public keys in the OpenSSH RSA only; up to 5000 key pairs per region; those keys are for APIs and command-line tools, NOT for console; users may be granted permission to list/rotate/manage their own keys; keys are NOT for GUI sign-in; such keys are SHOWN ONLY ONCE, so DOWNLOAD per "Download Credentials" button, else must regenerate anew; can also download "Credentials Report" (CSV file), which LISTS ALL USERS, PASSWORDS, access keys, credentials status, and MFA devices; IAM users sign-in link:  https://nnnnnnnnnnnn.signin.aws.amazon.com/console  (ONE alias is allowed)   
+
+                Key Pairs    
+                    Amazon EC2 uses 2048-bit SSH-2 RSA keys, PEM format (.pem); Amazon stores public key, and user stores private key; AWS does NOT store the private key it generates, so user MUST download it immediately upon key generation (GUI or CLI).    
+
+                    SSH Key Pair @ EC2 > "NETWORK & SECURITY" > "Key Pairs" > "Create Key Pair"    
+
+                Delegating Permissions :: root => Users, Groups, and Credentials    
+                http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_delegate-permissions.html
+
+                IDENTITY FEDERATION 
+                    "Fed User": IAM integrates with AD; ADFS Web Server; "Single Sign-on" (SSO); user FEDERATION    
+                        REF:    
+                            Programmatically @     http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_manual.html    
+
+            - GROUPs    
+                collection of users (only) under one set of permissions; create to establish/apply one set of IAM policies to all users therein; 100 max per acct.    
+
+            - ROLEs    
+                Defined permissions; GLOBAL; assigned to RESOURCE(s); assumed by USERS or RESOURCES; where possible, USE ROLES NOT CREDENTIALS (Best Practices); So, create a ROLE, name it, attach/apply policy(ies) to it, and then give the role to the resource, such as S3 access by EC2 instance; this is preferred over embedding credentials into the resource; e.g., allows aws-cli sans credentials
+
+                Can still use `aws-cli configure` to enter 'Default region', bypassing 'AWS Access Key ID' and 'AWS Secret Access Key' queries (press enter).
+
+                    E.g., for    
+                    - resource access    
+                    - cross-account access    
+                    - intra-account delegation    
+                    - Federated users     
+
+                ATTACH ROLE to RUNNING instance
+                    @ EC2 Dashboard > (select instance) > Actions    
+                    > Instance Settings > Attach/Replace IAM role    
+
+            - POLICY    
+                JSON document defining permissions; the mechanism by which permissions are applied/attached to users, groups and roles; password policy does NOT apply to credentials; e.g., ... 
+
+                If MULTIPLE   then apply LOGIC     
+                --------                 -----    
+                statements                OR    
+                policies                  OR    
+                conditions                AND    
+                keys                      OR    
+                values                    OR    
+
+                All conditions must be met for ALLOW or EXPLICIT DENY decision.    
+                If a condition isn't met, the result is a deny.     
+
+        # Cognito (2017)
+            Authentication service; Manage (temp) access to account 
+            OAuth service; store mobile user-data/state    
+
+            alt: OAuth.io  https://oauth.io/home    
+
+        # Directory Service    
+            "AWS Microsoft AD" (Enterprise); Microsoft Active Directory; for 3rd-party users; 
+            handles access/security of account resources by (3-rd party) users, e.g., users of some hosted application we created.    
+
+        # Certificate Manager  https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html  
+            ACM (Amazon Certificate Manager); provision, manage, and deploy Secure Sockets Layer/Transport Layer Security (SSL/TLS) certificates for use with AWS services; NOT installed directly on ebsite or app, but rather through certain AWS Services: ELB, CloudFront (via us-east-1), AWS EB, APIG  
+                - Can use same cert for domain and all subdomains 
+                - DNS validation method is merely adding the ACM-generated CNAME to its Route53 hosted zone.
+                - CloudFront foo.com dist requires edit/add @ "Alternate Domain Names" > SSL Certificate 
+            (See AWS.IAM.txt)
+
+        # Inspector    
+            Security auditor per EC2 instance; schedulable agents analyze the behavior & security of the stack    
+        # WAF    
+            Web Application FIREWALL; https://aws.amazon.com/waf/ 
+            prevent HTTP floods, protect against bad-behaving IPs, and maintain IP reputation lists; a poor man's APIG? Use w/ Lambda; https://www.youtube.com/watch?v=xskM8XA2bqE&t=1815s
+
+        # CloudHSM    
+            Hardware Security Module; keys store; $1.20/hr    
+
+        # KMS    
+            Key Management Service; e.g., encrypt S3 data stores    
+
+        # GuardDuty (2017)
+            Monitor for malicious activity 
+
+        # Macie 
+            Alerts if unsecured credentials etal 
+        
+        # WAF 
+            Web Application Firewall; Layer-7 firewall; stops SQL injections, XSS, ...
+
+        # Shield 
+            DDoS migitagion; works by default; Advanced Shield available ($3,000/mo) 
+
+        # Artifact
+            Audit and compliance service; download reports; SOC, payment reports
+
+    MANAGEMENT TOOLS 
+    ----------------
+        # CM vs. Orchestration Tools  https://blog.gruntwork.io/why-we-use-terraform-and-not-chef-puppet-ansible-saltstack-or-cloudformation-7989dad2865c
+
+            Configuration Management (CM) Tools  
+                - designed to install and manage software on existing servers;
+                  MUTABLE infrastructure paradigm; Configuration Drift issue 
+                - Chef, Puppet, Ansible, and SaltStack
+
+            Orchestration Tools  
+                - designed to provision the infrastructure,  
+                  leaving CM to other tools (Docker, Packer).  
+                - CloudFormation, TerraForm  (declarative)
+
+            Declarative (end-state; better)
+                CloudFormation, SaltStack, Puppet
+            Procedural (how-to)
+                Chef, Ansible
+            Client-only (no server install required)
+                CloudFormation, Ansible, and Terraform
+
+        # OpsWorks  https://aws.amazon.com/documentation/opsworks/   
+            DevOps platform to automate CONFIGURATION MANAGEMENT (CM) per STACKs, LAYERs, RECIPEs; Infrastructure as Code using Chef recipes; much more fine-grained control than EB; e.g., Web Server stack containing Layers and Recipes for DNS, LB, Server Instances, Apps (code), DB    
+
+            - OpsWorks Stacks  
+                https://aws.amazon.com/opsworks/stacks/  
+                model/visualize app with CM layers; DevOps pipeline, from source-repo to build to integration tests to production; per Chef Recipe  
+
+                @ OpsWorks Stacks > (dashboard)  
+                    > Stack  
+                    > Layers > Recipe (tab) > Repository URL (tar.gz; recipe; downloadable)  
+                        https://s3.amazonaws.com/opsworks-demo-assets/${RECIPE_NAME}.tar.gz  
+                        https://s3.amazonaws.com/opsworks-demo-assets/opsworks-linux-demo-cookbooks-nodejs.tar.gz  (demo)
+                    > Instances   
+                    > Apps > (select) > Repository URL (.git)  
+                        https://github.com/awslabs/${APP_NAME}.git  
+                        https://github.com/aws-samples/opsworks-windows-demo-nodejs  (demo)  
+
+                    Delete > App,Instance,Layer  
+
+            - OpsWorks for Chef Automate  
+                https://aws.amazon.com/opsworks/chefautomate/features/ 
+                Chef Recipes; Chef.io; https://www.chef.io/chef/   
+
+            - OpsWorks for Puppet Enterprise  
+                https://aws.amazon.com/opsworks/puppetenterprise/  
+                Fully managed Puppet CM; a set of automation tools; 
+                maintains Puppet MASTER SERVER; automatic patch/update/backup  
+
+        # CloudFormation  https://aws.amazon.com/documentation/cloudformation/  
+            Infrastructure as code; automation tool; create/manage AWS resources PROGRAMATICALLY; provisioning is per STACK, per TEMPLATE (JSON|YAML); template changes spawn INCREMENTAL changes to resources; deleting a stack deletes all resources thereof; on fail, terminate and rollback of all resources created;  
+
+            alt: TerraForm.io  https://www.terraform.io/     (cloud-vendor-agnostic)    
+                 VisualOps.io  http://www.visualops.io/      (AWS-partner)    
+
+            Exam Tips (Cert.Dev.Assoc.):  
+                - "automatic rollback on error" is ENABLED, by default  
+                - ERRORS are CHARGED TO ACCOUNT, else free  
+                - "WaitCondition"; stacks can wait for apps to be provisioned  
+                - "Fn:GetAtt" to output data  
+                - Route53 supported; create/update hosted zones, A Records, Aliases, etc.   
+                - IAM Role creation/assignment supported  
+
+            CloudFormation > (menu options)
+                > Create Stack        create per template (sample|upload|S3-file)  
+                > Design Template     create per graphical/textual tool  
+                > Launch CloudFormer  create per existing stack/resources (BETA)  
+
+                @ Create Stack > Choose a template   
+                    > Select a template (check-box)  
+                        "View/Edit template in Designer" (link)  
+                            ... link goes to to "Design Template" page;  
+                            Stack/Resources diagram (Graphical) & template (JSON|YAML)    
+                
+                @ Design Template (CloudFormation Designer)  
+                    - Graphical Tool (resources diagram; drag-n-drop)  
+                    - Textual Tool (associated with graphical tool, per click)  
+                        Properties|Metadata|CreationPolicy|DeletionPolicy|DependsOn|Condition  (tabs)  
+                        Components     (tab)  JSON|YAML  
+                        Template       (tab)  JSON|YAML  
+
+                @ CloudFormer (Beta)   
+                    EC2-instance-based tool used to create a CloudFormation Template based on an EXISTING STACK; the template created thereby is placed in S3; JSON format (does NOT support YAML);  
+                    
+                    The CloudFormer Tool is itself a special stack (EC2 Instance + ...)   
+                    To create/launch the CloudFormer Tool (stack) ...  
+
+                        @ CloudFormation > Create Stack > Choose a template  
+                        > Select a template (check-box)  
+                            Tools > CloudFormer  
+                            > Next (button)    
+                            Specify Details 
+                                Stack name: 
+                            Parameters 
+                                Password: 
+                                Username:  
+                                VPC Selection:  
+                            > Next (button)   
+                              ... 
+                            > Next (button)   
+                                "I acknowledge that AWS CloudFormation might ..." (check-box)  
+                            > Create (button)  
+
+                    After creation/launch, browse to its URL, found @ Output (tab), and sign in (per user/pass specified upon tool creation).   
+
+        # CloudWatch    
+            Performance Monitoring; set alarms/alerts, per metrics, per region (metric availablility is per region); monitor all resources; default 5 min interval; set alarms per COST, traffic, etc; spinup/shutdown EC2 servers as needed, say, per SQS queue LENGTH (+SNS for email alert); Baseline: monitor and record CONSTANTLY, to know when use is abnormal    
+                
+            Dashboards  
+                Basic Monitoring; DEFAULTs; Free Tier  
+                    - CPU/Network/Disk/Status(instance+system-resources)    
+                    - 5 min monitoring intervals    
+
+                Detailed Monitoring; NOT Free:  
+                    - RAM utilization    
+                    - 1 min intervals  
+
+            Metrics   
+                - Available Metrics: CPU , Disk, Network, Status (categories)     
+                - Available metrics vary by AZ  
+                - DEFAULT metrics; custom metrics can be created, e.g., monitor RAM  
+
+            Alarms  
+                - Performance and Billing Alarms;  
+                - Integrates with SNS;  
+                - Three states: OK, ALARM, INSUFFICIENT_DATA  
+                
+                    Alarms BETTER @ RESOURCE ITSELF, NOT @ CloudWatch Alarm
+                    "Create Status Check Alarm"; 
+                    resource monitoring/alarm/ACTION can be setup from the dashboard of that resource; 
+                    E.g.     
+                        Compute > EC2 > Instances > click on an instance    
+                            > Status Check > "Create Status Check Alarm"    
+                            "Send a notification"    
+                            "Take the action"    
+                                - Recover this instance    
+                                - Stop this instance    
+                                - Terminate this instance    
+                                - Reboot this instance    
+
+            Events 
+                - When a resource changes state
+                - CloudTrail integration
+
+                Rules 
+                    Match incomming events and route them to targets
+                    - Event Source
+                    - Targets 
+                        - SNS topic
+                        - SQS queue
+                        - Kinesis stream
+                        - Built-in target: E.g., reboot instance, create snapshot of EBS vol, ...
+                        - Lambda: E.g., on new EC2 instance to update DNS entry @ Route53, associating new IP with domain name.
+                
+                Event Buses 
+                    Accepts events from AWS services, PutEvents API calls, and other authorized accounts
+
+            Logs 
+                Monitor, store, and access logs from EC2, CloudTrail, or other resources
+                - Realtime monitoring of log info
+                - Log Streams - sequence of log events from a particular source
+                - Log Groups - streams having same retention, monitoring, and access control settings
+                - Metric filters - define how info is extracted from log stream; set data points
+                - Retention settings - how long to keep CloudWatch Logs
+                - Install and configure CloudWatch Logs Agent on EC2 instance 
+                - Monitor @ CloudWatch Logs portal
+
+        # CloudTrail    
+            Auditing; security; triggered by changes to environment (API calls); monitor and log of API calls; visibility into ACCOUNT user activity; coordinate with CloudWatch to send alerts; by default, turned on logs per week
+
+        # Trusted Advisor    
+            Auto auditing/accounting of services
+            Preferences: setup auto-email of status reports    
+            Services; free + paid AWS support services; free-only shown here    
+                - Cost Optimization; show unused though running resources; EC2, ELB, ...    
+                - Performance; Service Limits    
+                - Security; MFA on root account, IAM Use, Security Groups    (unrestricted ports)    
+                - Fault Tolerance; nothing free;    
+
+
+        # (Simple) Systems Manager (SSM) 
+            visibility and control of account infra; user interface to view operational data from multiple AWS services;  
+            AUTOMATE OPERATIONAL TASKS across account resources; group resources by application; 
+            integrates w/ KMS and Config  
+            Parameter Store (key/value store per acount+region): 
+                - To securely store configuration parameters (credentials)  
+                    e.g., per "Secure String" (parameter type); encryption per KMS
+                - Access settable per param; per IAM policies
+            https://aws.amazon.com/systems-manager/   
+            User Guide  https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html
+
+
+        # Config    
+            Configuration Management; rules/management for large setups    
+            https://aws.amazon.com/config/
+
+        # Service Catalog    
+            Service to manage a catalog of IT services; used by large organizations    
+
+    MIGRATION
+    ---------
+        # Migration Hub
+            Tracking service; track apps migrating to AWS  
+
+        # Applicatio Discovery Service 
+            Tracking app dependencies
+
+        # Database Migration Service 
+
+        # Snowball 
+            Migrate large amounts of data to AWS 
+
+    MEDIA SERVICES (none in Cert exams)
+    --------------
+        # Elastic Transcoder 
+        # MediaConvert
+        # MediaLive
+        # MediaPackage
+        # MediaStore
+        # MediaTailor
+
+    MACHINE LEARNING (none in Cert exams) 
+    ----------------
+        # SageMaker - Deep learning; managed service; Build/Train/Deploy  
+        # Comprehend - Sentiment Analysis around data 
+        # DeepLens - HW; AI Camera; categorizes objects 
+        # Rekognition - categorize objects in graphic/video 
+        # Lex - Alexa service backend
+        # Machine Learning - analyze a dataset and learn/predict
+        # Polly - TTS; variety of accents
+        # Amazon Translate - translate languages 
+        # Amazon Transcribe - Speech to Text; STT; auto speech recognition
+
+    APPLICATION SERVICES
+    --------------------
+        # API Gateway (APIG)
+            API Proxy; serverless APIs; integrates well with Lambda; Proxy app APIs through this to throttle bad client traffic, test new versions, and present methods more cleanly; a managed service;    
+            
+            https://aws.amazon.com/api-gateway/    
+
+            alt: 3Scale (RedHat)  https://www.3scale.net/    
+
+        # AppStream    
+            Remote access to Windows apps; Stream Windows    
+            desktop apps hosted at AWS to clients' browser    
+
+        # CloudSearch     
+            Full-text search on various account resources (S3, RDS, etal);    
+
+            alt: ElasticSearch  https://www.elastic.co/    
+
+        # Elastic Transcoder    
+            convert media files/formats; FFmpeg    
+
+        # SES    
+            Simple Email Service; Send one-off Emails;    
+            password resets, notifications, etc    
+
+    APPLICATION INTEGRATION
+    -----------------------
+ 
+        # Step Functions - manage Lambda
+
+        # Amazon MQ - message queues 
+
+        # SNS  
+            Simple Notification Service; Pub/Sub Messaging; PUSH-based (Notifications) per TOPIC (access point), emails and/or SMS messages to subscribers or other apps; can directly push to mobile devices (Apple, Google, Fire OS, Android in China thru Baidu Cloud Push); can trigger AWS Lambda; can push to other AWS services and to other SNS topics; subscriptions EXPIRE after 3 days if not confirmed;    
+
+            - instantaneous; PUSH-based; NO POLLING 
+            - Flexible msg delivery; multiple protocols 
+
+            E.g., 
+
+                SNS > Create topic  
+                    Topic name:
+                    Display name: 
+
+                Subscriptions > Create Subscription    
+                    Topic ARN: (auto-generated)
+                    Protocol: (dropdown-menu; HTTPS|HTTP|Email|Email-JSON|"Amazon SQS"|Application|AWS Lambda)   
+                        keys @ JSON message:    
+                            Type, MessageId, TipicArn, Subject, Message, Timestamp, SignatureVersion, Signature, SigningCertURL, UnsubscribeURL, MessageAttributes    
+                    Endpoint: (per protocol)
+                    > Create Subscription (button)  
+
+                SNS > Topics > Publish    
+                    > Topic Name: ...    
+                    > Subject: ...    
+                    > Message: ...    
+                    > Time to Live: >    # TTL seconds since published; message expires thereupon    
+
+            alt: Twilio  https://www.twilio.com/    
+
+        # SQS  
+            Simple Queue Service; distributed, serverless queue system (buffer) for producer(s)/consumer(s) architecture; PULL-based (always/only pulls messages; SNS is for push); temporary repository (buffer) to store/queue 'messages" (text data) for future processing; message deleted upon completion of message retrieval by consumer; Standard AND FIFO (2017) Queue Types; change time out per `ChangeMessageVisibility`; LONG POLLING to cut costs (max long poll time out 20 sec); FSQS-Fanning Out: one SNS topic subscribed to many SQS queues; DESIGNED for ONCE-ONLY DELIVERY, in ANY ORDER, BUT app must handle POSSIBILITY OF MULTIPLE DELIVERIES (of same message). placed between app and outside world, or intra-app between processes; was 1st service on AWS; decouples app from demand; reliable, highly scalable, hosted; use LENGTH to coordinate with CloudWatch; 
+        
+            Dev Guide  https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/welcome.html  
+            API Ref    https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/Welcome.html  
+
+            - PULL-based (polls)
+            - 256KB max msg size  
+            - Multiple delivery of same msg possible (impossible @ SWF); see Visibility Time Out.   
+            - Msg is kept in the queue for 1 min - 14 day; 4 day default (SWF max is 1 year)  
+            - Long-polling available; respond only when msg in queue OR time-out (20 sec max); more efficient (lower cost)  
+
+            - Visibility Time Out; period of time msg is invisible to other consumers; 
+                I.e., an estimate of consumer-processing time; 
+                if proc-time exceeds it, then multiple delivery/processing possible   
+                default 30 sec; min 0 sec; max 12 hrs  (0 sec < 30 sec < 12 hrs)https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html  
+
+            - Queue Types   
+                - Standard (default)  
+                    unliimited TPS; best-effort ordering (delivery may be out of order; may deliver more than once)   
+                - FIFO  
+                    max 300 TPS; First In First Out; exactly-once processing; multiple ordered msg grps per queue; msg persists until consumer processes and deletes  
+
+            - Auto Scaling (a server cluster), per SQS queue LENGTH, is a powerful combination;   
+                Decouple components of app, send/retrieve text (256KB max) messages (any format) per SQS API  
+                See @ Cert. Assoc: "001 Introduction to AWS.mp4"; SQS vs. SNS vs. Kafka (2013)    https://stackoverflow.com/questions/16449126/kafka-or-sns-or-something-else    
+
+                Client <==> SQS <==> Server (cluster)  
+
+            alt: RabbitMQ  https://www.rabbitmq.com/    
+
+        # SWF  https://docs.aws.amazon.com/amazonswf/latest/developerguide/swf-welcome.html  
+            Simple Workflow Service; msg queue (as is SQS) for TASKS; an EC2 process queue; coordinate work across distributed app components; for processing pipelines; designed as a coordination of tasks; for building a service of "deciders" and "workers" on top of EC2; manage application's execution state; BROKERs the workflow between WORKERS and DECIDERS; stores tasks and ASSIGNS them to workers; includes logic that ensures tasks are assigned once (never duplicated, unlike SQS); MAX WORKFLOW is 1 YEAR (per API, in seconds); 
+
+            - SWF NEVER duplicates task, unlike SQS    
+            - max 1 YEAR queue (SQS max is 14 days)  
+            - SWF has TASK-oriented API (SQS has message-oriented API) 
+            - SWF tracks all tasks and events; app-level (unlike SQS)
+
+            E.g., Amazon (retailer) uses SWF to create order-fulfillment process, per order  
+
+                SWF presents task-oriented API    
+                SQS offers message-oriented API    
+
+            SWF Actors
+                Workflow Starters: Initiates workflow, e.g., e-commerce app placing an order 
+                Deciders: Controls flow of activity (workflow)
+                Activity Workers: Carry out activity tasks
+
+            Task Queue lingo  
+                Worker   
+                    program that gets and processes tasks, and returns results    
+                Decider    
+                    program that controls coordination of tasks; order, concurrency, scheduling, according to the application logic.    
+                Domain    
+                    isolated set of types, executions and task lists; workflow activity types and execution are all SCOPED to a DOMAIN; specified in JSON doc, includes key `WorkflowExecutionRetentionPeriodInDays`; domains are registered per SWF API `RegisterDomain`, or @ AWS Management console (GUI).    
+
+            alt: IronWorker  https://www.iron.io/platform/ironworker/    
+
+    DEVELOPER TOOLS    
+    ---------------    
+        Manage/deploy code (DevOps) per automation tools        
+        
+            Infrastructure as Code    
+                - Version control, e.g., of AMIs    
+                - CloudFormation Templates    
+                - CloudFormation Designer (GUI)    
+                
+            Deployment Types    
+                - Continuous
+                    - CodeCommit; git repo 
+                    - CodePipeline    
+                    - Elastic Beanstalk    
+                    - OpsWorks; DevOps per Chef recipes    
+                    - Elastic Container Services (ECS); docker    
+                - Application     
+                - App & Infrastructure    
+                - Blue-Green; staged rollout from existing (blue) while testing a new (green) one; manage traffic (increase to green) per DNS services; requires doubling up on resources;        
+
+            Application Update Options    
+                - Prebaking AMIs; not efficient; slow & expensive    
+                - In-place Upgrade; updates on live EC2 instances    
+                - Disposable Upgrade; staged rollout/terminate of new/old code into EC2 instances (of a cluster).     
+
+        # CodeStar 
+            Collaboration; Project management for group of developers
+
+        # CodeCommit     
+            SCM; AWS' GitHub; username and password auto-created by AWS.    
+            FREE: 5 users /mo; more @ $1/mo 
+
+            alt: GitHub ; BitBucket    
+
+        # CodeBuild 
+            Compile, test, produce packages to deploy 
+
+        # CodeDeploy    
+            an automated deployment system to deploy code to newly created instances; REPO => EC2    
+
+        # CodePipeline    
+            automate test/deploy of apps/updates    
+
+        # X-Ray 
+            debugging
+
+        # Cloud9 
+            Web-based IDE; for code developers
+
+    MOBILE SERVICES 
+    ---------------    
+
+        # Cognito    
+            OAuth service; store mobile user-data/state    
+
+            alt: OAuth.io  https://oauth.io/home    
+
+        # Device Farm    
+            Multi-device testing; many devices (Android/iOS); simultaneous tests    
+
+            alt: MobileTest  http://mobiletest.me/    
+
+        # Mobile Analytics    
+            In-app user tracking    
+
+            alt: Flurry (Yahoo)  https://login.flurry.com/    
+
+        # Mobile Hub 
+            Mobile (NodeJS/React) management console; build/test/monitor mobile (NodeJS/React) apps    
+
+            - Amplify 
+                JS library for Mobile HUb 
+            
+        # Pinpoint    
+            Analytics and PUSH notifications for mobile 
+
+        # AWS AppSync 
+            GraphQL as a Service; handles DynamoDB database creation/setup; integrates with Elastic Search and Lambda; cache offline/client-side for mobile; GraphQL https://en.wikipedia.org/wiki/GraphQL
+
+    iOT (INTERNET OF THINGS)  
+    ------------------------
+        Interact with cloud apps and other devices;    
+        collect and send data to the cloud; load and analyze that information;    
+        manage devices; let devices communicate with cloud apps and each other.    
+
+        # Greengrass    
+            local compute, messaging & data caching for connected devices    
+
+        # iOT Device Management     
+            local devices interact with cloud apps and other devices.    
+
+        iOT Button     
+            Programmable button based on Amazon Dash Button HW;     
+            Wi-Fi device for device-agnostic development     
+            of AWS IoT, Lambda, DynamoDB, SNS, ... etc.    
+
+        # Amazon FreeRTOS 
+            OS for microcontrollers
+
+    ENTERPRISE APPLICATIONS    
+    -----------------------        
+        # WorkSpaces     
+            RDC for Enterprise; remotely connect to Windows desktop    
+
+        # WorkDocs    
+            shared Word Docs; like Dropbox    
+        
+        # WorkMail    
+            Email Service for enterprises    
+
+    ARTIFICIAL INTELLIGENCE     
+    -----------------------    
+        # Lex        
+            service for building conversational interfaces using voice/text; deep learning engine powering Alexa; build sophisticated, natural language chatbots into your apps; natural language understanding (NLU); automatic speech recognition (ASR); build highly engaging user experiences     
+        
+        # Polly    
+            Text-to-Speech (TTS) cloud service     
+
+        # Machine Learning    
+            service; visualization tools and wizards for creating machine learning (ML) models; fraud detection, demand forecasting, targeted marketing, and click prediction    
+
+        # Rekognition    
+            deep learning IMAGE ANALYSIS service    
+
+    AR/VR  
+    -----  
+        # Sumerian  
+            AR/VR tools; build worlds; graphic GUI interface;  
+
+    CUSTOMER ENGAGEMENT  
+    -------------------
+        # Connect (2018)
+            Call center as a service  
+        
+        # Simple Email Service  
+            Email service; pay as you go  
+
+    BUSINESS PRODUCTIVITY (2018)  
+    ---------------------  
+        # Alexa for Business - just that  
+        # Chime - video conferencing; record meetings  
+        # Work Docs - like Google Drive, or Dropbox   
+        # WorkMail - like Google email  
+
+    DESKTOP & APP STREAMING (2018)
+    -----------------------
+        # Workspaces - VM 
+        # App Stream 2.0
+
+    GAME DEVELOPMENT 
+    ----------------
+        # GameLift 
+
+CERTS
+=====                                                     Difficulty   
+    Developer                  Associate                  A            
+    Solutions Architect        Associate    Professional    A       P  
+    SysOps Administrator       Associate                      A        
+    DevOps Engineer                         Professional        P      
+    Adv Networking Specialty                                      S    
+
+    Exam    
+    - 80 minutes    
+    - 55 questions    
+    - $150 Registration Fee    
+    - Eng/Jap/Simplified-Chinese/Korean/French  
+    - Reg @ https://www.webassessor.com    
+
+    @ Test Center    
+    - 15 minutes early required    
+    - MUST have "Test Taker Authorization Code"; proctor requires it.  
+    - 2 forms of ID; 1 gov, 1 credit-card etc    
+    - Reschedule must be 72 hrs notice @ awscertification@amazon.com, else 50% cost.  
+

@@ -1,0 +1,672 @@
+NETWORK SOFTWARE 
+    Two Categories
+
+        CLIENT
+            Network program/app that connects to other apps; to services/servers
+            
+        SERVER (SERVICE/HOST/ORIGIN)
+            Network program/app that other apps connect to; a SERVER of a service
+
+            Browsers are clients;
+                - Client uses TCP/IP protocol to connect to server.
+                - Client sends HTTP request packages to server.
+                - Server returns HTTP response packages to client. 
+                    If requested resources include dynamic scripts, 
+                    then server calls script engine first.
+                - Client DISCONNECTS from server, starts rendering HTML.
+                - Server CLOSES the CONNECTION after sending response to client, 
+                    then listens/waits for next request.
+
+STANDARD MODELs  
+    There are TWO (2) starndard models of Computer Networking   
+        1. OSI  
+        2. Internet Protocol Suite a.k.a. "TCP/IP Stack" 
+
+    Layer Names and Numbers  https://en.wikipedia.org/wiki/Internet_protocol_suite#Layer_names_and_number_of_layers_in_the_literature
+
+OSI MODEL  
+    Open Systems Interconnection (OSI) Model; SEVEN (7) Layer OSI Model; a "Layered Network Model"; 
+    ORTHOGONAL LAYERS; CONTENT of each LAYER is MEANINGLESS to all other LAYERS; E.g., a sockets app is independent of the data that is physically transmitted (serial, thin Ethernet, AUI, whatever) because that's handled at lower layers; network hardware and topology is transparent to socket app (and its programmer).  
+    https://en.wikipedia.org/wiki/OSI_model  
+
+    Layer            Struct Name        Protocol     
+    -----            -----------        --------  
+    7. Application   |\                 HTTP, FTP, DHCP, SSH, SMTP ...          *  
+    6. Presentation  |- Data            ASCII, EBCDIC, JPEG, MPEG, ...  
+    5. Session       |/                 NFS, NetBIOS, RPC, SQL, ...  
+    4. Transport     Segment/Datagram   TCP/UDP                                 *   H2H Transport; crosses boundaries  
+    3. Network       Packet (Datagram)  IP, ARP, IGMP,...                       *   Internet  
+    2. (Data) Link   Frame/PDU          Ethernet, PPP, HDLC, Token-Ring, ...    *   P2P Link; within a boundary  
+    1. Physical      Bit                Ethernet, Frame-Relay, ATM, serial, ...  
+
+                PDU is "Protocol Data Unit"
+                H2H is "Host to Host" 
+                P2P is "Peer to Peer"
+
+        "Host Layers":  4,5,6,7
+        "Media Layers": 1,2,3
+        "Link Layers":  1,2
+
+        Condensible to FOUR (4) per Unix philosophy (& Cisco)  
+        Internet Protocol Suite  a.k.a. "TCP/IP Stack"  
+        https://beej.us/guide/bgnet/html#lowlevel  
+
+            Layer                                               Handler
+            -----                                               -------
+            Application      (telnet, ftp, etc.)                App 
+            H2H Transport    (TCP, UDP)                         Kernel 
+            Internet         (IP and routing)                   Kernel 
+            Network Access   (Ethernet, WiFi, or whatever)      HW 
+
+    Data Encapsulation, e.g., Ethernet(IP[UDP{TFTP<Data>}])  
+
+Internet Protocol Suite  a.k.a. "TCP/IP Stack"                                 (*)  
+    OSI Layers 2+3+4+7; a SEPARATE MODEL for computer neworking; FOUR (4) Layers.   
+    https://en.wikipedia.org/wiki/Internet_protocol_suite  
+
+    IPS Layer           Struct Name         Protocol                          OSI Layer(s)
+    ---------           -----------         --------                          ------------
+    7. Application      Data                HTTP, FTP, DHCP, SSH, SMTP ...    L5+L6+L7 (Sessn+Prsntn+App)
+    4. H2H Transport    Segment/Datagram    TCP/UDP                           L4       (Transport)
+    3. Internet         Packet (Datagram)   IP, ARP, IGMP, ...                L3       (Network)
+    2. Link/Network     Frame (PDU)         Ethernet, PPP, ...                L1+L2    (PHY+DL)
+
+URL  
+    Uniform Resource Locator (URL) is a specific type of Uniform Resource Identifier (URI), which is a string of characters used to identify a resource.  https://en.wikipedia.org/wiki/URL
+
+    scheme:(//{user[:password]@}host[:port])(/path)(?query)(#fragment)
+
+    scheme://host(:port#)/path/.../(?query-string)(#anchor)
+    
+        schemes         Underlying protocol (such as HTTP, HTTPS, FTP)
+        host            IP or domain name of HTTP server
+        port#           Default port is 80; can omit if default, else must
+                            specify, e.g., http://www.foobar.com:8080/
+        path            Relative path of Resource
+        query-string    Data sent to server per GET method of HTTP Protocol
+        anchor          Anchor (Bookmark)
+
+    Query Delimiter is `&` or `;`
+
+        key1=value1&key2=value2
+
+    FORM submission 
+
+        GET method sends data to server in URL of the request
+        POST method sends data to server in body of the request
+
+DMZ 
+    a.k.a. Perimeter Network; physical or logical subnet that contains and exposes external-facing services to an untrusted network, e.g, the Internet; "DMZ host" of a home router is a host (one IP address) on the LAN that has ALL traffic sent to it which is not otherwise forwarded to other LAN hosts.  https://en.wikipedia.org/wiki/DMZ_(computing)
+    
+    DHCP Reservation a.k.a. Static {DHCP/Route List/Port Forwarding}
+
+Bastion Host (Jump Box)  
+    a special purpose, hardened computer on a network specifically for withstanding attack; for perimeter access control security; typically a proxy server; placed either outside a firewall or in a DMZ subnet; any server that is fully exposed to attack (by being on the public side of the DMZ), unprotected by a firewall or filtering router; AWS instance in public subnet, typically accessed using SSH or RDP; SSH Jump Host is set up using ProxyCommand with OpenSSH (execute ssh command on remote host to jump to the next host and forward all traffic through; `ssh -J user1@host1:port1 user2@host2:port2`)  https://en.wikipedia.org/wiki/Bastion_host  
+
+DNS 
+    The Domain Name System (DNS); mapping NAMEs (domain) to NUMBERs (IP); manage the map btwn the two namespaces (NAME/NUMBER); a HIERARCHICAL DECENTRALIZED NAMING SYSTEM (1985) for resources connected to an IP network; associates various information with domain names; maps names to numbers. DNS NAME SERVERs are responsible for ANSWERing DNS QUERIES; translating a queried domain (name) to its (numerical) IP Address.
+
+    To decentralize the DNS database, the DNS system DELEGATES its RESPONSIBILITY by designating AUTHORITATIVE NAME SERVERs (SOA record type; Start Of Authority) per DOMAIN. The domain's SOA Name Server further delegates responsibility for that domain to a DELEGATION SET of 4 Name Servers (NS record type). 
+
+    Network administrators may further DELEGATE AUTHORITY over sub-domains of their allocated name space to other name servers. Referred to as "Delegating responsibility for a subdomain to (name servers at) a HOSTED ZONE", or "Delegating a subdomain to other name servers."  This mechanism provides distributed and fault tolerant service and was designed to avoid a single large central database. DNS also specifies the technical functionality of the DATABASE SERVICE that is at its core. It defines the DNS protocol, a detailed spec of the DATA STRUCTURES and DATA COMMUNICATION EXCHANGES used in the DNS, as part of the INTERNET PROTOCOL SUITE.  
+
+    https://en.wikipedia.org/wiki/Domain_Name_System
+
+    DOMAIN NAME  https://en.wikipedia.org/wiki/Domain_name 
+
+    DNS Root Zone (.) https://en.wikipedia.org/wiki/DNS_root_zone 
+        Nameless top-level DNS zone in the hierarchical namespace of the DNS.
+        Denoted by the trailing dot (.) of a FQDN (foo.com.) .
+
+    TLD (Top Level Domain; last-dot-name); https://en.wikipedia.org/wiki/Top-level_domain 
+        IANA (Internet Assigned Numbers Authority) controls these.  
+        GENERIC (gTLD): .com, .gov, .org, ...
+        COUNTRY-CODE (ccTLD): .uk, .cn, ... 
+
+        Root Zone Database  
+            represents the delegation details of top-level domains. 
+            http://www.iana.org/domains/root/db  
+        
+        gTLD   https://en.wikipedia.org/wiki/Generic_top-level_domain  
+        ccTLD  https://en.wikipedia.org/wiki/Internationalized_country_code_top-level_domain  
+
+    SLD (Second Level Domain) 
+        Second-to-last dot-name; typically the name of the organization,   
+        but can be other if country code (ccTLD) or such is used:  
+        google if google.com, gov if .gov.uk, ..., i.e., {gTLD}.{ccTLD} or such.
+    
+    FQDN  (foo.com.) "Fully Qualified Domain Name" 
+        Unambiguous, complete domain name. 
+        Note the trailing dot; the (nameless) DNS root itself.
+        
+                    .   The (nameless) DNS root domain.  
+                 com.   com is a TLD  
+             foo.com.   foo is a SLD, and the Root/Main/Parent Domain.  
+         bar.foo.com.   bar is a SUBDOMAIN.  
+  
+    Zone Apex  (foo.com)
+        The Zone Apex is the Root/Naked/Parent DOMAIN of a HOSTED ZONE.
+        Must have an A-type record (IPv4 Address); required per DNS RFC (RFC1033)
+
+    HOSTED ZONE
+        any distinct, contiguous portion of the domain name space in the DNS for which ADMINISTRATIVE RESPONSIBILITY has been delegated to a single manager. E.g., Route 53 > Hosted Zones; must contain an NS record.
+
+    ZONE FILE
+        A structured file storing a (Hosted) Zone's DNS records; a component of the DNS database. Although not intended to be a general purpose database, DNS can store records for other types of data; DNSSEC records, Responsible Person (RP) records, Generic text strings (TXT); also used to combat unsolicited email (spam) by storing a real-time BLACKHOLE LIST (DNSBL or RBL).
+
+    RECORD TYPEs stored in the DNS database (the most common)
+
+        SOA (Start of Authority)    
+            - authority-domain          Server that supplied the data for the zone    
+            - domain-of-zone-admin      Zone Administrator (Responsible Person; RP)  
+            - zone-serial-number        Current version of the data file    
+            - Number of seconds:  
+                refresh-time            Seconds to wait before checking for updates  
+                retry-time              Failed zone transfer    
+                expire-time             Refresh before expire    
+                negative caching TTL    TTL on resource records   
+
+                FORMAT: 
+                    [authority-domain] [domain-of-zone-admin]
+                    [zone-serial-number] [refresh-time] [retry-time]
+                    [expire-time] [negative caching TTL] 
+                E.g., 
+                    ns-381.awsdns-47.com. awsdns-hostmaster.amazon.com. 
+                    1 7200 900 
+                    1209600 86400
+
+        NS (Name Server)  
+            This record lists the DELEGATED SET of 4 AUTHORITATIVE NAME SERVERS, 
+            which answers DNS queries from data configured by an original source, 
+            vs from another name server's cache of data. 
+            
+            Every DNS zone must be ASSIGNED a set of Authoritative Name Servers. 
+            Every PARENT DOMAIN zone must include an NS record.
+            
+            SUBDOMAINS 
+                can have their own Hosted Zone, containing their own NS record, 
+                listing their own Delegated Set of four (4) Authoritative Name Servers. 
+            
+                Such requires DELEGATING RESPONSIBILITY (from the parent) to their 
+                Authoritative Name Servers by adding an NS record at the Parent Domain, 
+                which lists the subdomain's Delegation Set. So, the Parent Domain (Zone Apex) 
+                would have TWO (2) NS records; one for itself (foo.com) and one for the subdomain (bar.foo.com). This is more flexible, having more options than the alternate method.
+                
+                Alternately, subdomains can be established per   
+                A-record and CNAME-record in the Parent Domain (Zone Apex).  
+                Some Hosted Zone providers offer additional, proprietary setups.  
+                E.g., AWS Route 53  conjures an "Alias" record,  
+                a hybrid which maps (domain) name to (resource) name,  
+                kind of like a CNAME, yet reliably satisfies the DNS requirement  
+                that every domain name has an A-type record;  
+                doing so all in one "answer" (response to DNS record query).
+            
+            
+        CNAME (Canonical Name; CName)
+            Used to resolve one subdomain name to another name; point several to one; 
+            DNS does not allow CNAME type record for Main/Naked Domain Name (Zone Apex)   
+
+        A (Address; IPv4 Address)
+            Translates domain NAME to NUMBER (IPv4 Address); 
+            DNS requires the Main/Naked Domain Name (foo.com) to have an A (type) record.   
+            While vital, it's not much help in virtual environments where IP addresses are transient.  
+            AWS conjured their own proprietary record type to handle this; "Alias Record".
+            
+        AAAA (Address; IPv6 Address)
+
+        PTR (Pointer; for reverse DNS lookups)
+        
+        MX (SMTP Mail Exchanger)
+
+        Alias (@ AWS)
+            An AWS-Route53–specific DNS extension; 
+            a hybrid of A-type and CNAME-type records; 
+            a mapping of domain NAME to (AWS) resource NAME; 
+            avoids the problem of transient (unreliable) IP addresses 
+            in virtual/containerized environments. 
+            Yet reliably satisfying DNS requirements for an A-type record.
+            Parent and child (sub)domain(s) are both allowed Alias type records.  
+
+            LIMITATION: The target (name) must be ELB|S3|CloudFront 
+            E.g., foo.com => elb1234.elb.amazonaws.com
+        
+    DNS RESOLUTION PROCESS and URLs
+        1. OS checks `hosts` file for URL mapping/resolution. If none,
+        2. OS checks if any cache exists in the DNS. If none,
+        3. OS finds the first DNS resolution server in its TCP/IP settings, 
+             which is likely a local DNS server, e.g., Gateway Router; 
+             if domain name present, then resolves IP. This DNS resolution is AUTHORITATIVE. Else,
+        4. if the local DNS server doesn't contain the domain name but a mapping relationship 
+             exists in the cache, the local DNS server returns resolved IP. 
+             This DNS resolution is NOT authoritative.
+        5. If the local DNS server cannot resolve this domain name either by configuration of regional resources or cache,  
+        it will proceed to the next step, which depends on the local DNS server's settings.  
+        https://astaxie.gitbooks.io/build-web-application-with-golang/content/en/03.1.html
+
+        Whether or not the local DNS server enables forwarding, 
+        the IP address of the domain name always returns to the local DNS server, 
+        and the local DNS server sends it back to the client.
+
+    Round Robin (RR) DNS  
+        A scheme whereof one domain name is mapped to a list of IP addresses;
+        the RR DNS Server answers domain name queries with a randomly chosen  
+        IP address from a pool of redundant IP hosts (servers hosting identical services).
+        
+        Used as a technique of LOAD DISTRIBUTION or FAULT-TOLERANCE PROVISIONING; 
+        often used to LOAD BALANCE requests between a number of Web servers; 
+        "A poor-man's load balancer".
+
+    IP Addresses  
+        IPv4   32-bit;   4 billion addresses  
+        IPv6  128 bit; 340 undecillion addresses; not well supported 
+
+    DOMAIN REGISTRAR  
+        An authority that ASSIGNs domain names directly under one or more top-level domains (TLDs);   
+        REGISTERS domain name with InterNIC, an IANA service;  
+    
+    WhoIS 
+        database containing all registered domain names  
+
+    ICANN + IANA ("Internet Corp for Assigned Names & Numbers" + "Internet Assigned Numbers Authority") 
+        Manages the DNS; ICANN functions per contract with IANA; ICANN is a nonprofit org for coordinating the maintenance and procedures of several databases related to internet namespaces (names and numbers; domains & IPs); performs technical maintenance work of the Central Internet Address pools and DNS Root Zone registries per contract with IANA.
+
+        CONTRACT with US gov ENDED @ 2016; regarding IANA stewardship between ICANN and NTIA (US National Telecommunications and Information Administration; Dept of Commerce); a "global multi-stakeholder community" is taking over.
+
+        https://en.wikipedia.org/wiki/ICANN
+
+
+    IPv6 Special Addresses  https://tools.ietf.org/html/rfc4291#section-2.7
+    
+        ::1         127.0.0.1 @ IPv4; loopback address, 
+
+        fe00::0     Class E @ IPv4; Scope 0 (Reserved); reserved for future use.
+ 
+        ff02::1     192.168.x.255 @ IPv4; Reserved Multicast; Scope 2 (Link-local).
+
+        ff02::2     All IPv6 routers; Reserved Multicast; Scope 2 (Link-local).
+
+        ff02::3     Unassigned; formerly all hosts (excl. routers); 
+                    Reserved Multicast; Scope 2 (Link-local)
+
+
+HTTP PROTOCOL
+    Hypertext Transfer Protocol (HTTP) is an application protocol for distributed, collaborative, and hypermedia information systems; HYPERTEXT is structured text that uses logical links (HYPERLINKS) between nodes containing text. HTTP is the protocol to exchange or transfer hypertext. HTTP is the foundation of data communication for the World Wide Web; for communication between browser and web server; based on the TCP protocol; usual/default SERVER PORT 80; utilizes the REQUEST-RESPONSE MODEL; clients send requests and servers respond; clients always setup new connections and send HTTP requests to servers. Servers do NOT connect to clients proactively, nor establish callback connections. A Client/Server CONNECTION between a client and a server CAN BE CLOSED BY EITHER SIDE. 
+
+    HTTP is a STATELESS protocol, i.e., for any two connections (requests/responses), the server has no knowledge about the relationship between the two, even if both came from the same client. Thus the need for web apps to handle SESSION management, e.g., use COOKIES to maintain state (of connections).
+
+    All TCP attacks will affect HTTP communications at the server. E.g., SYN flooding, DoS and DDoS attacks.
+
+    HTTP was initiated by Tim Berners-Lee at CERN in 1989. Standards development of HTTP was coordinated by the Internet Engineering Task Force (IETF) and the World Wide Web Consortium (W3C), culminating in the publication of a series of Requests for Comments (RFCs). The first definition of HTTP/1.1, the version of HTTP in common use, per RFC 2068 in 1997; obsoleted by RFC 2616 in 1999; again by the RFC 7230 family of RFCs in 2014; the successor, HTTP/2, was standardized in 2015, and is now supported by major web servers and browsers over TLS using ALPN extension, where TLS 1.2 or newer is required.
+
+    HTTP             https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol
+    REQUEST METHODs  https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol#Request_methods
+
+    HTTP REQUEST PACKAGE
+        3 parts: REQUEST LINE, REQUEST HEADER, and BODY (@ POST, not GET).
+
+        GET /domains/example/ HTTP/1.1  // REQUEST LINE: request-method <sp> URL <sp> protocol/version <CRLF>
+        Host：www.iana.org              // domain name; 1st line of REQUEST HEADER
+        User-Agent：Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.4 (KHTM...      // browser information
+        Accept：text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8  // mime types acceptable to client
+        Accept-Encoding：gzip,deflate,sdch   // stream compression
+        Accept-Charset：UTF-8,*;q=0.5        // client-side character set
+        <BLANK-LINE>
+        // BODY, request resource arguments (for example, arguments in POST)
+
+    HTTP RESPONSE PACKAGE 
+
+        HTTP/1.1 200 OK      // STATUS LINE: protocol/version <sp> status-code <sp> status-reason <CRLF>
+        Server: nginx/1.0.8  // WEB SERVER SOFTWARE and its VERSION in the server machine
+        Date:Date: Tue, 30 Oct 2012 04:14:25 GMT  // RESPONDED TIME
+        Content-Type: text/html                   // RESPONDED DATA TYPE
+        Transfer-Encoding: chunked                // if "chunked", Content-lenght NOT given; see spec
+        Connection: keep-alive                    // "Connection" | keep-alive | close
+        Content-Length: 90                        // length of body
+        <BLANK-LINE>
+        <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN".
+
+        RESPONSE (STATUS) CODEs: 1xx:Info, 2xx:Success, 3xx:Redirect, 4xx:Client-Err, 5xx Server-Err
+
+        Though stateless, servers CAN keep a connection (alive); @ HTTP/1.1, `Keep-alive` is used by default. If CLIENTS have additional requests, they will USE THE SAME CONNECTION for them. `Keep-alive` cannot maintain one connection forever; server/config determines that limit.
+
+        HTTP HEADERs  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+                      https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
+
+    CLIENT/SERVER MESSAGING  https://github.com/GoesToEleven/golang-web-dev/tree/master/014_understanding-servers 
+
+        HTTP is a stateless request/response protocol that operates by exchanging messages across a reliable TRANSPORT- or SESSION-layer "CONNECTION".
+
+        HTTP CLIENT; a program that establishes a CONNECTION to a server for the purpose of sending one or more HTTP requests.
+        HTTP SERVER; a program that accepts CONNECTIONS in order to service HTTP requests by sending HTTP responses.
+        The terms "client" and "server" refer only to the roles per connection. 
+        
+        USER AGENT; any of the various client programs that INITIATE A REQUEST
+        
+        ORIGIN SERVER; program that can originate authoritative responses for a given target resource. The terms "sender" and "recipient" refer to any implementation that sends or receives a given message, respectively.
+
+        HTTP relies upon the Uniform Resource Identifier (URI) standard to indicate the target resource and relationships between resources. Most HTTP communication consists of a RETRIEVAL REQUEST (GET) for a representation of some resource identified by a URI. 
+
+            A client sends an HTTP REQUEST to a server in the form of a REQUEST MESSAGE, beginning with a REQUEST-LINE that includes a method, URI, and protocol version, followed by header fields containing request modifiers, client information, and representation metadata, an empty line to indicate the end of the header section, and finally a message body containing the payload body (if any).
+
+            A server responds to a client's request by sending one or more HTTP RESPONSE MESSAGES, each beginning with a STATUS LINE that includes the protocol version, a success or error code, and textual reason phrase, possibly followed by header fields containing server information, resource metadata, and representation metadata, an empty line to indicate the end of the header section, and finally a message body containing the payload body (if any).
+
+            A connection might be used for multiple REQUEST/RESPONSE exchanges. 
+
+VPN 
+    Virtual Private Network; extends a private network across a public network; security mechanism (protocols) to connect subnets across an untrusted network; a virtual point-to-point connection thru either dedicated connections, virtual tunneling protocols, or traffic encryption; circumvent geo-restrictions; protect user identity/location; 
+
+    Wikipedia  https://en.wikipedia.org/wiki/Virtual_private_network
+
+        IPsec VPN
+            Internet Policy Security (IPsec) VPN; kernel access required; often used with Layer-2 Tunneling Protocol (L2TP/IPsec); BACKDOORed by NSA; Ex: AWS-VPN, Algo; Requires WAN NAT Passthrough (below).
+
+        SSL/TLS VPN
+            Transport Layer Security (TLS; a.k.a. SSL/TLS; TLS is successor to SSL) VPN; requires only user-space access; can tunnel all network traffic, or an individual connection; can connect where IPsec runs into trouble with NAT and firewall rules;  
+            
+            OpenVPN uses OpenSSL; library of utilities to implement SSL and TLS protocols; offers two types of interfaces for networking via the Universal TUN/TAP driver; layer-3 based IP tunnel (TUN); layer-2 based Ethernet TAP that can carry any type of Ethernet traffic; AUTHENTICATION by pre-shared keys, certificate, or username/password; optionally uses LZO compression; Port 1194 is OpenVPN's official IANA assigned port; Newer versions of the program now default to that port; OpenVPN 2.0+ allows for multiplexing SSL tunnels on a single TCP/UDP port; desirable alternative to IPsec
+
+            OpenVPN            https://openvpn.net/index.php/open-source/overview.html  
+            OpenVPN Wikipedia  https://en.wikipedia.org/wiki/OpenVPN  
+            OpenVPN GitHub     https://github.com/OpenVPN  
+
+            OpenSSL            https://en.wikipedia.org/wiki/OpenSSL
+
+        SSH VPN
+            Secure Shell VPN; OpenSSH offers VPN tunneling (distinct from port forwarding) to secure remote connections to a network or inter-network links; simplest means of VPN, but more overhead than OpenSSL VPN.
+
+            OpenSSH, a.k.a. "OpenBSD Secure Shell"; library of utilities to implement Secure Shell (SSH) protocol; a network-level suite; secure network communications via encryption of network traffic; forward remote TCP ports over a secure SSH tunnel; multiple authentication methods; basic cryptographic functions and provides various utility functions; ssh (client), sshd (server), scp, sftp, ssh-keygen, ssh-agent, ssh-keyscan; authenticate users using ssh protocol methods; OpenSSH SERVER provides concurrent tunnels, and makes use of authentication methods native to the host operating system; can multiplex TCP connections over single SSH connection; conceal connections and encrypting protocols; circumvent firewalls, thus potential security issues, e.g., an X Window System tunnel may be created automatically when using OpenSSH to connect to a remote host, etc.
+
+            SOCKS proxy server may be created, ad hoc, using OpenSSH; allows more flexible proxying than is possible with ordinary port forwarding; OpenSSH 4.3+ implements an OSI layer 2/3 TUN-based VPN, which is the most flexible of its tunnelling capabilities, allowing applications to transparently access remote network resources without modifications.
+
+            SSH-based VPN  http://man.openbsd.org/ssh#SSH-BASED_VIRTUAL_PRIVATE_NETWORKS
+            OpenSSH        https://en.wikipedia.org/wiki/OpenSSH  
+
+            BadVPN         https://github.com/ambrop72/badvpn     (Tun2socks, P2P VPN)
+
+                Tun2socks
+                    "socksifes" TCP connections at Layer-3 (Network layer); implements a TUN device which accepts all incoming TCP connections (regardless of destination IP), and forwards the connections through a SOCKS server; forwards all connections through SOCKS, without any need for application support; e.g., to forward connections through a remote SSH server
+
+                P2P VPN 
+                    Peer-to-peer VPN; implements a Layer 2 (Ethernet) network between peers (VPN nodes); peers connect to a central server which acts as a communication proxy allowing the peers to establish direct connections between each other (data connections); connections transfer network data (Ethernet frames), and can be secured with a multitude of mechanisms
+
+    WAN NAT Passthrough 
+        Allow, per protocol (PPTP, LL2TP, IPSec, ...), a remote Virtual Private Network (VPN) connection to pass through the router to local network clients. Such a local client is then removed from the list of active local clients (hosts), and appears as on the VPN as a local client (host). Security issue is VPN is two-way; everyone @ other end (VPN server) has access to everyone @ local end, so even one connection by one local LAN client to a malicious VPN server exposes everyone on the local LAN to the external players. 
+        
+       - OpenVPN does NOT NEED it. (IPSec VPNs do need it.) 
+       - Gateway router should DISABLE IT for all protocols.
+
+TUN/TAP 
+        Network TUNnel/TAP; virtual NETWORK KERNEL DEVICEs (sofware); a (user-space) application attaches itself to the device, so incoming network packets from the kernel are delivered to it through the TUN/TAP device; an application may also pass packets into a TUN/TAP device, whereof the TUN/TAP device delivers, or "injects", these packets to the kernel network stack, thus emulating their reception from an external source.  https://en.wikipedia.org/wiki/TUN/TAP
+        
+        TUN - simulates a NETWORK LAYER DEVICE; operates on layer 3 packets, e.g., IP packets; used with ROUTING
+        
+        TAP - simulates a LINK LAYER DEVICE; operates on layer 2 packets, e.g., Ethernet Frames; used for creating a NETWORK BRIDGE.
+
+Bridge Network (bridge)
+    a Link Layer (Layer 2) device which forwards traffic between network segments; runs within a host machine’s kernel; default Docker network connection btwn containers sharing 1 daemon host (docker server).  https://docs.docker.com/network/bridge/
+
+Proxy Servers
+    a middle step between client and server; may reside on client machine, or at various points between client and server; many possible functions
+    
+    Types 
+        
+        Gateway a.k.a. Tunneling Proxy a.k.a. Protocol Converter
+            Pass requests unmodified; e.g., home router (a very lame one); a network node equipped for interfacing with another network; may use/map different protocols
+        
+        Forward Proxy
+            "Internet-facing" (client-side) proxy used to retrieve from a wide range of sources, e.g., anywhere.
+            
+            Open Proxy
+                forward proxy accessible by anyone; anonymous open proxy allows users to conceal their IP address
+
+        Reverse Proxy 
+            "internal-facing" proxy used as a front-end (server-side); can appear to clients as the desination (server); controls and protects access to resources of the internal network; commonly also performs tasks such as load-balancing, authentication, decryption or caching; E.g., CDN, SSL server, load balancers, security, cache, NAT/firewall/filter, eavesdropping
+            
+            Anonymous Proxy Server a.k.a. Web Proxy
+                attempts to anonymize web surfing
+            
+            I.e., "reverse", as counterpart to "forward proxy", in that it deals with the web servers that handle the clients' requests; serves only a restricted set of websites.
+
+            SOCKS(5) Proxy 
+                Socket Secure (SOCKS) is a layer-5 (Session-Layer) Internet protocol; SOCKS is the de facto standard for circuit-level gateways; exchanges network packets between a client and server through a proxy server; SOCKS5 additionally provides authentication so only authorized users may access a server; a SOCKS (protocol) server accepts incoming client connection on TCP port 1080, and proxies TCP connections to an arbitrary IP address, and provides a means for UDP packets to be forwarded; operates at a lower level than HTTP proxying; SOCKS5 was originally a security protocol that made firewalls and other security products easier to administer. 
+                
+                Wikipedia  https://en.wikipedia.org/wiki/SOCKS
+            
+Open proxies
+    https://en.wikipedia.org/wiki/Proxy_server
+            
+FTPS
+    a version of FTP protocol that enforces encryption of the communication between the client and server through TLS (Transport Layer Security) or SSL (Secure Sockets Layer).
+
+SFTP (SSH File Transfer Protocol)
+    not FTP, but rather a secure version of SSH which provides a similar command set and functionality as FTP.
+
+FTP over SSH
+    tunneling the FTP connection in it’s entirety through an SSH connection.
+            
+        Often, there will only be one server on a machine, and that server will handle multiple clients using `fork()`; server will wait for a connection, `accept()` it, and `fork()` a CHILD PROCESS to handle it.  https://beej.us/guide/bgnet/output/html/singlepage/bgnet.html#clientserver
+        
+    Most programs written using high-level APIs are purely clients. At a lower level, however, the lines are often blurry.
+    
+    SOCKET and STREAM programming generally falls into one of the following broad categories:
+
+        Packet-based communication
+            Programs that operate on one packet at a time, listening for incoming packets, then sending packets in reply; only differences between clients and servers therein are the contents of the packets, and what each program does with the data. The networking code itself is identical.
+
+        Stream-based clients
+            Programs that use TCP to send and receive data as two continuous streams of bytes, one in each direction; clients and servers are somewhat more distinct; data handling part of clients and servers is similar, but the way that the program initially constructs the communication channel is very different.
+
+STREAMS 
+    Unix System V native framework for implementing character device drivers, network protocols, and inter-process communication; a CHAIN OF COROUTINES that pass messages between a program and a device driver (or between a pair of programs); originated in Version 8 Research Unix, as 'Streams'.
+    
+    NOT a "Stream Socket"; an alternative to Socket; 
+
+    a modular architecture for implementing full-duplex I/O between kernel and device drivers; most frequent use is terminal I/O (line discipline) and networking subsystems. In System V Release 4, the entire terminal interface was reimplemented using STREAMS; important concept in STREAMS is the ability to push drivers – custom code modules which can modify the functionality of a network interface or other device – together to form a stack. Several of these drivers can be chained together in order.  
+    
+    - FreeBSD has basic support for STREAMS-related system calls
+    - Linux does NOT include STREAMS functionality without third-party add-ons
+    - Windows NT used to include, but now obsolete.
+    
+    https://en.wikipedia.org/wiki/STREAMS
+
+Socket / Internet Socket / Network Socket / Berkeley Socket
+
+    There are many kinds of sockets, all of which are endpoints of/for fully duplex byte streams; two-way communication between processes/machines; Unix Sockets, which identify path names on a local node, X.25 Sockets, which identify CCITT X.25 addresses; Network Sockets, or Internet Sockets, which identify internal endpoints for data transmission across a computer network.
+
+    The term "socket" is analogous to physical female connectors, communication between two nodes through a channel  (cable) with two male connectors plugging into sockets at each node (end point); sockets allow communication between two different processes on the same or different machines. Also see Berkeley Sockets, originally an API for BOTH Internet and Unix Sockets, effectively won and is now synonymous with Internet Sockets, often just called sockets.https://en.wikipedia.org/wiki/Berkeley_sockets
+
+    Internet Sockets are a way to communicate between machines using standard Unix file descriptors. In Unix, every I/O action is writing or reading a file descriptor; an integer associated with an open 'file' (file handle), which can be a network connection, a text file, a terminal, or something else.
+    
+    "port" references the EXTERNAL endpoints at a node; "socket" references the INTERNAL endpoint of local inter-process communication (IPC) (NOT known externally, by network). Then analogy is strained since needn't be one-to-one, e.g., a broadcast comm has no stipulated end-point.
+    
+    Socket API 
+        The interface used in programming (applications) to communicate with the protocol stack, using network sockets. Unlike ports, sockets are local to a node; local resources and cannot be referred to directly by other nodes; sockets are NOT necessarily associated with a PERSISTENT connection (CHANNEL) for communication between two nodes, nor is there necessarily some single other endpoint (though there usually is). E.g, a DATAGRAM SOCKET can be used for connectionless communication, and a multicast socket can be used to send to multiple nodes, or an address range where there may or may not be any nodes to receive data.
+
+        Typically, internet socket APIs are based on the Berkeley sockets standard, whereof sockets are a form of file descriptor (a file handle); have functions to read, write, open, and close; the differences mean the analogy is strained, and one instead uses different interfaces (send and receive) on a socket. In inter-process communication (IPC), each end generally has its own socket, but these may use different APIs: they are abstracted by the network protocol.
+        
+    Socket Programming (Network Programming) 
+        is of applications that utilize this API. 
+    
+    Socket Address 
+        "socket" usually refers to an Internet Socket; that of an Internet Protocol (IP) network, in particular for the Transmission Control Protocol (TCP), which is a protocol for one-to-one connections. In this context, sockets are assumed to be associated with a specific socket address, namely the IP address and port number for the local node, and there is a corresponding socket address at the foreign node (other node), which itself has an associated socket, used by the foreign process. BINDING: associating a socket with a socket address; E.g., a connection between ...  
+        
+            10.20.30.40:4444  # local-IP-address:local-port    Socket:317
+            50.60.70.80:8888  # remote-IP-address:remote-port  Socket:922
+        
+        an associated socket exists at each end, corresponding to the INTERNAL REPRESENTATION OF THE CONNECTION by the PROTOCOL STACK on that node, which are referred to locally by NUMERICAL SOCKET DESCRIPTORs, e.g., 317 at one side and 922 at the other. A process on (local) node 10.20.30.40 can request to communicate with (remote) node 50.60.70.80 on port 8888 -- request that the protocol stack create a socket to communicate with that destination -- and once it has created a socket and received a socket descriptor (317), it communicate via descriptor 317. The protocol stack forwards data to/from (remote) node 50.60.70.80:8888, NOT "socket 922"; socket address is INTERNAL to its node (meaningless to all remote nodes).
+        
+    https://en.wikipedia.org/wiki/Network_socket
+
+    THREE TYPES of Internet Sockets
+    
+        1. Stream Sockets (SOCK_STREAM), which use TCP; reliable two-way connected communication streams; packets are ordered (sequence is known) and error-free per TCP. IP deals primarily with Internet routing and is not generally responsible for data integrity.
+        
+        2. Datagram Sockets (SOCK_DGRAM), which use UDP; datagram may arrive; may arrive out of order; if it arrives, the data within the packet will be error-free; use IP for routing; called "connectionless sockets" because needn't maintain an open connection as you do with stream sockets. You just build a packet, slap an IP header on it with destination information, and send it out. No connection needed; used either when a TCP stack is unavailable or when a few dropped packets are acceptable; E.g., tftp (trivial file transfer protocol), dhcpcd (a DHCP client), multiplayer games, streaming audio, video conferencing, etc.
+        
+            Apps may have their own protocol, on top of UDP, for error handling. For example, for each packet sent, the recipient must send back an ACK packet (acknowledgement; "I got it!"). So, if sender gets no reply within, say, five seconds, sender will re-transmit the packet; very important when implementing reliable SOCK_DGRAM apps; unreliable apps like games, audio, or video, you just ignore the dropped packets, or perhaps try to cleverly compensate for them.
+
+            Why use an unreliable underlying protocol? SPEED. It's much faster to fire-and-forget; game play communicating 40 positional updates per second may be unaffected if one or two packets get dropped.
+            
+        3. Raw Sockets (Raw IP Sockets); bypass transport layer; packet headers are usually included/accessible per application; NO PORT NUMBER, just the IP address; allows direct send/receive of IP packets, sans any protocol-specific transport layer formatting. 
+
+            Raw Sockets are used in security related applications like nmap. One use case is to implement a new transport-layer protocol (in user space). Raw sockets are typically available in network equipment, and used for routing protocols such as the Internet Group Management Protocol (IGMPv4) and Open Shortest Path First (OSPF), and in the Internet Control Message Protocol (ICMP, e.g., ping command).  https://en.wikipedia.org/wiki/Raw_socket
+    
+    https://beej.us/guide/bgnet/html/single/bgnet.html#twotypes
+
+Protocol Stack (Network Stack)
+
+    an implementation of a computer networking protocol suite; a set of programs that allow processes to communicate over a network using a suite of protocols implemented by the software stack.
+    
+    Protocol Suite: the communications protocols.
+    Protocol Stack: the software implementation of the protocol suite.
+        
+    The protocol suite is usually provided by the OS (rather than as a separate library, for instance).
+
+    Individual protocols within a suite are often designed with a single purpose in mind, at a specific layer in the 7 layer OSI network model; commonly imagined as layers in a stack of protocols, from "low-level", physical interaction of the hardware, to application layers; often divided into three major sections: media, transport, and applications. 
+
+        Stack (Protocols)   Layer
+        -----------------   -----
+        HTTP                Application
+        TCP                 Transport
+        IP                  Internet/Network
+        Ethernet            Data Link/Link
+        IEEE 802.3u         Physical
+
+    OS platforms have two well-defined software interfaces: one between the media-to-transport layers, and one between the transport-to-applications layers. 
+        
+    https://en.wikipedia.org/wiki/Protocol_stack
+    
+Data Encapsulation
+    Application/Presentation/Session layers/protocols wrap (encapsulate) its info/content/message along with its header and possibly footer, to send as DATA. That gets wrapped (encapsulated) again per Transport layer protocol (TCP/UDP), into a SEGMENT/DATAGRAM, then the whole thing (header included) is encapsulated again, by the Network layer protocol, into a PACKET, then again by the Data Link layer into a FRAME, then transmitted by a Physical Layer protocol, as BITs "on the wire". 
+    
+    On recieve, the hardware strips the FRAME header, the kernel (typically) strips the SEGMENT/DATAGRAM headers and PACKET header, the application/presentation/session program(s) strip the DATA header(s), and so the original info/content/message is recieved.
+
+Byte Order (Endianness) (Network|Host)
+    
+    Bytes are STORED SEQUENTIALLY, but in which order; e.g., how is a multi-byte number, from its most significant, "big end", byte through to its least significant, "little end", byte, stored? E.g., on a 32-bit machine, 
+
+        `b3...4f`
+        
+        Big-Endian:    `b3`, ..., `4f`  a.k.a. "Network Byte Order"
+
+        Little-Endian: `4f`, ..., `b3`  a.k.a. "Host Byte Order" a.k.a. "Backwards!"
+    
+    - Intel-compatible (x86, x86-64) processors are Little-Endian machines.
+    - ARM v3+, PowerPC, Alpha, SPARC V9, MIPS, ... are Big-Endian. 
+    
+        Many of these architectures can be switched via software to default to a specific endian format 
+    https://en.wikipedia.org/wiki/Endianness
+
+SERIALIZE 
+    a.k.a. MARSHAL a.k.a. PICKLE; converting some higher-level (object) data structure to a lower-level representation, e.g., binary, for transport; to send it on the wire. E.g., serialized JSON.
+
+    Data Encodings: RFC 4648  https://tools.ietf.org/html/rfc4648 (2006)
+
+        Base64 contains +, /, and =  
+        Base64URL maps: + => -, / => _
+
+        JWT segments (3) are Base64URL encoded  
+
+IPFS (P2P) https://ipfs.io/
+
+    IP File System; URI identifies content, not location; replaces HTTP; IPFS network finds the nodes having the data, using DHT (Distributed Hash Table), retrieve it, and verifies using the hash (@ URI) that it's the correct data. IPFS network becomes a finely-grained, trustless, distributed, easily federated Content Delivery Network (CDN)
+    https://ipfs.io/ipfs/QmNhFJjGcMPqpuYfxL62VVB9528NXqDNMFXiqN5bgFYiZ1/its-time-for-the-permanent-web.html
+
+DHT (Distributed Hash Table)
+
+    a lookup service similar to a hash table (table of key-value pairs); participating nodes can efficiently retrieve the value associated with a given key; responsibility for maintaining the mapping from keys to values is distributed among the nodes, in such a way that a change in the set of participants causes a minimal amount of disruption; allows a DHT to scale to extremely large numbers of nodes and to handle continual node arrivals, departures, and failures.
+
+    DHTs form an infrastructure that can be used to build more complex services, such as anycast, cooperative Web caching, distributed file systems, domain name services, instant messaging, multicast, and also peer-to-peer file sharing and content distribution systems. Notable distributed networks that use DHTs include BitTorrent's distributed tracker, the Coral Content Distribution Network, the Kad network, the Storm botnet, the Tox instant messenger, Freenet and the YaCy search engine.
+    
+    https://en.wikipedia.org/wiki/Distributed_hash_table  
+    
+
+DHCP (Dynamic Host Configuration Protocol)  
+    provides an IP (Internet Protocol) host with its IP address and other related configuration information such as the subnet mask and default gateway.
+    
+    DHCP Reservation a.k.a. Static {DHCP/Route List/Port Forwarding}
+        Static IP addresses (e.g., at gateway router) for any nodes (e.g., downstream router) to forward ports to. Else manually configuring IPs @ node OS. Static IPs MUST BE OUTSIDE outside the automatic (DHCP) address range (of the gateway router). 
+        
+        UPnP port forwards may OVERWRITE static port forwards. If your static port forwarding is important, turn off UPnP. 
+
+NAT (Network Address Translation)
+    a process to map IP addresses to/from internal/external (LAN/WAN) networks; typically handled at gateway node (router); allows for a firewall between the two, and for IP address reuse.
+
+Port (Range) Forwarding a.k.a. "Port Mapping"
+    a NAT application that redirects a communication request from one address and port number (ADDR:PORT) combination to another WHILE packets are TRAVERSING A NETWORK GATEWAY, such as a router or firewall. 
+
+    UPnP is the easiest (automatic) way to handle Port Forward settings.
+    
+    Applications supporting UPnP automatically request the (gateway/NAT) router to open/close the port they're listening on whenever the application starts/stops. Automatic port forwarding with UPnP means you needn't manually script IP addresses, ports, nor any such parameters, neither at client PC nor router. 
+    
+    (The application using (UPnP) Port Forwarding must be in the list of Windows Firewall exceptions!)
+
+    REF:
+        http://www.portforward.com
+        http://www.dd-wrt.com/wiki/index.php/Port_Forwarding
+
+Port Triggering (Triggered Port Forwarding)
+    Forwarding requests to a range of ports to whatever machine connected to a remote host on the Trigger Port. It's semi-automatic and doesn't care about static IP addresses. Used for web services having a known/unique port. 
+    
+    E.g., AIM client machine/app sends request to, e.g., 207.234.129.65:5190 (trigger port is 5190), so setup Port Triggering @ router to forward on that trigger to local ports (range) 4117-4443. (The local port range is specified by the client app.)
+
+NAT-PMP (NAT Port Mapping Protocol)
+    Implemented in many network address translation (NAT) routers. NAT-PMP allows a computer in a private network (behind a NAT router) to automatically configure the router to allow parties outside the private network to contact it. NAT-PMP runs over UDP port 5351. It essentially automates the process of port forwarding. NAT-PMP is the precursor to Port Control Protocol (PCP); an alternative to Internet Gateway Device (IGD) Standardized Device Control Protocol, created by Apple, 2005.
+
+Port Control Protocol (PCP)
+    Newest scheme (2013) to solve NAT/port public/private WAN/LAN issues; to replace all prior/existing port forwarding schemes.
+
+MAC (Media Access Control)
+
+ARP (Address Resolution Protocol) http://linux-ip.net/html/ether-arp.html#ether-arp-overview
+    @ IPv4; maps network (IP) addresses to hardware (MAC) addresses used by a data link protocol; interface between OSI Layer-2 (Data Link) and Layer-1 (Physical). The protocol operates below Layer 3 (Network); interface between Layer 3 and Layer 2; between Network and Data-Link.
+
+IP Traffic  
+    UNICAST 
+        A conversation between two hosts. Though there may be routers between them, the two hosts are carrying on a 'private' conversation. Common Unicast protocols: HTTP (web), SMTP (sending mail), POP3 (fetching mail), IRC (chat), SSH (secure shell), and LDAP (directory access)
+        
+    BROADCAST
+        One destination IP addresses all hosts in a given network range; "chatty network traffic"; like shouting in a room. Used at the Ethernet (Layers 1,2) and the IP layer (Layer 3)
+
+Node 
+    a connection point, a redistribution point (e.g. data communications equipment), or a communication endpoint (e.g. data terminal equipment); a device that implements IPv6. The definition of a node depends on the network and protocol layer referred to.
+
+Router   
+    A networking node/device that forwards data packets between computer networks.
+
+Host     
+    Any node that is not a router. Each PC on the LAN is a host.
+
+CIDR 
+    Classless Inter-Domain Routing; a method for allocating IP addresses & routing; 1993; superceeded classful network design; to slow the rapid exhaustion of IPv4 addresses; 
+    
+    CIDR notation:  192.168.2.0/24  (IPv4)
+ 
+    IP Addresses + Ports (common)
+
+        DHCP range (default)
+            192.168.1.100 - 192.168.1.149
+
+        Private IP Address RANGEs   (rfc1918)
+            10.0.0.0    - 10.255.255.255  (10/8 prefix)
+            172.16.0.0  - 172.31.255.255  (172.16/12 prefix)
+            192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+            
+            Typical Home setup ...
+                192.168.1.1   ... Gateway Router LAN (inside) IP Address
+                255.255.255.0 ... Subnet Mask (24 bit mask); allows 254 Host IDs
+                192.168.1     ... Network ID
+                192.168.100.1 ... DOCSIS Modem
+                
+            Router client referred to as 'host'; 
+            All on LAN have same 'Network ID', and each has unique 'Host ID'. 
+            
+        Ports
+            80    Web server 
+            21    FTP server 
+            22    SSH server 
+            5190  AIM server
+            5351  NAT-PMP, UDP
+
+    Wikipedia  https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+

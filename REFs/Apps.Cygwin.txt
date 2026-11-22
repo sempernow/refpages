@@ -1,0 +1,379 @@
+# cygwin.bat 
+    Menu of options
+
+# Update per CMD
+    cygwin.bat update
+
+# Usage 
+	mintty -t Cygwin -i c:\Cygwin\Cygwin-Terminal.ico
+
+	## More robust, per xhere; launches @ current path
+	C:\cygwin\bin\mintty.exe -i /Cygwin-Terminal.ico -e /bin/xhere /bin/bash.exe
+
+# Windows Terminal Settings 
+
+If installed by Chocolatey
+   
+## Command:   
+C:\tools\cygwin\bin\bash.exe --login  
+
+## Icon:
+C:\tools\cygwin\Cygwin.ico
+
+# Install per Chocolatey
+	2018.04 @ Win10 RS3 
+	per Chocolatey, @ CMD.exe 
+
+		C:\> choco install cygwin -y 
+		C:>\ choco upgrade cygwin -y 
+
+	## Install cyg-get tool
+		C:\> choco install cyg-get -y 
+
+	## Install packages per cyg-get tool
+
+		C:\> cyg-get pkg1 pkg2
+
+# Install/Update per Windows / GUI 
+
+	setup-x86_64.exe  (DBL-CLICK) 
+	
+	## Menu @ Cygwin Setup [setup-x86_64.exe] utility:
+
+		- Select "Next" button all the way through to the final "Select Packages" window.
+
+		- @ "Select Packages" window: 
+
+			- @ "View" dropdown menu 
+				> Select "Pending"; shows everything about to be installed upon "Next" button.
+					Select it after any "Search" form (add/update/remove) package(s). 
+					(Hover event over the "View" menu launces pop-up text description.) 
+
+			- Select "Best" radio button (right-hand side of window)
+
+# Install per Windows commandline
+
+	## Options Menu
+	C:\> setup-x86_64 -h  
+
+# Validate Pkgs
+	$ cygcheck -h         # options menu
+	$ cygcheck -c         # show installed PACKAGEs and verify status 
+	$ cygckeck -cd        # show installed PACKAGEs; no verify (quicker)
+
+# File Explorer Shell Context Menu 
+
+	Add Reg keys for "Cygwin Bash" on RT-CLICK ..
+
+	[HKEY_CLASSES_ROOT\Directory\Background\shell\Cyghere]
+	@="Cygwin Bash"
+	"Icon"="C:\\Cygwin\\Cygwin-Terminal.ico,0"
+
+	w/ chere (incl. xhere) pkg 
+
+	[HKEY_CLASSES_ROOT\Directory\Background\shell\Cyghere\command]
+	@="C:\\cygwin\\bin\\mintty.exe -i /Cygwin-Terminal.ico -e /bin/xhere /bin/bash.exe"
+
+	w/out 'chere' pkg
+
+	[HKEY_CLASSES_ROOT\Directory\Background\shell\Cyghere\command]
+	@="C:\\Cygwin\\bin\\mintty.exe -i /Cygwin-Terminal.ico --dir \"%V\""
+
+	:: Add chere pkg (also adds 'xhere'), from cmd.exe ...
+	C:\> cyg-get chere 
+
+	# Run w/out effect; `-p` 
+	$ chere -iap -s bash > chere.log 
+
+Recommended Packages 
+====================
+	ssh
+	7z
+	apt-cyg (from GitHub); allows pkg installs whilst @ Cygwin.
+    bash-completion
+    lynx (to install apt-cyg), wget and curl
+    vim
+    hg, git, svn, git-svn
+    diffutils, patchutils
+    python, python3
+
+
+# OLDER 
+
+	See full INSTALL details below
+	
+	Shortcut [link] w/ no-desktop, no-startmenu [See cmdline options list below]
+
+		"C:\Program Files\Cygwin\setup-x86_64.exe" -d -N
+
+	- @ Setup Menus ...
+
+	- ALL "Next"; defaults; select nothing 
+	- Dropdown Menu > Select "Full"
+	- Buttons @ right side of window > "Current"
+	
+		"Keep"     Keep the current version
+		"Current"  Upgrade to the latest version  <== select this one
+		"Test"     Try the experimental version
+
+PACKAGES
+========
+
+	# test if package is installed, @ Cygwin session ...
+
+		cygcheck -c <pkg-name>
+
+	# list all installed packages, @ Cygwin session ...
+	
+		cygcheck -cd 
+
+	# Added/Installed 
+	
+		X11 # Cygwin/X  https://x.cygwin.com/  https://x.cygwin.com/docs/faq/cygwin-x-faq.html 
+
+			openssh, xorg-server, xinit
+		
+			# Windows X11 forwarding @ SSH session
+			# http://www.arsc.edu/arsc/knowledge-base/ssh-and-x11-forwarding-us/index.xml
+
+			# RUN @ Windows Command line 
+			
+				# GUI method: double-click @ installed XDG Menu app, 'Cygwin-X.lnk', @ Start Menu 
+				# See Command @ shortcut Properties >
+					C:\Cygwin\bin\run.exe --quote /usr/bin/bash.exe -l -c "exec /usr/bin/startxwin"
+				
+				# OR script it into Cygwin.bat [done!].
+					START cmd /c C:\Cygwin\bin\run.exe --quote /usr/bin/bash.exe -l -c "exec /usr/bin/startxwin"
+				
+			# Use per SSH @ mintty terminal ...
+
+				$ SSH -Y user@host.domain  # `-Y` is trusted X11; `-X` sans security checks
+
+				# TESTED/SUCCESS :: launched a window @ local XPC Windows 7 PC
+
+					[Uzer@CentOS REFs]$ gedit REF.vi.sh &  
+					
+					#=> Launched gedit GUI @ client window !
+
+				# Old ISSUE/UPDATE: 'startxwin &' now works !
+					# Issue ... launch from bash [mintty] terminal hangs/waits ...
+					# 'startxwin &' and 'startx &' commands, with or without '&', 
+					#  ... all lockup the terminal until CTRL+C
+
+						# config scripts @ /etc/X11 fail to wrap dirs in quotes, so $HOME/... fails.
+						# Fixed/edited scripts, but that doesn't fix the invariable hanging issue; it did fix some error msgs reported prior to program hang.
+						# Hangs REGARDLESS of appending '&', to make it a background process.
+						# Both 'startxwin &' and 'startx &' hang, with or without appending '&' 
+
+					# if not launched from terminal that started 'starxwin', then need to set vars
+					
+						export DISPLAY=:0  # REQUIREd by Cygwin-X11 methods; 
+						# 'startxwin' sets this automatically
+				
+						# added export vars @ _UzerX.cfg ...
+						# All vars set @ mintty Env. when launched per TaskBar Cygwin/X app ...
+							export DISPLAY=:0   # REQUIREd by Cygwin-X11 methods;
+							export XAUTHORITY='/home/USERNAME/.Xauthority'
+							export XDG_CURRENT_DESKTOP=X-Cygwin
+							export XDG_MENU_PREFIX=xwin-
+
+		7z 
+		
+		nc # netcat
+		
+		GCC Compiler
+			setup-x86_64.exe -n -q 
+				-P wget 
+				-P gcc-g++ 
+				-P make 
+				-P diffutils 
+				-P libmpfr-devel 
+				-P libgmp-devel 
+				-P libmpc-devel
+				
+				-P ncurses
+
+		xdg-utils [ per 'Cygwin.BAT xdg-utils' @ windows cmdline ]
+
+		xrandr [ graphics-card stuff - doesn't work ]
+
+		ent-cygwin [ per git @ https://github.com/raincoats/ent-cygwin ]
+
+		ExifTools @ _UNREG_FOLDER
+
+		python2 		`python` @ Cygwin terminal
+		python-pip	`pip2`   @ Cygwin terminal
+		
+		IPython [Jupyter] Python 2.7 [pip] 
+			REF: https://scivision.co/install-ipython-jupyter-in-cygwin/
+
+			lynx -source https://bootstrap.pypa.io/get-pip.py | python
+			pip install ipython
+			
+		x86_64-w64-mingw32-gcc [MinGW C compiler]
+
+		gpg
+			gnupg-1.4.21-1  [2015]; `GnuPG` script is based on this one
+			
+		gpg2
+			gnupg2-2.1.22-1 [2017]; installed @ XPC 2017-08-13
+
+		git 
+			git-2.14.0-1 - git: Distributed version control system
+
+			Also use Git-for-Windows per git.bat @ "C:\Program Files\Git"
+				https://git-for-windows.github.io/
+
+		svn 
+			per `Cygwin.bat install subversion`
+			Installed @ /bin/svn  [v1.9.6]
+		
+		
+INSTALL
+=======
+
+	* Make Dirs ...
+	
+		Install Root Directory:		C:\Cygwin
+		Local Package Directory: 	C:\Program Files\Cygwin
+		
+			This folder scheme allows backups of the current install [C:\Cygwin], including configs, scripts, archives, etc, separate from the humongous local pkg repository in 'Program Files'.
+					
+	* Download: setup-x86_64.exe
+	
+		Put 'setup-x86_64.exe' @ 'Local Package Repository',
+	
+		Make a shortcut @ install dir [C:\Cygwin] ... 
+		
+			"C:\Program Files\Cygwin\setup-x86_64.exe" -d -N
+
+	* Run: setup-x86_64.exe GUI menus 
+	
+		... same for initial install AND updates
+
+		* Choose a download source :: Install from internet
+		* Select Root Install Dir  :: C:\Cygwin
+		* Select Local Package Dir :: C:\Program Files\Cygwin
+		* Direct Connect
+		* Choose Download Site :: 'Available ... Sites ...'
+				http://cygwin.mirror.constant.com	
+						
+		* On first run, after install, Cygwin creates $HOME, @ .\home, and setup files; .bashrc, et al 
+		
+			Run Cygwin per ... 
+			
+				# mintty.exe :: title [-t], icon [-i]
+				
+					mintty.exe -t Cygwin -i c:\Cygwin\Cygwin.ico
+					
+					[ See 'mintty.exe --help' ]
+			
+				OR
+			
+				# bash.exe :: act as login shell [--login or -l], interactively [-i]
+				
+					bash.exe -l -i  
+					
+					[ See 'bash.exe --help' ]
+				
+				
+			OR, using UzerX library,
+				
+				bash.bat
+				
+				OR 
+				
+				Cygwin.bat
+
+/etc/fstab
+==========
+	Show mounts: 
+		$ mount  
+
+	Default fstab setting damages ACLs.
+	So, change 4th field to 'binary,posix=0,noacl,user'
+
+	E.g., 
+		# This maintains ACLs @ paths OUTSIDE Cygwin
+		# And removes '/cygdrive' prefix
+		none / cygdrive binary,posix=0,noacl,user 0 0
+
+		# This maintains ACLs @ paths INSIDE Cygwin (@ /home)
+		c:/Cygwin/home /home ntfs binary,posix=0,noacl,user 0 0
+
+	# REFs 
+	# https://cygwin.com/ml/cygwin/2008-07/msg00293/fstab 
+	# https://cygwin.com/cygwin-ug-net/using.html#mount-table
+	# https://cygwin.com/ml/cygwin/2016-02/msg00158.html
+
+ISSUE @ XPC 
+===========
+
+	Cygwin 2.6.0: unreadable UTF-8 in Windows console
+	https://sourceware.org/ml/cygwin/2016-10/msg00000.html
+
+	UPDATE: FIXed; line-endings issue; dos vs. unix; CRLF vs. LF
+	
+		used 'dos2unix' utility.
+	
+	----
+	
+	* Fail @ 'store dropbox'; bizarre stdout chars, see screenshot; tried to debug using 'store dropbox print', but NOT script dependent; bizarre stdout @ nested quotes, e.g., echo "'$any-path-var'"; appears to be due to some updated cygwin binaries @ /bin/
+			
+		- began after setup-x86_64.exe updated from 2016-05-23 to 2016-10-17;
+			HOWEVER, now occurs @ any config, even @ clean install 
+			per setup-x86_64.exe [old and new, both].
+		
+		- Does NOT occur @ HTPC, though haven't updated from 2016-05-23 setup.
+		
+		- FIXED by reverting to older install; had saved to iso 
+		  'Cygwin [XPC] 2016-06-24.iso'.
+		  
+
+COMMAND LINE OPTIONS  [setup-x86_64.exe]
+====================
+
+ -D --download                     Download from internet
+ -L --local-install                Install from local directory
+ -s --site                         Download site
+ -O --only-site                    Ignore all sites except for -s
+ -R --root                         Root installation directory
+ -x --remove-packages              Specify packages to uninstall
+ -c --remove-categories            Specify categories to uninstall
+ -P --packages                     Specify packages to install
+ -C --categories                   Specify entire categories to install
+ -p --proxy                        HTTP/FTP proxy (host:port)
+ -a --arch                         architecture to install (x86_64 or x86)
+ -q --quiet-mode                   Unattended setup mode
+ -M --package-manager              Semi-attended chooser-only mode
+ -B --no-admin                     Do not check for and enforce running as
+                                   Administrator
+ -W --wait                         When elevating, wait for elevated child
+                                   process
+ -h --help                         print help
+ -i --ini-basename                 Use a different basename, e.g. "foo",
+                                   instead of "setup"
+ -v --verbose                      Verbose output
+ -l --local-package-dir            Local package directory
+ -r --no-replaceonreboot           Disable replacing in-use files on next
+                                   reboot.
+ -X --no-verify                    Don't verify setup.ini signatures
+ -I --include-source               Automatically include source download
+ -n --no-shortcuts                 Disable creation of desktop and start menu
+                                   shortcuts
+ -N --no-startmenu                 Disable creation of start menu shortcut
+ -d --no-desktop                   Disable creation of desktop shortcut
+ -K --pubkey                       URL of extra public key file (gpg format)
+ -S --sexpr-pubkey                 Extra public key in s-expr format
+ -u --untrusted-keys               Use untrusted keys from last-extrakeys
+ -U --keep-untrusted-keys          Use untrusted keys and retain all
+ -g --upgrade-also                 also upgrade installed packages
+ -o --delete-orphans               remove orphaned packages
+ -Y --prune-install                prune the installation to only the requested
+                                   packages
+ -m --mirror-mode                  Skip availability check when installing from
+                                   local directory (requires local directory to
+                                   be clean mirror!)
+ -A --disable-buggy-antivirus      Disable known or suspected buggy anti virus
+                                   software packages during execution.
+

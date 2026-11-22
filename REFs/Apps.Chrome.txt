@@ -1,0 +1,34 @@
+Google Chrome
+=============
+
+DISABLE NOTIFICATIONS 
+  Settings > Advanced > Privacy & ... > Content settings > Notifications > BLOCK
+
+SYNCH PHRASE
+	hmuck of google-voice account username sans '@gmail.com'
+
+CACHE DIR 
+  "%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Cache"
+
+  SET CACHE DIR
+	  chrome.exe --disk-cache-dir="TARGET"
+
+    OR 
+
+    SYMLINK.bat j "%USERPROFILE%\AppData\Local\Google\Chrome\User Data\Default\Cache" TARGET
+
+USER DATA 
+  "%USERPROFILE%\AppData\Local\Google\Chrome\User Data"
+
+  SET USER-DATA DIR
+	  chrome.exe --user-data-dir="TARGET"
+
+EXTENSIONS DIR
+  %LOCALAPPDATA%\Google\Chrome\User Data
+  ...\GoogleChromePortable\Data\profile
+
+EXPERIMENTAL SETTINGS
+  chrome://flags/
+
+  AUDIO MUTE per TAB ICON
+    chrome://flags/#enable-tab-audio-muting

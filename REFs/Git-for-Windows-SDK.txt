@@ -1,0 +1,157 @@
+Git for Windows SDK [GitHub.com]	
+================================
+https://github.com/git-for-windows/build-extra/
+	
+
+INSTALLED @ XPC 2016-11-16 
+
+	# git-sdk-installer-1.0.3-64.7z [sfx] 
+	# https://github.com/git-for-windows/build-extra/releases/tag/git-sdk-1.0.3
+	
+		@ C:\git-sdk-64  [~ 5 GB]
+
+		It auto LAUNCHed a mintty terminal; 
+		
+			trial/error indicates launch statement was ...
+			
+			msys2_shell.cmd -mingw64
+			
+				- launches mintty terminal titled 'SDK-64' w/ purple 'M' icon [denoting Msys2-64]
+				  configured per .bash_profile @ USERPROFILE [UzerX.cfg]
+				  [same as Git-for-Windows]
+					
+					HOME='/c/Cygwin/home/USERNAME'
+					source "${HOME}/_UzerX.cfg" 
+					
+					... which reset $HOME to that @ Cygwin [per _UzerX.cfg]
+
+				- Env. Vars. ...
+				
+					OSTYPE=msys
+					MSYSTEM=MINGW64
+				
+		APPs AVAILABLE include ...
+
+			gcc, make, git, GNU utilities
+
+LAUNCHER script 
+
+	# msys2_shell.cmd [--help]
+
+		launches apps with params @ /usr/bin/..., with command ...
+	
+		/usr/bin/mintty -i /msys2.ico /usr/bin/bash --login %1 %2 %3 %4 %5 %6 %7 %8 %9
+		
+		See 'mintty --help'
+		    'bash   --help'
+			
+		CONFIGs  @ /etc/msystem
+		           /etc/profile
+				   /etc/profile.d/...
+
+		
+APPs [.exe] per FOLDERs 
+	
+	@ / :: main launchers 
+	
+		git-bash 
+		git-cmd 
+		mingw32 
+		mingw64 
+		msys2
+		
+	@ /cmd :: launchers
+	
+		git-gui
+		git
+		gitk
+		
+	@ /mingw32/bin
+	@ /mingw64/bin
+	@ /usr/bin	[bin @ msys|msys2 ???] :: subset relative to mingw[32|64]
+		
+		git, gpg, curl, ls, grep, ... etc., [GNU utilities]
+	
+
+	@ /usr/bin :: meta apps
+	
+		sh
+		bash
+		mintty
+		pacman
+
+		
+************
+ [ABOUT]
+************
+
+ Git for Windows SDK [GitHub.com]	
+================================
+https://github.com/git-for-windows/build-extra/
+	
+BUILD ENVIRONMENT FOR GIT FOR WINDOWS
+
+	This is Git for Windows SDK, the build environment for Git for Windows.
+
+	The easiest way to install Git for Windows SDK is via the Git SDK installer. This installer will clone our repositories, including all the necessary components to build Git for Windows, and perform an initial build. It will also install a shortcut to the Git SDK Bash on the desktop.
+
+	To check out the build-extra project in the Git SDK, issue the following commands in the Git SDK Bash:
+
+	cd /usr/src/build-extra
+	git fetch
+	git checkout master
+
+COMPONENTS OF THE GIT FOR WINDOWS SDK
+
+	The build environment brings all the necessary parts required to build a Git for Windows installer, or a portable Git for Windows ("portable" == "USB drive edition", i.e. you can run it without installing, from wherever it was unpacked).
+	Git for Windows
+
+	The most important part of Git for Windows is Git, obviously. The Git for Windows project maintains a friendly fork of the "upstream" Git project. The idea is that the Git for Windows repository serves as a test bed to develop patches and patch series that are specific to the Windows port, and once the patches stabilized, they are submitted upstream.
+	MSYS2
+
+	Git is not a monolithic executable, but consists of a couple of executables written in C, a couple of Bash scripts, a couple of Perl scripts, and a couple of Tcl/Tk scripts. Some parts (not supported by Git for Windows yet) are written in other script languages, still.
+
+	To support those scripts, Git for Windows uses MSYS2, a project providing a minimal POSIX emulation layer (based on Cygwin), a package management system (named "Pacman", borrowed from Arch Linux) and a number of packages that are kept up-to-date by an active team of maintainers, including Bash, Perl, Subversion, etc.
+
+THE DIFFERENCE BETWEEN MSYS2 AND MINGW
+
+	MSYS2 refers to the libraries and programs that use the POSIX emulation layer ("msys2 runtime", derived from Cygwin's cygwin1.dll). It is very easy to port libraries and programs from Unix/Linux because most of the POSIX semantics is emulated reasonably well, for example the fork() function. Bash and Perl are examples of MSYS2 programs.
+
+	MinGW refers to libraries and programs that are compiled using GNU tools but do not require any POSIX semantics, instead relying on the standard Win32 API and the C runtime library. MinGW stands for "Minimal GNU for Windows". Examples: cURL (a library to talk to remote servers via HTTP(S), (S)FTP, etc), emacs, Inkscape, etc
+
+	The POSIX emulation layer of MSYS2 binaries is convenient, but comes at a cost: Typically, MSYS2 programs are noticably slower than their MinGW counterparts (if there are such counterparts). As a consequence, the Git for Windows project tries to provide as many components as possible as MinGW binaries.
+	
+MINGW PACKAGES
+
+	The MinGW packages are built from the MINGW-packages repository which can be initialized in the Git SDK Bash via
+
+	cd /usr/src/MINGW-packages
+	git fetch
+	git checkout master
+
+	The packages inside the /usr/src/MINGW-packages/ directory can then be built by executing makepkg-mingw -s in the appropriate subdirectory.
+
+	MinGW packages can be built for both i686 and x86_64 architectures at the same time by making sure that both toolchains are installed (pacman -Sy mingw-w64-i686-toolchain mingw-w64-x86_64-toolchain) before running makepkg-mingw.
+
+MSYS2 PACKAGES
+
+	The MSYS2 packages are built from the MSYS2-packages repository which can be initialized in the Git SDK Bash via
+
+	cd /usr/src/MSYS2-packages
+	git fetch
+	git checkout master
+
+	To build the packages inside the /usr/src/MSYS2-packages/ directory, the user has to launch a special shell by double-clicking the msys2_shell.bat script in the top-level directory of the Git SDK, switch the working directory to the appropriate subdirectory of /usr/src/MSYS2-packages/ and then execute makepkg -s. Before the first MSYS2 package is built, the prerequisite development packages have to be installed by executing pacman -Sy base-devel binutils.
+
+INSTALLER GENERATORS
+
+	The Git for Windows project aims to provide three different types of installers:
+
+		Git for Windows for end users. The subdirectory installer/ contains the files to generate this installer.
+		Portable Git for Windows for end users ("USB drive edition"). This installer is actually a self-extracting .7z archive, and can be generated using the files in portable/.
+		The Git for Windows SDK for Git for Windows contributors. This is a complete development environment to build Git for Windows, including Git, Bash, cURL, etc (including these three installers, of course). The files to generate this installer live in sdk-installer/.
+
+SUPPORT SCRIPTS/FILES
+
+	The build-extra repository is also the home of other resources necessary to develop and maintain Git for Windows. For example, it contains the Git garden shears that help with updating Git for Windows' source code whenever new upstream Git versions are released ("merging rebase").
+	

@@ -1,0 +1,483 @@
+
+S3
+==
+    Simple Storage Service; SERVERLESS; AUTO scales (handles servers, load balancing etal); NOT a filesystem; key-value OBJECT store in GLOBAL Buckets; object CAN be a regular file; S3 can host STATIC WEBSITE; stable, redundant, slow; 0 byte - 5 TB per bucket; max 5 GB/object; multi-part upload if larger than 100 MB; 100 buckets per acct; PER OBJECT: tier/version/encryption/ACLs; encryption; lifecycle management;    
+    # S3 Console [GUI] @ bucketname link; S3 console tabs: Overview/Properties/Permissions    
+    https://aws.amazon.com/documentation/s3/    
+
+    - Bucket contains objects: Key, Value, Verion ID, Metadata, ACLs 
+    - Bucket NAMEs must be UNIQUE, globally [planet-wide]; e.g., incl. domain name    
+    - Object uniquely identified [AWS-INDEXed] by its bucket, key, and version ID    
+    - Tags; metadata; per bucket and/or per object    
+      Objects do NOT INHERIT bucket tag(s)    
+    - Object index updated only after synch across AZs;    
+    - Cross-Region Replication [new] is allowed     
+    - Versioning; FEES PER VERSION; can SUSPEND, 
+      but NOT STOP versioning, so do NOT select w/out considering COST         
+    - Read-After-Write Consistency for NEW objects (PUTs), AFTER Synched, BEFORE Indexed    
+      Uploaded => Synched => Indexed => Success [returned]    
+    - UPDATEs (PUTs) and DELETEs are EVENTUALLY CONSISTENT, 
+      NOT Read-After-Write Consistent    
+      Update/Delete => Success [returned] => Synched => Indexed  
+    - Atomic 
+      "Success [returned]" means HTTP: 200    
+    - MFA Delete of VERSION(s); option per bucket enabled by OWNER (root)  
+      https://docs.aws.amazon.com/AmazonS3/latest/dev/Versioning.html    
+
+    # Bucket URL (endpoint);  
+        "https://s3-${REGION}.amazonaws.com/${BUCKET_NAME}"  # * 
+        "https://s3.amazonaws.com/${BUCKET_NAME}"            # @ us-east-1  
+        
+        * If domainname hosted @ Route53, THEN bucket-name MUST be domainname 
+        
+    # Hosting a Static Website on Amazon S3    
+        http://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html    
+
+        S3 > BUCKET_NAME > Properties > Static Website Hosting 
+            > Use this bucket to host a website
+
+            (Upload files) > (select all) > Make public (BUTTON)
+
+        ENDPOINT (URL; all routes relative to it)
+            
+            @ http://${BUCKETNAME}.s3-website-${REGION}.amazonaws.com  
+
+            OR, attach to Hosted Zone (domain) ...
+
+            @ Route 53 > Hosted Zones > (select domain) 
+                > Create Record Set 
+                    Name: (whatever; naked or subdomain)
+                    Type: A - IPv4 address 
+                    Alias: Yes 
+                    Alias Target: s3-website-us-east-1.amazonaws.com. (or whatever region)
+
+        IF NOT using CloudFront
+        S3 > Permissions > Bucket Policy 
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "PublicReadGetObject",
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": [
+                            "s3:GetObject"
+                        ],
+                        "Resource": [
+                            "arn:aws:s3:::${BUCKET_NAME}/*"
+                        ]
+                    }
+                ]
+            }
+            
+        IF using CloudFront > Origin Access Identity > Create|Get the OAI user (per CLI|GUI)  
+            aws cloudfront list-distributions
+            aws cloudfront get-distribution --id $DIST_ID
+            aws cloudfront list-cloud-front-origin-access-identities
+            aws cloudfront create-cloud-front-origin-access-identity \
+             --cloud-front-origin-access-identity-config "CallerReference=$(date "+%s"),Comment=S3-$BUCKET_NAME"
+             
+            (See "AWS.CLI.txt")
+
+                OAI scheme is preferable, but NOT COMPATIBLE with the AWS/S3 static-website scheme. 
+                If URL is a subdirectory, https://$bucket/foo that contains index.html, 
+                then an OAI-configured CloudFront distro will respond with 403, not with the index.html,
+                unlike when serving from a static-site-configured S3 bucket directly (sans OAI).
+                
+        S3 > Permissions > Bucket Policy 
+            - Bucket Policy should NOT be public, but rather allow only 
+              ORIGIN ACCESS IDENTITY to access it (see `Principle:` key)
+            - This scheme protects the S3 bucket from attack; sits behind CloudFront's firewall.
+            - App URLs must be (re)set if app domainname is the CloudFront-default 
+            {
+                "Version": "2008-10-17",
+                "Id": "PolicyForCloudFrontPrivateContent",
+                "Statement": [
+                    {
+                        "Sid": "1",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity $CFr_OAI_ID"
+                        },
+                        "Action": "s3:GetObject",
+                        "Resource": "arn:aws:s3:::$BUCKET_NAME/*"
+                    }
+                ]
+            }
+
+        - Custom Domain (foo.com) Setup and HTTPS (S3/CloudFront/ACM/Route53)  http://docs.aws.amazon.com/AmazonS3/latest/dev/website-hosting-custom-domain-walkthrough.html    
+
+            @ ACM, request/validate public SSL Certificate (use CLI method; `aws acm request-...`)
+                - ONE CERT FOR ALL "Alternate Domain Names" @ CloudFront distro 
+                  (See "AWS.IAM.txt" and "AWS.CLI.sh")
+
+            @ CloudFront > (select the certified-domain distro) > Edit 
+                > "Alternative Domain Names (CNAMEs)"
+                    - ADD ALL certified (sub)domains;
+                      foo.com *.foo.com; one per line
+                > SSL Certificate > Custom SSL Certificate (select-box)
+                    - Select the proper (domainname-bound) cert, per its Identifier
+                    
+            @ Route 53, create a DNS record for EACH of "Alternate Domain Names" specified @ CloudFront distro: 
+                Type: A > Alias: Yes > "Alias Target" > CloudFront endpoint (hh....hhhh.cloudfront.net)
+                    - The CloudFront distro/endpoint appears @ select-box ONLY IF the
+                      domainname is specified at distro's "Alternate Domain Names".
+
+    # Performance    
+        http://docs.aws.amazon.com/AmazonS3/latest/dev/request-rate-perf-considerations.html    
+        - Key name (Prefix) AFFECTS PERFORMANCE, so randomize name        
+            [storage location/partitions set per name (sort/order)]; e.g., add hash to path, or reverse keyname    
+
+    # Price/Fees /Month  
+        - Storage                 $0.023/GB    
+        - Request                 $0.0004/1K-req 
+        - Storage Management      $0.01/1M-Objects + $0.01/10K-Tags
+        - Data Transfer           $0.09/GB 
+        - Transfer Acceleration   $0.04/GB
+                                 ----------
+                                  $0.60/GB/1M-req
+
+    # Security    
+        - Bucket is PRIVATE by default;    
+            To access: EC2 > ROLE with POLICY `AmazonS3FullAccess`    
+        - IAM roles, users, groups (fine-grained control, per JSON)    
+        - Access Logs can be setup; can store logs @ another bucket    
+        - Encryption available for S3 Standard Class
+            In Transit:    
+                SSL/TLS; to/from S3    
+            At Rest:    
+                Server-side Encryption (SSE); 3 Types    
+                - SSE-S3; "S3 Managed Keys"; AES256 keys PER OBJECT    
+                - SSE-KMS; "Key Management Service"; includes audit-trail    
+                - SSE-C; "Customer-provide Keys"    
+                Client-Side Encryption: 
+                - Encrypted before uploaded to S3    
+        - Permissions, by Policy or ACLs
+            - ACLs per bucket or object (coarse control only); Legacy method    
+            - Bucket Policy per bucket (fine-grained control, per JSON)     
+                "Bucket Policy" and ACLs are BOTH managed @     
+                S3 > All Buckets > Permissions     
+
+    # Storage Classes/Tiers [per object] 
+
+        - S3-99.99%     
+            a.k.a. "Standard"    
+            99.99% availability; 99.999999999% (11x9's) durability;    
+            can sustain loss of 2 AZs concurrently;    
+            Supports SSL encryption of data in transit and at rest    
+
+        - S3-IA    
+            a.k.a. "Standard - Infrequent Access"    
+            Infrequent Access; lower fee, but adds per retrieval fee     
+
+        - RRS     
+            a.k.a. "Reduced Redundancy"    
+            99.99% availability; 99.99% durability;    
+            sustains 1 concurrent failure     
+
+    # Archive to Glacier    
+
+        S3 => Glacier; very cheap, but for archive only;    
+        S3 <= Glacier; very expensive and HOURs to retrieve     
+
+            $0.01/GB/mo; less for more storage;    
+            fees: storage, requests, data transfer    
+
+    # Lifecycle Management     
+        
+        - Object Deletion after expiry time (per age)    
+        - Object Transition to different class after expiry time    (per age)    
+        - Object restore to S3 from Glacier    
+
+        - CAN be applied to    current and previous versions    
+        - CAN transition to S3-IA, "Standard - Infrequent Access"    
+            if 128Kb+ and 30+ days after creation date.    
+        - CAN archive to Glacier Storage if 30+ days after S3-IA    
+        - CAN permanently DELETE; auto-deleted from Glacier thereupon.    
+
+    # Cross Region Replication    
+        - Versioning MUST be enabled on both regions.    
+        - Permissions and Versions are replicated too.    
+        - Existing objects NOT replicated until updated. 
+        - Delete (marker) SYNCHs; but undoing it does NOT synch 
+
+        This is for disaster recovery.    
+        It's more common to create a new bucket and     
+        then MIGRATE it (?) to a new region.    
+
+
+LAB: Hosting a Static Website  
+==============================
+    http://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html    
+    https://docs.aws.amazon.com/AmazonS3/latest/dev/website-hosting-custom-domain-walkthrough.html    (Custom Domain)    
+    
+    - BUCKET_NAME === DOMAIN_NAME
+
+        S3 > BUCKETNAME > Properties > Static Website Hosting 
+        > Use this bucket to host a website
+
+        (Upload files) > (select all) > Make public (BUTTON)
+
+        ENDPOINT (URL; all routes relative to it) @ 
+
+            http://${BUCKETNAME}.s3-website-${REGION}.amazonaws.com     
+
+        E.g., default (index.html) @ 
+            http://sempernow-static-site-1.s3-website-us-east-1.amazonaws.com
+
+            ./docs/doc1.html @    
+            http://examplebucket.s3-website-us-east-1.amazonaws.com/docs/doc1.html    
+
+        Permissions > Bucket Policy > policy.json (Make public; all objects therein) ...
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "PublicReadGetObject",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "s3:GetObject",
+                    "Resource": "arn:aws:s3:::BUCKETNAME/*"
+                }
+            ]
+        }
+
+Add Subdomain URL to S3 Static Website  
+======================================  
+    # IF NOT redirecting www. to naked domain name per Route 53 or CloudFront, 
+       THEN 2 buckets per DOMAIN_NAME bucket are required, i.e.,  
+        Create second bucket W/OUT CONTENT; to redirect requests   
+
+            1. DOMAIN_NAME w/ contents; 
+            2. www.DOMAIN_NAME w/out content; to redirect requests    
+
+        S3 > Create Bucket    
+            Name: SUBDOMAIN.DOMAIN_NAME  
+
+        S3 > (select bucket) > Properties  
+        > Static website hosting > Redirect requests (check-box)  
+
+        (Nothing @ Route53 needed.)  
+
+BUCKET POLICY Creation 
+======================
+    # per AWS CLI (add/replace Bucket Policy)
+        aws s3api put-bucket-policy --bucket $BUCKET_NAME --policy file://policy.json  
+
+    # per "AWS Policy Generator"    
+    https://awspolicygen.s3.amazonaws.com/policygen.html    
+        E.g., for full public access 
+        *** NOT ADVISED *** (use CDN for public access; allow only CDN access to S3 bucket) 
+        Step 1. Select Policy Type > S3 Bucket Policy    
+        Step 2. Add Statements    
+            Effect > Allow    
+            Principal > *    
+            AWS Service > Amazon S3    
+            Actions > * | GetObject 
+            Amazon Resource Name (ARN) > arn:aws:s3:::BUCKETNAME/*
+        Add Statement     [button]    
+        Generate Policy [button]    
+            copy/paste JSON to Bucket Policy console    
+
+CONTENT TYPE
+============
+    per GUI S3 > (select bucket) > ... Properties ...
+    per CLI (better); see 'REF.AWS.CLI.txt', S3 section 
+
+    If wrong Content type a.k.a. Media type a.k.a. MIME type,
+    then browser may not handle it properly.
+
+LAB: CloudFront
+===============
+    @ CloudFront > Create distribution
+        Origin Settings
+            Origin Domain Name: bucket-name
+            Origin Path: optional folder, e.g., bucket-name/foo
+            Origin ID: auto per domain name / bucket-name 
+            Restrict Bucket Access: Yes (check-box; prevents direct S3 access)  *** GOOD ***
+            Origin Access Identity: "Create a New Identity" (check-box; required per above 'Yes') 
+            Grant Read Permissions on Bucket: Yes (check-box; so CloudFront can read S3 updates)  
+            Origin Custom Headers: (optional; name:val)
+            Viewer Protocol Policy: Redirect HTTP to HTTPS  
+        Default Cache Behavior Settings
+            Default TTL: 86400 (24 hrs)
+            Restrict Viewer Access: (Use Signed URLs or Signed Cookies); can restrict per signed URL/Cookie
+            Compress Objects Automatically: Yes
+            Lambda Function Associations: 
+        Distribution Settings
+            AWS WAF Web ACL: (Web App firewall)
+            Alternate Domain Names (CNAMESs; enter THE domain name, e.g., Route53-hosted)
+                The default URL is random, long and ugly, but if per https, will require your own SSL certificate
+            SSL Certificate: "Default CloudFront Certificate (*.cloudfront.net)" (checkbox)
+            Default Root Object: index.html
+            Logging: no (CHARGES apply)
+
+         > Create Distribution (button) ... ~ 15 min 
+
+            Distribution ID: E3EVVEOEJ1JGCG
+            Domain Name: d2za9djks93o03.cloudfront.net 
+
+            So, Endpoints (URLs) for FILENAME object ...
+
+            Origin:  https://s3.amazonaws.com/BUCKET_NAME/FILENAME
+            CDN:     https://d2za9djks93o03.cloudfront.net/FILENAME 
+            or
+            CDN:     https://$DOMAIN_NAME/FILENAME  (per "Alternate Domain Names" entry, above)
+        
+        Distributions (tab)
+
+            Behaviors > Path Pattern  ... RegEx to set (filter), e.g., per filetype
+            Error Pages > Create Custom Error Response
+            Restrictions > Geo Restrictions (Whitelist|Blacklist; countries list)
+            Disable > ... to DELETE the distribution; select distro (check its left-most box); ~ 15 min
+
+LAB: AWS CLI 
+============
+    # AWS CLI              https://aws.amazon.com/documentation/cli/
+    # AWS CLI config       https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html     
+    # cheatsheet           https://github.com/toddm92/aws/wiki/AWS-CLI-Cheat-Sheet    
+    # 10 useful commands   https://cloudacademy.com/blog/aws-cli-10-useful-commands/    
+
+    aws s3 ls    # list buckets    
+
+    # Upload file to S3 
+        $ aws s3 cp {FILEPATH} s3://{BUCKETNAME}/{FILENAME) --dryrun
+        $ export AWS_ACCESS_KEY_ID=AKIA...
+        $ export AWS_SECRET_ACCESS_KEY=...
+        $ export AWS_DEFAULT_REGION=us-east-1
+
+        $ aws s3 cp cli-test.jpg s3://sempernow-test-1/001-cli-test.jpg
+        upload: .\cli-test.jpg to s3://sempernow-test-1/001-cli-test.jpg
+
+    # Get Canonical User ID
+        $ aws s3api list-buckets
+        {
+            "Owner": {
+                "DisplayName": "f06ybeast",
+                "ID": "46cec7b838ba66086cb8e75f606d6d38d50f77fe1e14fb41fc2fefaed2bf2d5d"
+            },
+            "Buckets": [
+                {
+                    "CreationDate": "2018-09-07T19:16:12.000Z",
+                    "Name": "sempernow-test-1"
+                }
+            ]
+        }
+
+LAB: CORS 
+=========
+    S3 handle "Cross-Origin Resource Sharing" (CORS) , e.g.,    
+        script/AJAX a RESOURCE (loadpage.html) from its calling origin (index.html), when the two have DIFFERENT ORIGINs [different buckets/urls]; See files @ "042 CORS Configuration"; also applies to S3 bucket ORIGINs for CloudFront [CDN].    
+
+        Add "CORS configuration" Bucket Policy @ RESOURCE bucket,     
+        stating the ORIGIN calling the resource bucket (else "403 Forbidden");        
+
+            S3 > click RESOURCE_BUCKET link > Permissions > Access Control List    
+            > CORS configuration [XML file] > EDIT it; add WEBSITE URL    ...    
+
+            <AllowedOrigin>WEBSITE_URL</AllowedOrigin>    
+
+        Then publicly accessible (from WEBSITE URL, NOT from S3 link URL)    
+
+LAB: Serverless Webpage
+=======================
+    Lambda + API Gateway    
+
+    # Create Bucket     
+        S3 > Create Bucket > Name/Region    
+        click bucket link (per bucketname)    
+        Properties > "Static website hosting"    
+            Creates ENDPOINT [URL]    
+
+    # Lambda 
+        > Blank Function > Configure triggers > API Gateway >    
+            "API name"/"Deployment stage"/"Security"    
+        > "Next"    
+        Configure function >    
+            Name/Description/Runtime    
+            Hello.../Hello.../"Python 3.6"    
+        Lambda function code    
+            Edit inline or upload file    
+        Lambda function handler and role    
+            Handler > lambda_runtion.lambda_handler    
+            Role > "Create new role from templates"    
+            "Role name" > Hello...Lambda    
+            "Policy templates" > "Simple Microservice permissions"    
+        "Next"    
+            
+        "Triggers" > API Gateway [URL]    ... is the Endpoint;     
+            Clicking on URL invoke the Lambda function.    
+            insert into index.html @ ...    
+            xhttp.open("GET","API-GATEWAY-LINK-HERE",true)    
+
+    # API Gateway    
+        > APIs > LambdaMicroservice    
+        Resources    
+        `/Hello...`    
+            `ANY`  # can change this, e.g., to `GET`    
+
+    # Upload files to S3     
+        - index.html    
+        - error.html    
+        - hello....py    
+            Python script handles CORS    
+            (See "043 Build A Serverless Webpage")    
+            resp = { ...    
+            "headers": {    
+                    "Access-Control-Allow-Origin": "*"    
+                }, ...    
+
+        S3 > click bucket link > Objects > Upload    
+        "Add files"    
+        "Manage public permissions" > "Everyone" [read access]    
+
+    # Resolve to a DNS name [Register a Domain Name]    
+        Route53 > Register Domain    
+        "Alias:" > "Alias Target:"    
+            NOTE: S3 bucketname MUST BE AVAILABLE    
+
+LAB: Using Polly; Lambda, SNS, API Gateway, DynamoDB    
+====================================================    
+    Artificial Intelligence > Polly > Text-to-Speech    
+    S3 > Create ... some buckets; website [static] and audio        
+    SNS > Create new topic    
+
+    DynamoDB > ... ??? ...    
+
+    Lambda requires a Role to use SNS, DynamoDB etal    
+
+    IAM > Roles > AWS Lambda > custom policy    
+        See "044 Using Polly To Help You Pass Your Exam - A Serverless Approach - Part 1"    
+        ... copy/paste ...    
+        > "Attach Policy"    
+
+    Lambda > Blank function > Name > 'PostReader_NewPost'    
+        See "044 Using Polly To Help You Pass Your Exam - A Serverless Approach - Part 1"    
+        - newposts.py;    
+            Python script environment variables must be passed to Lambda ...    
+            > Environment variables > key: DB_TABLE_NAME, value: posts    
+            > Environment variables > key: SNS_TOPIC, value: sns:us-east-...    
+                from SNS > Topics > new_posts > ARN [copy/paste]     
+        > "Create function"    
+    > Test > using JSON input ... Lambda should generate a new item @ DynamoDB    
+
+    API Gateway > PostReaderAPI(z4a...)    
+        > Resources > /(...) >    
+            > Enable CORS ... because origin is S3 bucket [@not same domainname]    
+            > GET > URL Query String Parameters > "Add query string" [click] ...    
+            > GET > Integration Request > Body Mapping Templates >    
+            > "Request body passthrough" > "When there are no templates defined"    
+            > "Add mapping template" > 'application/json' > cut/paste JSON [from file]     
+
+    API Gateway > PostReaderAPI(z4a...)    
+        > Stages > dev > Invoke URL: ADD_THIS_TO_S3_WEBSITE    [copy]    
+        paste into 'scripts.js' @ `API_ENDPOINT` value
+
+    Deploy website: index.html, scripts.js, styles.css ...    
+
+    S3 > bucketname > Permissions > Bucket Policy    
+        > copy/paste bucket ARN into JSON @ "Resource" key    
+        (makes all objects in bucket public)    
+
+
+

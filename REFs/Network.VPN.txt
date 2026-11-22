@@ -1,0 +1,201 @@
+OpenVPN 
+=======
+
+  OpenVPN 2.4 manpage  https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
+  
+  Setup a router as OpenVPN client and/or server:
+
+    Client - with router as OpenVPN client, connecting to (remote) VPN server, all hosts on LAN can be connected, sans any host-based app or configuration. Some router firmware (AsusWRT) includes options to select/filter (per IP) which host(s) use the VPN and which are allowed to (concurrently) bypass it; also to select whether the VPN-hosts are blocked if/when the VPN disconnects, preventing any leaks (TX/RX) thereupon. The unselected/unfiltered hosts, those bypassing the router's VPN, may still connect to the/any (remote) VPN server per OpenVPN's (host-based) client app. OpenVPN's app, for Windows/Linux/Mac, uses a virtual (TAP/TUN) adapter; its install/usage is entirely orthogonal to the gateway (router's) setup.
+
+    Server - with router as "OpenVPN server", a REMOTE host can connect to router per host's OpenVPN client app. Note the router's "OpenVPN server" still connects to a (remote) VPN server. That is, the router's "server" is a client too.
+  
+  TUN/TAP  https://community.openvpn.net/openvpn/wiki/ManagingWindowsTAPDrivers#WindowsTAPdevicenaming
+  
+    Questioned: 
+      The SSH/SOCKS VPN project (below) raises new questions regarding current TUN/TAP usage 
+
+      Need to rename, e.g., tap0  ? 
+      so, 
+        --dev tunX|tapX  # tun/tap device (X can be omitted for dynamic device).
+
+        --dev-node {EC7BEAA5-858A-49BD-9833-128A3AECE0E0}  
+
+        --dev-node node
+            Explicitly set the device node rather than using /dev/net/tun, /dev/tun, /dev/tap, etc. If OpenVPN cannot figure out whether node is a TUN or TAP device based on the name, you should also specify --dev-type tun or --dev-type tap.
+
+            Under Mac OS X this option can be used to specify the default tun implementation. Using --dev-node utun forces usage of the native Darwin tun kernel support. Use --dev-node utunN to select a specific utun instance. To force using the tun.kext (/dev/tunX) use --dev-node tun. When not specifying a --dev-node option openvpn will first try to open utun, and fall back to tun.kext.
+
+            On Windows systems, select the TAP-Win32 adapter which is named node in the Network Connections Control Panel or the raw GUID of the adapter enclosed by braces. The --show-adapters option under Windows can also be used to enumerate all available TAP-Win32 adapters and will show both the network connections control panel name and the GUID for each TAP-Win32 adapter. 
+
+      Need to set IP & mask ? 
+
+      $ netsh interface ip set address tap0 static 10.3.0.1 255.255.255.0
+
+    Answered: 
+      @ OpenVPN on ... TAP shows up in Network Window as "Unidentified Network", and assigned IP, e.g.,    
+          Connection-specific DNS Suffix: 
+          Description: TAP-Windows Adapter V9
+          Physical Address: ‎00-FF-EC-7B-EA-A5
+          DHCP Enabled: Yes
+          IPv4 Address: 10.48.12.6
+          IPv4 Subnet Mask: 255.255.255.252
+          Lease Obtained: Sunday, October 29, 2017 7:37:48 AM
+          Lease Expires: Monday, October 29, 2018 7:37:48 AM
+          IPv4 Default Gateway: 
+          IPv4 DHCP Server: 10.48.12.5
+          IPv4 DNS Servers: 209.222.18.222, 209.222.18.218
+          IPv4 WINS Server: 
+          NetBIOS over Tcpip Enabled: Yes
+          Link-local IPv6 Address: fe80::9858:e9cf:55ab:dbed%16
+          IPv6 Default Gateway: 
+          IPv6 DNS Server: 
+
+      Thus badVPN/tun2sock/proxifier function needed; performs this function.  
+
+        "Example (tunnelling through SSH)"
+        https://code.google.com/archive/p/badvpn/wikis/tun2socks.wiki  
+
+        $ badvpn-tun2socks \
+          --tundev $TUN_SPEC \
+          --netif-ipaddr 10.0.0.2 \
+          --netif-netmask 255.255.255.0 \
+          --socks-server-addr 127.0.0.1:1080  
+          
+          $TUN_SPEC is ...
+          @ Linux 
+            tun0
+          @ Windows 
+            "tap0901:<human_name_of_TUN_device>:10.0.0.1:10.0.0.0:255.255.255.0"
+
+          ... but much more to config ...
+
+
+SSH/SOCKS VPN
+=============
+
+  To create NIC-wide VPN, so apps need not be configured separately, requires TUN/TAP config/bound to SOCKS tuhnel:
+  - SOCKS tunnel per SSH  
+  - TUN/TAP per ... handled per platform; OpenVPN has a 'universal' tun/tap device 
+
+@ Windows platform  
+  ssh per Git-for-Windows 
+    try to SOCKS tunnel into Linux (CentOS7), 
+    as before, but using the TAP device  
+
+    ssh -w "$DeviceID" user@host.domain 
+
+      where $DeviceID is  ...  
+
+        DeviceID=16  
+        GUID={EC7BEAA5-858A-49BD-9833-128A3AECE0E0}  
+        Manufacturer=TAP-Windows Provider V9  
+        Name=TAP-Windows Adapter V9  
+        NetConnectionID=Local Area Connection  
+
+    - connects, but can't validate per WireShark,  
+      and CAN SEE traffic @ router per `netstat-nat`  
+
+      The problem may be ports;  
+
+    try ... supposedly spawns TAP device @ both ends  
+    
+      -w foo:bar 
+
+    NOPE; nothing @ Windows.  
+
+    ssh -o Tunnel=ethernet -w 16 -f -C -q -N Uzer@host.domain  
+    
+
+  DONE: 
+
+    setup HTPC (@CentOS7) as SOCKS5 proxy server per SSH, from XPC @ Cygwin   
+      $ ssh -D 5555 -f -C -q -N $someSSHuser@$HOST.$DOMAIN  
+    setup Firefox to connect per (that) SOCKS proxy   
+      Firefox > Options > Advanced > Network > Settings 
+      > "Manual proxy config" > "SOCKS Host:" > `localhost`, port  
+    Monitor per WireShark  
+
+    SOCKS proxy @ server per SSH tunnel [port-forwarding]  
+
+      $ ssh -D 5555 -f -C -q -N $someSSHuser@$HOST.$DOMAIN
+
+      -D  # bind local [address:]port (1025-65536)
+      -f  # fork process to background
+      -C  # compress data before sending
+      -q  # quiet mode
+      -N  # no commands sent once the tunnel is up
+
+      Applications must be manually configured  
+        Firefox > Options > Advanced > Network > Settings  
+        > "Manual proxy config" > "SOCKS Host:" > `localhost`, port  
+        https://www.digitalocean.com/community/tutorials/how-to-route-web-traffic-securely-without-a-vpn-using-a-socks-tunnel  
+
+AWS 
+===
+
+EC2 Placement Group  
+  10Gpbs, low latency network; cluster of identical optimized-type EC2 instances, all launched at once (recommended);  
+
+SSH/SOCKS Tunnel as Proxy
+=========================
+
+  # "How To Route Web Traffic Securely Without a VPN Using a SOCKS Tunnel"  
+  https://www.digitalocean.com/community/tutorials/how-to-route-web-traffic-securely-without-a-vpn-using-a-socks-tunnel  
+
+  # "SSH Through or Over Proxy"  https://daniel.haxx.se/docs/sshproxy.html  
+
+    Method 1 is overly complicated, requiring an HTTP proxy (Apache) and Corkscrew tunnelling software; Method 2 is just SSH (client) tunnel as proxy, i.e., method used @ DigitalOcean article  
+  
+    - Method 1.  HTTP proxy server + SSH server  
+
+      Need software installed and running in a location (home) outside of where you are (work); at 'work' you're behind the evil proxy preventing you from accessing what you want.
+
+      @ Home  
+
+        HTTP proxy server, e.g., Apache or Squid; listening @ localhost:80  
+        may enable HTTPS and FTP and other protocols in the proxy config  
+
+        sshd running on port 443; 443 is typically used for HTTPS; most proxies are configured to allow connections to 443, e.g., companies allowing employees to access their banks etal.  
+
+        (make sure the HTTP proxy server does NOT use 443 port for HTTPS.)  
+
+      @ Work  
+
+        SSH client that can issue CONNECT requests through work's HTTP proxy  
+
+        @ Windows/Putty
+          has built-in support for tunneling through a HTTP proxy  
+          
+        @ Windows/Cywgin or Linux  
+          Config ssh client to port-forward a local port (e.g., 8080), to the remote's localhost:80  
+
+          OpenSSH + Corkscrew  https://en.wikipedia.org/wiki/Corkscrew_(program)  
+
+            Add line @ ~/.ssh/config  
+              `ProxyCommand /usr/local/bin/corkscrew proxy.work.com 80 %h %p`
+
+        To connect and port-foward the proxy:
+        
+          $ ssh -L 8080:localhost:80 user@server.at.home -p 443
+
+        Thus establishing a channel to home, over a securely encrypted connection; can also SSH login and start X-programs of home to pop up at work, etc.  
+
+        Configure work browser to use proxy "localhost:8080" for all protocols enabled @ home's proxy.
+
+        All subsequent browser requests are then sent over the SSH connection, through work's proxy, to the ssh server at home, and from there to home's proxy, and out in the world... 
+
+    - Method 2. The SSH/SOCKS tunnel/proxy (simpler)  
+
+      If OpenSSH @ home AND work, then instead of running a HTTP proxy at home, use the SSH tunnel as a SOCKS proxy; @ home, only ssh server running  
+
+      @ Home 
+        sshd server running (normally)  
+
+      @ Work 
+        Create a SSH/SOCKS tunnel (see better config/desc @ "SOCKS VPN" section):  
+
+          $ ssh -D 8080 user@server.at.home -p 443  
+
+          (may still need the "ProxyCommand" line mentioned above)  
+
+        Configure work browser to use the SOCKS tunnel as a proxy; localhost:8080  

@@ -1,0 +1,78 @@
+Kinesis
+=======
+    Kinesis  https://docs.aws.amazon.com/streams/latest/dev/introduction.html  
+        Amazon's Kafka; handle real-time streaming data;    
+        ingest/queue huge amounts of realtime 'messages' (small data),    
+        from many sources, for (later/slower/distributed) processsing;  
+        DISTRIBUTED STREAMING PLATFORM    
+
+        alt: Apache Kafka  https://kafka.apache.org/    
+
+        - Kinesis (Data) Streams  https://docs.aws.amazon.com/kinesis/latest/APIReference/Welcome.html
+            Ingest and store data streams for processing;  
+            Shards (buffer) containing the realtime streaming data   
+            - 1-500 shards (default limit @ US East/Wesst)  
+            - Data capacity is sum of Shards' capacity  
+            - Capacity per Shard  
+                - 1 MB/blob max
+                - Retention: 24 hrs (default) to 7 days    
+                - Egress (Read):  1 MiB/record up to 2 MiB/s; 
+                                  10 MiB/call; 10,000 records/call  
+                - Ingest (Write): 1,000 PUT records/sec up to 1 MiB/s  
+                                  500 records/request; 1 MiB/record up to 5 MiB/request
+
+           Producers        =>  Kinesis Streams  =>  Consumers     =>  Storage  
+           (EC2,Mobile,IoT)     (Shards)             (EC2 cluster)     (DynamoDB,S3,EMR,Redshift)  
+
+        - Kinesis Video Streams  
+            Ingest, durably store, encrypt, an dindex video streams for real-time and batch analytics; securely stream video from connected devices to AWS for analytics, machine learning (ML), playback, and other processing  
+
+        - Kinesis Firehose  
+            Fully automated/managed version of Kinesis Streams + Consumers  
+            - immediately analyzed or stored  
+           
+           Producers  =>  Kinesis Firehose  =>  Storage  
+                                                S3 => Redshift (in that order)  
+                                                ElasticSearch-cluster  
+                                                Splunk
+
+        - Kinesis Analytics  
+            Run standard SQL queries against data streams of Kinesis Streams|Firehose  
+
+              Input                       =>  Kinesis Analytics  =>  Alerts/Storage 
+              (Kinesis Streams|Firehose)                             (S3|Redshift|ElasticSearch-cluster)  
+
+Kinesis Lab  
+=========== 
+    # "The Amazon Kinesis Data Visualization Sample Application"
+    @ CloudFormation > Create new stack  
+        Select Template  
+            Choose a template  
+                Upload a template to Amazon S3 (check-box)
+                    (browse; select local file; 'kinesis-data-vis-sample-app.template')
+                OR
+                Specify an Amazon S3 template URL (check-box)  
+  
+        (defaults @ all others)
+        > Next (button) 
+        > Next (button) ...
+        (defaults @ all others)
+
+        "I acknowledge that AWS CloudFormation might create IAM resources." (check-box)
+
+        (Creation per CloudFormation takes 10-15 minutes)
+
+    > Outputs (tab)  
+        URL: (Producer & Consumer; artificial/simulation)  
+        ... shows a graph/visualization of the data streams  
+
+    # Using AWS Dashbard, view AWS resources created, per the CloudFormation template,   
+      to run this Kinesis demo:    
+        - Kinesis Stream  
+        - EC2 Instance  
+        - DynamoDB Table  
+        - IAM policy  
+
+    # Delete Stack  
+    @ CloudFormation > Actions > Delete Stack  
+    

@@ -1,0 +1,470 @@
+IAM   
+    Identity & Access Management; service for managing users and user PERMISSIONS; manage [millions of] clients' credentials/access per "Federated User" concept; IAM entities support ASCII chars ONLY; can meet corporate-client compliance requirements ( See "AWS Compliance Reports and Agreements" > "Artifact" docs ) 
+
+        USERS, KEYS, AND CERTS; Mnage user accounts to interact with AWS services  
+        (old => new [console names] :: "Password Policy" => "Account Settings")  
+        
+        CLI User/Password ...
+            Access Key ID      - CLI Username
+            Secret Access Key  - CLI Password 
+
+    - IAM is UNIVERSAL; per account, NOT per region.  
+    - Centralized control  
+    - Granular Permissions   
+    - Shared Access to AWS account  
+    - Secure access to AWS resources  
+    - Identity Federation; grant perms to users OUTSIDE of AWS   
+            AD (Microsoft), and WEB: Facebook, LinkedIn, ... etc.  
+    - Multifactor Auth (MFA); HW or Virtual 
+    - Allows for Temporary Access  
+    - Allows setup of password rotation policy  
+    - Access log auditing using CloudTrail  
+    - Integrates with other AWS services  
+    - Pyment Card Industry (PCI) Data Security Standard (DSS) compliant  
+    - Eventually Consistent  
+    - Free to use  
+
+    ROOT ACCOUNT  
+        is that of email-addr used to signup/pay; given complete access, by default; Best Practice: utilize MFA, e.g., Google Authenticator; use only to setup/change billing arrangements; NEVER use root acct to administer; create user[s] for account access/admin thereafter; fine-grained access control; 
+        
+        - Create Alias (Globally unique), e.g., domain name, and use that 
+        
+    MFA (Virtual)
+        Enable a Virtual MFA Device for Your AWS Account Root User (Console) 
+        https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html  
+        Google Authenticator - installed @ smartphone; timed six-digit code(s)
+
+    IDENTITY FEDERATION   
+        - handle Externally Identified (Federated) Users by establishing trust   
+            with an external [OAuth] service; roles used to specify permissions   
+        - bypasses the max 5000 users per account;   
+        
+        METHODS:  
+            - Amazon Cognito  
+            - Identity Provider (IdP) service or app  
+                1. OpenID Connect (OIDC); authentication per OAuth 2.0  
+                     https://en.wikipedia.org/wiki/OpenID_Connect  
+                     a.k.a. "Public Identity Service Providers"  
+                     a.k.a. "Web Identity Federation"  
+                    - Facebook, Google, LinkeIn, Amazon, ...  
+                2. SAML 2.0  
+                    - AWS Directory Service for AD [per SAML]  
+                    - Custom ID broker app per LDAP or AD  
+
+    USERs/GROUPs/ROLEs/POLICY(ies)  
+
+        - USER/Fed User  
+            a newly created user is given NO PERMISSIONS by default; new user assigned "Access Key ID" and "Secret Access Key", which are OpenSSH keys; IAM accepts public keys in the OpenSSH RSA only; up to 5000 key pairs per region; those keys are for APIs and command-line tools, NOT for console; users may be granted permission to list/rotate/manage their own keys; keys are NOT for GUI sign-in; such keys are SHOWN ONLY ONCE, so DOWNLOAD per "Download Credentials" button, else must regenerate anew; can also download "Credentials Report" [CSV file], which LISTS ALL USERS, PASSWORDS, access keys, credentials status, and MFA devices; IAM users sign-in link:  https://nnnnnnnnnnnn.signin.aws.amazon.com/console  [ONE alias is allowed]  
+
+            Key Pairs  
+                Amazon EC2 uses 2048-bit SSH-2 RSA keys, PEM format [.pem]; Amazon stores public key, and user stores private key; AWS does NOT store the private key it generates, so user MUST download it immediately upon key generation [GUI or CLI].  
+
+                SSH Key Pair @ EC2 > "NETWORK & SECURITY" > "Key Pairs" > "Create Key Pair"  
+
+                - SECURE INACTIVE User(s) :: Prevent credentialed User, e.g., Travis-CI bot, 
+                    from programmatic (automatic) access ... 
+                            @ IAM > User > Security credentials 
+                                > Access Key > "Make inactive"
+
+                @ Linux AMIs, SSH into instance per [user's] private key.  
+                @ Windows AMIs, AWS generates a password per [user's] private key.  
+
+                http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html  
+
+                Can create/import RSA key pair from 3rd party ...  
+                    E.g., `ssh-keygen` (OpenSSH), or libraries @ Java, Ruby, Python, ...  
+                    Accepted (RSA) formats:  
+                        - OpenSSH public key format (the format in ~/.ssh/authorized_keys)  
+                        - Base64 encoded DER format  
+                        - SSH public key file format as specified in RFC4716  
+                    Supported lengths: 1024, 2048, and 4096.  
+
+            Delegating Permissions :: root => Users, Groups, and Credentials  
+            http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_delegate-permissions.html
+
+            IDENTITY FEDERATION 
+
+                "Fed User": IAM integrates with AD; ADFS Web Server; "Single Sign-on" [SSO]); user FEDERATION  
+
+                HOW TO "Federate AD with AWS Console":  
+                    
+                    - USER sign-in @ ADFS [AD Federation Server] URL:   
+                        https://FQDN/adfs/Is/IdpinitiatedSignOn.aspx ; FQDN: "Fully Qualified Domain Name"  
+                    - ADFS [server] Authenticates USER against AD; a.k.a. "Single Sign-on" [SSO]  
+                    - ADFS sends Authentication Response (cookie),   
+                        which is SAML [Secure Assertion Markup Language]  
+                    - Browser posts SAML assertion to the AWS sign-in endpoint for SAML  
+                        (https://signin.aws.amazon.com/saml), utilizing AWS API `AssumeRoleWithSAML`  
+                    - Browser receives the sign-in URL and is redirected to AWS console  
+
+                HOW TO "Web Identity Federation with Mobile Applications"  
+
+                 IAM console > "Web Identity Federation Playground"  
+                 > "Step 1 - Authenticate with Identity Provider" [Amazon Google Facebook]  
+                 ... prompt for login ...  
+
+                 - Response is ACCESS TOKEN / ID TOKEN / `WebIdentityToken`   
+                    - Temporary security credentials, with countdown timer  
+                    - utilizes AWS API `AssumeRoleWithWebIdentity`  
+                    Shows ...
+                    - Trust Policy:  (shows the JSON text)  
+                    - ProviderID: graph.facebook.com   
+                    - RoleArn:    arn:aws:iam::877nnnnnnnnn:role/WebIdFed_Faceb...  
+                        (ARN: "Amazon Resource Name")  
+                    - RoleSessionName: web-identity-federation  
+                    - WebIdentityToken: Cm3JJo0IZCelruEwWEEQqsaXc....  
+
+                    "Call AssumeRoleWithWebIdentity"  [button]  
+                    ... shows Request & Response  
+                    "Proceed to Step 3"               [button]  
+
+                    REF:  
+                        Programmatically @   http://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc_manual.html  
+
+        - GROUPs  
+            collection of users [only] under one set of permissions; create to establish/apply one set of IAM policies to all users therein; 100 max per acct.  
+
+            GROUPs/USERs
+                Group           User    URL Sign-in
+                -----           ----    -----------
+                Administrators  devops  https://sempernow.signin.aws.amazon.com/console
+
+        - ROLEs  
+            Defined permissions; assigned to RESOURCE(s); used by USERS or SERVICES/RESOURCES; either can "SWITCH to a role" a.k.a. "ASSUME a role"; where possible, use roles not credentials [Best Practices]; So, create a ROLE, name it, attach/apply policy(ies) to it, and then give the role to the resource, such as S3 access by EC2 instance; this is preferred over embedding credentials into the resource.  
+
+            E.g., for  
+                - resource access  
+                - cross-account access  
+                - intra-account delegation  
+                - Federated users   
+
+                CREATE/NAME the role, then APPLY POLICY to it  
+
+                    IAM > Roles > "Create New Role" > "Set Role Name" > name it  
+                    "Select Role Type" > "Amazn EC2" > "Select" > Policy Type > type "s3"  
+                    > check "AmazonS3FullAccess" > "Next Step" > "Create Role"  
+
+                ATTACH role to resource, e.g., to EC2 @ LAUNCH instance  
+
+                    EC2 > ... > "Step 3. Configure Instance Details" >  
+                    "IAM Role" > enter-the-role-name-here  
+
+            E.g., Create Role for Cross-Account Access  
+                Allow users (per Group) from a central Identity Account to access other accounts  
+                by assuming this role; accounts containing resources, e.g., this one. 
+                The Group POLICY allows members to ASSUME ROLE.
+                (See @ BEST PRACTICES, below.)
+
+            REF: 
+                - Creating a ROLE to DELEGATE PERMISSIONS to an IAM User (AWS STS; Security Token Service)  
+                  https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user.html   
+                - Enable Your Users to Configure Their Own Credentials and MFA Settings  
+                  https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html  
+                - Delegate Access Across AWS Accounts Using IAM Roles 
+                   https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html?icmpid=docs_iam_console
+
+                - Using IAM Roles  
+                  https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use.html  
+                - Providing Access to an AWS Service  
+                  https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_services.html 
+                - Delegate Access Across AWS Accounts Using IAM Roles    
+                  https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html?icmpid=docs_iam_console  
+                - RBAC (Role-Based Access Control); Cognito    
+                  https://docs.aws.amazon.com/cognito/latest/developerguide/role-based-access-control.html  
+                
+        - POLICY  
+                JSON document defining permissions; the mechanism by which permissions are applied/attached to users, groups and roles; password policy does NOT apply to credentials; e.g., ... 
+
+                POLICIES can ALLOW Groups/Users to ASSUME a ROLE.
+
+                `PowerUserAccess` policy, which allows access to all AWS services except for management of groups & users within IAM  
+                http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html  
+                    ```   
+                    {
+                        "Version": "2012-10-17",
+                        "Id": "S3-Account-Permissions",
+                        "Statement": [{
+                            "Sid": "1",
+                            "Effect": "Allow",
+                            "Principal": {"AWS": ["arn:aws:iam::ACCOUNT-ID-WITHOUT-HYPHENS:root"]},
+                            "Action": "s3:*",
+                            "Resource": [
+                                "arn:aws:s3:::mybucket",
+                                "arn:aws:s3:::mybucket/*"
+                            ]
+                        }]
+                    }  
+                    ```   
+                    # `[]` is a list (an array); `{}` is a key-value pair (an object).  
+
+                    If MULTIPLE then apply LOGIC   
+                         --------            -----  
+                         statements           OR  
+                         policies             OR  
+                         conditions           AND  
+                         keys                 OR  
+                         values               OR  
+
+                    All conditions must be met for ALLOW or EXPLICIT DENY decision.  
+                    If a condition isn't met, the result is a deny.   
+
+                "Policy type" [SEARCH/FILTER menu]  
+                > All, "AWS managed", "Job function", "Customer managed"  
+
+                "Policy Actions" > Attach  
+
+                @ User/Group ... "Show policy" > link to JSON, revealing the policy rules  
+
+            Security Assessment :: Policy Simulator  
+                @ IAM > Users > Attached from group > click on arrow/down-arrow   
+                > "Simulate Policy" [button]  
+                    @ Policy Simulator > "Select service"  
+                
+    Cognito [2017]
+        Authentication service; Manage (temp) access to account 
+        OAuth service; store mobile user-data/state  
+
+        alt: OAuth.io  https://oauth.io/home  
+
+            Security Token Service (STS) 
+                a web service, with API, to request temporary,   
+                limited-privilege credentials for IAM users or Federated (authenticated) users.  
+                Based on open standard STS https://en.wikipedia.org/wiki/Security_token_service  
+
+                Federation:      authenticated users of one domain "joined" with those from another  
+                Identity Broker: [custom] service that "joins" a user's identity from one domain to another  
+                Identity Store:  services like AD, Faceboo  
+                Identities:      user of a service like Facebook   
+
+                E.g., to connect on-premesis AD [users] to AWS S3 bucket:  
+                    Credentials-based method:  
+                    - Develop an Identity Broker to communicate with LDAP and AWS STS  
+                    - Identity Broker authenticates with LDAP first, then with AWS STS 
+                    - App then gets temp access to AWS resources   
+
+                    Role-based method:  
+                    - Develop an Identity Broker to communicate with LDAP and AWS STS   
+                    - Identity Broker authenticates with LDAP first, then get an IAM Role for the user  
+                    - Authenticate with STS assuming the IAM Role  
+                    - App then uses IAM Role to access AWS resources  
+
+                http://docs.aws.amazon.com/cli/latest/reference/sts/index.html  
+
+    Directory Service  
+        "AWS Microsoft AD" [Enterprise]; Microsoft Active Directory; for 3rd-party users; 
+        handles access/security of account resources by [3-rd party] users, e.g., users of some hosted application we created.  
+
+    Certificate Manager (ACM) https://docs.aws.amazon.com/acm/latest/userguide/acm-overview.html  
+        ACM (Amazon Certificate Manager); Handles PUBLIC SSL/TLS certificates for AWS based websites and applications; PRIVATE (ACM PCA) certificates identify users, computers, applications, services, servers, and other devices for INTERNAL use (expensive); PUBLIC certs are NOT installed directly on website or app, but rather through certain AWS Services: ELB, CloudFront (via us-east-1), AWS EB and APIG 
+    
+        - Certificate Transparency Logging; ENABLE; logs domainname;
+          most browsers generate security error otherwise.
+        - X.509 version 3 (public-private pair); 
+        - Valid for 13 months
+        - Applies ONLY to specific (sub)domain(s) for which it is requested/enabled.
+        - EACH target (sub)domain must be certified; 
+          'foo.com' AND '*.foo.com'; ALL PER ONE CERT
+        - Validation by adding the generated private cert CNAME to 
+          the DNS record of the target domainname @ Route53, else thru email.
+
+        @ ACM, request/validate public SSL Certificate (use CLI method)
+            - ONE CERT FOR ALL "Alternate Domain Names (CNAMEs)" @ CloudFront distro 
+              (See "AWS.IAM.txt" and "AWS.CLI.sh")
+            - Each certificate has its own CNAME (Name/Value), which must be added to DNS records for the domain
+                E.g., 
+                    Name:  _20167d0ef6186f49b9a823f8af2c6171.sempernow.com. (for sempernow.com) 
+                    Value: _55dc1a53444b4a5c9586e86436837df8.tljzshvwok.acm-validations.aws.
+
+            > "Create recode in Route 53": (button)
+
+            - ACM CLI > (See "AWS.CLI.txt") 
+                aws acm request-certificate
+                    --domain-name 'foo.com'
+                    --validation-method 'DNS'
+                    --subject-alternative-names '*.foo.com'
+                    --idempotency-token 1234  
+                    --options CertificateTransparencyLoggingPreference=ENABLED 
+                    
+            - ACM GUI > Provision Certificates (button) > Request a public certificate 
+                > Request a certificate (button)
+                    > Add Domain names > 
+                        DOMAIN_NAME  
+                        *.DOMAIN_NAME  (covers www.DOMAIN_NAME, foo.DOMAIN_NAME, etc; multiple sites thereunder)  
+                        > Next  (button)  
+                    > Select validation method  
+                        - Add cert CNAME to DNS @ Route53, or Email validation (check-box)
+
+        @ CloudFront > (select the certified distro) > Edit > 
+                > "Alternative Domain Names (CNAMEs)"
+                    - ADD ALL certified (sub)domains;
+                      foo.com *.foo.com; one per line
+                > SSL Certificate > Custom SSL Certificate (select-box)
+                    - Select the proper (domainname-bound) cert, per its Identifier
+
+                        ARN: arn:aws:acm:us-east-1:971733315851:certificate/45b2c815-65d1-46a3-b6e4-6e158090e69d
+                        Identifier: 45b2c815-65d1-46a3-b6e4-6e158090e69d    
+
+            https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-procedures.html#cnames-and-https-getting-certificates  
+
+        @ Route 53, Add CNAME record: (Name/Value) of the certificate 
+                Name:  _20167d0ef6186f49b9a823f8af2c6171.sempernow.com. 
+                Value: _55dc1a53444b4a5c9586e86436837df8.tljzshvwok.acm-validations.aws.
+
+            - Name/Value is @ ACM, under the domain-name validation process 
+            - Use the button @ ACM under the domain name > "Create recode in Route 53": (button)
+
+         create a DNS record for EACH of "Alternate Domain Names" specified @ CloudFront distro: 
+            Type: A > Alias: Yes > "Alias Target" > CloudFront endpoint (hh....hhhh.cloudfront.net)
+                - The CloudFront distro/endpoint appears @ select-box ONLY IF the
+                  domainname is specified at distro's "Alternate Domain Names".
+            
+    Inspector  
+        Security auditor per EC2 instance; schedulable agents analyze the behavior & security of the stack  
+
+    WAF  
+        Web App FIREWALL; Layer-7 firewall; stops SQL-inj, XSS, ...  https://aws.amazon.com/waf/  
+
+    CloudHSM  
+        Hardware Security Module; keys store; $1.20/hr  
+
+    KMS  
+        Key Management Service; e.g., encrypt S3 data stores  
+
+    GuardDuty [2017]
+        Monitor for malicious activity 
+
+    Macie 
+        Alerts if unsecured credentials etal 
+
+    Shield 
+        DDoS migitagion; works by default; Advanced Shield available ($3,000/mo) 
+
+    Artifact
+        Audit and compliance service; download reports; SOC, payment reports
+
+
+    - Tasks requiring Root User Account:  
+        https://docs.aws.amazon.com/general/latest/gr/aws_tasks-that-require-root.html 
+
+    - Enable Billing Data Access by (non-root) Users : 
+
+        1. login as Root User, and enable such access by other users ...  
+            https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_billing.html?icmpid=docs_iam_console#tutorial-billing-step1  
+
+            My Account > IAM User and Role Access to Billing Information  
+            > Edit > Check Box: "Activate IAM Access"
+
+            Log out, then login as user to whom Billing Data access will be granted.
+            
+        2. Create IAM Policies That Grant Permissions to Billing Data:  
+            https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_billing.html#tutorial-billing-step2
+            IAM > Policies > Create Policy > Visual Editor > Choose a service > Billing >  
+                
+            Create 2 Policies  
+
+                Full access 
+                    > Check box: "All Billing ..." 
+                    > Review policy > Name: BillingFullAccess > Create policy
+
+                Read-only access
+                    > Check box: "Read..." 
+                    > Review policy > Name:  BillingViewAccess > Create policy
+
+        3. Attach Billing Policies to Your Groups  
+            Create Group: FinanceManager
+            Attach the desired Billing policy to Group   
+            Add the User to Group  
+
+    - Create a Billing Alarm 
+        Billing > Preferences > Receive Billing Alerts 
+        ... CloudWatch ...
+
+        
+    - BEST PRACTICES ::  Cross-Account Access per Role(s) 
+        Creating a ROLE to DELEGATE PERMISSIONS to IAM Users 
+        Trusted Users at a Central Identity Account,   
+        or this one in a singl-account environment,   
+        assume role(s) at (this/many) resource account(s).
+
+        A created Group has an attached POLCIY   
+        allowing its members to ASSUME the created ROLE 
+
+        - MFA  (MUST LOGOUT/LOGIN after first setup, else Swith Role DENIED)
+        - Roles with Policies given to Groups
+            1. Administrators Group  (Access per Assuming the Role)
+            2. Users Group (for per-user MFA setup/validate only)
+            
+            - Every user is member of BOTH groups;  
+                - Users Group merely enforces MFA requirement;  
+                  allows users to manage their password/MFA setup, 
+                  but nothing else if fail to authenticate  
+                  (per explicit deny statements, which override all else.)
+
+                - Administrator Group (user/members) assumes role per SWITCH ROLE   
+                (@ IAM User/dropdown menu) per AWS STS (Security Token Service).  
+
+            REF: 
+            Creating a Role to Delegate Permissions to an IAM User
+            https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user.html      
+            
+            Enable Your Users to Configure Their Own Credentials and MFA Settings 
+            https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html           
+            
+
+        Create Role 
+            Roles > Type: Role for Cross-Account Access 
+                E.g., allow uers from a central Identity Account to assume role   
+                and be granted access to (several) local acount (this one) resources.  
+                
+            > Account ID: Identity Account Number
+                    (If none, then local account number)
+            > Require MFA (check-box)
+            
+            > Role Name: admin 
+        
+            Select the role
+                > Attach Policy > AdministratorAccess
+                
+            Create/Select and then Copy/Save the Role ARN
+         
+        Create Group (Administrators Group)
+            Groups > Create New Group 
+                Name: Administrators
+                (Skip Policies; will add later)
+                
+            Selet the group
+                > Permissions (tab) 
+                    > Inline Policies > Create (link)
+                        > Custom Policy > Select 
+                            Policy Name: AssumeAdminRole 
+                            (See AssumeAdminRole.json)
+                            
+                            {
+                              "Version": "2012-10-17",
+                              "Statement": [
+                                {
+                                  "Effect": "Allow",
+                                  "Action": [
+                                    "sts:AssumeRole"
+                                  ],
+                                  "Resource": [
+                                    "ROLE_ARN"
+                                  ]
+                                }
+                              ]
+                            }
+                        
+        Create Group (Users Group)
+            Groups > Create New Group 
+                Name: Users
+                (Skip Policies; will add later)
+                
+            Selet the group
+                > Permissions (tab) 
+                    > Inline Policies > Create (link)
+                        > Custom Policy > Select 
+                            Policy Name: RequireMFA   
+                            (See RequireMFA.json)
+                            
+                            REF: https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_users-self-manage-mfa-and-creds.html
+                        

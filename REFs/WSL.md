@@ -366,6 +366,10 @@ $ screenfetch
         ```  
 
         - `PATH` environment variable is ___automatically shared___ between Windows and WSL, so _needn't bother with_ `WSLENV`.
+        - So for `md2html`:  
+            ```cmd
+            setx WSLENV "MD2HTML_BASE_URL" /m
+            ```
 
     - Mount (removable) `NTFS` volume 
 

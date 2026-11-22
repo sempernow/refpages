@@ -1,0 +1,13 @@
+# Windows Media Player 
+
+## Disable Synch Devices 
+    Services.msc >
+    > "Portable Device Enumerator Service" > DISABLE
+
+## Add "Play with Windows Media Player" to Folder Context (RT-CLICK) 
+
+    - Select the root folder of the audio collection
+    - RT-CLICK > Properties > Customize 
+        > "Optimize this folder for ..." > Music
+        
+## Delete Cache (See icons.bat)
