@@ -1,10 +1,35 @@
-# Radio : [PMR](https://chatgpt.com/share/671cfc17-1484-8009-91d5-497890198fee "ChatGPT") (Personal/Professional Mobile Radio)
+# [PMR](https://en.wikipedia.org/wiki/Professional_mobile_radio) (**P**rivate/**P**rofessional **M**obile **R**adio)
 
-Narrowband (typically 12.5 KHz of UHF) communication systems for voice and data.
+Narrowband, typically 12.5 KHz of **UHF**, communication systems for voice and data.
+
+A licence-exempt personal radio service in the UHF radio frequency band, available for business and personal use throughout European continent, all CEPT member countries, Malaysia, Singapore, the United Arab Emirates and other territories.
+
+Typically used for both recreational and business use, including small-site, same-building and line of sight outdoor activities. Additionally it has been utilized by amateur-radio operators and radio enthusiasts as a license-free experimental band. Historically, analogue FM is used but a digital voice mode has been available in radios conforming to digital private mobile radio (**dPMR446**) and digital mobile radio (**DMR** Tier 1) standards designed by ETSI. Originally 8 channels were available in analogue mode but this has now been increased to 16 channels.
+
+Equipment use ranges from consumer-grade to professional quality **walkie-talkies** (similar to those used for FRS/GMRS in the United States and Canada). Depending on surrounding terrain, range can vary from a few hundred metres (yards) (in a city) to a few kilometres (miles) (flat countryside) to many kilometres (miles) from high ground.
+
+## DMR Tiers
+
+Digital Mobile Radio (DMR) is organized into three ETSI tiers—Tier I, Tier II, and Tier III—that separate license-free short-range radios from licensed conventional and trunked commercial systems.
+
+- DMR **Tier I** (Unlicensed): Operates on license-free frequencies (such as 446 MHz PMR446) with a maximum output of **0.5 watts**. It supports *short-range, direct radio-to-radio communication without repeaters or external antennas*, making it suited for personal, recreational, or light retail use.
+- DMR **Tier II** (Licensed Conventional): Operates on *licensed land mobile bands* (typically **VHF 136–174 MHz** and **UHF 403–527 MHz**) using **two-slot TDMA** in 12.5 kHz channels. It *supports higher power, repeaters, IP site linking, group/individual calls, text messaging, and GPS*.
+- DMR **Tier III** (Licensed **Trunked**): Uses *licensed bands with centralized trunking controllers that dynamically assign channels and frequencies across large user groups*. It scales to high user volumes and wide coverage areas while adding features like *roaming, telemetry, over-the-air programming, and remote radio*.
+
+### Trunking 
+
+A method where a central controller automatically assigns a pool of shared radio frequencies to users on demand, rather than locking each group onto a single fixed channel.
+
+- **Higher Capacity**:   
+    Dozens of separate teams (security, maintenance, logistics) can share just a handful of frequencies with almost zero wait times.
+- **Automatic Roaming**:  
+    As users move across large campuses, cities, or multi-site networks, the system hands off their radio to the strongest tower automatically.
+- **Priority & Emergency Preemption**:  
+    Critical calls (like an emergency alert or supervisor override) can instantly bump lower-priority traffic off a busy channel.
 
 ## Examples
 
-1. [TP9500](MPT-1327-radio-TAIT.TP9500.jpg)  
+1. [Tait DMR TP9500](https://www.taitcommunications.com/products/dmr-radio/tp9500)  
 _The TP9500 supports multiple modes. Analog Conventional, MPT Trunking, DMR Tier 2 Conventional, and DMR Tier 3 Trunking_
     ```plaintext
     Available:
@@ -15,39 +40,103 @@ _The TP9500 supports multiple modes. Analog Conventional, MPT Trunking, DMR Tier
     Channels/Zones:
         1,500 channels / 26 zones and 16 channels 
     ```
-1. [DMR-6x2](https://baofengtech.com/product/dmr-6x2/ "BaofengTech.com") | Kit @ [RadioMadeEasy.com](https://radiomadeeasy.com/product/wranglerstar-proho-radio-package/)  
-_BTECH DMR-6X2 DMR & Analog Dual Band Two-Way Radio-7W VHF/UHF (136-174MHz & 400-480MHz), Encryption, GPS, Talker Alias, Voice Recording, with Large Accessory Kit_
+1. [BTECH DMR-6X2](https://baofengtech.com/product/dmr-6x2/ "BaofengTech.com") | Kit @ [RadioMadeEasy.com](https://radiomadeeasy.com/product/wranglerstar-proho-radio-package/)  
+
+**Baofeng** _BTECH DMR-6X2 DMR & Analog Dual Band Two-Way Radio-7W VHF/UHF (136-174MHz & 400-480MHz), Encryption, GPS, Talker Alias, Voice Recording, with Large Accessory Kit_
+
+---
+
+## [CB](https://en.wikipedia.org/wiki/Citizens_band_radio) (**C**itizens **B**and) Radio
+
+LMRS (**L**and **M**obile **R**adio **S**ystem) allowing short-distance **one-to-many bidirectional voice** communication among individuals, using two-way radios operating near **27 MHz** (11m) in the HF or Shortwave band; distinct from other personal radio service allocations such as FRS, GMRS, MURS, [UHF CB](https://en.wikipedia.org/wiki/UHF_CB) and the Amateur Radio Service ("ham" radio). 
+
+In many countries, CB operation does not require a license and may be used for business or personal communications.
+
+---
+
+## MURS (**M**ulti-**U**se **R**adio **S**ervice)
+
+A license-exempt, two-way **VHF** radio service in USA for short-distance voice and data communications,
+allowing both personal and business use with a maximum transmitter output power of **2 watts**.
+
+### Channels and Frequencies
+
+MURS operates on **5 channels** between **151 MHz to 154 MHz**, 
+previously known as "*color dot*" frequencies:
+
+- 151.820 MHz: Narrowband FM (**11.25 kHz** max bandwidth)
+- 151.880 MHz: Narrowband FM (11.25 kHz max bandwidth)
+- 151.940 MHz: Narrowband FM (11.25 kHz max bandwidth)
+- 154.570 MHz: Up to **20.0 kHz** bandwidth
+    - "**Blue Dot**" frequency; shared with grandfathered business users
+- 154.600 MHz: Up to 20.0 kHz bandwidth
+    - "**Green Dot**" frequency; shared with grandfathered business users
+
+Sometimes advertised as "*16 channels*" or "*30 channels*", these radios still only use the exact same 5 frequencies above—they simply pre-program the 5 channels multiple times **with different privacy codes**(CTCSS/DCS tones) **to help filter out chatter** from other nearby users on the same frequency.
+
+### Key Rules and Features
+
+- No Individual License: You do not need an FCC license or exam to operate certified MURS equipment.
+- 2-Watt Limit: Maximum transmit power is capped at 2 watts across all channels.
+- External Antennas Allowed: Unlike many FRS walkie-talkies, MURS radios can use detachable or external antennas to extend range. Antenna height cannot exceed 60 feet above ground or 20 feet above a structure (whichever is greater).
+- Operational Limits: Stations cannot connect to the public telephone network, cannot operate aboard aircraft in flight, and cannot transmit in continuous carrier mode.
+- Common Uses: Retail, farms, job sites, event staff, outdoor recreation, wireless call boxes/intercoms, and backup local communications.
+- References:
+    - [FCC Multi-Use Radio Service](https://www.fcc.gov/wireless/bureau-divisions/mobility-division/multi-use-radio-service-murs)
+    - [Radioddity MURS Guide](https://www.radioddity.com/blogs/all/everything-you-want-to-know-about-murs-radio)
+
+Example Product: [Radioddity MU-5 MURS Radio](https://www.radioddity.com/products/radioddity-mu-5)
+
+---
 
 ## [PMR446](https://en.wikipedia.org/wiki/PMR446 "Wikipedia.org")
 
-__Private Mobile Radio, 446MHz__ is a licence-exempt UHF-band service available for business and personal use in most countries throughout the EU. The __European__ equivalent to US/Canada's FRS.
+__Private Mobile Radio, 446MHz__ is a licence-exempt UHF-band service available for business and personal use in most countries throughout the European continent, all CEPT member countries, Malaysia, Singapore, the United Arab Emirates and other territories. 
 
-## [FRS](https://en.wikipedia.org/wiki/Family_Radio_Service "Wikipedia.org") (Family Radio Service)
+## [FRS](https://en.wikipedia.org/wiki/Family_Radio_Service "Wikipedia.org") (**F**amily **R**adio **S**ervice)
 
 A __personal radio service__ in __USA__ intended for families and individuals. 
-FRS is the USA equivalent of EU's PMR446.
 
-FRS radios use narrow-band FM.
+- **North America's PMR446**. 
+- License-exempt **462 MHz** and **467 MHz** radio. 
+- FRS radios use narrow-band FM.
+    - 22 Channels 
+    - 12.5 kHz channel spacing (used in land mobile frequency bands globally)
+    - 0.5W per channel.
+    - 2.0W @ Channels 1-7, 15-22.
 
-22 Channels 
 
-12.5 kHz channel spacing (used in land mobile frequency bands globally)
+## PMR446 vs FRS
 
-0.5W per channel.
+FRS and PMR446 are functional counterparts designed for license-free, short-range UHF communication, sharing nearly identical modulation, channel spacing, and hardware rules, though they operate on completely incompatible frequencies.
 
-2.0W @ Channels 1-7, 15-22.
+Both services were created to give consumers and businesses simple, walkie-talkie communication without requiring an individual license, using non-removable antennas and simplex (direct radio-to-radio) operation.
 
-FRS/GMRS hybrids exist due to their [overlapping frequency bands](GMRS_and_FRS_Frequency_Spectrum_Chart.png).
+||FRS (North America)| PMR446 (Europe/CEPT)|
+|---|:---|:---|
+|Frequency Band|462 MHz & 467 MHz|446.0 – 446.2 MHz|
+|Channels|22 (Shared w/ GMRS)|16 analog/DMR; 32 dPMR|
+|Channel Spacing|12.5 kHz|12.5 kHz (analog/DMR); 6.25 kHz (dPMR)|
+|Modulation| Analog NBFM <br>(2.5 kHz max deviation)| Analog NBFM (2.5 kHz deviation) <br> Digital 4FSK|
+|Max Transmit Power|2 W (Ch 1–7, 15–22) / 0.5 W (Ch 8–14)|0.5 W (500 mW) across all channels|
+|Antenna Rules|Fixed, non-removable|Fixed, non-removable|
+|Sub-audible Codes|CTCSS & DCS|CTCSS & DCS|
 
-## [GMRS](https://en.wikipedia.org/wiki/General_Mobile_Radio_Service "Wikipedia.org") (General Mobile Radio Service)
 
-A __personal radio service__ intended for families and individuals. It's popular for short-range, personal, or recreational communication and does not require specialized knowledge or equipment. GMRS radios can be used without a business license, but they do require an FCC license in the U.S.
 
-License required; 1 per family. 
+## [GMRS](https://en.wikipedia.org/wiki/General_Mobile_Radio_Service "Wikipedia.org") (**G**eneral **M**obile **R**adio **S**ervice) 
 
-UHF frequencies in the 462-467 MHz range with analog FM modulation.
+Higher power version of FRS; up to 50 watts on select channels. A licensed two-way FM UHF radio service in the United States (462 MHz and 467 MHz) used for short- to medium-range voice communication, limited data, and repeater operation. GMR also supports external antennas and repeaters.
 
-Land-mobile FM UHF radio service designed for short-range two-way voice communication
+GMRS is North American version of [UHF CB](https://en.wikipedia.org/wiki/UHF_CB).
+
+A __personal radio service__ intended for families and individuals. It's popular for short-range, personal, or recreational communication and does not require specialized knowledge or equipment. GMRS radios can be used without a business license, but they do **require an FCC license** in the U.S.
+
+- License required; 1 per family. 
+- UHF frequencies in the 462-467 MHz range with analog FM modulation.
+- Land-mobile FM UHF radio service designed for short-range two-way voice communication
+
+**FRS/GMRS hybrids** exist due to their [overlapping frequency bands](GMRS_and_FRS_Frequency_Spectrum_Chart.png).
 
 ## [Trunked Radio System](https://en.wikipedia.org/wiki/Trunked_radio_system "Wikipedia.org")s
 
